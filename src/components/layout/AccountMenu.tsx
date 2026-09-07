@@ -1,0 +1,123 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { CircleUserRound, Monitor, Moon, Settings, Sun } from "lucide-react";
+import { useTheme, type ThemeMode } from "@/components/theme/ThemeProvider";
+import { ROLE_LABELS } from "@/domains/identity/domain/role";
+import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
+import { useAppSelector } from "@/context/hooks";
+import { cn } from "@/lib/utils";
+
+const THEMES: { id: ThemeMode; label: string; icon: typeof Sun }[] = [
+    { id: "light", label: "Light", icon: Sun },
+    { id: "dark", label: "Dark", icon: Moon },
+    { id: "system", label: "System", icon: Monitor },
+];
+
+export default function AccountMenu({
+    compact = false,
+}: {
+    compact?: boolean;
+}) {
+    const staff = useAppSelector(selectCurrentStaff);
+    const { mode, setMode } = useTheme();
+    const [open, setOpen] = useState(false);
+    const rootRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function onClick(event: MouseEvent) {
+            if (!rootRef.current?.contains(event.target as Node)) {
+                setOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", onClick);
+        return () => document.removeEventListener("mousedown", onClick);
+    }, []);
+
+    if (!staff) return null;
+
+    return (
+        <div ref={rootRef} className="relative">
+            <button
+                type="button"
+                onClick={() => setOpen(value => !value)}
+                className={
+                    compact
+                        ? "flex size-8 items-center justify-center rounded-md text-slate-gray hover:bg-secondary hover:text-foreground"
+                        : "flex items-center gap-2 rounded-[48px] border border-hairline bg-card py-1 pr-3 pl-1 hover:bg-secondary"
+                }
+                aria-expanded={open}
+                aria-haspopup="menu"
+                aria-label={compact ? "Account" : undefined}
+            >
+                {compact ? (
+                    <CircleUserRound className="size-4" />
+                ) : (
+                    <>
+                        <span className="flex size-8 items-center justify-center rounded-full bg-secondary">
+                            <CircleUserRound className="size-4" />
+                        </span>
+                        <span className="hidden text-left sm:block">
+                            <span className="block text-[13px] font-medium leading-tight">
+                                {staff.name}
+                            </span>
+                            <span className="block text-[11px] text-slate-gray">
+                                {ROLE_LABELS[staff.role]}
+                            </span>
+                        </span>
+                    </>
+                )}
+            </button>
+            {open ? (
+                <div
+                    role="menu"
+                    className="absolute top-full right-0 z-50 mt-2 w-[260px] rounded-[16px] border border-hairline bg-popover p-2 text-popover-foreground shadow-subtle"
+                >
+                    <div className="px-3 py-2">
+                        <p className="text-[14px] font-medium">{staff.name}</p>
+                        <p className="text-[13px] text-slate-gray">
+                            {ROLE_LABELS[staff.role]}
+                        </p>
+                    </div>
+                    <div className="border-t border-hairline px-3 py-3">
+                        <p className="mb-2 flex items-center gap-2 text-[12px] font-medium tracking-[0.08em] text-steel-gray uppercase">
+                            <Settings className="size-3.5" />
+                            Settings
+                        </p>
+                        <p className="mb-2 text-[13px] text-slate-gray">
+                            Appearance
+                        </p>
+                        <div
+                            role="radiogroup"
+                            aria-label="Theme"
+                            className="grid grid-cols-3 gap-1 rounded-[12px] bg-secondary p-1"
+                        >
+                            {THEMES.map(option => {
+                                const Icon = option.icon;
+                                const active = mode === option.id;
+                                return (
+                                    <button
+                                        key={option.id}
+                                        type="button"
+                                        role="radio"
+                                        aria-checked={active}
+                                        onClick={() => setMode(option.id)}
+                                        className={cn(
+                                            "flex flex-col items-center gap-1 rounded-[10px] py-2 text-[11px] font-medium",
+                                            active
+                                                ? "bg-card text-foreground shadow-subtle"
+                                                : "text-muted-foreground hover:text-foreground",
+                                        )}
+                                    >
+                                        <Icon className="size-4" />
+                                        {option.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            ) : null}
+        </div>
+    );
+}

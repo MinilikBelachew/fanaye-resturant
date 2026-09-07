@@ -1,0 +1,310 @@
+import type { LucideIcon } from "lucide-react";
+import {
+    Activity,
+    AlertTriangle,
+    Bell,
+    Building2,
+    CheckCircle2,
+    ClipboardCheck,
+    Clock3,
+    CreditCard,
+    Flame,
+    Inbox,
+    LayoutDashboard,
+    LayoutGrid,
+    LifeBuoy,
+    ScrollText,
+    Settings,
+    Store,
+    UserRound,
+    Users,
+    UtensilsCrossed,
+    Wallet,
+    Warehouse,
+} from "lucide-react";
+import type { Role } from "../domain/role";
+import { homePathForRole } from "./homePath";
+
+export interface NavItem {
+    href: string;
+    label: string;
+    icon: LucideIcon;
+    filter?: "all" | "new" | "preparing" | "ready" | "exceptions";
+    badgeKey?: "new" | "preparing" | "ready" | "exceptions";
+}
+
+export interface NavSection {
+    title: string;
+    items: NavItem[];
+}
+
+function stationQueueNav(home: string): NavSection[] {
+    return [
+        {
+            title: "Queue",
+            items: [
+                {
+                    href: home,
+                    label: "All tickets",
+                    icon: LayoutGrid,
+                    filter: "all",
+                },
+                {
+                    href: `${home}?status=new`,
+                    label: "New",
+                    icon: Inbox,
+                    filter: "new",
+                    badgeKey: "new",
+                },
+                {
+                    href: `${home}?status=preparing`,
+                    label: "In progress",
+                    icon: Flame,
+                    filter: "preparing",
+                    badgeKey: "preparing",
+                },
+                {
+                    href: `${home}?status=ready`,
+                    label: "Ready",
+                    icon: CheckCircle2,
+                    filter: "ready",
+                    badgeKey: "ready",
+                },
+                {
+                    href: `${home}?status=exceptions`,
+                    label: "Exceptions",
+                    icon: AlertTriangle,
+                    filter: "exceptions",
+                    badgeKey: "exceptions",
+                },
+            ],
+        },
+    ];
+}
+
+export function navForRole(role: Role): NavSection[] {
+    switch (role) {
+        case "super_admin":
+            return [
+                {
+                    title: "Overview",
+                    items: [
+                        {
+                            href: "/super-admin",
+                            label: "Dashboard",
+                            icon: LayoutDashboard,
+                        },
+                    ],
+                },
+                {
+                    title: "Platform",
+                    items: [
+                        {
+                            href: "/super-admin/tenants",
+                            label: "Tenants",
+                            icon: Building2,
+                        },
+                        {
+                            href: "/super-admin/plans",
+                            label: "Plans",
+                            icon: CreditCard,
+                        },
+                        {
+                            href: "/super-admin/usage",
+                            label: "Usage",
+                            icon: Activity,
+                        },
+                    ],
+                },
+                {
+                    title: "Trust",
+                    items: [
+                        {
+                            href: "/super-admin/support",
+                            label: "Support",
+                            icon: LifeBuoy,
+                        },
+                        {
+                            href: "/super-admin/audit",
+                            label: "Platform Audit",
+                            icon: ScrollText,
+                        },
+                    ],
+                },
+            ];
+        case "owner":
+            return [
+                {
+                    title: "Business",
+                    items: [
+                        {
+                            href: "/owner",
+                            label: "Dashboard",
+                            icon: LayoutDashboard,
+                        },
+                        {
+                            href: "/owner/branches",
+                            label: "Branches",
+                            icon: Store,
+                        },
+                        {
+                            href: "/owner/live",
+                            label: "Live Operations",
+                            icon: Activity,
+                        },
+                        {
+                            href: "/owner/reports",
+                            label: "Reports",
+                            icon: ScrollText,
+                        },
+                        {
+                            href: "/owner/daily-close",
+                            label: "Daily Close",
+                            icon: ClipboardCheck,
+                        },
+                        {
+                            href: "/owner/settings",
+                            label: "Settings",
+                            icon: Settings,
+                        },
+                    ],
+                },
+            ];
+        case "manager":
+            return [
+                {
+                    title: "Overview",
+                    items: [
+                        {
+                            href: "/manager",
+                            label: "Dashboard",
+                            icon: LayoutDashboard,
+                        },
+                        {
+                            href: "/manager/live",
+                            label: "Live Operations",
+                            icon: Activity,
+                        },
+                    ],
+                },
+                {
+                    title: "House",
+                    items: [
+                        {
+                            href: "/manager/menu",
+                            label: "Menu",
+                            icon: UtensilsCrossed,
+                        },
+                        {
+                            href: "/manager/stations",
+                            label: "Stations",
+                            icon: Warehouse,
+                        },
+                        {
+                            href: "/manager/tables",
+                            label: "Tables",
+                            icon: Store,
+                        },
+                        {
+                            href: "/manager/staff",
+                            label: "Staff",
+                            icon: Users,
+                        },
+                    ],
+                },
+                {
+                    title: "Control",
+                    items: [
+                        {
+                            href: "/manager/reports",
+                            label: "Reports",
+                            icon: ScrollText,
+                        },
+                        {
+                            href: "/manager/daily-close",
+                            label: "Daily Close",
+                            icon: Wallet,
+                        },
+                        {
+                            href: "/manager/audit",
+                            label: "Audit",
+                            icon: ScrollText,
+                        },
+                    ],
+                },
+            ];
+        case "cashier":
+            return [
+                {
+                    title: "Floor",
+                    items: [
+                        {
+                            href: "/cashier",
+                            label: "Dashboard",
+                            icon: LayoutDashboard,
+                        },
+                        {
+                            href: "/cashier/payments",
+                            label: "Payments",
+                            icon: Wallet,
+                        },
+                    ],
+                },
+                {
+                    title: "Close",
+                    items: [
+                        {
+                            href: "/cashier/closed",
+                            label: "Closed Bills",
+                            icon: ScrollText,
+                        },
+                        {
+                            href: "/cashier/reconciliation",
+                            label: "Reconciliation",
+                            icon: CreditCard,
+                        },
+                    ],
+                },
+            ];
+        case "waiter":
+            return [
+                {
+                    title: "Floor",
+                    items: [
+                        {
+                            href: "/waiter/tables",
+                            label: "Tables",
+                            icon: LayoutGrid,
+                        },
+                        {
+                            href: "/waiter/notifications",
+                            label: "Ready",
+                            icon: Bell,
+                        },
+                    ],
+                },
+                {
+                    title: "Shift",
+                    items: [
+                        {
+                            href: "/waiter/shift",
+                            label: "Shift",
+                            icon: Clock3,
+                        },
+                        {
+                            href: "/waiter/profile",
+                            label: "Profile",
+                            icon: UserRound,
+                        },
+                    ],
+                },
+            ];
+        case "kitchen":
+        case "barista":
+        case "cakes":
+        case "soft_drinks":
+            return stationQueueNav(homePathForRole(role));
+        default:
+            return [];
+    }
+}
