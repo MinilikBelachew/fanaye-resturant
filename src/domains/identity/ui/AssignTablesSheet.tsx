@@ -47,6 +47,7 @@ export default function AssignTablesSheet() {
     }
 
     function handleSave() {
+        if (!waiter) return;
         dispatch(
             assignTablesToWaiter({
                 waiterId: waiter.id,
@@ -102,7 +103,7 @@ export default function AssignTablesSheet() {
                                 </p>
                             </div>
                         </div>
-                        <Badge variant="primary">
+                        <Badge variant="default">
                             {selectedTableIds.length} Assigned
                         </Badge>
                     </div>

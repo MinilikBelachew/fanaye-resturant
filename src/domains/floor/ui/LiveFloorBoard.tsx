@@ -48,7 +48,10 @@ export default function LiveFloorBoard() {
                     0,
                 );
                 const cookingCount = sessionItems.filter(
-                    i => i.status === "cooking",
+                    i =>
+                        i.status === "queued" ||
+                        i.status === "acknowledged" ||
+                        i.status === "in_preparation",
                 ).length;
                 const readyCount = sessionItems.filter(
                     i => i.status === "ready",
@@ -107,7 +110,9 @@ export default function LiveFloorBoard() {
                                             <span
                                                 className={cn(
                                                     "rounded-full px-1.5 py-0.2 text-[10px] font-semibold",
-                                                    item.status === "cooking"
+                                                    item.status === "in_preparation" ||
+                                                    item.status === "acknowledged" ||
+                                                    item.status === "queued"
                                                         ? "bg-amber-50 text-amber-700"
                                                         : item.status === "ready"
                                                           ? "bg-emerald-50 text-emerald-700"

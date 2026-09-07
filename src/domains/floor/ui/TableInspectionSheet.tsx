@@ -43,7 +43,12 @@ export default function TableInspectionSheet({
     const tax = Math.round(subtotal * 0.15);
     const total = subtotal + tax;
 
-    const cookingCount = activeItems.filter(i => i.status === "cooking").length;
+    const cookingCount = activeItems.filter(
+        i =>
+            i.status === "queued" ||
+            i.status === "acknowledged" ||
+            i.status === "in_preparation",
+    ).length;
     const readyCount = activeItems.filter(i => i.status === "ready").length;
 
     return (
@@ -223,7 +228,9 @@ export default function TableInspectionSheet({
                                                 <span
                                                     className={cn(
                                                         "mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                                                        item.status === "cooking"
+                                                        item.status === "in_preparation" ||
+                                                        item.status === "acknowledged" ||
+                                                        item.status === "queued"
                                                             ? "bg-amber-50 text-amber-700"
                                                             : item.status === "ready"
                                                               ? "bg-emerald-50 text-emerald-700"
