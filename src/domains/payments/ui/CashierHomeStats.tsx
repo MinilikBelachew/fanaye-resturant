@@ -17,7 +17,7 @@ export default function CashierHomeStats() {
             <KpiCard
                 label="Bill requests"
                 value={String(bills.length)}
-                hint="Waiting for waiter collection"
+                hint="Waiting for you to generate"
             />
             <KpiCard
                 label="Total logged"

@@ -2,6 +2,7 @@ import {
     isExceptionStatus,
     type OrderItem,
 } from "@/domains/ordering/domain/order";
+import type { StationTicket } from "@/domains/fulfillment/domain/stationTicket";
 
 function isDelayed(item: OrderItem, now = Date.now()): boolean {
     if (
@@ -60,6 +61,23 @@ export function matchesQueueFilter(
         return item.status === "ready";
     }
     return isExceptionStatus(item.status) || delayed;
+}
+
+export function matchesStationFilter(
+    ticket: StationTicket,
+    filter: QueueFilter,
+): boolean {
+    if (filter === "all") return true;
+    if (filter === "new") {
+        return ticket.state === "QUEUED" || ticket.state === "ACKNOWLEDGED";
+    }
+    if (filter === "preparing") {
+        return ticket.state === "IN_PREPARATION";
+    }
+    if (filter === "ready") {
+        return ticket.state === "READY";
+    }
+    return ticket.state === "CANNOT_PREPARE" || ticket.delayed;
 }
 
 export function stationQueueHref(

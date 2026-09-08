@@ -1,4 +1,6 @@
-import { Bot } from "lucide-react";
+"use client";
+
+import { Bot, RefreshCw } from "lucide-react";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import KpiCard from "@/components/custom/organisms/KpiCard";
 import PageHeader from "@/components/custom/organisms/PageHeader";
@@ -9,28 +11,55 @@ import {
     TopDishesLeaderboard,
     WeeklyCashMovementChart,
 } from "@/components/custom/organisms/Charts";
+import { useGetManagerDashboardQuery } from "@/context/services/managerDashboardApi";
+import { Button } from "@/components/ui/button";
 
 export default function ManagerPage() {
+    const { data, isLoading, isFetching, error, refetch } = useGetManagerDashboardQuery();
+    const dash = data?.data;
+
     return (
         <DashboardFrame>
-            <PageHeader
-                eyebrow="House"
-                title="Manager dashboard"
-                description="Live station throughput, revenue analytics, and fulfillment channels."
-            />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <PageHeader
+                    eyebrow="House"
+                    title="Manager dashboard"
+                    description={
+                        dash
+                            ? `${dash.branchName} · Live telemetry for business date ${dash.businessDate}`
+                            : "Live station throughput, revenue analytics, and fulfillment channels."
+                    }
+                />
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => refetch()}
+                    disabled={isFetching}
+                    className="self-start sm:self-auto gap-2 rounded-full border-border/80 bg-background text-xs font-medium"
+                >
+                    <RefreshCw className={`size-3.5 ${isFetching ? "animate-spin" : ""}`} />
+                    <span>Refresh data</span>
+                </Button>
+            </div>
 
-            {/* 1. Top Modern KPI Stat Cards (Image 2 style) */}
+            {error && (
+                <div className="rounded-[16px] border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive">
+                    Unable to load real-time telemetry from backend. Please check connection and permissions.
+                </div>
+            )}
+
+            {/* 1. Top Modern KPI Stat Cards */}
             <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
                 <KpiCard
                     label="Daily Revenue / Net"
-                    value="ETB 48.2k"
+                    value={isLoading ? "..." : (dash?.kpis.dailyRevenueFormatted ?? "ETB 0")}
                     trend={{
-                        value: "+23%",
-                        direction: "up",
-                        label: "vs yesterday",
+                        value: dash?.kpis.dailyRevenueTrend ?? "0%",
+                        direction: dash?.kpis.dailyRevenueTrend?.startsWith("+") ? "up" : "neutral",
+                        label: dash?.kpis.dailyRevenueTrendLabel ?? "vs yesterday",
                     }}
                     sparkline={{
-                        badge: "23%",
+                        badge: dash?.kpis.dailyRevenueTrend?.replace(/[^0-9%]/g, "") || "0%",
                         color: "#e85d04",
                         variant: "wave1",
                     }}
@@ -38,14 +67,14 @@ export default function ManagerPage() {
                 />
                 <KpiCard
                     label="Avg Prep Time / Day"
-                    value="7.4 min"
+                    value={isLoading ? "..." : (dash?.kpis.avgPrepTimeFormatted ?? "0.0 min")}
                     trend={{
-                        value: "-12%",
+                        value: dash?.kpis.avgPrepTimeTrend ?? "0%",
                         direction: "up",
-                        label: "faster vs last week",
+                        label: dash?.kpis.avgPrepTimeTrendLabel ?? "fulfillment speed",
                     }}
                     sparkline={{
-                        badge: "18%",
+                        badge: dash?.kpis.avgPrepTimeFormatted?.replace(" min", "") || "0",
                         color: "#046645",
                         variant: "wave2",
                     }}
@@ -53,14 +82,14 @@ export default function ManagerPage() {
                 />
                 <KpiCard
                     label="Active Tables / Floor"
-                    value="8 / 14"
+                    value={isLoading ? "..." : (dash?.kpis.activeTablesFormatted ?? "0 / 0")}
                     trend={{
-                        value: "57%",
+                        value: dash?.kpis.floorCapacityPercentage ?? "0%",
                         direction: "neutral",
                         label: "floor capacity",
                     }}
                     sparkline={{
-                        badge: "15%",
+                        badge: dash?.kpis.floorCapacityPercentage || "0%",
                         color: "#f97316",
                         variant: "wave3",
                     }}
@@ -68,14 +97,14 @@ export default function ManagerPage() {
                 />
                 <KpiCard
                     label="TinaVerify Transfer Mix"
-                    value="89.2%"
+                    value={isLoading ? "..." : (dash?.kpis.tinaVerifyMixPercentage ?? "0.0%")}
                     trend={{
-                        value: "+14%",
+                        value: dash?.kpis.tinaVerifyTrend ?? "0%",
                         direction: "up",
-                        label: "digital verified",
+                        label: dash?.kpis.tinaVerifyTrendLabel ?? "digital verified",
                     }}
                     sparkline={{
-                        badge: "94%",
+                        badge: dash?.kpis.tinaVerifyMixPercentage || "0%",
                         color: "#c2410c",
                         variant: "wave4",
                     }}
@@ -83,24 +112,27 @@ export default function ManagerPage() {
                 />
             </div>
 
-            {/* 2. Main Dashboard Charts (Image 3 Top Row: 2-col Revenue vs Collections + 1-col Payment Channels) */}
+            {/* 2. Main Dashboard Charts: Revenue vs Collections + Payment Channels */}
             <div className="grid gap-4 lg:grid-cols-3">
                 <div className="lg:col-span-2">
-                    <RevenueVsCollectionsChart />
+                    <RevenueVsCollectionsChart data={dash?.salesTrend} />
                 </div>
                 <div className="lg:col-span-1">
-                    <PaymentChannelsBreakdown />
+                    <PaymentChannelsBreakdown channels={dash?.paymentChannels} />
                 </div>
             </div>
 
-            {/* 3. Operational Drill-down (Image 3 Bottom Row: 3 equal cards) */}
+            {/* 3. Operational Drill-down */}
             <div className="grid gap-4 md:grid-cols-3">
-                <PrepDurationBucketsChart />
-                <WeeklyCashMovementChart />
-                <TopDishesLeaderboard />
+                <PrepDurationBucketsChart
+                    buckets={dash?.prepBuckets}
+                    avgSpeed={dash?.kpis.avgPrepTimeFormatted}
+                />
+                <WeeklyCashMovementChart movement={dash?.weeklyCashMovement} />
+                <TopDishesLeaderboard dishes={dash?.topDishes} />
             </div>
 
-            {/* 4. Floating AI Assistant Quick-Insight Pill (Image 3 bottom-right style) */}
+            {/* 4. Floating AI Assistant Quick-Insight Pill */}
             <div className="fixed bottom-6 right-6 z-40">
                 <button
                     type="button"

@@ -4,16 +4,10 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { Bell, Search } from "lucide-react";
 import { useAppSelector } from "@/context/hooks";
 import { stationQueueHref } from "@/domains/fulfillment/application/queueFilter";
+import { useCurrentStationQueue } from "@/domains/fulfillment/application/useCurrentStationQueue";
 import { homePathForRole, stationOrderPath } from "@/domains/identity/application/homePath";
-import {
-    isStationRole,
-    stationIdForRole,
-} from "@/domains/identity/domain/role";
-import {
-    selectCurrentStaff,
-    selectStationItems,
-    selectStationQueueCounts,
-} from "@/domains/ordering/application/selectors";
+import { isStationRole } from "@/domains/identity/domain/role";
+import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { Input } from "@/components/ui/input";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
@@ -60,19 +54,10 @@ function StationTopBarToolsInner({
     const home = station ? homePathForRole(station) : "";
     const isQueueHome = Boolean(station && pathname === home);
 
-    const items = useAppSelector(state =>
-        station ? selectStationItems(state, stationIdForRole(station)) : [],
-    );
-    const counts = useAppSelector(state =>
-        station
-            ? selectStationQueueCounts(state, stationIdForRole(station))
-            : { new: 0, preparing: 0, ready: 0, exceptions: 0 },
-    );
-    const tables = useAppSelector(state => state.ops.tables);
-    const sessions = useAppSelector(state => state.ops.sessions);
-
-    const incoming = items.filter(
-        item => item.status === "queued" || item.status === "acknowledged",
+    const { tickets, counts } = useCurrentStationQueue();
+    const incoming = tickets.filter(
+        ticket =>
+            ticket.state === "QUEUED" || ticket.state === "ACKNOWLEDGED",
     );
     const urlQuery = searchParams.get("q") ?? "";
     const [query, setQuery] = useState(urlQuery);
@@ -164,39 +149,29 @@ function StationTopBarToolsInner({
                                 </p>
                             ) : (
                                 <ul className="max-h-72 overflow-y-auto">
-                                    {incoming.map(item => {
-                                        const session = sessions.find(
-                                            entry =>
-                                                entry.id === item.sessionId,
-                                        );
-                                        const table = tables.find(
-                                            entry =>
-                                                entry.id === session?.tableId,
-                                        );
-                                        return (
-                                            <li key={item.id}>
-                                                <Link
-                                                    href={stationOrderPath(
-                                                        station,
-                                                        item.id,
-                                                    )}
-                                                    className="block px-3 py-2.5 hover:bg-secondary"
-                                                    onClick={() =>
-                                                        setOpen(false)
-                                                    }
-                                                >
-                                                    <p className="text-[14px] font-medium">
-                                                        {item.quantity}×{" "}
-                                                        {item.name}
-                                                    </p>
-                                                    <p className="text-[12px] text-slate-gray">
-                                                        Table{" "}
-                                                        {table?.number ?? "—"}
-                                                    </p>
-                                                </Link>
-                                            </li>
-                                        );
-                                    })}
+                                    {incoming.map(ticket => (
+                                        <li key={ticket.orderItemId}>
+                                            <Link
+                                                href={stationOrderPath(
+                                                    station,
+                                                    ticket.orderItemId,
+                                                )}
+                                                className="block px-3 py-2.5 hover:bg-secondary"
+                                                onClick={() =>
+                                                    setOpen(false)
+                                                }
+                                            >
+                                                <p className="text-[14px] font-medium">
+                                                    {ticket.quantity}×{" "}
+                                                    {ticket.itemName}
+                                                </p>
+                                                <p className="text-[12px] text-slate-gray">
+                                                    Table{" "}
+                                                    {ticket.tableDisplayName}
+                                                </p>
+                                            </Link>
+                                        </li>
+                                    ))}
                                 </ul>
                             )}
                         </div>

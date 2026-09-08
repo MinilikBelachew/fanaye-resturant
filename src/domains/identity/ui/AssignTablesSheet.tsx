@@ -1,44 +1,89 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Check, Clock3, Plus, UtensilsCrossed, X } from "lucide-react";
+import { useAdminFloorLayoutQuery } from "@/context/services/floorApi";
 import {
-    Check,
-    Grid,
-    LayoutGrid,
-    Phone,
-    UtensilsCrossed,
-    User,
-    X,
-} from "lucide-react";
-import { useAppDispatch, useAppSelector } from "@/context/hooks";
-import {
-    assignTablesToWaiter,
-    closeAssignTables,
-} from "@/context/slices/identitySlice";
+    useAdminStaffQuery,
+    useCreateShiftDefinitionMutation,
+    useSetWaiterTableCoverageMutation,
+} from "@/context/services/staffApi";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-export default function AssignTablesSheet() {
-    const dispatch = useAppDispatch();
-    const isOpen = useAppSelector(state => state.identity.isAssignTablesOpen);
-    const waiter = useAppSelector(state => state.identity.assigningWaiter);
-    const tables = useAppSelector(state => state.ops.tables);
-    const sessions = useAppSelector(state => state.ops.sessions);
+interface AssignTablesSheetProps {
+    isOpen: boolean;
+    waiterMembershipId: string | null;
+    waiterName: string | null;
+    onClose: () => void;
+}
 
+export default function AssignTablesSheet({
+    isOpen,
+    waiterMembershipId,
+    waiterName,
+    onClose,
+}: AssignTablesSheetProps) {
+    const { data: staffData } = useAdminStaffQuery(undefined, { skip: !isOpen });
+    const { data: layoutData } = useAdminFloorLayoutQuery(undefined, {
+        skip: !isOpen,
+    });
+    const [setCoverage, { isLoading: saving }] =
+        useSetWaiterTableCoverageMutation();
+    const [createShift, { isLoading: creatingShift }] =
+        useCreateShiftDefinitionMutation();
+
+    const shifts = staffData?.shifts ?? [];
+    const locations = layoutData?.data ?? [];
+    const tables = locations.flatMap(location =>
+        location.tables.map(table => ({
+            ...table,
+            locationName: location.name,
+        })),
+    );
+
+    const waiter = useMemo(
+        () =>
+            staffData?.data.find(member => member.id === waiterMembershipId) ??
+            null,
+        [staffData, waiterMembershipId],
+    );
+
+    const [shiftId, setShiftId] = useState("");
     const [selectedTableIds, setSelectedTableIds] = useState<string[]>([]);
+    const [showNewShift, setShowNewShift] = useState(false);
+    const [newShiftName, setNewShiftName] = useState("");
+    const [newStart, setNewStart] = useState("07:00");
+    const [newEnd, setNewEnd] = useState("15:00");
+    const [error, setError] = useState("");
+    const [message, setMessage] = useState("");
 
     useEffect(() => {
-        if (waiter) {
-            setSelectedTableIds(waiter.assignedTableIds || []);
-        } else {
+        if (!isOpen) return;
+        const initialShift = shifts[0]?.id ?? "";
+        setShiftId(initialShift);
+        setShowNewShift(false);
+        setError("");
+        setMessage("");
+    }, [isOpen, shifts]);
+
+    useEffect(() => {
+        if (!isOpen || !waiter || !shiftId) {
             setSelectedTableIds([]);
+            return;
         }
-    }, [waiter, isOpen]);
+        const coverage = waiter.shiftCoverages.find(
+            entry => entry.shiftDefinitionId === shiftId,
+        );
+        setSelectedTableIds(coverage?.tables.map(table => table.tableId) ?? []);
+    }, [isOpen, waiter, shiftId]);
 
-    if (!isOpen || !waiter) return null;
+    if (!isOpen || !waiterMembershipId) return null;
 
-    function handleToggle(tableId: string) {
+    const selectedShift = shifts.find(shift => shift.id === shiftId);
+
+    function toggleTable(tableId: string) {
         setSelectedTableIds(prev =>
             prev.includes(tableId)
                 ? prev.filter(id => id !== tableId)
@@ -46,211 +91,227 @@ export default function AssignTablesSheet() {
         );
     }
 
-    function handleSave() {
-        if (!waiter) return;
-        dispatch(
-            assignTablesToWaiter({
-                waiterId: waiter.id,
+    async function handleSave() {
+        if (!waiterMembershipId || !shiftId) return;
+        setError("");
+        setMessage("");
+        try {
+            await setCoverage({
+                membershipId: waiterMembershipId,
+                shiftDefinitionId: shiftId,
                 tableIds: selectedTableIds,
-            }),
-        );
+            }).unwrap();
+            setMessage("Tables saved for this shift.");
+            onClose();
+        } catch {
+            setError("Could not save table coverage.");
+        }
+    }
+
+    async function handleCreateShift(event: React.FormEvent) {
+        event.preventDefault();
+        if (!newShiftName.trim()) return;
+        setError("");
+        try {
+            const created = await createShift({
+                name: newShiftName.trim(),
+                startLocalTime: newStart,
+                endLocalTime: newEnd,
+            }).unwrap();
+            setShiftId(created.data.id);
+            setShowNewShift(false);
+            setNewShiftName("");
+            setMessage(
+                `Shift “${created.data.name}” created (${created.data.startLocalTime}–${created.data.endLocalTime}).`,
+            );
+        } catch {
+            setError("Could not create shift. Use times like 07:00.");
+        }
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-[2px] transition-opacity animate-in fade-in duration-200">
-            <div
-                className="fixed inset-0"
-                onClick={() => dispatch(closeAssignTables())}
-            />
-
-            <aside className="relative z-10 flex h-full w-full max-w-lg flex-col bg-white shadow-2xl dark:bg-card border-l border-hairline overflow-hidden">
-                {/* Header */}
-                <div className="flex shrink-0 items-center justify-between border-b border-hairline px-6 py-4">
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-[2px]">
+            <div className="flex-1" onClick={onClose} aria-hidden />
+            <aside className="relative z-10 flex h-full w-full max-w-lg flex-col border-l border-hairline bg-card shadow-2xl">
+                <div className="flex shrink-0 items-center justify-between border-b border-hairline px-5 py-4">
                     <div className="flex items-center gap-3">
                         <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                             <UtensilsCrossed className="size-5" />
                         </div>
                         <div>
-                            <h2 className="text-[17px] font-semibold text-foreground">
-                                Assign Dining Tables
+                            <h2 className="text-[17px] font-semibold">
+                                Assign tables by shift
                             </h2>
                             <p className="text-[13px] text-slate-gray">
-                                Table allocation for <span className="font-semibold text-foreground">{waiter.name}</span>
+                                {waiterName || waiter?.name || "Waiter"} — pick
+                                a shift window, then tables
                             </p>
                         </div>
                     </div>
                     <button
                         type="button"
-                        onClick={() => dispatch(closeAssignTables())}
-                        className="flex size-8 items-center justify-center rounded-full text-slate-gray hover:bg-secondary hover:text-foreground transition-colors"
+                        onClick={onClose}
+                        className="rounded-full p-2 text-slate-gray hover:bg-secondary"
                     >
                         <X className="size-4" />
                     </button>
                 </div>
 
-                {/* Body */}
-                <div className="app-scroll flex-1 space-y-6 overflow-y-auto p-6 text-[14px]">
-                    {/* Waiter Profile Mini Card */}
-                    <div className="flex items-center justify-between rounded-[16px] border border-hairline bg-surface-ivory/50 p-4">
-                        <div className="flex items-center gap-3">
-                            <div className="flex size-11 items-center justify-center rounded-full bg-secondary text-[16px] font-bold text-foreground">
-                                {waiter.name.charAt(0)}
-                            </div>
-                            <div>
-                                <p className="font-semibold text-foreground">{waiter.name}</p>
-                                <p className="text-[12px] text-slate-gray">
-                                    {waiter.phone || "No phone registered"} · {waiter.shiftStatus === "on_duty" ? "● On Duty" : "○ Off Duty"}
-                                </p>
-                            </div>
-                        </div>
-                        <Badge variant="default">
-                            {selectedTableIds.length} Assigned
-                        </Badge>
-                    </div>
-
-                    {/* Quick Selection Shortcuts */}
+                <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
                     <div className="space-y-2">
-                        <p className="text-[12px] font-semibold tracking-wider text-slate-gray uppercase">
-                            Quick Zone Allocation
-                        </p>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex items-center justify-between gap-2">
+                            <label className="text-[13px] font-medium">
+                                Shift (custom times)
+                            </label>
                             <button
                                 type="button"
-                                onClick={() =>
-                                    setSelectedTableIds(
-                                        tables.slice(0, 8).map(t => t.id),
-                                    )
-                                }
-                                className="rounded-full border border-hairline bg-surface-ivory px-3 py-1 text-[12px] font-medium text-foreground hover:bg-secondary transition-colors"
+                                onClick={() => setShowNewShift(v => !v)}
+                                className="inline-flex items-center gap-1 text-[12px] font-medium text-brand"
                             >
-                                Zone A (Tables 1-8)
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    setSelectedTableIds(
-                                        tables.slice(8, 16).map(t => t.id),
-                                    )
-                                }
-                                className="rounded-full border border-hairline bg-surface-ivory px-3 py-1 text-[12px] font-medium text-foreground hover:bg-secondary transition-colors"
-                            >
-                                Zone B (Tables 9-16)
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    setSelectedTableIds(tables.map(t => t.id))
-                                }
-                                className="rounded-full border border-hairline bg-surface-ivory px-3 py-1 text-[12px] font-medium text-foreground hover:bg-secondary transition-colors"
-                            >
-                                All Tables
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setSelectedTableIds([])}
-                                className="rounded-full border border-hairline bg-surface-ivory px-3 py-1 text-[12px] font-medium text-slate-gray hover:bg-secondary transition-colors"
-                            >
-                                Clear All
+                                <Plus className="size-3.5" />
+                                New shift
                             </button>
                         </div>
-                    </div>
-
-                    {/* Table Grid (16 Tables) */}
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                            <p className="text-[12px] font-semibold tracking-wider text-slate-gray uppercase">
-                                Floor Tables Map
+                        <select
+                            value={shiftId}
+                            onChange={e => setShiftId(e.target.value)}
+                            className="h-10 w-full rounded-[10px] border border-input bg-card px-3 text-[13px]"
+                        >
+                            {shifts.length === 0 ? (
+                                <option value="">Create a shift first</option>
+                            ) : null}
+                            {shifts.map(shift => (
+                                <option key={shift.id} value={shift.id}>
+                                    {shift.name} · {shift.startLocalTime}–
+                                    {shift.endLocalTime}
+                                </option>
+                            ))}
+                        </select>
+                        {selectedShift ? (
+                            <p className="flex items-center gap-1.5 text-[12px] text-slate-gray">
+                                <Clock3 className="size-3.5" />
+                                Only this waiter covers these tables during{" "}
+                                {selectedShift.startLocalTime}–
+                                {selectedShift.endLocalTime}
                             </p>
-                            <span className="text-[12px] text-slate-gray">
-                                Tap table to toggle assignment
-                            </span>
-                        </div>
-
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            {tables.map(table => {
-                                const isSelected = selectedTableIds.includes(table.id);
-                                const session = sessions.find(
-                                    s =>
-                                        s.tableId === table.id &&
-                                        s.status !== "paid" &&
-                                        s.status !== "closed",
-                                );
-                                const isOccupied = Boolean(session);
-
-                                return (
-                                    <button
-                                        key={table.id}
-                                        type="button"
-                                        onClick={() => handleToggle(table.id)}
-                                        className={cn(
-                                            "relative flex flex-col items-center justify-between rounded-[14px] border p-4 text-center transition-all",
-                                            isSelected
-                                                ? "border-primary bg-primary/10 dark:bg-primary/20 ring-2 ring-primary/40 shadow-xs"
-                                                : "border-hairline bg-white hover:border-slate-300 dark:bg-card",
-                                        )}
-                                    >
-                                        <div className="flex w-full items-center justify-between">
-                                            <span className="text-[11px] font-medium text-slate-gray">
-                                                Table
-                                            </span>
-                                            {isSelected ? (
-                                                <div className="flex size-4 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                                                    <Check className="size-2.5 stroke-[3]" />
-                                                </div>
-                                            ) : (
-                                                <div className="size-4 rounded-full border border-hairline" />
-                                            )}
-                                        </div>
-
-                                        <p className="my-2 text-[22px] font-bold text-foreground">
-                                            {table.number}
-                                        </p>
-
-                                        <div className="flex w-full items-center justify-center gap-1.5">
-                                            <span
-                                                className={cn(
-                                                    "size-1.5 rounded-full",
-                                                    isOccupied
-                                                        ? "bg-amber-500"
-                                                        : "bg-emerald-500",
-                                                )}
-                                            />
-                                            <span className="text-[11px] text-slate-gray">
-                                                {isOccupied ? "Occupied" : "Available"}
-                                            </span>
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
+                        ) : null}
                     </div>
+
+                    {showNewShift ? (
+                        <form
+                            onSubmit={handleCreateShift}
+                            className="space-y-2 rounded-[12px] border border-dashed border-hairline bg-surface-ivory p-3"
+                        >
+                            <p className="text-[12px] font-medium">
+                                Create shift with any times
+                            </p>
+                            <Input
+                                value={newShiftName}
+                                onChange={e => setNewShiftName(e.target.value)}
+                                placeholder="e.g. Brunch, Late night"
+                                className="h-9"
+                            />
+                            <div className="grid grid-cols-2 gap-2">
+                                <Input
+                                    type="time"
+                                    value={newStart}
+                                    onChange={e => setNewStart(e.target.value)}
+                                    className="h-9"
+                                />
+                                <Input
+                                    type="time"
+                                    value={newEnd}
+                                    onChange={e => setNewEnd(e.target.value)}
+                                    className="h-9"
+                                />
+                            </div>
+                            <Button
+                                type="submit"
+                                size="sm"
+                                disabled={
+                                    creatingShift || !newShiftName.trim()
+                                }
+                            >
+                                Save shift
+                            </Button>
+                        </form>
+                    ) : null}
+
+                    <div className="space-y-3">
+                        {locations.map(location => (
+                            <div key={location.id}>
+                                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-gray">
+                                    {location.name}
+                                </p>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {location.tables.map(table => {
+                                        const selected =
+                                            selectedTableIds.includes(table.id);
+                                        return (
+                                            <button
+                                                key={table.id}
+                                                type="button"
+                                                onClick={() =>
+                                                    toggleTable(table.id)
+                                                }
+                                                className={cn(
+                                                    "rounded-[12px] border px-2 py-2 text-left transition-colors",
+                                                    selected
+                                                        ? "border-brand bg-brand/10"
+                                                        : "border-hairline bg-card hover:bg-secondary/50",
+                                                )}
+                                            >
+                                                <div className="flex items-start justify-between gap-1">
+                                                    <span className="text-[13px] font-semibold">
+                                                        {table.displayNumber ||
+                                                            table.displayName}
+                                                    </span>
+                                                    {selected ? (
+                                                        <Check className="size-3.5 text-brand" />
+                                                    ) : null}
+                                                </div>
+                                                <span className="mt-0.5 block truncate text-[11px] text-slate-gray">
+                                                    {table.displayName}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                        {tables.length === 0 ? (
+                            <p className="text-[13px] text-slate-gray">
+                                No tables yet. Create them under Tables →
+                                Configure.
+                            </p>
+                        ) : null}
+                    </div>
+
+                    {error ? (
+                        <p className="text-[12px] text-destructive">{error}</p>
+                    ) : null}
+                    {message ? (
+                        <p className="text-[12px] text-emerald-700">{message}</p>
+                    ) : null}
                 </div>
 
-                {/* Footer */}
-                <div className="flex shrink-0 items-center justify-between border-t border-hairline bg-white p-4 dark:bg-card">
-                    <p className="text-[13px] text-slate-gray">
-                        <span className="font-semibold text-foreground">
-                            {selectedTableIds.length}
-                        </span>{" "}
-                        of {tables.length} tables selected
-                    </p>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => dispatch(closeAssignTables())}
-                            className="rounded-full text-[13px]"
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="button"
-                            onClick={handleSave}
-                            className="rounded-full bg-primary text-primary-foreground hover:bg-primary-deep text-[13px] font-semibold px-5"
-                        >
-                            Save Allocation
-                        </Button>
-                    </div>
+                <div className="flex gap-2 border-t border-hairline px-5 py-4">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={onClose}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        type="button"
+                        className="flex-1"
+                        disabled={saving || !shiftId}
+                        onClick={() => void handleSave()}
+                    >
+                        {saving ? "Saving…" : "Save for this shift"}
+                    </Button>
                 </div>
             </aside>
         </div>

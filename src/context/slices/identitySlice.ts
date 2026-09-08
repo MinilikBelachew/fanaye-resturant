@@ -1,12 +1,19 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type { Staff } from "@/domains/identity/domain/staff";
+import type { AuthContext } from "@/domains/identity/domain/authContext";
+import type { CurrentShiftResponse } from "@/domains/identity/domain/shift";
 import { DEMO_STAFF } from "@/domains/identity/infrastructure/demoStaff";
+import { authApi } from "@/context/services/authApi";
+import { shiftsApi } from "@/context/services/shiftsApi";
+import { API_BASE_URL } from "@/context/env";
 
-const STAFF_KEY = "fanaye.demo.staffId";
 const STAFF_LIST_STORAGE_KEY = "fanaye.demo.staffList.v1";
 
 interface IdentityState {
-    staffId: string | null;
+    apiBaseUrl: string;
+    accessToken: string | null;
+    tokenExpires: number | null;
+    session: AuthContext | null;
     staffMembers: Staff[];
     hydrated: boolean;
     isAddEditOpen: boolean;
@@ -16,7 +23,10 @@ interface IdentityState {
 }
 
 const initialState: IdentityState = {
-    staffId: null,
+    apiBaseUrl: API_BASE_URL,
+    accessToken: null,
+    tokenExpires: null,
+    session: null,
     staffMembers: DEMO_STAFF,
     hydrated: false,
     isAddEditOpen: false,
@@ -25,14 +35,37 @@ const initialState: IdentityState = {
     assigningWaiter: null,
 };
 
+function applyShiftToSession(
+    session: AuthContext | null,
+    shift: CurrentShiftResponse,
+): AuthContext | null {
+    if (!session) return session;
+    return {
+        ...session,
+        shiftSessionId: shift.shiftSession?.id ?? null,
+    };
+}
+
 export const identitySlice = createSlice({
     name: "identity",
     initialState,
     reducers: {
-        hydrateIdentity: (state, action: PayloadAction<string | null>) => {
-            const staffId = action.payload;
-            const exists = state.staffMembers.some(person => person.id === staffId);
-            state.staffId = exists ? staffId : (state.staffMembers[4]?.id ?? null);
+        setSession: (state, action: PayloadAction<AuthContext>) => {
+            state.session = action.payload;
+        },
+        setAccessToken: (
+            state,
+            action: PayloadAction<{ token: string; tokenExpires: number }>,
+        ) => {
+            state.accessToken = action.payload.token;
+            state.tokenExpires = action.payload.tokenExpires;
+        },
+        clearSession: state => {
+            state.session = null;
+            state.accessToken = null;
+            state.tokenExpires = null;
+        },
+        markHydrated: state => {
             state.hydrated = true;
         },
         hydrateStaff: (state, action: PayloadAction<Staff[] | null>) => {
@@ -40,19 +73,6 @@ export const identitySlice = createSlice({
                 state.staffMembers = action.payload;
             }
         },
-        switchDemoStaff: (state, action: PayloadAction<string>) => {
-            state.staffId = action.payload;
-            if (typeof window !== "undefined") {
-                localStorage.setItem(STAFF_KEY, action.payload);
-            }
-        },
-        signOutDemo: state => {
-            state.staffId = null;
-            if (typeof window !== "undefined") {
-                localStorage.removeItem(STAFF_KEY);
-            }
-        },
-        // Staff Registration & Management
         addStaff: (state, action: PayloadAction<Staff>) => {
             state.staffMembers.push(action.payload);
             state.isAddEditOpen = false;
@@ -68,9 +88,6 @@ export const identitySlice = createSlice({
         },
         deleteStaff: (state, action: PayloadAction<string>) => {
             state.staffMembers = state.staffMembers.filter(s => s.id !== action.payload);
-            if (state.staffId === action.payload) {
-                state.staffId = state.staffMembers[0]?.id ?? null;
-            }
             state.isAddEditOpen = false;
             state.editingStaff = null;
         },
@@ -134,13 +151,42 @@ export const identitySlice = createSlice({
             state.assigningWaiter = null;
         },
     },
+    extraReducers: builder => {
+        builder.addMatcher(authApi.endpoints.login.matchFulfilled, (state, action) => {
+            state.session = action.payload.context;
+            state.accessToken = action.payload.token;
+            state.tokenExpires = action.payload.tokenExpires;
+        });
+        builder.addMatcher(authApi.endpoints.refresh.matchFulfilled, (state, action) => {
+            state.accessToken = action.payload.token;
+            state.tokenExpires = action.payload.tokenExpires;
+        });
+        builder.addMatcher(authApi.endpoints.me.matchFulfilled, (state, action) => {
+            state.session = action.payload.context;
+        });
+        builder.addMatcher(authApi.endpoints.logout.matchFulfilled, state => {
+            state.session = null;
+            state.accessToken = null;
+            state.tokenExpires = null;
+        });
+        builder.addMatcher(shiftsApi.endpoints.currentShift.matchFulfilled, (state, action) => {
+            state.session = applyShiftToSession(state.session, action.payload);
+        });
+        builder.addMatcher(shiftsApi.endpoints.clockIn.matchFulfilled, (state, action) => {
+            state.session = applyShiftToSession(state.session, action.payload);
+        });
+        builder.addMatcher(shiftsApi.endpoints.clockOut.matchFulfilled, (state, action) => {
+            state.session = applyShiftToSession(state.session, action.payload);
+        });
+    },
 });
 
 export const {
-    hydrateIdentity,
+    setSession,
+    setAccessToken,
+    clearSession,
+    markHydrated,
     hydrateStaff,
-    switchDemoStaff,
-    signOutDemo,
     addStaff,
     updateStaff,
     deleteStaff,
@@ -155,4 +201,4 @@ export const {
 } = identitySlice.actions;
 
 export default identitySlice.reducer;
-export { STAFF_KEY, STAFF_LIST_STORAGE_KEY };
+export { STAFF_LIST_STORAGE_KEY };

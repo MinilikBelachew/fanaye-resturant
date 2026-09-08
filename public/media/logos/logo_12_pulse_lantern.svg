@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="lantGrad" x1="30" y1="30" x2="90" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FBBF24" />
+      <stop offset="50%" stop-color="#F97316" />
+      <stop offset="100%" stop-color="#EA580C" />
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="32" fill="#0A0F1D" />
+  <rect x="1" y="1" width="118" height="118" rx="31" stroke="rgba(255,255,255,0.08)" stroke-width="2" />
+  <!-- Traditional-Modern Geometric Lantern Frame -->
+  <path d="M60 20L84 38V82L60 100L36 82V38L60 20Z" stroke="url(#lantGrad)" stroke-width="4" stroke-linejoin="round" />
+  <!-- Glowing Horizontal Window Slits -->
+  <line x1="44" y1="50" x2="76" y2="50" stroke="url(#lantGrad)" stroke-width="3" stroke-linecap="round" />
+  <line x1="40" y1="60" x2="80" y2="60" stroke="#FFF" stroke-width="3.5" stroke-linecap="round" />
+  <line x1="44" y1="70" x2="76" y2="70" stroke="url(#lantGrad)" stroke-width="3" stroke-linecap="round" />
+  <!-- Live Signal Pulse -->
+  <circle cx="60" cy="60" r="6" fill="#FFF" />
+</svg>

@@ -19,6 +19,7 @@ import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { StationRole } from "@/domains/identity/domain/role";
 import { homePathForRole } from "@/domains/identity/application/homePath";
+import { useCurrentStationQueue } from "@/domains/fulfillment/application/useCurrentStationQueue";
 
 const TABS: { key: QueueFilter; label: string; icon: typeof Inbox }[] = [
     { key: "all", label: "All", icon: LayoutGrid },
@@ -56,6 +57,14 @@ function StationKdsNavInner({
     const view = parseQueueView(searchParams.get("view"));
     const q = searchParams.get("q") ?? "";
     const onHome = pathname === home;
+    const { counts } = useCurrentStationQueue();
+    const tabCount: Record<QueueFilter, number | null> = {
+        all: null,
+        new: counts.new,
+        preparing: counts.preparing,
+        ready: counts.ready,
+        exceptions: counts.exceptions,
+    };
 
     return (
         <nav className={cn("-mx-1 flex gap-2 overflow-x-auto px-1 pb-1", className)}>
@@ -80,6 +89,11 @@ function StationKdsNavInner({
                     >
                         <Icon className="size-4" />
                         {tab.label}
+                        {tabCount[tab.key] ? (
+                            <span className="rounded-full bg-black/10 px-1.5 py-0.5 text-[11px] font-medium dark:bg-white/10">
+                                {tabCount[tab.key]}
+                            </span>
+                        ) : null}
                     </Link>
                 );
             })}

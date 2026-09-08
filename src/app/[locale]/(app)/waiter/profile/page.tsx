@@ -2,16 +2,12 @@
 
 import { CircleUserRound, LogOut, Shield } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/context/hooks";
-import { signOutDemo } from "@/context/slices/identitySlice";
 import PageHeader from "@/components/custom/organisms/PageHeader";
 import ThemeSwitcher from "@/components/theme/ThemeSwitcher";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ROLE_LABELS } from "@/domains/identity/domain/role";
-import RoleSwitcher from "@/domains/identity/ui/RoleSwitcher";
-import {
-    DEMO_PASSWORD,
-} from "@/domains/identity/infrastructure/demoStaff";
+import { performSignOut } from "@/domains/identity/application/signOut";
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { useRouter } from "@/i18n/navigation";
 
@@ -32,6 +28,7 @@ function InfoRow({
 
 export default function WaiterProfilePage() {
     const staff = useAppSelector(selectCurrentStaff);
+    const session = useAppSelector(state => state.identity.session);
     const dispatch = useAppDispatch();
     const router = useRouter();
 
@@ -42,7 +39,7 @@ export default function WaiterProfilePage() {
             <PageHeader
                 eyebrow="Account"
                 title="Profile"
-                description="Your floor identity, demo role, and appearance."
+                description="Your floor identity, branch, and appearance."
             />
 
             <div className="overflow-hidden rounded-[20px] border border-hairline bg-card shadow-subtle">
@@ -58,27 +55,19 @@ export default function WaiterProfilePage() {
                             {ROLE_LABELS[staff.role]}
                         </p>
                     </div>
-                    <Badge variant={staff.active ? "success" : "secondary"}>
-                        {staff.active ? "On shift" : "Inactive"}
+                    <Badge variant={session?.shiftSessionId ? "success" : "secondary"}>
+                        {session?.shiftSessionId ? "On shift" : "Off shift"}
                     </Badge>
                 </div>
                 <div className="px-5">
                     <InfoRow label="Role" value={ROLE_LABELS[staff.role]} />
-                    <InfoRow label="Staff ID" value={staff.id} />
-                    <InfoRow label="House" value="Fanaye · Bole" />
-                    <InfoRow label="Demo PIN" value={DEMO_PASSWORD} />
+                    <InfoRow label="Email" value={staff.email || "—"} />
+                    <InfoRow label="Phone" value={staff.phone || "—"} />
+                    <InfoRow
+                        label="Branch"
+                        value={session?.branchName || "Fanaye"}
+                    />
                 </div>
-            </div>
-
-            <div className="rounded-[20px] border border-hairline bg-card p-5 shadow-subtle">
-                <p className="text-[13px] font-medium tracking-[0.08em] text-steel-gray uppercase">
-                    Switch demo role
-                </p>
-                <p className="mt-1 mb-3 text-[13px] text-slate-gray">
-                    Jump to kitchen, cashier, or another seat without signing
-                    in again.
-                </p>
-                <RoleSwitcher />
             </div>
 
             <div className="rounded-[20px] border border-hairline bg-card p-5 shadow-subtle">
@@ -105,14 +94,14 @@ export default function WaiterProfilePage() {
                     <div>
                         <p className="text-[15px] font-semibold">Session</p>
                         <p className="text-[13px] text-slate-gray">
-                            Sign out of this demo seat.
+                            Sign out of this device.
                         </p>
                     </div>
                 </div>
                 <Button
                     variant="outline"
-                    onClick={() => {
-                        dispatch(signOutDemo());
+                    onClick={async () => {
+                        await performSignOut(dispatch);
                         router.push("/sign-in");
                     }}
                 >

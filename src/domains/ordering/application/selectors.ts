@@ -1,4 +1,5 @@
 import type { RootState } from "@/context/store";
+import { mapAuthContextToStaff } from "@/domains/identity/application/mapAuthToStaff";
 import { DEMO_STAFF } from "@/domains/identity/infrastructure/demoStaff";
 import type { StationId } from "@/domains/fulfillment/domain/station";
 import {
@@ -12,12 +13,8 @@ export function selectStaffList(state: RootState) {
 }
 
 export function selectCurrentStaff(state: RootState) {
-    if (!state.identity.staffId) return null;
-    const list = state.identity.staffMembers ?? DEMO_STAFF;
-    return (
-        list.find(person => person.id === state.identity.staffId) ??
-        null
-    );
+    if (!state.identity.session) return null;
+    return mapAuthContextToStaff(state.identity.session);
 }
 
 export function selectWaitersList(state: RootState) {

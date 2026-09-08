@@ -1,13 +1,15 @@
 "use client";
 
-import { useAppDispatch } from "@/context/hooks";
 import {
-    setStationItemStatus,
-    STATION_SETTABLE_STATUSES,
-    type StationSettableStatus,
-} from "@/context/slices/opsSlice";
-import { STATION_STATUS_LABELS } from "@/domains/ordering/domain/order";
-import type { OrderItem } from "@/domains/ordering/domain/order";
+    useAcknowledgeOrderItemMutation,
+    useMarkItemReadyMutation,
+    useReportCannotPrepareMutation,
+    useStartPreparationMutation,
+} from "@/context/services/stationsApi";
+import {
+    stationStateLabel,
+    type StationTicket,
+} from "@/domains/fulfillment/domain/stationTicket";
 import { Badge } from "@/components/ui/badge";
 import {
     Select,
@@ -18,75 +20,89 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
-function isSettable(status: OrderItem["status"]): status is StationSettableStatus {
-    return (STATION_SETTABLE_STATUSES as readonly string[]).includes(status);
-}
+const SETTABLE = [
+    "QUEUED",
+    "ACKNOWLEDGED",
+    "IN_PREPARATION",
+    "READY",
+    "CANNOT_PREPARE",
+] as const;
 
-function statusTone(item: OrderItem, delayed: boolean) {
-    if (item.status === "rejected_by_station" || delayed) {
+function tone(ticket: StationTicket) {
+    if (ticket.state === "CANNOT_PREPARE" || ticket.delayed) {
         return "bg-destructive/10 text-destructive hover:bg-destructive/15";
     }
-    if (item.status === "ready") {
+    if (ticket.state === "READY") {
         return "bg-accent text-accent-foreground hover:bg-accent/80";
     }
-    if (item.status === "in_preparation") {
+    if (ticket.state === "IN_PREPARATION") {
         return "bg-[#fff4e5] text-[#c2410c] hover:bg-[#ffedd5]";
     }
     return "bg-secondary text-slate-gray hover:bg-secondary/80";
 }
 
 export default function StationStatusSelect({
-    item,
-    delayed = false,
+    ticket,
 }: {
-    item: OrderItem;
-    delayed?: boolean;
+    ticket: StationTicket;
 }) {
-    const dispatch = useAppDispatch();
-    const current = isSettable(item.status) ? item.status : null;
+    const [acknowledge] = useAcknowledgeOrderItemMutation();
+    const [start] = useStartPreparationMutation();
+    const [ready] = useMarkItemReadyMutation();
+    const [cannotPrepare] = useReportCannotPrepareMutation();
+    const current = SETTABLE.includes(
+        ticket.state as (typeof SETTABLE)[number],
+    )
+        ? ticket.state
+        : null;
 
     if (!current) {
         return (
             <Badge
                 variant={
-                    item.status === "ready"
+                    ticket.state === "READY"
                         ? "default"
-                        : delayed
+                        : ticket.delayed
                           ? "danger"
                           : "secondary"
                 }
             >
-                {STATION_STATUS_LABELS[item.status]}
+                {stationStateLabel(ticket.state)}
             </Badge>
         );
     }
 
+    const body = {
+        orderItemId: ticket.orderItemId,
+        expectedVersion: ticket.version,
+    };
+
+    function apply(next: string) {
+        if (next === ticket.state) return;
+        if (next === "ACKNOWLEDGED") void acknowledge(body);
+        else if (next === "IN_PREPARATION") void start(body);
+        else if (next === "READY") void ready(body);
+        else if (next === "CANNOT_PREPARE") {
+            void cannotPrepare({ ...body, reasonDetail: "Cannot prepare" });
+        }
+    }
+
     return (
-        <Select
-            value={current}
-            onValueChange={value =>
-                dispatch(
-                    setStationItemStatus({
-                        itemId: item.id,
-                        status: value as StationSettableStatus,
-                    }),
-                )
-            }
-        >
+        <Select value={current} onValueChange={apply}>
             <SelectTrigger
                 size="sm"
                 aria-label="Status"
                 className={cn(
                     "h-7 min-w-[8.5rem] rounded-full border-0 px-2.5 text-[12px] font-medium shadow-none focus-visible:ring-1",
-                    statusTone(item, delayed),
+                    tone(ticket),
                 )}
             >
-                <SelectValue />
+                <SelectValue>{stationStateLabel(ticket.state)}</SelectValue>
             </SelectTrigger>
             <SelectContent align="start">
-                {STATION_SETTABLE_STATUSES.map(status => (
-                    <SelectItem key={status} value={status}>
-                        {STATION_STATUS_LABELS[status]}
+                {SETTABLE.map(state => (
+                    <SelectItem key={state} value={state}>
+                        {stationStateLabel(state)}
                     </SelectItem>
                 ))}
             </SelectContent>

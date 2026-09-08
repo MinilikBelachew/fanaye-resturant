@@ -4,6 +4,17 @@ import identityReducer from "./slices/identitySlice";
 import opsReducer from "./slices/opsSlice";
 import stationReducer from "./slices/stationSlice";
 import { api } from "./services";
+import "./services/authApi";
+import "./services/shiftsApi";
+import "./services/floorApi";
+import "./services/ordersApi";
+import "./services/stationsApi";
+import "./services/billingApi";
+import "./services/cashApi";
+import "./services/reconciliationApi";
+import "./services/dailyCloseApi";
+import "./services/menuApi";
+import "./services/staffApi";
 
 export const store = configureStore({
     reducer: {

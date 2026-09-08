@@ -4,7 +4,10 @@ import {
     modifiersKey,
     type SelectedModifier,
 } from "@/domains/catalog/domain/modifiers";
-import { createFloorTables } from "@/domains/floor/domain/table";
+import {
+    createFloorTables,
+    withTableLocations,
+} from "@/domains/floor/domain/table";
 import type {
     DiningTable,
     TableSession,
@@ -126,7 +129,7 @@ export const opsSlice = createSlice({
     reducers: {
         hydrateOps: (state, action: PayloadAction<OpsState | null>) => {
             if (action.payload) {
-                state.tables = action.payload.tables;
+                state.tables = withTableLocations(action.payload.tables);
                 state.sessions = action.payload.sessions;
                 state.orders = action.payload.orders;
                 state.items = action.payload.items.map(normalizeItem);

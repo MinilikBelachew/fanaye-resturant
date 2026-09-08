@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140" fill="none">
+  <defs>
+    <linearGradient id="tvGrad" x1="70" y1="20" x2="70" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="60%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+    <linearGradient id="shieldFlame" x1="70" y1="46" x2="70" y2="92" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE047" />
+      <stop offset="60%" stop-color="#F97316" />
+      <stop offset="100%" stop-color="#DC2626" />
+    </linearGradient>
+  </defs>
+  <rect width="140" height="140" rx="36" fill="#061A14" />
+  <rect x="1" y="1" width="138" height="138" rx="35" stroke="#10B981" stroke-opacity="0.25" stroke-width="2" />
+
+  <!-- TinaVerify Geometric Cryptographic Vault Shield -->
+  <path d="M70 24L102 36V70C102 88 88 106 70 114C52 106 38 88 38 70V36L70 24Z" fill="url(#tvGrad)" opacity="0.2" stroke="url(#tvGrad)" stroke-width="4" stroke-linejoin="round" />
+
+  <!-- Central Living Hearth / Service Flame -->
+  <path d="M70 42C70 52 82 62 82 74C82 82 76 88 70 90C64 88 58 82 58 74C58 62 70 52 70 42Z" fill="url(#shieldFlame)" />
+
+  <!-- Encrypted Checkmark Badge at Bottom Center -->
+  <circle cx="70" cy="98" r="10" fill="#10B981" />
+  <path d="M66 98L69 101L75 95" stroke="#FFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="qfGrad" x1="28" y1="24" x2="92" y2="96" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF6B00" />
+      <stop offset="100%" stop-color="#FF007A" />
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="32" fill="#09090B" />
+  <rect x="1" y="1" width="118" height="118" rx="31" stroke="rgba(255,255,255,0.08)" stroke-width="2" />
+  <!-- Quantum F Lines -->
+  <path d="M38 26H86M38 26V94M38 56H74" stroke="url(#qfGrad)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+  <!-- Quantum Data Dots -->
+  <circle cx="86" cy="26" r="5" fill="#FFF" />
+  <circle cx="74" cy="56" r="5" fill="#FFF" />
+  <circle cx="38" cy="94" r="5" fill="#FFF" />
+</svg>

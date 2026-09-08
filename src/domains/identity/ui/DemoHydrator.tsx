@@ -3,10 +3,11 @@
 import { useEffect } from "react";
 import { store } from "@/context/store";
 import { useAppDispatch, useAppSelector } from "@/context/hooks";
+import { authApi } from "@/context/services/authApi";
 import {
-    hydrateIdentity,
     hydrateStaff,
-    STAFF_KEY,
+    markHydrated,
+    clearSession,
     STAFF_LIST_STORAGE_KEY,
 } from "@/context/slices/identitySlice";
 import {
@@ -22,6 +23,7 @@ import {
     hydrateStations,
     STATIONS_STORAGE_KEY,
 } from "@/context/slices/stationSlice";
+import { clearLegacyAuthStorage } from "@/domains/identity/infrastructure/authSession";
 import type { MenuItem } from "@/domains/catalog/domain/menu";
 import type { PreparationStation } from "@/domains/fulfillment/domain/station";
 import type { Staff } from "@/domains/identity/domain/staff";
@@ -85,9 +87,6 @@ export default function DemoHydrator({
             dispatch(hydrateStaff(null));
         }
 
-        const staffId = localStorage.getItem(STAFF_KEY);
-        dispatch(hydrateIdentity(staffId));
-
         try {
             const rawOps = localStorage.getItem(OPS_KEY);
             dispatch(hydrateOps(rawOps ? (JSON.parse(rawOps) as OpsState) : null));
@@ -116,6 +115,24 @@ export default function DemoHydrator({
         } catch {
             dispatch(hydrateStations(null));
         }
+
+        clearLegacyAuthStorage();
+
+        dispatch(authApi.endpoints.refresh.initiate())
+            .unwrap()
+            .then(() =>
+                dispatch(
+                    authApi.endpoints.me.initiate(undefined, {
+                        forceRefetch: true,
+                    }),
+                ).unwrap(),
+            )
+            .catch(() => {
+                dispatch(clearSession());
+            })
+            .finally(() => {
+                dispatch(markHydrated());
+            });
     }, [dispatch]);
 
     useEffect(() => {

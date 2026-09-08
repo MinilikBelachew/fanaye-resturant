@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="beamGrad" x1="20" y1="20" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF5400" />
+      <stop offset="50%" stop-color="#FF9E00" />
+      <stop offset="100%" stop-color="#00F0FF" />
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="32" fill="#030712" />
+  <rect x="1" y="1" width="118" height="118" rx="31" stroke="rgba(255,255,255,0.08)" stroke-width="2" />
+  <!-- Speed Beams forming dynamic F -->
+  <path d="M36 28H90L82 42H50V52H80L72 66H50V92H36V28Z" fill="url(#beamGrad)" />
+  <circle cx="86" cy="35" r="4" fill="#00F0FF" />
+  <circle cx="76" cy="59" r="4" fill="#FF9E00" />
+</svg>

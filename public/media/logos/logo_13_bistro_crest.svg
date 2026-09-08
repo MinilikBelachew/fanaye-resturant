@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="crestGrad" x1="20" y1="20" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E85D04" />
+      <stop offset="100%" stop-color="#3B82F6" />
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="32" fill="#18181B" />
+  <rect x="1" y="1" width="118" height="118" rx="31" stroke="rgba(255,255,255,0.08)" stroke-width="2" />
+  <!-- Fork & Knife Intersecting with Flame Center -->
+  <path d="M42 30V54C42 62 48 68 56 70V94H48" stroke="url(#crestGrad)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M78 30V94H70" stroke="url(#crestGrad)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+  <!-- Center Flame -->
+  <path d="M60 34C60 44 68 50 68 58C68 64 64 68 60 70C56 68 52 64 52 58C52 50 60 44 60 34Z" fill="#F59E0B" />
+</svg>

@@ -119,7 +119,7 @@ export const PLATFORM_PLANS = [
         seats: "3 branches · 40 staff",
         features: [
             "All four stations",
-            "TinaVerify",
+            "Digital Verification",
             "Manager approvals",
             "Live ops",
         ],
@@ -141,8 +141,8 @@ export const PLATFORM_PLANS = [
 
 export const FEATURE_FLAGS = [
     {
-        key: "tinaverify",
-        name: "TinaVerify transfers",
+        key: "digital_verification",
+        name: "Digital payment verification",
         enabled: true,
         scope: "Platform",
     },
@@ -176,7 +176,7 @@ export const SUPPORT_TICKETS = [
     {
         id: "SUP-1042",
         tenant: "Fanaye Restaurant",
-        topic: "TinaVerify pending on Table 12",
+        topic: "Payment receipt verification on Table 12",
         status: "Open",
         priority: "High",
     },

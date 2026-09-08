@@ -1,37 +1,40 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     Coffee,
     CookingPot,
     CupSoda,
+    ImagePlus,
     Plus,
     Save,
     Trash2,
+    Upload,
     UtensilsCrossed,
     X,
 } from "lucide-react";
-import { useAppDispatch, useAppSelector } from "@/context/hooks";
 import {
-    addMenuItem,
-    deleteMenuItem,
-    updateMenuItem,
-} from "@/context/slices/menuSlice";
+    useAdminMenuMetaQuery,
+    useAdminModifierGroupsQuery,
+    useCreateAdminMenuItemMutation,
+    useMarkMenuItemSoldOutMutation,
+    useUpdateAdminMenuItemMutation,
+    useUploadMenuImageMutation,
+} from "@/context/services/menuApi";
+import {
+    catalogModifiersToApi,
+    filePublicUrl,
+} from "@/domains/catalog/application/mapAdminMenu";
 import type { MenuItem } from "@/domains/catalog/domain/menu";
 import type {
     ModifierGroup,
     ModifierGroupKind,
     ModifierOption,
 } from "@/domains/catalog/domain/modifiers";
-import {
-    DEFAULT_STATIONS,
-    STATION_IDS,
-    type StationId,
-} from "@/domains/fulfillment/domain/station";
+import { STATION_IDS } from "@/domains/fulfillment/domain/station";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { DISH_IMAGES } from "@/lib/media";
 import { createId } from "@/lib/ids";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
@@ -40,6 +43,12 @@ interface AddMenuItemSheetProps {
     isOpen: boolean;
     onClose: () => void;
     initialItem?: MenuItem | null;
+}
+
+function isPersistedId(id: string) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        id,
+    );
 }
 
 const DEFAULT_STATION_META: Record<
@@ -82,83 +91,119 @@ const DEFAULT_STATION_META: Record<
     },
 };
 
-const PRESET_DISH_IMAGES = [
-    { key: "burger", label: "Burger", url: DISH_IMAGES.burger },
-    { key: "pizza", label: "Pizza", url: DISH_IMAGES.pizza },
-    { key: "pasta", label: "Pasta", url: DISH_IMAGES.pasta },
-    { key: "salad", label: "Salad", url: DISH_IMAGES.salad },
-    { key: "macchiato", label: "Macchiato", url: DISH_IMAGES.macchiato },
-    { key: "latte", label: "Latte", url: DISH_IMAGES.latte },
-    { key: "cheesecake", label: "Cheesecake", url: DISH_IMAGES.cheesecake },
-    { key: "tiramisu", label: "Tiramisu", url: DISH_IMAGES.tiramisu },
-    { key: "cola", label: "Cola", url: DISH_IMAGES.cola },
-    { key: "sprite", label: "Sprite", url: DISH_IMAGES.sprite },
-];
+function stationIconForName(name: string) {
+    const value = name.toLowerCase();
+    if (value.includes("barista")) return Coffee;
+    if (value.includes("cake")) return UtensilsCrossed;
+    if (value.includes("soft") || value.includes("drink")) return CupSoda;
+    return CookingPot;
+}
 
 export default function AddMenuItemSheet({
     isOpen,
     onClose,
     initialItem,
 }: AddMenuItemSheetProps) {
-    const dispatch = useAppDispatch();
-    const stations = useAppSelector(state => state.station.stations);
+    const { data: metaData } = useAdminMenuMetaQuery(undefined, {
+        skip: !isOpen,
+    });
+    const { data: libraryData } = useAdminModifierGroupsQuery(undefined, {
+        skip: !isOpen,
+    });
+    const [createItem, { isLoading: creating }] =
+        useCreateAdminMenuItemMutation();
+    const [updateItem, { isLoading: updating }] =
+        useUpdateAdminMenuItemMutation();
+    const [markSoldOut] = useMarkMenuItemSoldOutMutation();
+    const [uploadImage, { isLoading: uploading }] =
+        useUploadMenuImageMutation();
 
-    // Form states
+    const libraryGroups = libraryData?.data ?? [];
+
+    const stations = useMemo(
+        () =>
+            (metaData?.data.stations ?? []).map(station => ({
+                id: station.id,
+                name: station.name,
+                category: station.name,
+                avgPrepMin:
+                    DEFAULT_STATION_META[
+                        station.name.toLowerCase().includes("barista")
+                            ? STATION_IDS.barista
+                            : station.name.toLowerCase().includes("cake")
+                              ? STATION_IDS.cakes
+                              : station.name.toLowerCase().includes("soft")
+                                ? STATION_IDS.soft_drinks
+                                : STATION_IDS.kitchen
+                    ]?.defaultPrepMin ?? 10,
+            })),
+        [metaData],
+    );
+
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [price, setPrice] = useState<string>("250");
-    const [stationId, setStationId] = useState<string>(STATION_IDS.kitchen);
+    const [stationId, setStationId] = useState<string>("");
     const [category, setCategory] = useState("Kitchen");
     const [expectedPrepMinutes, setExpectedPrepMinutes] = useState<number>(12);
-    const [selectedImage, setSelectedImage] = useState<string>(
-        DISH_IMAGES.burger,
+    const [imageFileId, setImageFileId] = useState<string | null>(null);
+    const [uploadPreviewUrl, setUploadPreviewUrl] = useState<string | null>(
+        null,
     );
-    const [customImageUrl, setCustomImageUrl] = useState("");
     const [available, setAvailable] = useState(true);
+    const [submitError, setSubmitError] = useState("");
 
-    // Modifier Groups builder
+    const [selectedLibraryIds, setSelectedLibraryIds] = useState<string[]>([]);
     const [modifierGroups, setModifierGroups] = useState<ModifierGroup[]>([]);
     const [newGroupName, setNewGroupName] = useState("");
     const [newGroupKind, setNewGroupKind] =
         useState<ModifierGroupKind>("included");
 
-    // Option sub-form
     const [targetGroupId, setTargetGroupId] = useState<string | null>(null);
     const [optionName, setOptionName] = useState("");
     const [optionDelta, setOptionDelta] = useState<string>("0");
 
-    // Populate or reset form when initialItem or isOpen changes
     useEffect(() => {
+        if (!isOpen) return;
+        const defaultStationId =
+            initialItem?.stationId ||
+            stations[0]?.id ||
+            metaData?.data.stations[0]?.id ||
+            "";
         if (initialItem) {
             setName(initialItem.name);
             setDescription(initialItem.description);
             setPrice(String(initialItem.price));
-            setStationId(initialItem.stationId);
+            setStationId(initialItem.stationId || defaultStationId);
             setCategory(initialItem.category);
             setExpectedPrepMinutes(initialItem.expectedPreparationMinutes);
-            const isHttp = initialItem.image?.startsWith("http");
-            if (isHttp) {
-                setCustomImageUrl(initialItem.image || "");
-                setSelectedImage(DISH_IMAGES.burger);
-            } else {
-                setSelectedImage(initialItem.image || DISH_IMAGES.burger);
-                setCustomImageUrl("");
-            }
+            setImageFileId(initialItem.imageFileId ?? null);
+            setUploadPreviewUrl(initialItem.image || null);
             setAvailable(initialItem.available);
-            setModifierGroups(initialItem.modifierGroups || []);
+            const attached = initialItem.modifierGroups || [];
+            setSelectedLibraryIds(
+                attached.map(group => group.id).filter(isPersistedId),
+            );
+            setModifierGroups(attached.filter(group => !isPersistedId(group.id)));
         } else {
             setName("");
             setDescription("");
             setPrice("250");
-            setStationId(STATION_IDS.kitchen);
-            setCategory("Kitchen");
-            setExpectedPrepMinutes(12);
-            setSelectedImage(DISH_IMAGES.burger);
-            setCustomImageUrl("");
+            setStationId(defaultStationId);
+            setCategory(stations[0]?.name || "Kitchen");
+            setExpectedPrepMinutes(stations[0]?.avgPrepMin || 12);
+            setImageFileId(null);
+            setUploadPreviewUrl(null);
             setAvailable(true);
+            setSelectedLibraryIds([]);
             setModifierGroups([]);
         }
-    }, [initialItem, isOpen]);
+        setSubmitError("");
+        setNewGroupName("");
+        setOptionName("");
+        setOptionDelta("0");
+        setTargetGroupId(null);
+    }, [initialItem, isOpen, stations, metaData]);
 
     if (!isOpen) return null;
 
@@ -237,141 +282,98 @@ export default function AddMenuItemSheet({
         );
     }
 
-    function applyPresetHoldGroup() {
-        const holdGroup: ModifierGroup = {
-            id: createId("modgroup"),
-            name: "Hold ingredients",
-            kind: "included",
-            min: 0,
-            max: 4,
-            options: [
-                {
-                    id: createId("opt"),
-                    name: "Onion",
-                    ticketLabel: "No onion",
-                    priceDelta: 0,
-                },
-                {
-                    id: createId("opt"),
-                    name: "Tomato",
-                    ticketLabel: "No tomato",
-                    priceDelta: 0,
-                },
-                {
-                    id: createId("opt"),
-                    name: "Chili / Mitmita",
-                    ticketLabel: "No chili",
-                    priceDelta: 0,
-                },
-            ],
-        };
-        setModifierGroups(prev => [...prev, holdGroup]);
-    }
-
-    function applyPresetExtraGroup() {
-        const extraGroup: ModifierGroup = {
-            id: createId("modgroup"),
-            name: "Extra toppings",
-            kind: "extra",
-            min: 0,
-            max: 4,
-            options: [
-                {
-                    id: createId("opt"),
-                    name: "Extra Cheese",
-                    ticketLabel: "Extra cheese",
-                    priceDelta: 40,
-                },
-                {
-                    id: createId("opt"),
-                    name: "Extra Sauce",
-                    ticketLabel: "Extra sauce",
-                    priceDelta: 20,
-                },
-                {
-                    id: createId("opt"),
-                    name: "Double Portion",
-                    ticketLabel: "Double portion",
-                    priceDelta: 90,
-                },
-            ],
-        };
-        setModifierGroups(prev => [...prev, extraGroup]);
+    function toggleLibraryGroup(groupId: string) {
+        setSelectedLibraryIds(prev =>
+            prev.includes(groupId)
+                ? prev.filter(id => id !== groupId)
+                : [...prev, groupId],
+        );
     }
 
     function handleDeleteItem() {
         if (!initialItem) return;
-        if (confirm(`Delete "${initialItem.name}" from catalog?`)) {
-            dispatch(deleteMenuItem(initialItem.id));
-            onClose();
+        if (
+            confirm(
+                `Mark "${initialItem.name}" sold out / remove from floor?`,
+            )
+        ) {
+            void markSoldOut({ id: initialItem.id }).then(() => onClose());
         }
     }
 
-    function handleSubmit(e: React.FormEvent) {
+    async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        if (!name.trim()) return;
+        if (!name.trim() || !stationId) return;
+        setSubmitError("");
 
-        const finalPrice = Math.max(0, Number(price) || 0);
-        const finalImage = customImageUrl.trim() || selectedImage;
+        const finalPrice = Math.max(0, Number(price) || 0).toFixed(2);
+        const body = {
+            name: name.trim(),
+            description:
+                description.trim() ||
+                `${name.trim()} prepared fresh to order.`,
+            price: finalPrice,
+            preparationStationId: stationId,
+            categoryName:
+                category.trim() ||
+                stations.find(s => s.id === stationId)?.name ||
+                "Kitchen",
+            expectedPrepMinutes: Math.max(1, expectedPrepMinutes || 5),
+            available,
+            ...(imageFileId
+                ? { imageFileId }
+                : initialItem && !uploadPreviewUrl
+                  ? { imageFileId: null }
+                  : {}),
+            modifierGroupIds: selectedLibraryIds,
+            modifierGroups: catalogModifiersToApi(modifierGroups),
+        };
 
-        if (initialItem) {
-            const updated: MenuItem = {
-                ...initialItem,
-                name: name.trim(),
-                description:
-                    description.trim() ||
-                    `${name.trim()} prepared fresh to order.`,
-                category:
-                    category.trim() ||
-                    stations.find(s => s.id === stationId)?.name ||
-                    DEFAULT_STATION_META[stationId]?.label ||
-                    "Kitchen",
-                price: finalPrice,
-                stationId,
-                expectedPreparationMinutes: Math.max(
-                    1,
-                    expectedPrepMinutes || 5,
-                ),
-                available,
-                image: finalImage,
-                modifierGroups,
-            };
-            dispatch(updateMenuItem(updated));
-        } else {
-            const newItem: MenuItem = {
-                id: createId("menu"),
-                name: name.trim(),
-                description:
-                    description.trim() ||
-                    `${name.trim()} prepared fresh to order.`,
-                category:
-                    category.trim() ||
-                    stations.find(s => s.id === stationId)?.name ||
-                    DEFAULT_STATION_META[stationId]?.label ||
-                    "Kitchen",
-                price: finalPrice,
-                stationId,
-                expectedPreparationMinutes: Math.max(
-                    1,
-                    expectedPrepMinutes || 5,
-                ),
-                available,
-                image: finalImage,
-                modifierGroups,
-            };
-            dispatch(addMenuItem(newItem));
+        try {
+            if (initialItem) {
+                await updateItem({
+                    id: initialItem.id,
+                    body: {
+                        ...body,
+                        expectedVersion: initialItem.version,
+                    },
+                }).unwrap();
+            } else {
+                await createItem(body).unwrap();
+            }
+            onClose();
+        } catch {
+            setSubmitError(
+                "Could not save menu item. Check the API is running and you are signed in as manager.",
+            );
         }
-        onClose();
     }
 
+    const saving = creating || updating || uploading;
     const matchingStation = stations.find(s => s.id === stationId);
-    const stationLabel =
-        matchingStation?.name ||
-        DEFAULT_STATION_META[stationId]?.label ||
-        "Kitchen";
-    const StationIcon =
-        DEFAULT_STATION_META[stationId]?.icon || CookingPot;
-    const effectiveImage = customImageUrl.trim() || selectedImage;
+    const stationLabel = matchingStation?.name || "Kitchen";
+    const StationIcon = stationIconForName(stationLabel);
+    const effectiveImage = uploadPreviewUrl;
+
+    async function onPickUpload(file: File | null) {
+        if (!file) return;
+        setSubmitError("");
+        try {
+            const uploaded = await uploadImage(file).unwrap();
+            setImageFileId(uploaded.file.id);
+            setUploadPreviewUrl(
+                filePublicUrl(uploaded.file.path) ||
+                    URL.createObjectURL(file),
+            );
+        } catch {
+            setSubmitError("Could not upload image. Use JPG or PNG.");
+        }
+    }
+
+    function clearImage() {
+        setImageFileId(null);
+        setUploadPreviewUrl(null);
+    }
 
     return (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs transition-opacity animate-in fade-in duration-200">
@@ -516,18 +518,11 @@ export default function AddMenuItemSheet({
                         </div>
 
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                            {(stations.length > 0
-                                ? stations
-                                : DEFAULT_STATIONS
-                            ).map(st => {
-                                const meta = DEFAULT_STATION_META[st.id];
-                                const Icon = meta?.icon || CookingPot;
+                            {stations.map(st => {
+                                const Icon = stationIconForName(st.name);
                                 const isSelected = stationId === st.id;
-                                const label = st.name || meta?.label || "Station";
-                                const prepMin =
-                                    st.avgPrepMin ||
-                                    meta?.defaultPrepMin ||
-                                    10;
+                                const label = st.name || "Station";
+                                const prepMin = st.avgPrepMin || 10;
 
                                 return (
                                     <button
@@ -543,89 +538,126 @@ export default function AddMenuItemSheet({
                                                 : "border-hairline bg-card hover:border-slate-300 hover:bg-secondary/40",
                                         )}
                                     >
-                                        <div
+                                        <Icon
                                             className={cn(
-                                                "flex size-8 items-center justify-center rounded-full border",
+                                                "size-5",
                                                 isSelected
-                                                    ? "border-brand bg-brand text-white"
-                                                    : meta?.color ||
-                                                          "text-amber-600 bg-amber-500/10 border-amber-500/20",
+                                                    ? "text-brand"
+                                                    : "text-slate-gray",
                                             )}
-                                        >
-                                            <Icon className="size-4" />
-                                        </div>
-                                        <div>
-                                            <p className="text-[12px] font-medium text-foreground">
-                                                {label}
-                                            </p>
-                                            <p className="text-[10px] text-slate-gray">
-                                                ~{prepMin} min
-                                            </p>
-                                        </div>
+                                        />
+                                        <span className="text-[12px] font-medium">
+                                            {label}
+                                        </span>
+                                        <span className="text-[10px] text-slate-gray">
+                                            ~{prepMin}m
+                                        </span>
                                     </button>
                                 );
                             })}
                         </div>
+                        {stations.length === 0 ? (
+                            <p className="text-[12px] text-slate-gray">
+                                Loading stations from the server…
+                            </p>
+                        ) : null}
                     </div>
 
                     <hr className="border-hairline" />
 
-                    {/* Image / Photography */}
+                    {/* Image upload */}
                     <div className="space-y-2.5">
                         <label className="text-[13px] font-medium text-foreground">
-                            Photo & presentation
+                            Dish photo
                         </label>
+                        <p className="text-[12px] text-slate-gray">
+                            Upload a JPG or PNG. It is stored with this menu
+                            item.
+                        </p>
 
-                        {/* Selected thumbnail preview */}
-                        <div className="flex items-center gap-3 rounded-[12px] border border-hairline bg-surface-ivory p-2.5">
-                            <div className="size-12 shrink-0 overflow-hidden rounded-[8px] border border-hairline bg-secondary">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                    src={effectiveImage}
-                                    alt="Preview"
-                                    className="size-full object-cover"
-                                />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                                <p className="truncate text-[13px] font-semibold text-foreground">
-                                    {name || "Item name preview"}
-                                </p>
-                                <p className="text-[12px] font-medium text-brand">
-                                    {formatEtb(Number(price) || 0)} · {stationLabel}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Preset gallery */}
-                        <div className="grid grid-cols-5 gap-1.5">
-                            {PRESET_DISH_IMAGES.map(img => (
-                                <button
-                                    key={img.key}
-                                    type="button"
-                                    onClick={() => {
-                                        setSelectedImage(img.url);
-                                        setCustomImageUrl("");
-                                    }}
-                                    className={cn(
-                                        "group relative overflow-hidden rounded-[8px] border p-1 transition-all",
-                                        selectedImage === img.url && !customImageUrl
-                                            ? "border-brand ring-1 ring-brand"
-                                            : "border-hairline hover:border-slate-300",
-                                    )}
-                                >
-                                    <div className="aspect-square overflow-hidden rounded-[6px]">
+                        <div className="overflow-hidden rounded-[14px] border border-hairline bg-surface-ivory">
+                            <div className="relative aspect-[16/10] bg-secondary/40">
+                                {effectiveImage ? (
+                                    <>
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img
-                                            src={img.url}
-                                            alt={img.label}
+                                            src={effectiveImage}
+                                            alt={name || "Dish preview"}
                                             className="size-full object-cover"
                                         />
-                                    </div>
-                                    <p className="mt-0.5 truncate text-center text-[10px] text-slate-gray">
-                                        {img.label}
-                                    </p>
-                                </button>
-                            ))}
+                                        <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black/55 to-transparent p-3 pt-10">
+                                            <div className="min-w-0">
+                                                <p className="truncate text-[13px] font-semibold text-white">
+                                                    {name || "Item name"}
+                                                </p>
+                                                <p className="text-[12px] text-white/85">
+                                                    {formatEtb(
+                                                        Number(price) || 0,
+                                                    )}{" "}
+                                                    · {stationLabel}
+                                                </p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={clearImage}
+                                                className="shrink-0 rounded-full bg-white/90 px-3 py-1 text-[11px] font-medium text-foreground"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <label className="flex size-full cursor-pointer flex-col items-center justify-center gap-2 px-4 text-center transition-colors hover:bg-secondary/60">
+                                        <span className="flex size-12 items-center justify-center rounded-full border border-dashed border-brand/40 bg-brand/10 text-brand">
+                                            {uploading ? (
+                                                <Upload className="size-5 animate-pulse" />
+                                            ) : (
+                                                <ImagePlus className="size-5" />
+                                            )}
+                                        </span>
+                                        <span className="text-[13px] font-medium text-foreground">
+                                            {uploading
+                                                ? "Uploading…"
+                                                : "Click to upload photo"}
+                                        </span>
+                                        <span className="text-[11px] text-slate-gray">
+                                            JPG or PNG · best at least 800px wide
+                                        </span>
+                                        <input
+                                            type="file"
+                                            accept="image/jpeg,image/png,image/gif"
+                                            className="sr-only"
+                                            disabled={uploading}
+                                            onChange={event => {
+                                                const file =
+                                                    event.target.files?.[0] ??
+                                                    null;
+                                                void onPickUpload(file);
+                                            }}
+                                        />
+                                    </label>
+                                )}
+                            </div>
+                            {effectiveImage ? (
+                                <div className="border-t border-hairline bg-card px-3 py-2">
+                                    <label className="inline-flex cursor-pointer items-center gap-2 text-[12px] font-medium text-brand">
+                                        <Upload className="size-3.5" />
+                                        Replace photo
+                                        <input
+                                            type="file"
+                                            accept="image/jpeg,image/png,image/gif"
+                                            className="sr-only"
+                                            disabled={uploading}
+                                            onChange={event => {
+                                                const file =
+                                                    event.target.files?.[0] ??
+                                                    null;
+                                                void onPickUpload(file);
+                                            }}
+                                        />
+                                    </label>
+                                </div>
+                            ) : null}
                         </div>
                     </div>
 
@@ -638,36 +670,82 @@ export default function AddMenuItemSheet({
                                 Options & modifiers (Optional)
                             </label>
                             <p className="text-[12px] text-slate-gray">
-                                Customizable options for waiters (e.g. holds, extra toppings, milk/sugar choices).
+                                Attach saved groups (Hold / Extra / Choice), or
+                                create a new one just for this dish.
                             </p>
                         </div>
 
-                        {/* Quick preset buttons */}
-                        <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-[11px] text-slate-gray">
-                                Quick presets:
-                            </span>
-                            <button
-                                type="button"
-                                onClick={applyPresetHoldGroup}
-                                className="flex items-center gap-1 rounded-full border border-hairline bg-secondary px-3 py-1 text-[12px] font-medium text-foreground transition-colors hover:bg-accent"
-                            >
-                                <Plus className="size-3 text-brand" />
-                                Hold ingredients
-                            </button>
-                            <button
-                                type="button"
-                                onClick={applyPresetExtraGroup}
-                                className="flex items-center gap-1 rounded-full border border-hairline bg-secondary px-3 py-1 text-[12px] font-medium text-foreground transition-colors hover:bg-accent"
-                            >
-                                <Plus className="size-3 text-brand" />
-                                Extra toppings (+ETB)
-                            </button>
-                        </div>
+                        {libraryGroups.length > 0 ? (
+                            <div className="space-y-2">
+                                <p className="text-[11px] font-medium uppercase tracking-wide text-slate-gray">
+                                    Saved groups
+                                </p>
+                                <div className="space-y-1.5">
+                                    {libraryGroups.map(group => {
+                                        const selected =
+                                            selectedLibraryIds.includes(
+                                                group.id,
+                                            );
+                                        return (
+                                            <button
+                                                key={group.id}
+                                                type="button"
+                                                onClick={() =>
+                                                    toggleLibraryGroup(group.id)
+                                                }
+                                                className={cn(
+                                                    "flex w-full items-start gap-3 rounded-[12px] border px-3 py-2.5 text-left transition-colors",
+                                                    selected
+                                                        ? "border-brand bg-brand/10"
+                                                        : "border-hairline bg-card hover:bg-secondary/40",
+                                                )}
+                                            >
+                                                <span
+                                                    className={cn(
+                                                        "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border text-[10px]",
+                                                        selected
+                                                            ? "border-brand bg-brand text-white"
+                                                            : "border-input bg-card",
+                                                    )}
+                                                >
+                                                    {selected ? "✓" : ""}
+                                                </span>
+                                                <span className="min-w-0 flex-1">
+                                                    <span className="flex flex-wrap items-center gap-2">
+                                                        <span className="text-[13px] font-semibold">
+                                                            {group.name}
+                                                        </span>
+                                                        <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] capitalize text-slate-gray">
+                                                            {group.kind}
+                                                        </span>
+                                                    </span>
+                                                    <span className="mt-0.5 block text-[11px] text-slate-gray">
+                                                        {group.options
+                                                            .map(o => o.name)
+                                                            .join(" · ") ||
+                                                            "No options"}
+                                                    </span>
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="rounded-[12px] border border-dashed border-hairline bg-secondary/20 px-3 py-2 text-[12px] text-slate-gray">
+                                No saved groups yet. Use{" "}
+                                <span className="font-medium text-foreground">
+                                    Add modifier group
+                                </span>{" "}
+                                on the menu page, or create one below.
+                            </p>
+                        )}
 
-                        {/* Configured modifier groups */}
                         {modifierGroups.length > 0 ? (
                             <div className="space-y-2.5">
+                                <p className="text-[11px] font-medium uppercase tracking-wide text-slate-gray">
+                                    New for this dish
+                                </p>
                                 {modifierGroups.map(group => (
                                     <div
                                         key={group.id}
@@ -693,7 +771,6 @@ export default function AddMenuItemSheet({
                                             </button>
                                         </div>
 
-                                        {/* Options chips */}
                                         <div className="mt-2 flex flex-wrap gap-1.5">
                                             {group.options.map(opt => (
                                                 <span
@@ -722,10 +799,9 @@ export default function AddMenuItemSheet({
                                             ))}
                                         </div>
 
-                                        {/* Add option to group */}
                                         <div className="mt-2.5 flex items-center gap-2 border-t border-hairline pt-2">
                                             <Input
-                                                placeholder="Option name (e.g. Extra Sauce, No Onions)"
+                                                placeholder="Option name"
                                                 value={
                                                     targetGroupId === group.id
                                                         ? optionName
@@ -784,11 +860,13 @@ export default function AddMenuItemSheet({
                             </div>
                         ) : null}
 
-                        {/* Add custom group */}
                         <div className="rounded-[12px] border border-dashed border-hairline bg-secondary/30 p-2.5">
+                            <p className="mb-2 text-[11px] text-slate-gray">
+                                Create a new group for this dish only
+                            </p>
                             <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
                                 <Input
-                                    placeholder="Group name (e.g. Cooking Temp, Milk Choice)"
+                                    placeholder="Group name (e.g. Milk Choice)"
                                     value={newGroupName}
                                     onChange={e =>
                                         setNewGroupName(e.target.value)
@@ -889,10 +967,12 @@ export default function AddMenuItemSheet({
                         <Button
                             type="submit"
                             form="add-menu-item-form"
-                            disabled={!name.trim()}
+                            disabled={!name.trim() || !stationId || saving}
                             className="h-9 flex items-center gap-1.5 rounded-full bg-brand px-5 text-[13px] text-white hover:bg-brand-deep"
                         >
-                            {initialItem ? (
+                            {saving ? (
+                                "Saving…"
+                            ) : initialItem ? (
                                 <>
                                     <Save className="size-3.5" />
                                     Save changes
@@ -906,6 +986,11 @@ export default function AddMenuItemSheet({
                         </Button>
                     </div>
                 </div>
+                {submitError ? (
+                    <p className="border-t border-hairline px-5 py-2 text-[12px] text-red-600">
+                        {submitError}
+                    </p>
+                ) : null}
             </div>
         </div>
     );

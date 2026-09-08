@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="chevGrad" x1="60" y1="20" x2="60" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF5400" />
+      <stop offset="100%" stop-color="#9E0059" />
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="32" fill="#121214" />
+  <rect x="1" y="1" width="118" height="118" rx="31" stroke="rgba(255,255,255,0.08)" stroke-width="2" />
+  <!-- Triple Chevron Dynamic Rising Flames -->
+  <path d="M60 22L84 46L76 54L60 38L44 54L36 46L60 22Z" fill="url(#chevGrad)" />
+  <path d="M60 44L80 64L72 72L60 60L48 72L40 64L60 44Z" fill="url(#chevGrad)" opacity="0.8" />
+  <path d="M60 66L76 82L68 90L60 82L52 90L44 82L60 66Z" fill="url(#chevGrad)" opacity="0.6" />
+</svg>

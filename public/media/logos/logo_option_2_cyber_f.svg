@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="fStemGrad" x1="30" y1="25" x2="30" y2="95" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E85D04" />
+      <stop offset="100%" stop-color="#C2410C" />
+    </linearGradient>
+    <linearGradient id="fTopArm" x1="30" y1="25" x2="90" y2="25" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E85D04" />
+      <stop offset="100%" stop-color="#F59E0B" />
+    </linearGradient>
+    <linearGradient id="fMidArm" x1="30" y1="56" x2="78" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F97316" />
+      <stop offset="100%" stop-color="#38BDF8" />
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="120" height="120" rx="32" fill="#0F172A" />
+  <rect x="1" y="1" width="118" height="118" rx="31" stroke="rgba(255,255,255,0.08)" stroke-width="2" />
+
+  <!-- Vertical Stem with angled cuts -->
+  <path d="M34 26C34 23.7909 35.7909 22 38 22H48C50.2091 22 52 23.7909 52 26V92C52 94.2091 50.2091 96 48 96H38C35.7909 96 34 94.2091 34 92V26Z" fill="url(#fStemGrad)" />
+  
+  <!-- Top Arm (Floor & Dispatch Station Beam) -->
+  <path d="M48 22H84C86.7614 22 89 24.2386 89 27V33C89 35.7614 86.7614 38 84 38H48V22Z" fill="url(#fTopArm)" />
+  <circle cx="84" cy="30" r="3" fill="#FFFFFF" />
+
+  <!-- Middle Arm (Kitchen KDS & Barista Beam) -->
+  <path d="M48 53H74C76.2091 53 78 54.7909 78 57V61C78 63.2091 76.2091 65 74 65H48V53Z" fill="url(#fMidArm)" />
+  <circle cx="74" cy="59" r="3" fill="#38BDF8" />
+
+  <!-- TinaVerify Security Node at bottom -->
+  <circle cx="43" cy="84" r="3.5" fill="#10B981" />
+</svg>

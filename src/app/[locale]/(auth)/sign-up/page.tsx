@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
     AlertCircle,
-    ArrowRight,
     Building2,
-    Check,
     CheckCircle2,
     Eye,
     EyeOff,
@@ -15,13 +14,10 @@ import {
     Sparkles,
     User,
 } from "lucide-react";
-import { useAppDispatch } from "@/context/hooks";
-import { switchDemoStaff } from "@/context/slices/identitySlice";
-import { homePathForRole } from "@/domains/identity/application/homePath";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useRouter } from "@/i18n/navigation";
-import { cn } from "@/lib/utils";
+import LocaleSwitcher from "@/components/theme/LocaleSwitcher";
 
 function GoogleIcon({ className = "size-5" }: { className?: string }) {
     return (
@@ -47,7 +43,7 @@ function GoogleIcon({ className = "size-5" }: { className?: string }) {
 }
 
 export default function SignUpPage() {
-    const dispatch = useAppDispatch();
+    const t = useTranslations("auth.signUp");
     const router = useRouter();
 
     // Form states
@@ -82,54 +78,51 @@ export default function SignUpPage() {
         setTimeout(() => {
             setLoading(false);
             setSuccess(true);
-            // Default new registered account directly into manager demo
             setTimeout(() => {
-                dispatch(switchDemoStaff("staff-hana"));
-                router.push(homePathForRole("manager"));
+                router.push("/sign-in");
             }, 1200);
         }, 800);
     }
 
     function handleGoogleSignUp() {
-        setSocialLoading(true);
-        setError("");
-        setTimeout(() => {
-            setSocialLoading(false);
-            dispatch(switchDemoStaff("staff-hana"));
-            router.push(homePathForRole("manager"));
-        }, 700);
+        setError("Google sign-up is not available yet. Use email and password.");
     }
 
     return (
         <div className="relative min-h-screen py-10 px-4 sm:px-6 lg:px-8 flex flex-col justify-center bg-[#faf9f7] dark:bg-background">
+            {/* Top Bar with Locale Switcher */}
+            <div className="absolute top-4 right-4 sm:top-6 sm:right-8">
+                <LocaleSwitcher />
+            </div>
+
             <div className="mx-auto w-full max-w-lg my-auto">
                 {/* Header */}
                 <div className="text-center">
                     <h1 className="text-[32px] font-bold tracking-tight text-foreground">
-                        Create restaurant account
+                        {t("title")}
                     </h1>
                     <p className="mt-1 text-[14px] text-slate-gray">
-                        Start managing orders, table allocations, and kitchen queues
+                        {t("subTitle")}
                     </p>
                 </div>
 
                 {/* Sign-Up Card */}
-                <div className="mt-6 rounded-[24px] border border-hairline bg-white p-6 sm:p-8 shadow-sm dark:bg-card">
+                <div className="mt-6 rounded-[24px] border border-hairline bg-white p-6 sm:p-8 dark:bg-card">
                     {success ? (
                         <div className="py-8 text-center space-y-3">
                             <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50">
                                 <CheckCircle2 className="size-8 stroke-[2.5]" />
                             </div>
                             <h2 className="text-[20px] font-bold text-foreground">
-                                Account Created Successfully!
+                                {t("successTitle")}
                             </h2>
                             <p className="text-[14px] text-slate-gray max-w-sm mx-auto">
-                                Welcome to Fanaye! Provisioning your digital kitchen and dining tables...
+                                {t("successDesc")}
                             </p>
                             <div className="pt-2">
                                 <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-primary">
                                     <Sparkles className="size-4 animate-spin" />
-                                    <span>Opening Manager Dashboard...</span>
+                                    <span>{t("openingDashboard")}</span>
                                 </span>
                             </div>
                         </div>
@@ -141,11 +134,11 @@ export default function SignUpPage() {
                                 variant="outline"
                                 onClick={handleGoogleSignUp}
                                 disabled={socialLoading}
-                                className="h-11 w-full rounded-[14px] border-hairline bg-white hover:bg-secondary text-[14px] font-semibold gap-3 shadow-xs dark:bg-card"
+                                className="h-11 w-full rounded-[14px] border-hairline bg-white hover:bg-secondary text-[14px] font-semibold gap-3 dark:bg-card"
                             >
                                 <GoogleIcon />
                                 <span>
-                                    {socialLoading ? "Connecting Google..." : "Sign up with Google"}
+                                    {socialLoading ? t("googleConnecting") : t("googleBtn")}
                                 </span>
                             </Button>
 
@@ -155,7 +148,7 @@ export default function SignUpPage() {
                                 </div>
                                 <div className="relative flex justify-center text-[12px] uppercase">
                                     <span className="bg-white px-3 text-slate-gray dark:bg-card font-medium">
-                                        or register with email
+                                        {t("orEmail")}
                                     </span>
                                 </div>
                             </div>
@@ -171,7 +164,7 @@ export default function SignUpPage() {
 
                                 <div className="space-y-1.5">
                                     <label className="text-[13px] font-medium text-foreground">
-                                        Restaurant / Business Name <span className="text-primary">*</span>
+                                        {t("restaurantName")} <span className="text-primary">*</span>
                                     </label>
                                     <div className="relative">
                                         <Building2 className="absolute left-3.5 top-3 size-4 text-slate-gray" />
@@ -179,7 +172,7 @@ export default function SignUpPage() {
                                             type="text"
                                             value={restaurantName}
                                             onChange={e => setRestaurantName(e.target.value)}
-                                            placeholder="e.g. Bole Lounge & Cafe"
+                                            placeholder={t("restaurantPlaceholder")}
                                             className="h-11 pl-10 rounded-[12px] text-[14px]"
                                             required
                                         />
@@ -189,7 +182,7 @@ export default function SignUpPage() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div className="space-y-1.5">
                                         <label className="text-[13px] font-medium text-foreground">
-                                            Your Full Name <span className="text-primary">*</span>
+                                            {t("fullName")} <span className="text-primary">*</span>
                                         </label>
                                         <div className="relative">
                                             <User className="absolute left-3.5 top-3 size-4 text-slate-gray" />
@@ -197,7 +190,7 @@ export default function SignUpPage() {
                                                 type="text"
                                                 value={fullName}
                                                 onChange={e => setFullName(e.target.value)}
-                                                placeholder="e.g. Hiwot Bekele"
+                                                placeholder={t("namePlaceholder")}
                                                 className="h-11 pl-10 rounded-[12px] text-[14px]"
                                                 required
                                             />
@@ -206,7 +199,7 @@ export default function SignUpPage() {
 
                                     <div className="space-y-1.5">
                                         <label className="text-[13px] font-medium text-foreground">
-                                            Phone Number
+                                            {t("phone")}
                                         </label>
                                         <div className="relative">
                                             <Phone className="absolute left-3.5 top-3 size-4 text-slate-gray" />
@@ -214,7 +207,7 @@ export default function SignUpPage() {
                                                 type="text"
                                                 value={phone}
                                                 onChange={e => setPhone(e.target.value)}
-                                                placeholder="+251 91..."
+                                                placeholder={t("phonePlaceholder")}
                                                 className="h-11 pl-10 rounded-[12px] text-[14px]"
                                             />
                                         </div>
@@ -223,7 +216,7 @@ export default function SignUpPage() {
 
                                 <div className="space-y-1.5">
                                     <label className="text-[13px] font-medium text-foreground">
-                                        Work Email <span className="text-primary">*</span>
+                                        {t("workEmail")} <span className="text-primary">*</span>
                                     </label>
                                     <div className="relative">
                                         <Mail className="absolute left-3.5 top-3 size-4 text-slate-gray" />
@@ -231,7 +224,7 @@ export default function SignUpPage() {
                                             type="email"
                                             value={email}
                                             onChange={e => setEmail(e.target.value)}
-                                            placeholder="manager@restaurant.et"
+                                            placeholder={t("emailPlaceholder")}
                                             className="h-11 pl-10 rounded-[12px] text-[14px]"
                                             required
                                         />
@@ -240,7 +233,7 @@ export default function SignUpPage() {
 
                                 <div className="space-y-1.5">
                                     <label className="text-[13px] font-medium text-foreground">
-                                        Password <span className="text-primary">*</span>
+                                        {t("password")} <span className="text-primary">*</span>
                                     </label>
                                     <div className="relative">
                                         <Lock className="absolute left-3.5 top-3 size-4 text-slate-gray" />
@@ -248,7 +241,7 @@ export default function SignUpPage() {
                                             type={showPassword ? "text" : "password"}
                                             value={password}
                                             onChange={e => setPassword(e.target.value)}
-                                            placeholder="Create a secure password (min 6 chars)"
+                                            placeholder={t("passwordPlaceholder")}
                                             className="h-11 pl-10 pr-10 rounded-[12px] text-[14px]"
                                             required
                                         />
@@ -268,18 +261,18 @@ export default function SignUpPage() {
 
                                 <div className="space-y-1.5">
                                     <label className="text-[13px] font-medium text-foreground">
-                                        Restaurant Concept
+                                        {t("concept")}
                                     </label>
                                     <select
                                         value={concept}
                                         onChange={e => setConcept(e.target.value)}
                                         className="h-11 w-full rounded-[12px] border border-hairline bg-surface-ivory/50 px-3 text-[14px] text-foreground outline-none focus:border-primary"
                                     >
-                                        <option value="casual_dining">Casual Dining / Full Service</option>
-                                        <option value="cafe_bar">Cafe & Specialty Coffee Bar</option>
-                                        <option value="fast_casual">Fast Casual / Burger & Pizza</option>
-                                        <option value="bakery">Bakery & Pastry House</option>
-                                        <option value="lounge">Lounge & Bar</option>
+                                        <option value="casual_dining">{t("conceptCasual")}</option>
+                                        <option value="cafe_bar">{t("conceptCafe")}</option>
+                                        <option value="fast_casual">{t("conceptFastCasual")}</option>
+                                        <option value="bakery">{t("conceptBakery")}</option>
+                                        <option value="lounge">{t("conceptLounge")}</option>
                                     </select>
                                 </div>
 
@@ -292,7 +285,7 @@ export default function SignUpPage() {
                                             className="mt-0.5 size-4 rounded border-hairline text-primary focus:ring-primary"
                                         />
                                         <span>
-                                            I agree to the <a href="#" className="text-primary hover:underline">Terms of Service</a> and <a href="#" className="text-primary hover:underline">Privacy Policy</a>
+                                            {t("termsPrefix")} <a href="#" className="text-primary hover:underline">{t("termsLink")}</a> {t("termsAnd")} <a href="#" className="text-primary hover:underline">{t("privacyLink")}</a>
                                         </span>
                                     </label>
                                 </div>
@@ -300,9 +293,9 @@ export default function SignUpPage() {
                                 <Button
                                     type="submit"
                                     disabled={loading}
-                                    className="mt-2 h-11 w-full rounded-[14px] bg-primary text-primary-foreground hover:bg-primary-deep text-[14px] font-semibold shadow-sm transition-all"
+                                    className="mt-2 h-11 w-full rounded-[14px] bg-primary text-primary-foreground hover:bg-primary-deep text-[14px] font-semibold transition-all"
                                 >
-                                    {loading ? "Creating your restaurant..." : "Create Free Account"}
+                                    {loading ? t("creating") : t("submitBtn")}
                                 </Button>
                             </form>
                         </div>
@@ -311,12 +304,12 @@ export default function SignUpPage() {
 
                 {/* Footer Link */}
                 <p className="mt-6 text-center text-[14px] text-slate-gray">
-                    Already have an account?{" "}
+                    {t("alreadyAccount")}{" "}
                     <Link
                         href="/sign-in"
                         className="font-semibold text-primary hover:underline"
                     >
-                        Sign in
+                        {t("signIn")}
                     </Link>
                 </p>
             </div>

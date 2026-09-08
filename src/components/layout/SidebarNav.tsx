@@ -39,7 +39,7 @@ function SidebarNavInner({
     extraBadges = {},
     onNavigate,
     collapsed = false,
-}: {
+    }: {
     sections: NavSection[];
     badges?: Partial<Record<"new" | "preparing" | "ready" | "exceptions", number>>;
     extraBadges?: Record<string, number>;
@@ -75,7 +75,7 @@ function SidebarNavInner({
 
     if (collapsed) {
         return (
-            <nav className="sidebar-scroll flex min-h-0 flex-1 flex-col items-center gap-1 px-2 py-1">
+            <nav className="sidebar-scroll flex min-h-0 flex-1 flex-col items-center gap-1.5 px-2 py-2">
                 {items.map(item => {
                     const active = activeHref(item);
                     const count =
@@ -96,18 +96,18 @@ function SidebarNavInner({
                                 onClick={onNavigate}
                                 aria-label={item.label}
                                 className={cn(
-                                    "relative flex size-10 items-center justify-center rounded-full transition-colors",
+                                    "relative flex size-10 items-center justify-center rounded-xl transition-all duration-150",
                                     active
-                                        ? "bg-secondary text-foreground font-semibold shadow-xs"
-                                        : "text-slate-gray hover:bg-secondary hover:text-foreground",
+                                        ? "bg-orange-500/15 text-orange-600 dark:text-orange-400 font-semibold shadow-xs border border-orange-500/30"
+                                        : "text-muted-foreground hover:bg-secondary hover:text-foreground",
                                 )}
                             >
                                 <item.icon className="size-4" />
                                 {count > 0 ? (
-                                    <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-brand" />
+                                    <span className="absolute top-1 right-1 size-2 rounded-full bg-orange-500 animate-pulse" />
                                 ) : null}
                             </Link>
-                            <span className="pointer-events-none absolute top-1/2 left-[calc(100%+10px)] z-50 -translate-y-1/2 rounded-md bg-foreground px-2 py-1 text-[12px] font-medium whitespace-nowrap text-background opacity-0 shadow-subtle transition-opacity group-hover:opacity-100">
+                            <span className="pointer-events-none absolute top-1/2 left-[calc(100%+12px)] z-50 -translate-y-1/2 rounded-lg border border-border/80 bg-popover px-2.5 py-1 text-[12px] font-semibold whitespace-nowrap text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100">
                                 {item.label}
                                 {count > 0 ? ` · ${count}` : ""}
                             </span>
@@ -119,19 +119,14 @@ function SidebarNavInner({
     }
 
     return (
-        <nav className="sidebar-scroll min-h-0 flex-1 px-3 py-2">
+        <nav className="sidebar-scroll min-h-0 flex-1 px-3 py-3 space-y-4">
             {sections.map((section, index) => {
                 const expanded = open[section.title] !== false;
                 return (
-                    <div
-                        key={section.title}
-                        className={cn(
-                            index > 0 && "mt-3 border-t border-dashed border-hairline pt-3",
-                        )}
-                    >
+                    <div key={section.title} className="space-y-1">
                         <button
                             type="button"
-                            className="mb-1 flex w-full items-center justify-between rounded-[10px] px-2 py-1.5 text-[11px] font-medium tracking-[0.08em] text-steel-gray uppercase hover:bg-secondary transition-colors"
+                            className="flex w-full items-center justify-between rounded-lg px-2.5 py-1 text-[10px] font-bold tracking-widest text-muted-foreground/80 uppercase hover:text-foreground transition-colors"
                             onClick={() =>
                                 setOpen(current => ({
                                     ...current,
@@ -139,16 +134,16 @@ function SidebarNavInner({
                                 }))
                             }
                         >
-                            {section.title}
+                            <span>{section.title}</span>
                             <ChevronDown
                                 className={cn(
-                                    "size-3.5 transition-transform",
-                                    expanded ? "rotate-180" : "",
+                                    "size-3 text-muted-foreground/60 transition-transform duration-200",
+                                    expanded ? "rotate-0" : "-rotate-90",
                                 )}
                             />
                         </button>
                         {expanded ? (
-                            <ul className="ml-2 space-y-0.5 border-l border-hairline pl-2">
+                            <ul className="space-y-0.5">
                                 {section.items.map(item => {
                                     const active = activeHref(item);
                                     const count =
@@ -167,23 +162,37 @@ function SidebarNavInner({
                                                                   q: query,
                                                                   view,
                                                               },
-                                                            )
+                                                          )
                                                         : item.href
                                                 }
                                                 onClick={onNavigate}
                                                 className={cn(
-                                                    "flex items-center gap-2.5 rounded-[12px] px-2.5 py-2 text-[14px] font-medium transition-colors",
+                                                    "group flex items-center gap-2.5 py-2 text-[13px] font-medium transition-all duration-150",
                                                     active
-                                                        ? "bg-secondary text-foreground font-semibold"
-                                                        : "text-slate-gray hover:bg-secondary/70 hover:text-foreground",
+                                                        ? "rounded-r-xl rounded-l-xs border-l-[3px] border-orange-500 bg-gradient-to-r from-orange-500/15 via-orange-500/8 to-transparent pl-3 pr-2.5 text-orange-600 dark:text-orange-400 font-semibold"
+                                                        : "rounded-xl px-3 text-muted-foreground hover:bg-secondary/70 hover:text-foreground",
                                                 )}
                                             >
-                                                <item.icon className="size-4 shrink-0" />
+                                                <item.icon
+                                                    className={cn(
+                                                        "size-4 shrink-0 transition-colors",
+                                                        active
+                                                            ? "text-orange-600 dark:text-orange-400"
+                                                            : "text-muted-foreground/70 group-hover:text-foreground",
+                                                    )}
+                                                />
                                                 <span className="min-w-0 flex-1 truncate">
                                                     {item.label}
                                                 </span>
                                                 {item.badgeKey || count > 0 ? (
-                                                    <span className="rounded-full bg-black/5 dark:bg-white/10 px-1.5 py-0.5 text-[11px] font-medium text-slate-gray">
+                                                    <span
+                                                        className={cn(
+                                                            "rounded-full px-2 py-0.5 text-[10px] font-bold font-mono tracking-tight",
+                                                            count > 0
+                                                                ? "bg-orange-500 text-white"
+                                                                : "bg-secondary text-muted-foreground",
+                                                        )}
+                                                    >
                                                         {count}
                                                     </span>
                                                 ) : null}

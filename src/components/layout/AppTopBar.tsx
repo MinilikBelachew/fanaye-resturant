@@ -4,6 +4,7 @@ import AccountMenu from "@/components/layout/AccountMenu";
 import StationTopBarTools from "@/components/layout/StationTopBarTools";
 import { useSidebarUi } from "@/components/layout/SidebarUi";
 import { ThemeToggleButton } from "@/components/theme/ThemeSwitcher";
+import LocaleSwitcher from "@/components/theme/LocaleSwitcher";
 import { navForRole } from "@/domains/identity/application/nav";
 import { homePathForRole } from "@/domains/identity/application/homePath";
 import { isStationRole } from "@/domains/identity/domain/role";
@@ -77,10 +78,11 @@ function AppTopBarInner({ className }: { className?: string }) {
                     className="hidden min-w-0 max-w-md flex-1 md:flex"
                 />
             ) : null}
-            <div className="ml-auto flex shrink-0 items-center gap-1">
+            <div className="ml-auto flex shrink-0 items-center gap-2">
                 {stationQueue ? (
                     <StationTopBarTools search={false} />
                 ) : null}
+                <LocaleSwitcher />
                 <ThemeToggleButton />
                 <AccountMenu compact />
             </div>

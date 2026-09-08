@@ -11,11 +11,7 @@ import {
     UtensilsCrossed,
     X,
 } from "lucide-react";
-import { useAppDispatch, useAppSelector } from "@/context/hooks";
-import {
-    deleteMenuItem,
-    toggleItemAvailability,
-} from "@/context/slices/menuSlice";
+import { useAppSelector } from "@/context/hooks";
 import type { MenuItem } from "@/domains/catalog/domain/menu";
 import {
     STATION_IDS,
@@ -31,6 +27,7 @@ interface MenuItemDetailSheetProps {
     isOpen: boolean;
     onClose: () => void;
     onEdit: (item: MenuItem) => void;
+    onToggleAvailability?: (item: MenuItem) => void;
 }
 
 const STATION_META: Record<
@@ -68,8 +65,8 @@ export default function MenuItemDetailSheet({
     isOpen,
     onClose,
     onEdit,
+    onToggleAvailability,
 }: MenuItemDetailSheetProps) {
-    const dispatch = useAppDispatch();
     const stations = useAppSelector(state => state.station.stations);
 
     if (!isOpen || !item) return null;
@@ -78,6 +75,7 @@ export default function MenuItemDetailSheet({
     const stationLabel =
         matchingStation?.name ||
         STATION_META[item.stationId]?.label ||
+        item.category ||
         "Kitchen";
     const StationIcon =
         STATION_META[item.stationId]?.icon || CookingPot;
@@ -87,19 +85,17 @@ export default function MenuItemDetailSheet({
 
     function handleToggleStatus() {
         if (!item) return;
-        dispatch(toggleItemAvailability(item.id));
+        if (onToggleAvailability) {
+            onToggleAvailability(item);
+            return;
+        }
     }
 
     function handleDelete() {
         if (!item) return;
-        if (
-            confirm(
-                `Are you sure you want to remove "${item.name}" from the menu catalog?`,
-            )
-        ) {
-            dispatch(deleteMenuItem(item.id));
-            onClose();
-        }
+        // Hard delete not in Step M — use 86 / sold-out instead.
+        handleToggleStatus();
+        onClose();
     }
 
     return (

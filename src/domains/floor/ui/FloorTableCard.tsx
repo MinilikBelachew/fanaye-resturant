@@ -7,6 +7,7 @@ export type FloorCardTone = "free" | "mine" | "other" | "occupied" | "available"
 
 export default function FloorTableCard({
     tableNumber,
+    location,
     seats,
     badge,
     waiter,
@@ -18,6 +19,7 @@ export default function FloorTableCard({
     onClick,
 }: {
     tableNumber: string;
+    location?: string;
     seats?: number;
     badge: { label: string; tone: FloorCardTone };
     waiter?: string | null;
@@ -54,6 +56,11 @@ export default function FloorTableCard({
                     <p className="text-[28px] font-semibold leading-none tracking-tight">
                         {tableNumber}
                     </p>
+                    {location ? (
+                        <p className="mt-1.5 text-[12px] text-slate-gray">
+                            {location}
+                        </p>
+                    ) : null}
                 </div>
                 <div className="text-right">
                     <span

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140" fill="none">
+  <defs>
+    <linearGradient id="beaconGlow" x1="40" y1="20" x2="100" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FBBF24" />
+      <stop offset="50%" stop-color="#F97316" />
+      <stop offset="100%" stop-color="#C2410C" />
+    </linearGradient>
+  </defs>
+  <rect width="140" height="140" rx="36" fill="#0E131F" />
+  <rect x="1" y="1" width="138" height="138" rx="35" stroke="rgba(255,255,255,0.08)" stroke-width="2" />
+
+  <!-- Modern Amharic 'Fanaye' Heritage Lantern Frame -->
+  <path d="M70 20L98 42V98L70 120L42 98V42L70 20Z" stroke="url(#beaconGlow)" stroke-width="4.5" stroke-linejoin="round" />
+  
+  <!-- Symmetric Internal Light Slits -->
+  <line x1="52" y1="56" x2="88" y2="56" stroke="url(#beaconGlow)" stroke-width="3" stroke-linecap="round" />
+  <line x1="48" y1="70" x2="92" y2="70" stroke="#FFF" stroke-width="4" stroke-linecap="round" />
+  <line x1="52" y1="84" x2="88" y2="84" stroke="url(#beaconGlow)" stroke-width="3" stroke-linecap="round" />
+
+  <!-- Radiating Top Crown Beacon -->
+  <circle cx="70" cy="70" r="7" fill="#FFF" />
+  <circle cx="70" cy="20" r="4" fill="#FBBF24" />
+</svg>

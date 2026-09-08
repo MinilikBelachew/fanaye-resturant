@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="orbitGrad" x1="15" y1="15" x2="105" y2="105" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E85D04" />
+      <stop offset="40%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#10B981" />
+    </linearGradient>
+    <linearGradient id="centerPulse" x1="60" y1="42" x2="60" y2="78" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF" />
+      <stop offset="100%" stop-color="#F97316" />
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="120" height="120" rx="32" fill="#18181B" />
+  <rect x="1" y="1" width="118" height="118" rx="31" stroke="rgba(255,255,255,0.08)" stroke-width="2" />
+
+  <!-- Outer Orbit Timeline Ring with Station Nodes -->
+  <circle cx="60" cy="60" r="34" stroke="url(#orbitGrad)" stroke-width="5.5" stroke-linecap="round" stroke-dasharray="140 25" />
+
+  <!-- Orbiting Station Nodes (4 Stations) -->
+  <circle cx="60" cy="26" r="4.5" fill="#E85D04" />
+  <circle cx="94" cy="60" r="4.5" fill="#F59E0B" />
+  <circle cx="60" cy="94" r="4.5" fill="#10B981" />
+  <circle cx="26" cy="60" r="4.5" fill="#0EA5E9" />
+
+  <!-- Center Diamond Spark / Flame Core -->
+  <path d="M60 44L69 60L60 76L51 60L60 44Z" fill="url(#centerPulse)" />
+  <circle cx="60" cy="60" r="3" fill="#18181B" />
+</svg>

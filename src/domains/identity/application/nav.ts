@@ -216,6 +216,11 @@ export function navForRole(role: Role): NavSection[] {
                     title: "Control",
                     items: [
                         {
+                            href: "/manager/approvals",
+                            label: "Approvals",
+                            icon: ClipboardCheck,
+                        },
+                        {
                             href: "/manager/reports",
                             label: "Reports",
                             icon: ScrollText,
@@ -247,6 +252,16 @@ export function navForRole(role: Role): NavSection[] {
                             href: "/cashier/payments",
                             label: "Payments",
                             icon: Wallet,
+                        },
+                        {
+                            href: "/cashier/bills",
+                            label: "Bill requests",
+                            icon: ClipboardCheck,
+                        },
+                        {
+                            href: "/cashier/cash-drops",
+                            label: "Cash drops",
+                            icon: Warehouse,
                         },
                     ],
                 },
@@ -290,6 +305,11 @@ export function navForRole(role: Role): NavSection[] {
                             href: "/waiter/shift",
                             label: "Shift",
                             icon: Clock3,
+                        },
+                        {
+                            href: "/waiter/cash",
+                            label: "Cash",
+                            icon: Wallet,
                         },
                         {
                             href: "/waiter/profile",

@@ -5,8 +5,9 @@ import DataTable, {
     type DataTableColumn,
 } from "@/components/custom/organisms/DataTable";
 import { useAppSelector } from "@/context/hooks";
+import { useCurrentStationQueue } from "@/domains/fulfillment/application/useCurrentStationQueue";
 import {
-    matchesQueueFilter,
+    matchesStationFilter,
     parseQueueFilter,
     parseQueueView,
     QUEUE_FILTER_LABELS,
@@ -17,21 +18,16 @@ import StationStatusSelect from "@/domains/fulfillment/ui/StationStatusSelect";
 import StationTicketActions from "@/domains/fulfillment/ui/StationTicketActions";
 import TicketExtras from "@/domains/fulfillment/ui/TicketExtras";
 import type { StationRole } from "@/domains/identity/domain/role";
-import { stationIdForRole } from "@/domains/identity/domain/role";
 import {
     homePathForRole,
     stationOrderPath,
 } from "@/domains/identity/application/homePath";
-import { DEMO_STAFF } from "@/domains/identity/infrastructure/demoStaff";
 import {
-    displayStatus,
-    formatTicketExtras,
-    isItemDelayed,
-    selectStationItems,
-    selectStationQueueCounts,
-} from "@/domains/ordering/application/selectors";
-import { STATION_STATUS_LABELS } from "@/domains/ordering/domain/order";
-import type { OrderItem } from "@/domains/ordering/domain/order";
+    stationStateLabel,
+    stationTicketExtras,
+    type StationTicket,
+} from "@/domains/fulfillment/domain/stationTicket";
+import { imageForDish, lineTotal } from "@/domains/ordering/application/mapWaiterMenu";
 import { formatEtb } from "@/lib/money";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
@@ -39,19 +35,16 @@ import { cn } from "@/lib/utils";
 import { Suspense, useMemo } from "react";
 
 const STATUS_RANK: Record<string, number> = {
-    queued: 0,
-    acknowledged: 1,
-    in_preparation: 2,
-    ready: 3,
-    rejected_by_station: 4,
+    QUEUED: 0,
+    ACKNOWLEDGED: 1,
+    IN_PREPARATION: 2,
+    READY: 3,
+    CANNOT_PREPARE: 4,
 };
 
 type TicketRow = {
-    item: OrderItem;
-    tableNumber: string;
-    waiterName: string;
+    ticket: StationTicket;
     extras: string;
-    delayed: boolean;
     receivedAt: number;
     receivedLabel: string;
     waitMinutes: number;
@@ -72,35 +65,39 @@ function formatReceived(iso: string | null) {
     };
 }
 
+function ticketModifiers(ticket: StationTicket) {
+    return ticket.modifiers.map((entry, index) => ({
+        groupId: "mod",
+        optionId: `${index}`,
+        name: entry.name,
+        priceDelta: Number(entry.priceDelta),
+    }));
+}
+
 function TicketCard({
     role,
-    item,
-    tableNumber,
-    delayed,
+    ticket,
 }: {
     role: StationRole;
-    item: OrderItem;
-    tableNumber: string;
-    delayed: boolean;
+    ticket: StationTicket;
 }) {
-    const menuItem = useAppSelector(state =>
-        state.menu.items.find(entry => entry.id === item.menuItemId),
-    );
+    const image = imageForDish(ticket.itemName);
     const customized =
-        (item.modifiers?.length ?? 0) > 0 || Boolean(item.instruction?.trim());
+        ticket.modifiers.length > 0 ||
+        Boolean(ticket.specialInstruction?.trim());
 
     return (
         <article
             className={cn(
                 "group relative min-h-[340px] overflow-hidden rounded-[20px] border",
-                delayed ? "border-destructive/40" : "border-hairline",
+                ticket.delayed ? "border-destructive/40" : "border-hairline",
             )}
         >
-            {menuItem?.image ? (
+            {image ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
-                    src={menuItem.image}
-                    alt={item.name}
+                    src={image}
+                    alt={ticket.itemName}
                     className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
             ) : (
@@ -111,45 +108,42 @@ function TicketCard({
             <div className="relative flex min-h-[340px] flex-col justify-between p-4">
                 <div className="flex items-start justify-between gap-2">
                     <p className="rounded-full bg-black/25 px-2.5 py-1 text-[12px] font-medium text-white/90 backdrop-blur-sm">
-                        Table {tableNumber}
+                        Table {ticket.tableDisplayName}
                     </p>
-                    <StatusPill item={item} delayed={delayed} overlay />
+                    <StatusPill ticket={ticket} overlay />
                 </div>
 
                 <div className="text-white">
                     <h2 className="text-[22px] leading-tight font-semibold">
-                        {item.quantity}× {item.name}
+                        {ticket.quantity}× {ticket.itemName}
                     </h2>
-                    {menuItem?.description ? (
-                        <p className="mt-1.5 line-clamp-2 text-[13px] text-white/75">
-                            {menuItem.description}
-                        </p>
-                    ) : null}
                     {customized ? (
                         <TicketExtras
                             compact
                             overlay
-                            modifiers={item.modifiers}
-                            instruction={item.instruction}
+                            modifiers={ticketModifiers(ticket)}
+                            instruction={ticket.specialInstruction ?? ""}
                         />
                     ) : (
                         <p className="mt-3 text-[13px] text-white/60">
                             As listed
                         </p>
                     )}
-                    {item.rejectReason ? (
+                    {ticket.exceptionReason ? (
                         <p className="mt-2 text-[13px] text-red-200">
-                            {item.rejectReason}
+                            {ticket.exceptionReason}
                         </p>
                     ) : null}
                     <p className="mt-2 text-[12px] text-white/55">
-                        {displayStatus(item)} · ~
-                        {item.expectedPreparationMinutes} min
+                        {ticket.delayed
+                            ? `Delayed · ${stationStateLabel(ticket.state)}`
+                            : stationStateLabel(ticket.state)}{" "}
+                        · ~{ticket.expectedPrepMinutes} min
                     </p>
                     <div className="mt-4 flex flex-wrap items-center gap-2">
-                        <StationTicketActions item={item} />
+                        <StationTicketActions ticket={ticket} />
                         <Link
-                            href={stationOrderPath(role, item.id)}
+                            href={stationOrderPath(role, ticket.orderItemId)}
                             className="text-[13px] font-medium text-white/90 underline-offset-4 hover:underline"
                         >
                             Order detail
@@ -162,12 +156,10 @@ function TicketCard({
 }
 
 function StatusPill({
-    item,
-    delayed,
+    ticket,
     overlay = false,
 }: {
-    item: OrderItem;
-    delayed: boolean;
+    ticket: StationTicket;
     overlay?: boolean;
 }) {
     return (
@@ -175,11 +167,11 @@ function StatusPill({
             className={cn(
                 "rounded-full px-3 py-1 text-[12px] font-medium",
                 overlay && "backdrop-blur-md",
-                item.status === "ready"
+                ticket.state === "READY"
                     ? overlay
                         ? "bg-white/90 text-accent-foreground"
                         : "bg-accent text-accent-foreground"
-                    : delayed
+                    : ticket.delayed || ticket.state === "CANNOT_PREPARE"
                       ? overlay
                           ? "bg-red-500/90 text-white"
                           : "bg-destructive/10 text-destructive"
@@ -188,15 +180,17 @@ function StatusPill({
                         : "bg-secondary text-slate-gray",
             )}
         >
-            {delayed && item.status !== "ready"
+            {ticket.delayed && ticket.state !== "READY"
                 ? "Delayed"
-                : STATION_STATUS_LABELS[item.status]}
+                : stationStateLabel(ticket.state)}
         </span>
     );
 }
 
 function StationQueueBoardInner({ role }: { role: StationRole }) {
-    const stationId = stationIdForRole(role);
+    const stationName = useAppSelector(
+        state => state.identity.session?.stationName,
+    );
     const home = homePathForRole(role);
     const pathname = usePathname();
     const router = useRouter();
@@ -204,38 +198,21 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
     const status = parseQueueFilter(searchParams.get("status"));
     const view = parseQueueView(searchParams.get("view"));
     const query = searchParams.get("q") ?? "";
-    const items = useAppSelector(state =>
-        selectStationItems(state, stationId),
-    );
-    const counts = useAppSelector(state =>
-        selectStationQueueCounts(state, stationId),
-    );
-    const tables = useAppSelector(state => state.ops.tables);
-    const sessions = useAppSelector(state => state.ops.sessions);
+    const { stationId, tickets, counts, isLoading, isError } =
+        useCurrentStationQueue();
 
-    const rows: TicketRow[] = items
-        .filter(item => matchesQueueFilter(item, status))
-        .map(item => {
-            const session = sessions.find(entry => entry.id === item.sessionId);
-            const table = tables.find(entry => entry.id === session?.tableId);
-            const waiter = DEMO_STAFF.find(
-                person => person.id === session?.waiterId,
-            );
-            const tableNumber = table?.number ?? "—";
-            const received = formatReceived(item.queuedAt ?? item.createdAt);
-            const waitMinutes = received.stamp
-                ? Math.max(0, Math.floor((Date.now() - received.stamp) / 60000))
-                : 0;
+    const rows: TicketRow[] = tickets
+        .filter(ticket => matchesStationFilter(ticket, status))
+        .map(ticket => {
+            const received = formatReceived(ticket.queuedAt);
+            const waitMinutes = Math.floor(ticket.elapsedSeconds / 60);
             const overdueMinutes = Math.max(
                 0,
-                waitMinutes - item.expectedPreparationMinutes,
+                waitMinutes - ticket.expectedPrepMinutes,
             );
             return {
-                item,
-                tableNumber,
-                waiterName: waiter?.name ?? "—",
-                extras: formatTicketExtras(item),
-                delayed: isItemDelayed(item),
+                ticket,
+                extras: stationTicketExtras(ticket),
                 receivedAt: received.stamp,
                 receivedLabel: received.label,
                 waitMinutes,
@@ -245,13 +222,13 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
         .filter(row => {
             if (!query.trim()) return true;
             const haystack = [
-                row.item.name,
-                row.item.quantity,
-                row.tableNumber,
+                row.ticket.itemName,
+                row.ticket.quantity,
+                row.ticket.tableDisplayName,
                 row.extras,
-                row.waiterName,
-                row.item.instruction ?? "",
-                STATION_STATUS_LABELS[row.item.status],
+                row.ticket.waiter.displayName,
+                row.ticket.specialInstruction ?? "",
+                stationStateLabel(row.ticket.state),
             ]
                 .join(" ")
                 .toLowerCase();
@@ -270,27 +247,28 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
             {
                 id: "item",
                 header: "Item",
-                sortValue: row => row.item.name,
+                sortValue: row => row.ticket.itemName,
                 cell: row => (
                     <Link
-                        href={stationOrderPath(role, row.item.id)}
+                        href={stationOrderPath(role, row.ticket.orderItemId)}
                         className="font-semibold text-foreground hover:text-brand"
                     >
-                        {row.item.name}
+                        {row.ticket.itemName}
                     </Link>
                 ),
             },
             {
                 id: "table",
                 header: "Table",
-                sortValue: row => Number.parseInt(row.tableNumber, 10) || 0,
-                cell: row => row.tableNumber,
+                sortValue: row =>
+                    Number.parseInt(row.ticket.tableDisplayName, 10) || 0,
+                cell: row => row.ticket.tableDisplayName,
             },
             {
                 id: "qty",
                 header: "Qty",
-                sortValue: row => row.item.quantity,
-                cell: row => row.item.quantity,
+                sortValue: row => row.ticket.quantity,
+                cell: row => row.ticket.quantity,
             },
             {
                 id: "extras",
@@ -306,20 +284,15 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
             {
                 id: "status",
                 header: "Status",
-                sortValue: row => STATUS_RANK[row.item.status] ?? 99,
+                sortValue: row => STATUS_RANK[row.ticket.state] ?? 99,
                 hideable: false,
-                cell: row => (
-                    <StationStatusSelect
-                        item={row.item}
-                        delayed={row.delayed}
-                    />
-                ),
+                cell: row => <StationStatusSelect ticket={row.ticket} />,
             },
             {
                 id: "waiter",
                 header: "Waiter",
-                sortValue: row => row.waiterName,
-                cell: row => row.waiterName,
+                sortValue: row => row.ticket.waiter.displayName,
+                cell: row => row.ticket.waiter.displayName,
             },
             {
                 id: "received",
@@ -332,9 +305,9 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
             {
                 id: "prep",
                 header: "Prep (min)",
-                sortValue: row => row.item.expectedPreparationMinutes,
+                sortValue: row => row.ticket.expectedPrepMinutes,
                 defaultHidden: true,
-                cell: row => row.item.expectedPreparationMinutes,
+                cell: row => row.ticket.expectedPrepMinutes,
             },
             {
                 id: "overdue",
@@ -352,9 +325,21 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
             {
                 id: "amount",
                 header: "Amount",
-                sortValue: row => row.item.unitPrice * row.item.quantity,
+                sortValue: row =>
+                    lineTotal(
+                        row.ticket.unitPrice,
+                        row.ticket.quantity,
+                        row.ticket.modifiers,
+                    ),
                 defaultHidden: true,
-                cell: row => formatEtb(row.item.unitPrice * row.item.quantity),
+                cell: row =>
+                    formatEtb(
+                        lineTotal(
+                            row.ticket.unitPrice,
+                            row.ticket.quantity,
+                            row.ticket.modifiers,
+                        ),
+                    ),
             },
         ],
         [role],
@@ -365,12 +350,28 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
             ? "No tickets in the queue."
             : `No tickets in ${QUEUE_FILTER_LABELS[status as QueueFilter].toLowerCase()}.`;
 
+    if (!stationId) {
+        return (
+            <p className="text-slate-gray">
+                This account has no station assignment.
+            </p>
+        );
+    }
+
+    if (isLoading) {
+        return <p className="text-slate-gray">Loading queue…</p>;
+    }
+
+    if (isError) {
+        return <p className="text-red-600">Could not load the station queue.</p>;
+    }
+
     return (
         <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <p className="text-[12px] tracking-[0.08em] text-steel-gray uppercase">
-                        Queue
+                        {stationName ?? "Queue"}
                     </p>
                     <h1 className="text-[22px] font-semibold">
                         {QUEUE_FILTER_LABELS[status]}
@@ -429,16 +430,16 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                 <DataTable
                     columns={columns}
                     data={rows}
-                    rowKey={row => row.item.id}
+                    rowKey={row => row.ticket.orderItemId}
                     empty={emptyLabel}
                     searchPlaceholder="Search tickets..."
                     searchText={row =>
                         [
-                            row.item.name,
-                            row.tableNumber,
-                            row.waiterName,
+                            row.ticket.itemName,
+                            row.ticket.tableDisplayName,
+                            row.ticket.waiter.displayName,
                             row.extras,
-                            STATION_STATUS_LABELS[row.item.status],
+                            stationStateLabel(row.ticket.state),
                         ].join(" ")
                     }
                 />
@@ -450,11 +451,9 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {rows.map(row => (
                         <TicketCard
-                            key={row.item.id}
+                            key={row.ticket.orderItemId}
                             role={role}
-                            item={row.item}
-                            tableNumber={row.tableNumber}
-                            delayed={row.delayed}
+                            ticket={row.ticket}
                         />
                     ))}
                 </div>

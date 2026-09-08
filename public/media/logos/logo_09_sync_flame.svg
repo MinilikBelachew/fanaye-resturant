@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="syncGrad1" x1="60" y1="20" x2="60" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FB923C" />
+      <stop offset="100%" stop-color="#C2410C" />
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="32" fill="#18181B" />
+  <rect x="1" y="1" width="118" height="118" rx="31" stroke="rgba(255,255,255,0.08)" stroke-width="2" />
+  <!-- Tier 1: Outer Base Flame -->
+  <path d="M60 22C60 40 86 52 86 72C86 86 74 96 60 96C46 96 34 86 34 72C34 52 60 40 60 22Z" fill="url(#syncGrad1)" opacity="0.4" />
+  <!-- Tier 2: Mid Active Flame -->
+  <path d="M60 38C60 50 76 60 76 74C76 84 68 92 60 92C52 92 44 84 44 74C44 60 60 50 60 38Z" fill="url(#syncGrad1)" opacity="0.8" />
+  <!-- Tier 3: Core Flame -->
+  <path d="M60 54C60 62 68 68 68 76C68 82 64 88 60 88C56 88 52 82 52 76C52 68 60 62 60 54Z" fill="#FFF" />
+</svg>

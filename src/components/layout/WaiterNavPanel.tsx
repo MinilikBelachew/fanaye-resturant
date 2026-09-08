@@ -2,14 +2,12 @@
 
 import { LogOut } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/context/hooks";
-import { signOutDemo } from "@/context/slices/identitySlice";
+import { useWaiterTablesQuery } from "@/context/services/floorApi";
+import { performSignOut } from "@/domains/identity/application/signOut";
 import SidebarNav from "@/components/layout/SidebarNav";
 import { navForRole } from "@/domains/identity/application/nav";
 import RoleSwitcher from "@/domains/identity/ui/RoleSwitcher";
-import {
-    selectCurrentStaff,
-    selectUnreadReadyCount,
-} from "@/domains/ordering/application/selectors";
+import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { useRouter } from "@/i18n/navigation";
 
 export default function WaiterNavPanel({
@@ -22,23 +20,26 @@ export default function WaiterNavPanel({
     const staff = useAppSelector(selectCurrentStaff);
     const router = useRouter();
     const dispatch = useAppDispatch();
-    const unread = useAppSelector(state =>
-        staff ? selectUnreadReadyCount(state, staff.id) : 0,
-    );
+    const { data: floor } = useWaiterTablesQuery("my", {
+        skip: !staff,
+        pollingInterval: 5000,
+    });
+    const readyCount =
+        floor?.data.reduce((sum, table) => sum + table.readyItemCount, 0) ?? 0;
     if (!staff) return null;
 
     const extraBadges: Record<string, number> =
-        unread > 0 ? { "/waiter/notifications": unread } : {};
+        readyCount > 0 ? { "/waiter/notifications": readyCount } : {};
 
-    function logOut() {
-        dispatch(signOutDemo());
+    async function logOut() {
+        await performSignOut(dispatch);
         router.push("/sign-in");
     }
 
     if (collapsed) {
         return (
-            <div className="flex h-full w-full flex-col bg-white dark:bg-card">
-                <div className="flex justify-center py-3">
+            <div className="flex h-full w-full flex-col bg-card py-3">
+                <div className="flex justify-center pb-3 border-b border-border/60">
                     <RoleSwitcher compact />
                 </div>
                 <SidebarNav
@@ -47,12 +48,12 @@ export default function WaiterNavPanel({
                     extraBadges={extraBadges}
                     onNavigate={onNavigate}
                 />
-                <div className="mt-auto flex justify-center border-t border-hairline py-3">
+                <div className="mt-auto flex justify-center border-t border-border/60 pt-3">
                     <button
                         type="button"
                         title="Log out"
                         aria-label="Log out"
-                        className="flex size-10 items-center justify-center rounded-full text-slate-gray hover:bg-secondary hover:text-foreground transition-colors"
+                        className="flex size-10 items-center justify-center rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border hover:border-destructive/20 transition-colors"
                         onClick={logOut}
                     >
                         <LogOut className="size-4" />
@@ -63,11 +64,8 @@ export default function WaiterNavPanel({
     }
 
     return (
-        <div className="flex h-full w-full flex-col overflow-hidden rounded-[20px] border border-hairline bg-white dark:bg-card shadow-none">
-            <div className="shrink-0 border-b border-dashed border-hairline p-3">
-                <p className="px-2 pb-2 text-[15px] font-semibold tracking-tight">
-                    Fanaye
-                </p>
+        <div className="flex h-full w-full flex-col overflow-hidden rounded-[22px] border border-border/80 bg-card shadow-sm">
+            <div className="shrink-0 p-3 border-b border-border/60">
                 <RoleSwitcher />
             </div>
             <SidebarNav
@@ -75,14 +73,14 @@ export default function WaiterNavPanel({
                 extraBadges={extraBadges}
                 onNavigate={onNavigate}
             />
-            <div className="shrink-0 border-t border-dashed border-hairline p-3">
+            <div className="shrink-0 border-t border-border/60 p-3">
                 <button
                     type="button"
-                    className="flex w-full items-center gap-2 rounded-[12px] px-3 py-2 text-[14px] text-slate-gray hover:bg-secondary hover:text-foreground transition-colors"
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border hover:border-destructive/20 border border-transparent transition-all duration-150"
                     onClick={logOut}
                 >
-                    <LogOut className="size-4" />
-                    Log out
+                    <LogOut className="size-4 shrink-0" />
+                    <span>Log out</span>
                 </button>
             </div>
         </div>

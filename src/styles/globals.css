@@ -147,8 +147,15 @@
     html,
     body {
         @apply bg-background text-foreground font-sans antialiased;
-        height: 100%;
-        overflow: hidden;
+        min-height: 100%;
+        overflow-x: hidden;
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar {
+        display: none;
     }
 
     *::-webkit-scrollbar {
@@ -203,5 +210,14 @@
         overflow-x: hidden;
         overscroll-behavior: contain;
         min-height: 0;
+    }
+
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
     }
 }

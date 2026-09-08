@@ -1,17 +1,13 @@
 "use client";
 
 import { useAppSelector } from "@/context/hooks";
+import { useStationOrderItemQuery } from "@/context/services/stationsApi";
 import StationTicketActions from "@/domains/fulfillment/ui/StationTicketActions";
 import TicketExtras from "@/domains/fulfillment/ui/TicketExtras";
 import { homePathForRole } from "@/domains/identity/application/homePath";
 import type { StationRole } from "@/domains/identity/domain/role";
-import { stationIdForRole } from "@/domains/identity/domain/role";
-import {
-    displayStatus,
-    isItemDelayed,
-} from "@/domains/ordering/application/selectors";
-import { STATION_STATUS_LABELS } from "@/domains/ordering/domain/order";
-import { DEMO_STAFF } from "@/domains/identity/infrastructure/demoStaff";
+import { stationStateLabel } from "@/domains/fulfillment/domain/stationTicket";
+import { lineTotal } from "@/domains/ordering/application/mapWaiterMenu";
 import { Link } from "@/i18n/navigation";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
@@ -23,15 +19,20 @@ export default function StationTicketDetail({
     role: StationRole;
     itemId: string;
 }) {
-    const stationId = stationIdForRole(role);
-    const item = useAppSelector(state =>
-        state.ops.items.find(entry => entry.id === itemId),
+    const stationId = useAppSelector(
+        state => state.identity.session?.stationId,
     );
-    const sessions = useAppSelector(state => state.ops.sessions);
-    const tables = useAppSelector(state => state.ops.tables);
+    const { data: ticket, isLoading, isError } = useStationOrderItemQuery(
+        itemId,
+        { skip: !itemId },
+    );
     const home = homePathForRole(role);
 
-    if (!item || item.stationId !== stationId) {
+    if (isLoading) {
+        return <p className="text-slate-gray">Loading ticket…</p>;
+    }
+
+    if (isError || !ticket) {
         return (
             <div>
                 <Link href={home} className="text-[14px] text-brand">
@@ -48,12 +49,14 @@ export default function StationTicketDetail({
         );
     }
 
-    const session = sessions.find(entry => entry.id === item.sessionId);
-    const table = tables.find(entry => entry.id === session?.tableId);
-    const waiter = DEMO_STAFF.find(person => person.id === session?.waiterId);
-    const delayed = isItemDelayed(item);
+    const extras = ticket.modifiers.map((entry, index) => ({
+        groupId: "mod",
+        optionId: `${index}`,
+        name: entry.name,
+        priceDelta: Number(entry.priceDelta),
+    }));
     const hasExtras =
-        (item.modifiers?.length ?? 0) > 0 || Boolean(item.instruction?.trim());
+        extras.length > 0 || Boolean(ticket.specialInstruction?.trim());
 
     return (
         <div className="mx-auto max-w-2xl">
@@ -63,26 +66,26 @@ export default function StationTicketDetail({
             <div className="mt-3 flex items-start justify-between gap-3">
                 <div>
                     <p className="text-[13px] text-slate-gray">
-                        Table {table?.number ?? "—"} ·{" "}
-                        {waiter?.name ?? "Waiter"}
+                        Table {ticket.tableDisplayName} ·{" "}
+                        {ticket.waiter.displayName}
                     </p>
                     <h1 className="text-[32px] font-semibold">
-                        {item.quantity}× {item.name}
+                        {ticket.quantity}× {ticket.itemName}
                     </h1>
                 </div>
                 <span
                     className={cn(
                         "rounded-full px-3 py-1 text-[12px] font-medium",
-                        item.status === "ready"
+                        ticket.state === "READY"
                             ? "bg-accent text-accent-foreground"
-                            : delayed
+                            : ticket.delayed || ticket.state === "CANNOT_PREPARE"
                               ? "bg-destructive/10 text-destructive"
                               : "bg-secondary text-slate-gray",
                     )}
                 >
-                    {delayed && item.status !== "ready"
+                    {ticket.delayed && ticket.state !== "READY"
                         ? "Delayed"
-                        : STATION_STATUS_LABELS[item.status]}
+                        : stationStateLabel(ticket.state)}
                 </span>
             </div>
 
@@ -92,8 +95,8 @@ export default function StationTicketDetail({
                 </p>
                 {hasExtras ? (
                     <TicketExtras
-                        modifiers={item.modifiers}
-                        instruction={item.instruction}
+                        modifiers={extras}
+                        instruction={ticket.specialInstruction ?? ""}
                     />
                 ) : (
                     <p className="mt-3 text-[14px] text-slate-gray">
@@ -103,32 +106,44 @@ export default function StationTicketDetail({
                 <dl className="mt-5 grid grid-cols-2 gap-3 text-[14px]">
                     <div>
                         <dt className="text-slate-gray">Ticket</dt>
-                        <dd className="font-medium">{item.id.slice(-8)}</dd>
+                        <dd className="font-medium">
+                            {ticket.orderItemId.slice(-8)}
+                        </dd>
                     </div>
                     <div>
                         <dt className="text-slate-gray">Price</dt>
                         <dd className="font-medium">
-                            {formatEtb(item.unitPrice * item.quantity)}
+                            {formatEtb(
+                                lineTotal(
+                                    ticket.unitPrice,
+                                    ticket.quantity,
+                                    ticket.modifiers,
+                                ),
+                            )}
                         </dd>
                     </div>
                     <div>
                         <dt className="text-slate-gray">Status</dt>
-                        <dd className="font-medium">{displayStatus(item)}</dd>
+                        <dd className="font-medium">
+                            {ticket.delayed
+                                ? `Delayed · ${stationStateLabel(ticket.state)}`
+                                : stationStateLabel(ticket.state)}
+                        </dd>
                     </div>
                     <div>
                         <dt className="text-slate-gray">Prep time</dt>
                         <dd className="font-medium">
-                            ~{item.expectedPreparationMinutes} min
+                            ~{ticket.expectedPrepMinutes} min
                         </dd>
                     </div>
                 </dl>
-                {item.rejectReason ? (
+                {stationId && ticket.exceptionReason ? (
                     <p className="mt-4 text-[13px] text-destructive">
-                        {item.rejectReason}
+                        {ticket.exceptionReason}
                     </p>
                 ) : null}
                 <div className="mt-6">
-                    <StationTicketActions item={item} />
+                    <StationTicketActions ticket={ticket} />
                 </div>
             </article>
         </div>

@@ -11,8 +11,13 @@ import {
     Search,
     Table as TableIcon,
 } from "lucide-react";
-import { useAppDispatch, useAppSelector } from "@/context/hooks";
-import { toggleItemAvailability } from "@/context/slices/menuSlice";
+import {
+    useAdminMenuItemsQuery,
+    useAdminMenuMetaQuery,
+    useClearMenuItemSoldOutMutation,
+    useMarkMenuItemSoldOutMutation,
+} from "@/context/services/menuApi";
+import { adminMenuItemToCatalog } from "@/domains/catalog/application/mapAdminMenu";
 import type { MenuItem } from "@/domains/catalog/domain/menu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,38 +28,49 @@ import DataTable, {
     type DataTableColumn,
 } from "@/components/custom/organisms/DataTable";
 import AddMenuItemSheet from "@/domains/catalog/ui/AddMenuItemSheet";
+import CreateModifierGroupSheet from "@/domains/catalog/ui/CreateModifierGroupSheet";
 import MenuItemDetailSheet from "@/domains/catalog/ui/MenuItemDetailSheet";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
-const STATION_FILTERS = [
-    { id: "all", label: "All Items" },
-    { id: "station-kitchen", label: "Kitchen" },
-    { id: "station-barista", label: "Barista" },
-    { id: "station-cakes", label: "Cakes" },
-    { id: "station-soft-drinks", label: "Soft Drinks" },
-] as const;
-
 export default function ManagerMenuPage() {
-    const dispatch = useAppDispatch();
-    const menuItems = useAppSelector(state => state.menu.items);
+    const { data: metaData } = useAdminMenuMetaQuery();
+    const { data, isLoading, isError } = useAdminMenuItemsQuery(undefined, {
+        pollingInterval: 15000,
+    });
+    const [markSoldOut] = useMarkMenuItemSoldOutMutation();
+    const [clearSoldOut] = useClearMenuItemSoldOutMutation();
 
-    // View mode: 'grid' or 'table'
+    const stations = metaData?.data.stations ?? [];
+    const menuItems = useMemo(
+        () => (data?.data ?? []).map(item => adminMenuItemToCatalog(item)),
+        [data],
+    );
+
     const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
-
-    // Modal / Drawer states
     const [sheetOpen, setSheetOpen] = useState(false);
+    const [modifierSheetOpen, setModifierSheetOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
     const [detailItem, setDetailItem] = useState<MenuItem | null>(null);
-
-    // Filter states
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedStation, setSelectedStation] = useState<string>("all");
+
+    const stationFilters = useMemo(
+        () => [
+            { id: "all", label: "All Items" },
+            ...stations.map(station => ({
+                id: station.id,
+                label: station.name,
+            })),
+        ],
+        [stations],
+    );
 
     const filteredItems = useMemo(() => {
         return menuItems.filter(item => {
             const matchesStation =
-                selectedStation === "all" || item.stationId === selectedStation;
+                selectedStation === "all" ||
+                item.stationId === selectedStation;
             const matchesQuery =
                 !searchQuery.trim() ||
                 item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -69,7 +85,6 @@ export default function ManagerMenuPage() {
     const activeCount = menuItems.filter(i => i.available).length;
     const soldOutCount = menuItems.length - activeCount;
 
-    // Keep detail item updated if Redux state changes (e.g. toggled 86 or edited)
     const currentDetailItem = useMemo(() => {
         if (!detailItem) return null;
         return menuItems.find(i => i.id === detailItem.id) ?? detailItem;
@@ -90,7 +105,14 @@ export default function ManagerMenuPage() {
         setDetailItem(item);
     }
 
-    // DataTable columns definition
+    async function handleToggleAvailability(item: MenuItem) {
+        if (item.available) {
+            await markSoldOut({ id: item.id });
+        } else {
+            await clearSoldOut({ id: item.id });
+        }
+    }
+
     const tableColumns: DataTableColumn<MenuItem>[] = useMemo(
         () => [
             {
@@ -121,7 +143,7 @@ export default function ManagerMenuPage() {
                             >
                                 {row.name}
                             </button>
-                            <p className="line-clamp-1 text-[12px] text-slate-gray">
+                            <p className="truncate text-[12px] text-slate-gray">
                                 {row.description}
                             </p>
                         </div>
@@ -133,9 +155,7 @@ export default function ManagerMenuPage() {
                 header: "Station",
                 sortValue: row => row.category,
                 cell: row => (
-                    <Badge variant="secondary" className="font-normal capitalize text-[11px]">
-                        {row.category}
-                    </Badge>
+                    <Badge variant="outline">{row.category}</Badge>
                 ),
             },
             {
@@ -143,50 +163,35 @@ export default function ManagerMenuPage() {
                 header: "Price",
                 sortValue: row => row.price,
                 cell: row => (
-                    <span className="font-semibold text-foreground">
-                        {formatEtb(row.price)}
-                    </span>
+                    <span className="font-medium">{formatEtb(row.price)}</span>
                 ),
             },
             {
-                id: "prepTime",
-                header: "Prep time",
+                id: "prep",
+                header: "Prep",
                 sortValue: row => row.expectedPreparationMinutes,
                 cell: row => (
-                    <div className="flex items-center gap-1 text-[12px] text-slate-gray">
-                        <Clock className="size-3.5" />
-                        <span>~{row.expectedPreparationMinutes}m</span>
-                    </div>
-                ),
-            },
-            {
-                id: "modifiers",
-                header: "Options",
-                cell: row => (
-                    <span className="text-[12px] text-slate-gray">
-                        {row.modifierGroups.length > 0
-                            ? row.modifierGroups.map(g => g.name).join(", ")
-                            : "Standard"}
+                    <span className="text-slate-gray">
+                        ~{row.expectedPreparationMinutes}m
                     </span>
                 ),
             },
             {
                 id: "status",
-                header: "Status",
+                header: "Floor",
                 sortValue: row => (row.available ? 1 : 0),
                 cell: row => (
                     <button
                         type="button"
-                        onClick={() => dispatch(toggleItemAvailability(row.id))}
-                        className={cn(
-                            "rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-colors",
-                            row.available
-                                ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                                : "bg-red-50 text-red-700 hover:bg-red-100",
-                        )}
-                        title="Click to toggle availability"
+                        onClick={() => {
+                            void handleToggleAvailability(row);
+                        }}
                     >
-                        {row.available ? "Active" : "86'd (Sold out)"}
+                        <Badge
+                            variant={row.available ? "success" : "warning"}
+                        >
+                            {row.available ? "Active" : "86 / Sold out"}
+                        </Badge>
                     </button>
                 ),
             },
@@ -194,28 +199,27 @@ export default function ManagerMenuPage() {
                 id: "actions",
                 header: "",
                 cell: row => (
-                    <div className="flex items-center justify-end gap-1">
-                        <button
-                            type="button"
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            size="sm"
+                            variant="outline"
                             onClick={() => handleOpenDetail(row)}
-                            className="flex size-7 items-center justify-center rounded-full border border-hairline bg-card text-slate-gray hover:bg-secondary hover:text-foreground"
-                            title="View details"
                         >
                             <Eye className="size-3.5" />
-                        </button>
-                        <button
-                            type="button"
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="outline"
                             onClick={() => handleOpenEdit(row)}
-                            className="flex size-7 items-center justify-center rounded-full border border-hairline bg-card text-slate-gray hover:bg-secondary hover:text-foreground"
-                            title="Edit dish"
                         >
                             <Edit3 className="size-3.5" />
-                        </button>
+                        </Button>
                     </div>
                 ),
             },
         ],
-        [dispatch],
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [],
     );
 
     return (
@@ -223,181 +227,133 @@ export default function ManagerMenuPage() {
             <PageHeader
                 eyebrow="House"
                 title="Menu"
-                description="Routing is by preparation station, not by a hardcoded food category."
+                description="Add dishes, route them to stations, and 86 items when stock runs out."
                 action={
-                    <Button
-                        onClick={handleOpenAdd}
-                        className="flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 font-medium text-white hover:bg-brand-deep"
-                    >
-                        <Plus className="size-4" />
-                        Add menu item
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => setModifierSheetOpen(true)}
+                        >
+                            <Plus className="size-4" />
+                            Add modifier group
+                        </Button>
+                        <Button onClick={handleOpenAdd}>
+                            <Plus className="size-4" />
+                            Add menu item
+                        </Button>
+                    </div>
                 }
             />
 
-            {/* Filter, Search, and View Mode Bar */}
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                {/* Station Filter Tabs */}
-                <div className="flex flex-wrap items-center gap-1 rounded-[48px] border border-hairline bg-surface-ivory p-1">
-                    {STATION_FILTERS.map(filter => {
-                        const isSelected = selectedStation === filter.id;
-                        const count =
-                            filter.id === "all"
-                                ? menuItems.length
-                                : menuItems.filter(
-                                      item => item.stationId === filter.id,
-                                  ).length;
-
-                        return (
-                            <button
-                                key={filter.id}
-                                type="button"
-                                onClick={() => setSelectedStation(filter.id)}
-                                className={cn(
-                                    "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors",
-                                    isSelected
-                                        ? "bg-white text-foreground border border-hairline"
-                                        : "text-slate-gray hover:text-foreground",
-                                )}
-                            >
-                                <span>{filter.label}</span>
-                                <span
-                                    className={cn(
-                                        "rounded-full px-1.5 py-0.2 text-[10px]",
-                                        isSelected
-                                            ? "bg-accent text-accent-foreground font-semibold"
-                                            : "bg-secondary text-slate-gray",
-                                    )}
-                                >
-                                    {count}
-                                </span>
-                            </button>
-                        );
-                    })}
+            <div className="mb-4 flex flex-wrap items-center gap-3">
+                <div className="relative min-w-[220px] flex-1">
+                    <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-gray" />
+                    <Input
+                        value={searchQuery}
+                        onChange={event => setSearchQuery(event.target.value)}
+                        placeholder="Search dishes & drinks…"
+                        className="pl-9"
+                    />
                 </div>
-
-                {/* Right controls: Search, Availability badge, and Grid/Table View toggle */}
-                <div className="flex items-center gap-2.5">
-                    <div className="relative flex-1 md:w-56">
-                        <Search className="absolute inset-y-0 left-3 my-auto size-3.5 text-slate-gray" />
-                        <Input
-                            placeholder="Search dishes & drinks…"
-                            value={searchQuery}
-                            onChange={e => setSearchQuery(e.target.value)}
-                            className="h-9 rounded-full border-hairline bg-white pl-8.5 text-[13px]"
-                        />
-                    </div>
-
-                    <Badge variant="secondary" className="hidden sm:inline-flex text-[11px]">
-                        {activeCount} active · {soldOutCount} 86'd
-                    </Badge>
-
-                    {/* View mode toggle (Grid vs Table) */}
-                    <div className="flex items-center rounded-full border border-hairline bg-surface-ivory p-0.5">
+                <div className="flex flex-wrap gap-2">
+                    {stationFilters.map(filter => (
                         <button
+                            key={filter.id}
                             type="button"
-                            onClick={() => setViewMode("grid")}
+                            onClick={() => setSelectedStation(filter.id)}
                             className={cn(
-                                "flex size-8 items-center justify-center rounded-full transition-colors",
-                                viewMode === "grid"
-                                    ? "bg-white text-foreground border border-hairline"
-                                    : "text-slate-gray hover:text-foreground",
+                                "rounded-full border px-3 py-1.5 text-[13px]",
+                                selectedStation === filter.id
+                                    ? "border-brand bg-brand/10 text-brand"
+                                    : "border-hairline text-slate-gray",
                             )}
-                            title="Grid card view"
                         >
-                            <LayoutGrid className="size-4" />
+                            {filter.label}
                         </button>
-                        <button
-                            type="button"
-                            onClick={() => setViewMode("table")}
-                            className={cn(
-                                "flex size-8 items-center justify-center rounded-full transition-colors",
-                                viewMode === "table"
-                                    ? "bg-white text-foreground border border-hairline"
-                                    : "text-slate-gray hover:text-foreground",
-                            )}
-                            title="Table list view"
-                        >
+                    ))}
+                </div>
+                <div className="ml-auto flex items-center gap-2 text-[13px] text-slate-gray">
+                    <span>{activeCount} active</span>
+                    <span>·</span>
+                    <span>{soldOutCount} sold out</span>
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setViewMode(viewMode === "grid" ? "table" : "grid")
+                        }
+                        className="ml-2 rounded-full border border-hairline p-2"
+                        aria-label="Toggle view"
+                    >
+                        {viewMode === "grid" ? (
                             <TableIcon className="size-4" />
-                        </button>
-                    </div>
+                        ) : (
+                            <LayoutGrid className="size-4" />
+                        )}
+                    </button>
                 </div>
             </div>
 
-            {/* View Render: Table View vs Grid Card View */}
-            {viewMode === "table" ? (
-                <div className="mt-4">
-                    <DataTable
-                        columns={tableColumns}
-                        data={filteredItems}
-                        rowKey={item => item.id}
-                        searchPlaceholder={null}
-                        showColumnToggle={true}
-                        empty={
-                            <div className="py-12 text-center text-slate-gray">
-                                No menu items found.
-                            </div>
-                        }
-                    />
-                </div>
-            ) : (
-                /* Grid Cards View */
-                <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {isLoading ? (
+                <p className="text-slate-gray">Loading menu…</p>
+            ) : null}
+            {isError ? (
+                <p className="text-red-600">
+                    Could not load menu from the server. Sign in as manager and
+                    confirm the API is running.
+                </p>
+            ) : null}
+
+            {!isLoading && !isError && viewMode === "table" ? (
+                <DataTable
+                    columns={tableColumns}
+                    data={filteredItems}
+                    rowKey={row => row.id}
+                />
+            ) : null}
+
+            {!isLoading && !isError && viewMode === "grid" ? (
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     {filteredItems.map(item => (
                         <article
                             key={item.id}
-                            className={cn(
-                                "group relative min-h-[360px] overflow-hidden rounded-[20px] border border-hairline bg-secondary",
-                                !item.available && "opacity-70 grayscale",
-                            )}
+                            className="group overflow-hidden rounded-[16px] border border-hairline bg-card shadow-subtle"
                         >
-                            {item.image ? (
-                                /* eslint-disable-next-line @next/next/no-img-element */
-                                <img
-                                    src={item.image}
-                                    alt={item.name}
-                                    className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                />
-                            ) : (
-                                <div className="absolute inset-0 bg-secondary" />
-                            )}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
-
-                            <div className="relative flex min-h-[360px] flex-col justify-between p-4">
-                                <div className="flex items-start justify-between gap-2">
-                                    <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-medium text-white/90 backdrop-blur-sm">
-                                        {item.category}
-                                    </span>
-                                    <button
-                                        type="button"
-                                        onClick={e => {
-                                            e.stopPropagation();
-                                            dispatch(
-                                                toggleItemAvailability(
-                                                    item.id,
-                                                ),
-                                            );
-                                        }}
-                                        title={
-                                            item.available
-                                                ? "Click to 86 item"
-                                                : "Click to mark available"
-                                        }
-                                        className={cn(
-                                            "rounded-full px-2.5 py-1 text-[11px] font-semibold backdrop-blur-md transition-colors",
-                                            item.available
-                                                ? "bg-white/90 text-emerald-800 hover:bg-white"
-                                                : "bg-red-600/95 text-white hover:bg-red-700",
-                                        )}
-                                    >
-                                        {item.available ? "Active" : "86'd"}
-                                    </button>
-                                </div>
-
-                                <div
-                                    className="cursor-pointer text-white"
-                                    onClick={() => handleOpenDetail(item)}
-                                >
+                            <div className="relative aspect-[4/3] bg-secondary">
+                                {item.image ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                        src={item.image}
+                                        alt={item.name}
+                                        className="size-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="flex size-full items-center justify-center text-slate-gray">
+                                        <CookingPot className="size-10 opacity-40" />
+                                    </div>
+                                )}
+                                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-4 text-white">
+                                    <div className="mb-2 flex items-center justify-between gap-2">
+                                        <Badge
+                                            variant={
+                                                item.available
+                                                    ? "success"
+                                                    : "warning"
+                                            }
+                                            className="cursor-pointer"
+                                            onClick={() => {
+                                                void handleToggleAvailability(
+                                                    item,
+                                                );
+                                            }}
+                                        >
+                                            {item.available
+                                                ? "Active"
+                                                : "86 / Sold out"}
+                                        </Badge>
+                                        <span className="text-[12px] text-white/70">
+                                            {item.category}
+                                        </span>
+                                    </div>
                                     <h2 className="text-[22px] leading-tight font-semibold">
                                         {item.name}
                                     </h2>
@@ -482,9 +438,8 @@ export default function ManagerMenuPage() {
                         </div>
                     ) : null}
                 </div>
-            )}
+            ) : null}
 
-            {/* Add / Edit Menu Item Form Sheet */}
             <AddMenuItemSheet
                 isOpen={sheetOpen}
                 initialItem={editingItem}
@@ -494,12 +449,22 @@ export default function ManagerMenuPage() {
                 }}
             />
 
-            {/* Dish Detail Sheet */}
+            <CreateModifierGroupSheet
+                isOpen={modifierSheetOpen}
+                onClose={() => setModifierSheetOpen(false)}
+            />
+
             <MenuItemDetailSheet
                 item={currentDetailItem}
-                isOpen={Boolean(detailItem)}
+                isOpen={Boolean(currentDetailItem)}
                 onClose={() => setDetailItem(null)}
-                onEdit={handleOpenEdit}
+                onEdit={item => {
+                    setDetailItem(null);
+                    handleOpenEdit(item);
+                }}
+                onToggleAvailability={item => {
+                    void handleToggleAvailability(item);
+                }}
             />
         </DashboardFrame>
     );

@@ -87,12 +87,12 @@ export default function CameraCapture({
             <div className="flex w-full max-w-md flex-col overflow-hidden rounded-[20px] bg-card">
                 <div className="border-b border-hairline px-5 py-4">
                     <p className="text-[12px] tracking-[0.08em] text-steel-gray uppercase">
-                        TinaVerify
+                        Receipt
                     </p>
                     <h2 className="text-[18px] font-semibold">{title}</h2>
                     <p className="mt-1 text-[13px] text-slate-gray">
-                        Photograph the bank or Telebirr receipt. The bill
-                        total is logged to the cashier.
+                        Photograph the bank or Telebirr slip. Payment is
+                        recorded when you confirm — cashier only sees the log.
                     </p>
                 </div>
                 <div className="bg-black">

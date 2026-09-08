@@ -1,36 +1,137 @@
+"use client";
+
+import {
+    useApproveCancellationRequestMutation,
+    useApproveChangeRequestMutation,
+    useOrderMutationApprovalsQuery,
+    useRejectCancellationRequestMutation,
+    useRejectChangeRequestMutation,
+} from "@/context/services/ordersApi";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
 
 export default function ManagerApprovalsPage() {
+    const { data, isLoading, isError } = useOrderMutationApprovalsQuery(
+        undefined,
+        { pollingInterval: 5000 },
+    );
+    const [approveCancel] = useApproveCancellationRequestMutation();
+    const [rejectCancel] = useRejectCancellationRequestMutation();
+    const [approveChange] = useApproveChangeRequestMutation();
+    const [rejectChange] = useRejectChangeRequestMutation();
+    const rows = data?.data ?? [];
+
     return (
         <DashboardFrame>
             <PageHeader
                 eyebrow="Control"
                 title="Approvals"
-                description="In-preparation cancellations need a manager. Nothing is silently deleted."
+                description="In-preparation cancellations and dish swaps need a manager. Nothing is silently deleted."
             />
-            <article className="rounded-[16px] border border-hairline bg-white p-5 shadow-subtle">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                        <p className="text-[13px] text-slate-gray">
-                            Table 12 · Kitchen
-                        </p>
-                        <h2 className="text-[18px] font-semibold">
-                            Cancel 1× Cheeseburger
-                        </h2>
-                        <p className="text-[14px] text-slate-gray">
-                            Item is in preparation · requested by Karim
-                        </p>
-                    </div>
-                    <Badge variant="warning">Needs PIN</Badge>
-                </div>
-                <div className="mt-4 flex gap-2">
-                    <Button>Approve</Button>
-                    <Button variant="outline">Hold</Button>
-                </div>
-            </article>
+
+            {isLoading ? (
+                <p className="text-slate-gray">Loading approvals…</p>
+            ) : null}
+            {isError ? (
+                <p className="text-red-600">Could not load approvals.</p>
+            ) : null}
+            {!isLoading && !isError && rows.length === 0 ? (
+                <p className="rounded-[16px] border border-hairline bg-card p-5 text-slate-gray">
+                    No pending change or cancellation requests.
+                </p>
+            ) : null}
+
+            <div className="space-y-3">
+                {rows.map(row => {
+                    const changeSummary = row.requestedChange
+                        ? Object.entries(row.requestedChange)
+                              .filter(([, value]) => value != null && value !== "")
+                              .map(([key, value]) => `${key}: ${String(value)}`)
+                              .join(" · ")
+                        : null;
+
+                    return (
+                        <article
+                            key={`${row.type}-${row.requestId}`}
+                            className="rounded-[16px] border border-hairline bg-card p-5"
+                        >
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <p className="text-[13px] text-slate-gray">
+                                        {row.tableDisplayName} · {row.stationName}
+                                    </p>
+                                    <h2 className="text-[18px] font-semibold">
+                                        {row.type === "CANCELLATION"
+                                            ? "Cancel"
+                                            : "Change"}{" "}
+                                        {row.itemName}
+                                    </h2>
+                                    <p className="text-[14px] text-slate-gray">
+                                        {row.itemState.replaceAll("_", " ")} ·
+                                        requested by {row.requestedByName}
+                                    </p>
+                                    {row.reason ? (
+                                        <p className="mt-1 text-[14px]">
+                                            {row.reason}
+                                        </p>
+                                    ) : null}
+                                    {changeSummary ? (
+                                        <p className="mt-1 text-[13px] text-slate-gray">
+                                            {changeSummary}
+                                        </p>
+                                    ) : null}
+                                </div>
+                                <Badge variant="warning">{row.type}</Badge>
+                            </div>
+                            <div className="mt-4 flex gap-2">
+                                <Button
+                                    onClick={() => {
+                                        if (row.type === "CANCELLATION") {
+                                            void approveCancel({
+                                                requestId: row.requestId,
+                                                expectedOrderItemVersion:
+                                                    row.itemVersion,
+                                            });
+                                        } else {
+                                            void approveChange({
+                                                requestId: row.requestId,
+                                                expectedOrderItemVersion:
+                                                    row.itemVersion,
+                                            });
+                                        }
+                                    }}
+                                >
+                                    Approve
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        if (row.type === "CANCELLATION") {
+                                            void rejectCancel({
+                                                requestId: row.requestId,
+                                                expectedOrderItemVersion:
+                                                    row.itemVersion,
+                                                decisionReason: "Rejected",
+                                            });
+                                        } else {
+                                            void rejectChange({
+                                                requestId: row.requestId,
+                                                expectedOrderItemVersion:
+                                                    row.itemVersion,
+                                                decisionReason: "Rejected",
+                                            });
+                                        }
+                                    }}
+                                >
+                                    Reject
+                                </Button>
+                            </div>
+                        </article>
+                    );
+                })}
+            </div>
         </DashboardFrame>
     );
 }

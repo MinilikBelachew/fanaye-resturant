@@ -1,264 +1,412 @@
 "use client";
 
 import { useState } from "react";
-import { useAppDispatch, useAppSelector } from "@/context/hooks";
+import { useAppSelector } from "@/context/hooks";
 import {
-    markItemServed,
-    removeDraftItem,
-    requestBill,
-    startTableSession,
-} from "@/context/slices/opsSlice";
+    useCancelBillRequestMutation,
+    useRequestBillMutation,
+    useSessionBillQuery,
+} from "@/context/services/billingApi";
+import {
+    useCloseTableSessionMutation,
+    useStartTableSessionMutation,
+    useWaiterTablesQuery,
+} from "@/context/services/floorApi";
+import { useTableSessionOrdersQuery } from "@/context/services/ordersApi";
+import { tableNumber } from "@/domains/floor/application/groupFloor";
 import AddOrderMenu from "@/domains/floor/ui/AddOrderMenu";
+import WaiterMarkServedButton from "@/domains/floor/ui/WaiterMarkServedButton";
+import WaiterOrderItemActions from "@/domains/floor/ui/WaiterOrderItemActions";
+import { lineTotal } from "@/domains/ordering/application/mapWaiterMenu";
 import WaiterPaymentPanel from "@/domains/payments/ui/WaiterPaymentPanel";
-import {
-    displayStatus,
-    formatTicketExtras,
-    selectCurrentStaff,
-    selectItemsForSession,
-    selectSessionForTable,
-    stationLabel,
-} from "@/domains/ordering/application/selectors";
-import { STATION_STATUS_LABELS } from "@/domains/ordering/domain/order";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { formatEtb } from "@/lib/money";
 
-export default function WaiterTableDetail({ tableId }: { tableId: string }) {
-    const dispatch = useAppDispatch();
-    const staff = useAppSelector(selectCurrentStaff);
-    const table = useAppSelector(state =>
-        state.ops.tables.find(entry => entry.id === tableId),
-    );
-    const session = useAppSelector(state =>
-        selectSessionForTable(state, tableId),
-    );
-    const items = useAppSelector(state =>
-        session ? selectItemsForSession(state, session.id) : [],
-    );
-    const [menuOpen, setMenuOpen] = useState(false);
-    const drafts = items.filter(item => item.status === "draft");
-    const live = items.filter(item => item.status !== "draft");
-    const ready = live.filter(item => item.status === "ready");
-    const cooking = live.filter(
-        item =>
-            item.status === "queued" ||
-            item.status === "acknowledged" ||
-            item.status === "in_preparation",
-    );
-    const total = items
-        .filter(item => item.status !== "cancelled" && item.status !== "draft")
-        .reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-    const billRequested = session?.status === "bill_requested";
-    const paymentPending = session?.status === "payment_pending";
-    const canRequestBill =
-        live.length > 0 &&
-        drafts.length === 0 &&
-        !billRequested &&
-        !paymentPending &&
-        session?.status !== "paid";
+const ORDERABLE = new Set(["OPEN", "ACTIVE_ORDER", "ATTENTION_REQUIRED"]);
+const REQUESTABLE = new Set(["OPEN", "ACTIVE_ORDER", "ATTENTION_REQUIRED"]);
 
-    if (!table) {
-        return <p>Table not found.</p>;
+function itemStateLabel(state: string) {
+    if (state === "READY") return "Ready to serve";
+    if (state === "SERVED") return "Served";
+    return state.replaceAll("_", " ");
+}
+
+function sessionLabel(status: string | null | undefined) {
+    if (!status) return "OPEN";
+    return status.replaceAll("_", " ");
+}
+
+export default function WaiterTableDetail({ tableId }: { tableId: string }) {
+    const clockedIn = Boolean(
+        useAppSelector(state => state.identity.session?.shiftSessionId),
+    );
+    const { data, isLoading, isError } = useWaiterTablesQuery("all", {
+        pollingInterval: 5000,
+    });
+    const [startSession, { isLoading: starting }] =
+        useStartTableSessionMutation();
+    const [closeSession, { isLoading: closing }] =
+        useCloseTableSessionMutation();
+    const [requestBill, { isLoading: requesting }] = useRequestBillMutation();
+    const [cancelBillRequest, { isLoading: cancelling }] =
+        useCancelBillRequestMutation();
+    const [error, setError] = useState("");
+    const [menuOpen, setMenuOpen] = useState(false);
+
+    const table = data?.data.find(entry => entry.tableId === tableId);
+    const sessionId = table?.tableSessionId ?? "";
+    const { data: orders } = useTableSessionOrdersQuery(sessionId, {
+        skip: !sessionId,
+        pollingInterval: 5000,
+    });
+    const { data: billing } = useSessionBillQuery(sessionId, {
+        skip: !sessionId,
+        pollingInterval: 5000,
+    });
+    const tickets = orders?.data ?? [];
+    const itemCount = tickets.reduce(
+        (sum, order) => sum + order.items.length,
+        0,
+    );
+    const sessionStatus =
+        billing?.tableSession.status ?? table?.sessionStatus ?? null;
+    const sessionVersion =
+        billing?.tableSession.version ?? table?.version ?? 1;
+    const bill = billing?.bill ?? null;
+    const pendingRequest =
+        billing?.billRequest?.status === "PENDING"
+            ? billing.billRequest
+            : null;
+
+    async function takeTable() {
+        setError("");
+        if (!clockedIn) {
+            setError("Clock in before taking a table.");
+            return;
+        }
+        try {
+            await startSession({ tableId }).unwrap();
+        } catch {
+            setError("Could not take this table. It may already be occupied.");
+        }
     }
 
-    if (!session) {
+    async function releaseTable() {
+        if (!table?.tableSessionId) return;
+        setError("");
+        try {
+            await closeSession({
+                tableSessionId: table.tableSessionId,
+                expectedVersion: sessionVersion,
+            }).unwrap();
+        } catch (err) {
+            if (err && typeof err === "object" && "data" in err) {
+                const code = (err as { data?: { code?: string } }).data?.code;
+                if (code === "TABLE_CLOSE_BLOCKED") {
+                    setError(
+                        "This table still has an order. Finish payment before closing.",
+                    );
+                    return;
+                }
+            }
+            setError("Could not close this table.");
+        }
+    }
+
+    async function onRequestBill() {
+        if (!table?.tableSessionId) return;
+        setError("");
+        try {
+            await requestBill({
+                tableSessionId: table.tableSessionId,
+                expectedTableSessionVersion: sessionVersion,
+            }).unwrap();
+        } catch {
+            setError("Could not request the bill. Refresh and try again.");
+        }
+    }
+
+    async function onResumeOrdering() {
+        if (!table?.tableSessionId || !pendingRequest) return;
+        setError("");
+        try {
+            await cancelBillRequest({
+                billRequestId: pendingRequest.billRequestId,
+                tableSessionId: table.tableSessionId,
+            }).unwrap();
+        } catch {
+            setError("Could not resume ordering.");
+        }
+    }
+
+    if (isLoading) {
+        return <p className="text-slate-gray">Loading table…</p>;
+    }
+
+    if (isError || !table) {
         return (
             <div>
                 <Link href="/waiter/tables" className="text-brand">
                     ← Floor
                 </Link>
-                <h1 className="mt-3 text-[24px] font-semibold">
-                    Table {table.number}
-                </h1>
-                <p className="mt-2 text-slate-gray">
-                    No guests yet. Take this table to add an order.
-                </p>
-                {staff ? (
-                    <Button
-                        className="mt-4"
-                        onClick={() => {
-                            dispatch(
-                                startTableSession({
-                                    tableId: table.id,
-                                    waiterId: staff.id,
-                                    guestCount: table.seats,
-                                }),
-                            );
-                        }}
-                    >
-                        Take table
-                    </Button>
-                ) : null}
+                <p className="mt-3 text-slate-gray">Table not found.</p>
             </div>
         );
     }
 
+    const occupied = Boolean(table.tableSessionId);
+    const canOrder =
+        occupied &&
+        table.mine &&
+        clockedIn &&
+        ORDERABLE.has(sessionStatus ?? "");
+    const canRequestBill =
+        occupied &&
+        table.mine &&
+        clockedIn &&
+        itemCount > 0 &&
+        REQUESTABLE.has(sessionStatus ?? "") &&
+        !bill;
+    const canClosePaid =
+        occupied && table.mine && sessionStatus === "PAID";
+    const canCloseEmpty =
+        occupied &&
+        table.mine &&
+        itemCount === 0 &&
+        table.readyItemCount === 0 &&
+        table.cookingItemCount === 0 &&
+        sessionStatus !== "PAID";
+
     return (
-        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start lg:gap-6">
-            <div>
-                <Link
-                    href="/waiter/tables"
-                    className="text-[14px] text-brand"
-                >
-                    ← Floor
-                </Link>
-                <div className="mt-2 flex items-start justify-between gap-3">
-                    <div>
-                        <h1 className="text-[28px] font-semibold md:text-[32px]">
-                            Table {table.number}
-                        </h1>
-                        <p className="text-[14px] text-slate-gray">
-                            {billRequested
-                                ? "Bill requested"
-                                : paymentPending
-                                  ? "Awaiting cashier"
-                                  : ready.length > 0
-                                    ? `${ready.length} ready`
-                                    : cooking.length > 0
-                                      ? `${cooking.length} cooking`
-                                      : live.length > 0
-                                        ? "Taken"
-                                        : "No order yet"}
-                        </p>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-[12px] text-slate-gray">Due</p>
-                        <p className="text-[20px] font-semibold">
-                            {formatEtb(total)}
-                        </p>
-                    </div>
-                </div>
-
-                {ready.length > 0 ? (
-                    <div className="mt-4 rounded-[16px] border border-transparent bg-accent p-4">
-                        <p className="text-[13px] font-medium text-accent-foreground">
-                            {ready.length} item{ready.length > 1 ? "s" : ""}{" "}
-                            ready — pick up and serve
-                        </p>
-                    </div>
-                ) : null}
-
-                <section className="mt-5 space-y-3">
-                    {live.length === 0 && drafts.length === 0 ? (
-                        <p className="rounded-[16px] border border-hairline bg-white p-4 text-slate-gray">
-                            No items yet. Add dishes and send the order.
+        <div>
+            <Link href="/waiter/tables" className="text-[14px] text-brand">
+                ← Floor
+            </Link>
+            <div className="mt-2 flex items-start justify-between gap-3">
+                <div>
+                    <h1 className="text-[28px] font-semibold md:text-[32px]">
+                        Table {tableNumber(table)}
+                    </h1>
+                    <p className="text-[13px] text-slate-gray">
+                        {table.locationName}
+                    </p>
+                    <p className="text-[14px] text-slate-gray">
+                        {occupied
+                            ? `${table.waiterName ?? "Waiter"} · ${sessionLabel(sessionStatus)}`
+                            : "No guests yet. Take this table to start a visit."}
+                    </p>
+                    {table.guestCount ? (
+                        <p className="mt-1 text-[13px] text-slate-gray">
+                            {table.guestCount} guests
                         </p>
                     ) : null}
-                    {live.map(item => (
-                        <article
-                            key={item.id}
-                            className="rounded-[16px] border border-hairline bg-white p-4"
-                        >
-                            <div className="flex items-start justify-between gap-2">
-                                <div>
-                                    <p className="font-medium">
-                                        {item.quantity}× {item.name}
-                                    </p>
-                                    {formatTicketExtras(item) ? (
-                                        <p className="text-[13px] text-ink-charcoal">
-                                            {formatTicketExtras(item)}
-                                        </p>
-                                    ) : null}
-                                    <p className="text-[13px] text-slate-gray">
-                                        {stationLabel(item.stationId)} ·{" "}
-                                        {displayStatus(item)}
-                                    </p>
-                                </div>
-                                <span className="rounded-full bg-secondary px-3 py-1 text-[12px]">
-                                    {STATION_STATUS_LABELS[item.status]}
-                                </span>
-                            </div>
-                            {item.status === "ready" ? (
-                                <Button
-                                    className="mt-3"
-                                    onClick={() =>
-                                        dispatch(markItemServed(item.id))
-                                    }
-                                >
-                                    Mark served
-                                </Button>
-                            ) : null}
-                        </article>
-                    ))}
-                    {drafts.map(item => (
-                        <article
-                            key={item.id}
-                            className="rounded-[16px] border border-dashed border-hairline bg-secondary p-4"
-                        >
-                            <div className="flex items-start justify-between gap-3">
-                                <div>
-                                    <p>
-                                        {item.quantity}× {item.name}{" "}
-                                        <span className="text-slate-gray">
-                                            (not sent)
-                                        </span>
-                                    </p>
-                                    {formatTicketExtras(item) ? (
-                                        <p className="text-[13px] text-slate-gray">
-                                            {formatTicketExtras(item)}
-                                        </p>
-                                    ) : null}
-                                    <p className="mt-1 text-[13px]">
-                                        {formatEtb(
-                                            item.unitPrice * item.quantity,
-                                        )}
-                                    </p>
-                                </div>
-                                <button
-                                    type="button"
-                                    className="text-[13px] text-destructive"
-                                    onClick={() =>
-                                        dispatch(removeDraftItem(item.id))
-                                    }
-                                >
-                                    Remove
-                                </button>
-                            </div>
-                        </article>
-                    ))}
-                </section>
+                </div>
             </div>
 
-            <aside className="mt-6 space-y-3 lg:sticky lg:top-8 lg:mt-10">
-                <div className="rounded-[16px] border border-hairline bg-white p-4">
-                    <p className="text-[12px] text-slate-gray">Check</p>
-                    <p className="text-[22px] font-semibold">
-                        {formatEtb(total)}
-                    </p>
-                    <p className="mt-1 text-[13px] text-slate-gray">
-                        {ready.length} ready · {cooking.length} in station
-                    </p>
-                </div>
-                <div className="flex flex-col gap-2">
-                    <Button onClick={() => setMenuOpen(true)}>
-                        Add dishes
-                    </Button>
-                    <Button
-                        variant="outline"
-                        disabled={!canRequestBill}
-                        onClick={() => dispatch(requestBill(session.id))}
-                    >
-                        Request bill
-                    </Button>
-                    {staff ? (
-                        <WaiterPaymentPanel
-                            sessionId={session.id}
-                            waiterId={staff.id}
-                            billRequested={Boolean(billRequested)}
-                        />
+            {error ? (
+                <p className="mt-3 text-[13px] text-red-600">{error}</p>
+            ) : null}
+
+            {!occupied && clockedIn ? (
+                <Button className="mt-4" disabled={starting} onClick={takeTable}>
+                    {starting ? "Opening…" : "Take table"}
+                </Button>
+            ) : null}
+
+            {occupied && table.mine ? (
+                <div className="mt-6 space-y-3">
+                    {canOrder ? (
+                        <Button onClick={() => setMenuOpen(true)}>
+                            Add order
+                        </Button>
+                    ) : null}
+
+                    {sessionStatus === "BILL_REQUESTED" && pendingRequest ? (
+                        <div className="rounded-[16px] border border-hairline bg-card p-4">
+                            <p className="font-medium">Bill requested</p>
+                            <p className="mt-1 text-[14px] text-slate-gray">
+                                Waiting for cashier to generate the bill.
+                            </p>
+                            <Button
+                                variant="outline"
+                                className="mt-3"
+                                disabled={cancelling}
+                                onClick={onResumeOrdering}
+                            >
+                                {cancelling
+                                    ? "Resuming…"
+                                    : "Resume ordering"}
+                            </Button>
+                        </div>
+                    ) : null}
+
+                    {bill && table.tableSessionId ? (
+                        <div className="space-y-3">
+                            <div className="rounded-[16px] border border-hairline bg-card p-4">
+                                <p className="text-[12px] font-medium tracking-wide text-slate-gray uppercase">
+                                    Bill {bill.billNumber}
+                                </p>
+                                <p className="mt-1 text-[22px] font-semibold">
+                                    {formatEtb(Number(bill.total))}
+                                </p>
+                                <ul className="mt-3 space-y-1 text-[14px]">
+                                    {bill.lines.map(line => (
+                                        <li
+                                            key={line.billLineId}
+                                            className="flex justify-between gap-3"
+                                        >
+                                            <span>
+                                                {line.quantity}× {line.itemName}
+                                            </span>
+                                            <span className="font-medium">
+                                                {formatEtb(
+                                                    Number(line.lineTotal),
+                                                )}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                            <WaiterPaymentPanel
+                                bill={bill}
+                                tableSessionId={table.tableSessionId}
+                            />
+                        </div>
+                    ) : null}
+
+                    {tickets.length > 0 ? (
+                        <div className="space-y-3">
+                            {tickets.map(order => (
+                                <div
+                                    key={order.orderId}
+                                    className="rounded-[16px] border border-hairline bg-card p-4"
+                                >
+                                    <p className="text-[12px] font-medium tracking-wide text-slate-gray uppercase">
+                                        {new Date(
+                                            order.confirmedAt,
+                                        ).toLocaleTimeString([], {
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                        })}
+                                    </p>
+                                    <ul className="mt-2 space-y-2">
+                                        {order.items.map(item => {
+                                            const extras = [
+                                                item.modifiers
+                                                    .map(entry => entry.name)
+                                                    .join(" · "),
+                                                item.specialInstruction ?? "",
+                                            ]
+                                                .filter(Boolean)
+                                                .join(" · ");
+                                            return (
+                                                <li
+                                                    key={item.orderItemId}
+                                                    className="flex items-start justify-between gap-3 text-[14px]"
+                                                >
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="font-medium">
+                                                            {item.quantity}×{" "}
+                                                            {item.itemName}
+                                                        </p>
+                                                        <p
+                                                            className={
+                                                                item.state ===
+                                                                "READY"
+                                                                    ? "text-[12px] font-medium text-brand"
+                                                                    : "text-[12px] text-slate-gray"
+                                                            }
+                                                        >
+                                                            {item.stationName} ·{" "}
+                                                            {itemStateLabel(
+                                                                item.state,
+                                                            )}
+                                                            {extras
+                                                                ? ` · ${extras}`
+                                                                : ""}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex shrink-0 flex-col items-end gap-2">
+                                                        <span className="font-semibold">
+                                                            {formatEtb(
+                                                                lineTotal(
+                                                                    item.unitPrice,
+                                                                    item.quantity,
+                                                                    item.modifiers,
+                                                                ),
+                                                            )}
+                                                        </span>
+                                                        {table.tableSessionId ? (
+                                                            <>
+                                                                <WaiterMarkServedButton
+                                                                    item={item}
+                                                                    tableSessionId={
+                                                                        table.tableSessionId
+                                                                    }
+                                                                />
+                                                                <WaiterOrderItemActions
+                                                                    item={item}
+                                                                    tableSessionId={
+                                                                        table.tableSessionId
+                                                                    }
+                                                                />
+                                                            </>
+                                                        ) : null}
+                                                    </div>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-[14px] text-slate-gray">
+                            No dishes yet. Add an order to send tickets to the
+                            stations.
+                        </p>
+                    )}
+
+                    {canRequestBill ? (
+                        <Button
+                            disabled={requesting}
+                            onClick={onRequestBill}
+                        >
+                            {requesting ? "Requesting…" : "Request bill"}
+                        </Button>
+                    ) : null}
+
+                    {canClosePaid || canCloseEmpty ? (
+                        <Button
+                            variant="outline"
+                            disabled={closing}
+                            onClick={releaseTable}
+                        >
+                            {closing
+                                ? "Closing…"
+                                : canClosePaid
+                                  ? "Close paid table"
+                                  : "Close empty table"}
+                        </Button>
+                    ) : itemCount > 0 && sessionStatus !== "PAID" ? (
+                        <p className="text-[13px] text-slate-gray">
+                            Close this table after the bill is paid.
+                        </p>
                     ) : null}
                 </div>
-                <p className="text-[12px] leading-5 text-slate-gray">
-                    Send the order, serve ready items, then request the bill.
-                    Collect the total at the table in cash, or photograph a
-                    bank/Telebirr receipt. That amount is logged to the cashier.
-                </p>
-            </aside>
+            ) : null}
 
-            {menuOpen ? (
+            {occupied && !table.mine ? (
+                <p className="mt-4 text-[14px] text-slate-gray">
+                    {table.waiterName} has this table.
+                </p>
+            ) : null}
+
+            {menuOpen && table.tableSessionId ? (
                 <AddOrderMenu
-                    sessionId={session.id}
-                    pendingDraftCount={drafts.length}
+                    tableSessionId={table.tableSessionId}
+                    expectedVersion={sessionVersion}
                     onClose={() => setMenuOpen(false)}
                 />
             ) : null}

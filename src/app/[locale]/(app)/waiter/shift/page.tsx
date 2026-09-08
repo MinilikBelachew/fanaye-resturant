@@ -2,18 +2,25 @@
 
 import {
     Bell,
-    CircleDot,
     Flame,
     LayoutGrid,
+    LogIn,
+    LogOut,
     Wallet,
 } from "lucide-react";
+import { useState } from "react";
 import { useAppSelector } from "@/context/hooks";
+import { useWaiterCashSummaryQuery } from "@/context/services/cashApi";
+import { useWaiterTablesQuery } from "@/context/services/floorApi";
+import {
+    useClockInMutation,
+    useClockOutMutation,
+    useCurrentShiftQuery,
+} from "@/context/services/shiftsApi";
 import PageHeader from "@/components/custom/organisms/PageHeader";
 import { Badge } from "@/components/ui/badge";
-import {
-    selectCurrentStaff,
-    selectWaiterFloorSummary,
-} from "@/domains/ordering/application/selectors";
+import { Button } from "@/components/ui/button";
+import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { Link } from "@/i18n/navigation";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
@@ -54,47 +61,122 @@ function MetricCard({
     );
 }
 
+function formatClock(value?: string | null) {
+    if (!value) return "—";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "—";
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function shiftErrorMessage(error: unknown) {
+    if (error && typeof error === "object" && "data" in error) {
+        const data = (error as { data?: { errors?: { shift?: string }; openTables?: number } }).data;
+        if (data?.errors?.shift === "openTables") {
+            const count = data.openTables ?? 0;
+            return `Close ${count} open table${count === 1 ? "" : "s"} before clocking out.`;
+        }
+        if (data?.errors?.shift === "alreadyClosed") {
+            return "This shift is already closed.";
+        }
+        if (data?.errors && "version" in data.errors) {
+            return "Shift changed on another device. Refresh and try again.";
+        }
+    }
+    return "Could not update your shift. Try again.";
+}
+
 export default function WaiterShiftPage() {
     const staff = useAppSelector(selectCurrentStaff);
-    const summary = useAppSelector(state =>
-        staff
-            ? selectWaiterFloorSummary(state, staff.id)
-            : {
-                  openTables: 0,
-                  readyCount: 0,
-                  cookingCount: 0,
-                  sales: 0,
-              },
-    );
-    const cashOnHand = useAppSelector(state =>
-        staff
-            ? state.ops.payments
-                  .filter(
-                      payment =>
-                          payment.waiterId === staff.id &&
-                          payment.method === "cash" &&
-                          payment.status !== "rejected",
-                  )
-                  .reduce((sum, payment) => sum + payment.amount, 0)
-            : 0,
-    );
+    const hasSession = useAppSelector(state => Boolean(state.identity.session));
+    const { data: shift, isFetching } = useCurrentShiftQuery(undefined, {
+        skip: !hasSession,
+    });
+    const [clockIn, { isLoading: clockingIn }] = useClockInMutation();
+    const [clockOut, { isLoading: clockingOut }] = useClockOutMutation();
+    const [actionError, setActionError] = useState("");
+    const { data: floor } = useWaiterTablesQuery("my", {
+        skip: !staff,
+        pollingInterval: 5000,
+    });
+    const { data: cashSummary } = useWaiterCashSummaryQuery(undefined, {
+        skip: !staff || !hasSession,
+        pollingInterval: 5000,
+    });
+    const myTables = floor?.data ?? [];
+    const cashOnHand = Number(cashSummary?.undroppedCash ?? 0);
+    const summary = {
+        openTables: myTables.filter(table => Boolean(table.tableSessionId))
+            .length,
+        readyCount: myTables.reduce(
+            (sum, table) => sum + table.readyItemCount,
+            0,
+        ),
+        cookingCount: myTables.reduce(
+            (sum, table) => sum + table.cookingItemCount,
+            0,
+        ),
+        sales: Number(cashSummary?.cashCollected ?? 0),
+    };
     const tablesOpen = summary.openTables > 0;
+    const clockedIn = Boolean(shift?.clockedIn && shift.shiftSession);
+    const session = shift?.shiftSession ?? null;
+    const upcoming = shift?.upcomingAssignment ?? null;
+    const busy = clockingIn || clockingOut || isFetching;
+
+    async function handleClockIn() {
+        setActionError("");
+        try {
+            await clockIn(
+                upcoming?.id ? { shiftAssignmentId: upcoming.id } : {},
+            ).unwrap();
+        } catch (error) {
+            setActionError(shiftErrorMessage(error));
+        }
+    }
+
+    async function handleClockOut() {
+        if (!session) return;
+        setActionError("");
+        try {
+            await clockOut({
+                shiftSessionId: session.id,
+                expectedVersion: session.version,
+            }).unwrap();
+        } catch (error) {
+            setActionError(shiftErrorMessage(error));
+        }
+    }
 
     return (
         <section className="mx-auto w-full max-w-3xl space-y-6">
             <PageHeader
                 eyebrow="Shift"
-                title="On the floor"
-                description={`${staff?.name ?? "Waiter"} is currently on floor duty. Monitor your active shift schedule, table load, and collections.`}
+                title={clockedIn ? "On the floor" : "Off the clock"}
+                description={
+                    clockedIn
+                        ? `${staff?.name ?? "Waiter"} is clocked in. Monitor tables, collections, and clock out when the floor is clear.`
+                        : `${staff?.name ?? "Waiter"} is not clocked in. Clock in before taking a table.`
+                }
             />
 
-            {/* Waiter Profile & Assigned Shift Card */}
             <div className="flex flex-col gap-4 rounded-[20px] border border-hairline bg-card p-5 shadow-xs">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3.5">
-                        <span className="relative flex size-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 font-bold text-[18px]">
+                        <span
+                            className={cn(
+                                "relative flex size-12 items-center justify-center rounded-full font-bold text-[18px]",
+                                clockedIn
+                                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                                    : "bg-secondary text-slate-gray",
+                            )}
+                        >
                             {staff?.name?.charAt(0) ?? "W"}
-                            <span className="absolute top-1 right-1 size-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-card" />
+                            <span
+                                className={cn(
+                                    "absolute top-1 right-1 size-2.5 rounded-full ring-2 ring-white dark:ring-card",
+                                    clockedIn ? "bg-emerald-500" : "bg-slate-400",
+                                )}
+                            />
                         </span>
                         <div>
                             <div className="flex items-center gap-2">
@@ -106,59 +188,70 @@ export default function WaiterShiftPage() {
                                 </span>
                             </div>
                             <p className="text-[13px] text-slate-gray">
-                                {staff?.phone || "+251 91 567 8901"} · Fanaye Floor
+                                {staff?.phone || "Fanaye Floor"}
                             </p>
                         </div>
                     </div>
 
-                    <Badge variant={tablesOpen ? "warning" : "success"}>
-                        {tablesOpen
-                            ? `${summary.openTables} tables active`
-                            : "Ready to clock out"}
+                    <Badge variant={clockedIn ? (tablesOpen ? "warning" : "success") : "secondary"}>
+                        {!clockedIn
+                            ? "Clocked out"
+                            : tablesOpen
+                              ? `${summary.openTables} tables active`
+                              : "Ready to clock out"}
                     </Badge>
                 </div>
 
-                {/* Shift Schedule Details Bar */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-hairline pt-3.5 text-[13px]">
-                    <div className="flex items-center gap-2">
-                        <span className="text-base">
-                            {staff?.shiftSchedule === "evening"
-                                ? "🌙"
-                                : staff?.shiftSchedule === "full_day"
-                                  ? "⚡"
-                                  : "🌅"}
-                        </span>
-                        <div>
-                            <p className="font-semibold text-foreground capitalize">
-                                {staff?.shiftSchedule?.replace("_", " ") || "Morning"} Shift
-                            </p>
-                            <p className="text-[12px] text-slate-gray">
-                                {staff?.shiftHours || "07:00 AM – 03:00 PM"}
-                            </p>
-                        </div>
+                    <div>
+                        <p className="font-semibold text-foreground">
+                            {session?.definitionName || upcoming?.definitionName || "Shift"}
+                        </p>
+                        <p className="text-[12px] text-slate-gray">
+                            {formatClock(session?.scheduledStartAt ?? upcoming?.scheduledStartAt)}
+                            {" – "}
+                            {formatClock(session?.scheduledEndAt ?? upcoming?.scheduledEndAt)}
+                        </p>
                     </div>
+                    <div>
+                        <p className="font-semibold text-foreground">Clock in</p>
+                        <p className="text-[12px] text-slate-gray">
+                            {formatClock(session?.clockInAt)}
+                        </p>
+                    </div>
+                    <div>
+                        <p className="font-semibold text-foreground">Clock out</p>
+                        <p className="text-[12px] text-slate-gray">
+                            {formatClock(session?.clockOutAt)}
+                        </p>
+                    </div>
+                </div>
 
-                    <div className="flex items-center gap-2">
-                        <span className="text-base">📅</span>
-                        <div>
-                            <p className="font-semibold text-foreground">Working Days</p>
-                            <p className="text-[12px] text-slate-gray">
-                                {staff?.workingDays?.join(", ") || "Mon, Tue, Wed, Thu, Fri, Sat"}
-                            </p>
-                        </div>
-                    </div>
+                {actionError ? (
+                    <p className="text-[13px] text-red-600">{actionError}</p>
+                ) : null}
 
-                    <div className="flex items-center gap-2">
-                        <span className="text-base">🍽️</span>
-                        <div>
-                            <p className="font-semibold text-foreground">Assigned Section</p>
-                            <p className="text-[12px] text-slate-gray">
-                                {staff?.assignedTableIds && staff.assignedTableIds.length > 0
-                                    ? staff.assignedTableIds.map(t => `T-${t.replace("table-", "")}`).join(", ")
-                                    : "All Floor Tables"}
-                            </p>
-                        </div>
-                    </div>
+                <div className="flex flex-wrap gap-2">
+                    {clockedIn ? (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            disabled={busy}
+                            onClick={handleClockOut}
+                        >
+                            <LogOut className="size-4" />
+                            {clockingOut ? "Clocking out..." : "Clock out"}
+                        </Button>
+                    ) : (
+                        <Button
+                            type="button"
+                            disabled={busy}
+                            onClick={handleClockIn}
+                        >
+                            <LogIn className="size-4" />
+                            {clockingIn ? "Clocking in..." : "Clock in"}
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -227,13 +320,19 @@ export default function WaiterShiftPage() {
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground">
                     <Wallet className="size-4" />
                 </span>
-                <div>
+                <div className="min-w-0 flex-1">
                     <p className="text-[15px] font-semibold">Cash on you</p>
                     <p className="mt-1 text-[14px] text-slate-gray">
-                        {formatEtb(cashOnHand)} collected in cash this shift.
-                        It stays with you until you drop it to the cashier.
-                        You cannot clock out while a table is still open.
+                        {formatEtb(cashOnHand)} still undropped this shift. It
+                        stays with you until you drop it to the cashier. You
+                        cannot clock out while a table is still open.
                     </p>
+                    <Link
+                        href="/waiter/cash"
+                        className="mt-3 inline-flex text-[14px] font-medium text-brand"
+                    >
+                        Drop cash →
+                    </Link>
                 </div>
             </div>
         </section>

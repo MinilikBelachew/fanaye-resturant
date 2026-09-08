@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Noto_Sans_Ethiopic } from "next/font/google";
 import Providers from "./providers";
 import "@/styles/globals.css";
 
@@ -13,9 +13,14 @@ const inter = Inter({
     variable: "--font-roobert",
 });
 
+const notoSansEthiopic = Noto_Sans_Ethiopic({
+    subsets: ["ethiopic"],
+    variable: "--font-ethiopic",
+});
+
 export const metadata: Metadata = {
-    title: "Fanaye Restaurant",
-    description: "Fanaye restaurant management demo",
+    title: "Fanaye Restaurant Management OS",
+    description: "The live real-time operating system for modern high-volume restaurants",
 };
 
 export default async function RootLayout({
@@ -33,7 +38,11 @@ export default async function RootLayout({
 
     setRequestLocale(locale);
     return (
-        <html lang={locale} className={inter.variable} suppressHydrationWarning>
+        <html
+            lang={locale}
+            className={`${inter.variable} ${notoSansEthiopic.variable}`}
+            suppressHydrationWarning
+        >
             <head>
                 <script
                     dangerouslySetInnerHTML={{
@@ -41,7 +50,10 @@ export default async function RootLayout({
                     }}
                 />
             </head>
-            <body className={inter.className} suppressHydrationWarning>
+            <body
+                className={`${inter.className} ${locale === "am" ? notoSansEthiopic.className : ""}`}
+                suppressHydrationWarning
+            >
                 <NextIntlClientProvider>
                     <Providers>{children}</Providers>
                 </NextIntlClientProvider>

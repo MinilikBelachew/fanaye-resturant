@@ -1,14 +1,16 @@
 "use client";
 
-import { useAppDispatch, useAppSelector } from "@/context/hooks";
-import { startTableSession } from "@/context/slices/opsSlice";
-import { DEMO_STAFF } from "@/domains/identity/infrastructure/demoStaff";
+import { useState } from "react";
+import { useAppSelector } from "@/context/hooks";
 import {
-    selectCurrentStaff,
-    selectWaiterFloorSummary,
-} from "@/domains/ordering/application/selectors";
+    useStartTableSessionMutation,
+    useWaiterTablesQuery,
+} from "@/context/services/floorApi";
+import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { useRouter } from "@/i18n/navigation";
+import FloorLocationSections from "@/domains/floor/ui/FloorLocationSections";
 import FloorTableCard from "@/domains/floor/ui/FloorTableCard";
+import { tableNumber } from "@/domains/floor/application/groupFloor";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
@@ -17,22 +19,44 @@ export default function WaiterTablesBoard({
 }: {
     hideIntro?: boolean;
 }) {
-    const tables = useAppSelector(state => state.ops.tables);
-    const sessions = useAppSelector(state => state.ops.sessions);
-    const items = useAppSelector(state => state.ops.items);
     const staff = useAppSelector(selectCurrentStaff);
-    const summary = useAppSelector(state =>
-        staff
-            ? selectWaiterFloorSummary(state, staff.id)
-            : {
-                  openTables: 0,
-                  readyCount: 0,
-                  cookingCount: 0,
-                  sales: 0,
-              },
+    const clockedIn = Boolean(
+        useAppSelector(state => state.identity.session?.shiftSessionId),
     );
-    const dispatch = useAppDispatch();
+    const { data, isLoading, isError } = useWaiterTablesQuery("all");
+    const [startSession] = useStartTableSessionMutation();
+    const [busyId, setBusyId] = useState<string | null>(null);
+    const [error, setError] = useState("");
     const router = useRouter();
+
+    const tables = data?.data ?? [];
+    const locations = data?.locations ?? [];
+    const mine = tables.filter(table => table.mine);
+    const readyCount = mine.reduce((sum, table) => sum + table.readyItemCount, 0);
+    const cookingCount = mine.reduce(
+        (sum, table) => sum + table.cookingItemCount,
+        0,
+    );
+
+    async function openTable(tableId: string, occupied: boolean) {
+        setError("");
+        if (!occupied) {
+            if (!clockedIn) {
+                setError("Clock in before taking a table.");
+                return;
+            }
+            setBusyId(tableId);
+            try {
+                await startSession({ tableId }).unwrap();
+            } catch (err) {
+                setError(floorActionError(err));
+                setBusyId(null);
+                return;
+            }
+            setBusyId(null);
+        }
+        router.push(`/waiter/tables/${tableId}`);
+    }
 
     return (
         <div>
@@ -43,27 +67,27 @@ export default function WaiterTablesBoard({
                             Floor
                         </h1>
                         <p className="mt-1 text-[14px] text-slate-gray">
-                            Your tables, running total, and items waiting to
-                            be served.
+                            Your tables at {staff?.name ? "this branch" : "Fanaye"}.
+                            One party per table.
                         </p>
                     </div>
                     <div className="mb-5 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
                         <SummaryTile
                             label="My tables"
-                            value={String(summary.openTables)}
+                            value={String(mine.length)}
                         />
                         <SummaryTile
                             label="Ready to serve"
-                            value={String(summary.readyCount)}
+                            value={String(readyCount)}
                             accent
                         />
                         <SummaryTile
                             label="Still cooking"
-                            value={String(summary.cookingCount)}
+                            value={String(cookingCount)}
                         />
                         <SummaryTile
                             label="Shift sales"
-                            value={formatEtb(summary.sales)}
+                            value={formatEtb(0)}
                         />
                     </div>
                     <div className="mb-4 flex flex-wrap gap-3 text-[12px] text-slate-gray">
@@ -73,101 +97,95 @@ export default function WaiterTablesBoard({
                     </div>
                 </>
             )}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                {tables.map(table => {
-                    const session = sessions.find(
-                        entry =>
-                            entry.id === table.currentSessionId &&
-                            entry.status !== "paid" &&
-                            entry.status !== "closed",
-                    );
-                    const mine = session?.waiterId === staff?.id;
-                    const other = session
-                        ? DEMO_STAFF.find(
-                              person => person.id === session.waiterId,
-                          )
-                        : null;
-                    const sessionItems = session
-                        ? items.filter(
-                              item =>
-                                  item.sessionId === session.id &&
-                                  item.status !== "draft",
-                          )
-                        : [];
-                    const ready = sessionItems.filter(
-                        item => item.status === "ready",
-                    ).length;
-                    const cooking = sessionItems.filter(
-                        item =>
-                            item.status === "queued" ||
-                            item.status === "acknowledged" ||
-                            item.status === "in_preparation",
-                    ).length;
-                    const hasOrder = sessionItems.length > 0;
-                    const free = !session;
-                    const badge = free
-                        ? { label: "Free", tone: "free" as const }
-                        : mine
-                          ? { label: "Mine", tone: "mine" as const }
-                          : {
-                                label: "Other waiter",
-                                tone: "other" as const,
-                            };
-                    const footerLeft = ready > 0
-                        ? `${ready} ready`
-                        : table.status === "payment_pending"
-                          ? "Awaiting cashier"
-                          : table.status === "bill_requested"
-                            ? "Bill requested"
-                            : cooking > 0
-                              ? `${cooking} cooking`
-                              : hasOrder
-                                ? "Taken"
-                                : free
-                                  ? "No guests"
-                                  : mine
+
+            {!clockedIn ? (
+                <p className="mb-4 rounded-[12px] border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] text-amber-900">
+                    Clock in on Shift before you take a table.
+                </p>
+            ) : null}
+            {error ? (
+                <p className="mb-4 text-[13px] text-red-600">{error}</p>
+            ) : null}
+            {isLoading ? (
+                <p className="text-slate-gray">Loading floor…</p>
+            ) : isError ? (
+                <p className="text-red-600">Could not load tables.</p>
+            ) : (
+                <FloorLocationSections
+                    tables={tables}
+                    locations={locations}
+                    renderTable={table => {
+                        const free = !table.tableSessionId;
+                        const badge = free
+                            ? { label: "Free", tone: "free" as const }
+                            : table.mine
+                              ? { label: "Mine", tone: "mine" as const }
+                              : {
+                                    label: "Other waiter",
+                                    tone: "other" as const,
+                                };
+                        const footerLeft = free
+                            ? "No guests"
+                            : table.readyItemCount > 0
+                              ? `${table.readyItemCount} ready`
+                              : table.sessionStatus === "BILL_REQUESTED"
+                                ? "Bill requested"
+                                : table.cookingItemCount > 0
+                                  ? `${table.cookingItemCount} cooking`
+                                  : table.mine
                                     ? "No order yet"
                                     : "Taken";
 
-                    return (
-                        <FloorTableCard
-                            key={table.id}
-                            tableNumber={table.number}
-                            badge={badge}
-                            waiter={
-                                free
-                                    ? null
-                                    : mine
-                                      ? (staff?.name ?? "You")
-                                      : (other?.name ?? "Taken")
-                            }
-                            footerLeft={footerLeft}
-                            footerAction={
-                                free
-                                    ? "Take table →"
-                                    : mine && !hasOrder
-                                      ? "Add order →"
-                                      : "View →"
-                            }
-                            onClick={() => {
-                                if (!staff) return;
-                                if (!session) {
-                                    dispatch(
-                                        startTableSession({
-                                            tableId: table.id,
-                                            waiterId: staff.id,
-                                            guestCount: table.seats,
-                                        }),
-                                    );
+                        return (
+                            <FloorTableCard
+                                key={table.tableId}
+                                tableNumber={tableNumber(table)}
+                                location={table.locationName}
+                                badge={badge}
+                                waiter={free ? null : table.waiterName}
+                                footerLeft={footerLeft}
+                                footerAction={
+                                    busyId === table.tableId
+                                        ? "Opening…"
+                                        : free
+                                          ? "Take table →"
+                                          : table.mine
+                                            ? "View →"
+                                            : "View →"
                                 }
-                                router.push(`/waiter/tables/${table.id}`);
-                            }}
-                        />
-                    );
-                })}
-            </div>
+                                onClick={() => {
+                                    void openTable(table.tableId, !free);
+                                }}
+                            />
+                        );
+                    }}
+                />
+            )}
         </div>
     );
+}
+
+function floorActionError(error: unknown) {
+    if (error && typeof error === "object" && "data" in error) {
+        const data = (
+            error as {
+                data?: { code?: string; errors?: { table?: string; shift?: string } };
+            }
+        ).data;
+        if (data?.code === "TABLE_NOT_ASSIGNED") {
+            return "This table is assigned to another waiter.";
+        }
+        if (data?.code === "TABLE_NOT_AVAILABLE" || data?.errors?.table === "TABLE_NOT_AVAILABLE") {
+            return "That table is already taken.";
+        }
+        if (data?.errors?.table === "TABLE_NOT_ASSIGNED") {
+            return "This table is assigned to another waiter.";
+        }
+        if (data?.code === "SHIFT_REQUIRED" || data?.errors?.shift) {
+            return "Clock in before taking a table.";
+        }
+    }
+    return "Could not open that table.";
 }
 
 function SummaryTile({
@@ -199,9 +217,7 @@ function SummaryTile({
 function Legend({ swatch, label }: { swatch: string; label: string }) {
     return (
         <span className="inline-flex items-center gap-1.5">
-            <span
-                className={cn("size-3 rounded-full border", swatch)}
-            />
+            <span className={cn("size-3 rounded-full border", swatch)} />
             {label}
         </span>
     );

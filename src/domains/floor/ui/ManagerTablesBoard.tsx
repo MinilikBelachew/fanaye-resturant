@@ -2,308 +2,217 @@
 
 import { useMemo, useState } from "react";
 import { User } from "lucide-react";
-import { useAppSelector } from "@/context/hooks";
-import { DEMO_STAFF } from "@/domains/identity/infrastructure/demoStaff";
-import type { DiningTable } from "@/domains/floor/domain/table";
+import { useFloorTablesQuery } from "@/context/services/floorApi";
+import type { FloorTable } from "@/domains/floor/domain/floorApi";
+import { tableNumber } from "@/domains/floor/application/groupFloor";
+import FloorLocationSections from "@/domains/floor/ui/FloorLocationSections";
 import FloorTableCard from "@/domains/floor/ui/FloorTableCard";
-import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import TableInspectionSheet from "./TableInspectionSheet";
 
 export default function ManagerTablesBoard() {
-    const tables = useAppSelector(state => state.ops.tables);
-    const sessions = useAppSelector(state => state.ops.sessions);
-    const items = useAppSelector(state => state.ops.items);
-    const staffMembers = useAppSelector(
-        state => state.identity.staffMembers ?? DEMO_STAFF,
-    );
+    const { data, isLoading, isError } = useFloorTablesQuery();
+    const tables = data?.data ?? [];
+    const locations = data?.locations ?? [];
 
-    const [statusFilter, setStatusFilter] = useState<"all" | "occupied" | "available">("all");
-    const [waiterFilter, setWaiterFilter] = useState<string>("all");
-    const [selectedTable, setSelectedTable] = useState<DiningTable | null>(null);
+    const [statusFilter, setStatusFilter] = useState<
+        "all" | "occupied" | "available"
+    >("all");
+    const [waiterFilter, setWaiterFilter] = useState("all");
+    const [selectedTable, setSelectedTable] = useState<FloorTable | null>(null);
 
-    // Compute floor statistics
     const stats = useMemo(() => {
-        let occupiedCount = 0;
-        let availableCount = 0;
-        let totalGuests = 0;
-        let totalRunningBill = 0;
-        const activeWaiterIds = new Set<string>();
-
-        tables.forEach(table => {
-            const session = sessions.find(s => s.id === table.currentSessionId);
-            const isOcc = Boolean(session && table.status !== "available");
-
-            if (isOcc && session) {
-                occupiedCount++;
-                totalGuests += session.guestCount || table.seats;
-                activeWaiterIds.add(session.waiterId);
-
-                const sessionItems = items.filter(
-                    i => i.sessionId === session.id && i.status !== "draft",
-                );
-                const tableTotal = sessionItems.reduce(
-                    (sum, i) => sum + i.unitPrice * i.quantity,
-                    0,
-                );
-                totalRunningBill += tableTotal;
-            } else {
-                availableCount++;
-            }
-        });
-
+        const occupied = tables.filter(table => table.tableSessionId);
+        const waiters = new Set(
+            occupied
+                .map(table => table.primaryWaiterMembershipId)
+                .filter(Boolean),
+        );
         return {
             total: tables.length,
-            occupiedCount,
-            availableCount,
+            occupiedCount: occupied.length,
+            availableCount: tables.length - occupied.length,
             occupancyRate:
                 tables.length > 0
-                    ? Math.round((occupiedCount / tables.length) * 100)
+                    ? Math.round((occupied.length / tables.length) * 100)
                     : 0,
-            totalGuests,
-            activeWaitersCount: activeWaiterIds.size,
-            totalRunningBill,
+            totalGuests: occupied.reduce(
+                (sum, table) => sum + (table.guestCount ?? 0),
+                0,
+            ),
+            activeWaitersCount: waiters.size,
         };
-    }, [tables, sessions, items]);
+    }, [tables]);
 
-    // Filter tables
-    const filteredTables = useMemo(() => {
-        return tables.filter(table => {
-            const session = sessions.find(s => s.id === table.currentSessionId);
-            const isOcc = Boolean(session && table.status !== "available");
-
-            if (statusFilter === "occupied" && !isOcc) return false;
-            if (statusFilter === "available" && isOcc) return false;
-
-            if (waiterFilter !== "all") {
-                if (isOcc && session) {
-                    if (session.waiterId !== waiterFilter) return false;
-                } else {
-                    const assignedWaiter = staffMembers.find(
-                        s => s.assignedTableIds?.includes(table.id),
-                    );
-                    if (assignedWaiter?.id !== waiterFilter) return false;
-                }
+    const waiterOptions = useMemo(() => {
+        const map = new Map<string, string>();
+        for (const table of tables) {
+            if (table.assignedWaiterMembershipId && table.assignedWaiterName) {
+                map.set(
+                    table.assignedWaiterMembershipId,
+                    table.assignedWaiterName,
+                );
             }
+            if (table.primaryWaiterMembershipId && table.waiterName) {
+                map.set(table.primaryWaiterMembershipId, table.waiterName);
+            }
+        }
+        return [...map.entries()].map(([id, name]) => ({ id, name }));
+    }, [tables]);
 
-            return true;
-        });
-    }, [tables, sessions, statusFilter, waiterFilter, staffMembers]);
+    const filteredTables = tables.filter(table => {
+        const occupied = Boolean(table.tableSessionId);
+        if (statusFilter === "occupied" && !occupied) return false;
+        if (statusFilter === "available" && occupied) return false;
+        if (waiterFilter !== "all") {
+            return (
+                table.assignedWaiterMembershipId === waiterFilter ||
+                table.primaryWaiterMembershipId === waiterFilter
+            );
+        }
+        return true;
+    });
 
-    // Selected table's session and items
-    const selectedSession = selectedTable
-        ? sessions.find(s => s.id === selectedTable.currentSessionId) || null
-        : null;
-
-    const waiterStaffList = staffMembers.filter(
-        s => s.role === "waiter" || s.role === "manager",
-    );
+    if (isLoading) {
+        return <p className="text-slate-gray">Loading floor…</p>;
+    }
+    if (isError) {
+        return <p className="text-red-600">Could not load tables.</p>;
+    }
 
     return (
         <div className="space-y-6">
-            {/* 1. Floor Summary Cards */}
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <div className="rounded-[16px] border border-hairline bg-card p-4 transition-all hover:border-slate-300">
-                    <div className="flex items-center justify-between">
-                        <p className="text-[13px] font-medium text-slate-gray">
-                            Occupied Tables
-                        </p>
-                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                            {stats.occupancyRate}% Full
+                <div className="rounded-[16px] border border-hairline bg-card p-4">
+                    <p className="text-[13px] font-medium text-slate-gray">
+                        Occupied Tables
+                    </p>
+                    <p className="mt-2 text-[26px] font-semibold">
+                        {stats.occupiedCount}{" "}
+                        <span className="text-[16px] font-normal text-slate-gray">
+                            / {stats.total}
                         </span>
-                    </div>
-                    <p className="mt-2 text-[26px] font-semibold text-foreground">
-                        {stats.occupiedCount} <span className="text-[16px] font-normal text-slate-gray">/ {stats.total}</span>
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
-                        Active dining sessions
+                        {stats.occupancyRate}% full
                     </p>
                 </div>
-
-                <div className="rounded-[16px] border border-hairline bg-card p-4 transition-all hover:border-slate-300">
-                    <div className="flex items-center justify-between">
-                        <p className="text-[13px] font-medium text-slate-gray">
-                            Available Tables
-                        </p>
-                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
-                            Ready
-                        </span>
-                    </div>
-                    <p className="mt-2 text-[26px] font-semibold text-foreground">
+                <div className="rounded-[16px] border border-hairline bg-card p-4">
+                    <p className="text-[13px] font-medium text-slate-gray">
+                        Available Tables
+                    </p>
+                    <p className="mt-2 text-[26px] font-semibold">
                         {stats.availableCount}
                     </p>
-                    <p className="mt-1 text-[12px] text-slate-gray">
-                        Clean & ready for orders
-                    </p>
                 </div>
-
-                <div className="rounded-[16px] border border-hairline bg-card p-4 transition-all hover:border-slate-300">
+                <div className="rounded-[16px] border border-hairline bg-card p-4">
                     <div className="flex items-center justify-between">
                         <p className="text-[13px] font-medium text-slate-gray">
                             Waiters on Floor
                         </p>
                         <User className="size-4 text-slate-gray" />
                     </div>
-                    <p className="mt-2 text-[26px] font-semibold text-foreground">
-                        {stats.activeWaitersCount} <span className="text-[16px] font-normal text-slate-gray">Staff</span>
-                    </p>
-                    <p className="mt-1 text-[12px] text-slate-gray">
-                        Managing active tables
+                    <p className="mt-2 text-[26px] font-semibold">
+                        {stats.activeWaitersCount}
                     </p>
                 </div>
-
-                <div className="rounded-[16px] border border-hairline bg-card p-4 transition-all hover:border-slate-300">
-                    <div className="flex items-center justify-between">
-                        <p className="text-[13px] font-medium text-slate-gray">
-                            Running Floor Bill
-                        </p>
-                        <span className="size-2 rounded-full bg-primary animate-pulse" />
-                    </div>
+                <div className="rounded-[16px] border border-hairline bg-card p-4">
+                    <p className="text-[13px] font-medium text-slate-gray">
+                        Guests seated
+                    </p>
                     <p className="mt-2 text-[26px] font-semibold text-primary">
-                        {formatEtb(stats.totalRunningBill)}
+                        {stats.totalGuests}
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
-                        Active open tabs total
+                        Running tabs come with orders
                     </p>
                 </div>
             </div>
 
-            {/* 2. Interactive Filter & View Bar */}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-[16px] border border-hairline bg-card p-3">
-                {/* Status Filter Tabs */}
+            <div className="flex flex-col gap-3 rounded-[16px] border border-hairline bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-1.5 overflow-x-auto">
-                    <button
-                        type="button"
-                        onClick={() => setStatusFilter("all")}
-                        className={cn(
-                            "rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-all",
-                            statusFilter === "all"
-                                ? "bg-foreground text-background"
-                                : "text-slate-gray hover:bg-secondary hover:text-foreground",
-                        )}
-                    >
-                        All Tables ({stats.total})
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setStatusFilter("occupied")}
-                        className={cn(
-                            "rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-all flex items-center gap-1.5",
-                            statusFilter === "occupied"
-                                ? "bg-primary text-white"
-                                : "text-slate-gray hover:bg-secondary hover:text-foreground",
-                        )}
-                    >
-                        <span className="size-1.5 rounded-full bg-current" />
-                        Occupied ({stats.occupiedCount})
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setStatusFilter("available")}
-                        className={cn(
-                            "rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-all",
-                            statusFilter === "available"
-                                ? "bg-emerald-600 text-white"
-                                : "text-slate-gray hover:bg-secondary hover:text-foreground",
-                        )}
-                    >
-                        Available ({stats.availableCount})
-                    </button>
+                    {(
+                        [
+                            ["all", `All Tables (${stats.total})`],
+                            ["occupied", `Occupied (${stats.occupiedCount})`],
+                            ["available", `Available (${stats.availableCount})`],
+                        ] as const
+                    ).map(([id, label]) => (
+                        <button
+                            key={id}
+                            type="button"
+                            onClick={() => setStatusFilter(id)}
+                            className={cn(
+                                "rounded-full px-3.5 py-1.5 text-[12px] font-semibold",
+                                statusFilter === id
+                                    ? "bg-foreground text-background"
+                                    : "text-slate-gray hover:bg-secondary",
+                            )}
+                        >
+                            {label}
+                        </button>
+                    ))}
                 </div>
-
-                {/* Waiter Filter Dropdown */}
-                <div className="flex items-center gap-2">
-                    <span className="text-[12px] text-slate-gray hidden sm:inline">
-                        Filter Waiter:
-                    </span>
-                    <select
-                        value={waiterFilter}
-                        onChange={e => setWaiterFilter(e.target.value)}
-                        className="rounded-full border border-hairline bg-surface-ivory px-3 py-1.5 text-[12px] font-medium text-foreground outline-none focus:border-primary"
-                    >
-                        <option value="all">All Servers</option>
-                        {waiterStaffList.map(st => (
-                            <option key={st.id} value={st.id}>
-                                {st.name}
-                            </option>
-                        ))}
-                    </select>
-                </div>
+                <select
+                    value={waiterFilter}
+                    onChange={e => setWaiterFilter(e.target.value)}
+                    className="rounded-full border border-hairline bg-surface-ivory px-3 py-1.5 text-[12px] font-medium outline-none"
+                >
+                    <option value="all">All servers</option>
+                    {waiterOptions.map(waiter => (
+                        <option key={waiter.id} value={waiter.id}>
+                            {waiter.name}
+                        </option>
+                    ))}
+                </select>
             </div>
 
-            {/* 3. Table Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {filteredTables.map(table => {
-                    const session = sessions.find(
-                        s => s.id === table.currentSessionId,
-                    );
-                    const isOcc = Boolean(
-                        session && table.status !== "available",
-                    );
-                    const waiter = session
-                        ? staffMembers.find(p => p.id === session.waiterId)
-                        : staffMembers.find(p => p.assignedTableIds?.includes(table.id)) ?? null;
-
-                    const sessionItems = session
-                        ? items.filter(
-                              i =>
-                                  i.sessionId === session.id &&
-                                  i.status !== "draft",
-                          )
-                        : [];
-
-                    const tableBill = sessionItems.reduce(
-                        (sum, i) => sum + i.unitPrice * i.quantity,
-                        0,
-                    );
-
-                    const cookingCount = sessionItems.filter(
-                        i =>
-                            i.status === "queued" ||
-                            i.status === "acknowledged" ||
-                            i.status === "in_preparation",
-                    ).length;
-                    const readyCount = sessionItems.filter(
-                        i => i.status === "ready",
-                    ).length;
-                    const footerLeft = !isOcc
+            <FloorLocationSections
+                tables={filteredTables}
+                locations={locations}
+                renderTable={table => {
+                    const occupied = Boolean(table.tableSessionId);
+                    const footerLeft = !occupied
                         ? "Available"
-                        : readyCount > 0
-                          ? `${readyCount} ready`
-                          : cookingCount > 0
-                            ? `${cookingCount} cooking`
-                            : `${sessionItems.length} items ordered`;
+                        : table.readyItemCount > 0
+                          ? `${table.readyItemCount} ready`
+                          : table.cookingItemCount > 0
+                            ? `${table.cookingItemCount} cooking`
+                            : table.sessionStatus ?? "Open";
 
                     return (
                         <FloorTableCard
-                            key={table.id}
-                            tableNumber={table.number}
-                            seats={table.seats}
+                            key={table.tableId}
+                            tableNumber={tableNumber(table)}
+                            location={table.locationName}
                             badge={
-                                isOcc
+                                occupied
                                     ? { label: "Occupied", tone: "occupied" }
                                     : { label: "Available", tone: "available" }
                             }
                             waiter={
-                                isOcc
-                                    ? (waiter?.name ?? "Server")
-                                    : null
+                                occupied
+                                    ? table.waiterName
+                                    : table.assignedWaiterName
                             }
-                            note={isOcc ? null : "No server assigned"}
-                            total={isOcc ? formatEtb(tableBill) : null}
+                            note={
+                                occupied
+                                    ? null
+                                    : table.assignedWaiterName
+                                      ? `Assigned · ${table.assignedWaiterName}`
+                                      : "No waiter assigned"
+                            }
+                            total={null}
                             footerLeft={footerLeft}
                             footerAction="Inspect →"
                             onClick={() => setSelectedTable(table)}
                         />
                     );
-                })}
-            </div>
+                }}
+            />
 
-            {/* 4. Table Inspection Side Sheet */}
             <TableInspectionSheet
                 table={selectedTable}
-                session={selectedSession}
-                items={items}
                 isOpen={Boolean(selectedTable)}
                 onClose={() => setSelectedTable(null)}
             />

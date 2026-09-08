@@ -8,7 +8,7 @@ export default function CashierPaymentsPage() {
             <PageHeader
                 eyebrow="Floor"
                 title="Payments"
-                description="Waiter collections log. The bill total is already on the check — nothing to confirm."
+                description="Payments the waiter already collected. Cash stays with the waiter until cash drop — nothing to confirm."
             />
             <CashierPaymentsLog />
         </DashboardFrame>

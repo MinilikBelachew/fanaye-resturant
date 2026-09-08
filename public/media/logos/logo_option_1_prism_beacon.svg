@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="flameGrad" x1="20" y1="100" x2="100" y2="20" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#C2410C" />
+      <stop offset="50%" stop-color="#E85D04" />
+      <stop offset="100%" stop-color="#F59E0B" />
+    </linearGradient>
+    <linearGradient id="innerCore" x1="60" y1="40" x2="60" y2="85" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE68A" />
+      <stop offset="100%" stop-color="#EA580C" />
+    </linearGradient>
+  </defs>
+  <!-- Background rounded squircle container -->
+  <rect width="120" height="120" rx="32" fill="#121722" />
+  <rect x="1" y="1" width="118" height="118" rx="31" stroke="rgba(255,255,255,0.08)" stroke-width="2" />
+  
+  <!-- Outer faceted flame petal (Left) -->
+  <path d="M42 84C34 74 32 60 38 48C41 42 46 36 52 30C52 42 56 48 50 58C46 64 46 76 56 82C50 84 46 84 42 84Z" fill="url(#flameGrad)" opacity="0.85" />
+  
+  <!-- Outer faceted flame petal (Right) -->
+  <path d="M78 84C86 74 88 60 82 48C79 42 74 36 68 30C68 42 64 48 70 58C74 64 74 76 64 82C70 84 74 84 78 84Z" fill="url(#flameGrad)" opacity="0.85" />
+  
+  <!-- Center Main Luminous Lantern Core -->
+  <path d="M60 22C60 38 74 50 74 66C74 78 67 86 60 90C53 86 46 78 46 66C46 50 60 38 60 22Z" fill="url(#innerCore)" />
+  
+  <!-- Glowing Beacon Sync Pulse Node -->
+  <circle cx="60" cy="64" r="5" fill="#FFFFFF" />
+  <circle cx="60" cy="64" r="9" stroke="#10B981" stroke-width="2" stroke-dasharray="2 2" />
+</svg>

@@ -12,7 +12,9 @@ export interface MenuItem {
     expectedPreparationMinutes: number;
     available: boolean;
     image?: string;
+    imageFileId?: string;
     modifierGroups: ModifierGroup[];
+    version?: number;
 }
 
 const PIZZA_HOLD: ModifierGroup = {

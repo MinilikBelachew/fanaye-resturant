@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140" fill="none">
+  <defs>
+    <linearGradient id="timeGrad" x1="20" y1="20" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF5400" />
+      <stop offset="50%" stop-color="#FF9E00" />
+      <stop offset="100%" stop-color="#10B981" />
+    </linearGradient>
+    <linearGradient id="innerFlame1" x1="70" y1="40" x2="70" y2="95" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF" />
+      <stop offset="40%" stop-color="#FDE047" />
+      <stop offset="100%" stop-color="#EA580C" />
+    </linearGradient>
+  </defs>
+  <rect width="140" height="140" rx="36" fill="#0B0F19" />
+  <rect x="1" y="1" width="138" height="138" rx="35" stroke="rgba(255,255,255,0.08)" stroke-width="2" />
+  
+  <!-- Outer Synchronized Timeline Orbital Ring -->
+  <circle cx="70" cy="70" r="46" stroke="url(#timeGrad)" stroke-width="5" stroke-dasharray="190 35" stroke-linecap="round" />
+  
+  <!-- The 4 Station Timeline Checkpoints (Floor, Kitchen, Bar, Cashier) -->
+  <circle cx="70" cy="24" r="5.5" fill="#FF5400" />
+  <circle cx="116" cy="70" r="5.5" fill="#FF9E00" />
+  <circle cx="70" cy="116" r="5.5" fill="#10B981" />
+  <circle cx="24" cy="70" r="5.5" fill="#38BDF8" />
+
+  <!-- Center "One Live Timeline" Core Flame -->
+  <path d="M70 42C70 54 84 64 84 78C84 88 77 96 70 98C63 96 56 88 56 78C56 64 70 54 70 42Z" fill="url(#innerFlame1)" />
+  <circle cx="70" cy="76" r="3.5" fill="#0B0F19" />
+</svg>

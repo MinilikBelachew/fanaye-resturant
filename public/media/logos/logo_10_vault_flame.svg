@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="vaultGrad" x1="24" y1="24" x2="96" y2="96" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="32" fill="#064E3B" fill-opacity="0.25" />
+  <rect x="1" y="1" width="118" height="118" rx="31" stroke="#10B981" stroke-opacity="0.3" stroke-width="2" />
+  <!-- Security Vault Lock Ring -->
+  <circle cx="60" cy="60" r="34" stroke="url(#vaultGrad)" stroke-width="6" stroke-dasharray="12 4" />
+  <!-- Center Verified Flame -->
+  <path d="M60 36C60 48 72 56 72 68C72 76 66 82 60 84C54 82 48 76 48 68C48 56 60 48 60 36Z" fill="#F59E0B" />
+  <!-- Checkmark Badge -->
+  <path d="M54 62L58 66L68 56" stroke="#FFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

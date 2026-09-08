@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="hexGrad" x1="20" y1="20" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F97316" />
+      <stop offset="60%" stop-color="#E85D04" />
+      <stop offset="100%" stop-color="#7C3AED" />
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="32" fill="#111827" />
+  <rect x="1" y="1" width="118" height="118" rx="31" stroke="rgba(255,255,255,0.08)" stroke-width="2" />
+  <!-- Isometric Hexagon Node -->
+  <polygon points="60,22 94,41 94,79 60,98 26,79 26,41" stroke="url(#hexGrad)" stroke-width="5" stroke-linejoin="round" fill="none" />
+  <!-- 3 Isometric Internal Tri-Beams (Kitchen, POS, Cashier) -->
+  <line x1="60" y1="60" x2="60" y2="22" stroke="url(#hexGrad)" stroke-width="4" stroke-linecap="round" />
+  <line x1="60" y1="60" x2="94" y2="79" stroke="url(#hexGrad)" stroke-width="4" stroke-linecap="round" />
+  <line x1="60" y1="60" x2="26" y2="79" stroke="url(#hexGrad)" stroke-width="4" stroke-linecap="round" />
+  <circle cx="60" cy="60" r="5" fill="#FFF" />
+</svg>

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140" fill="none">
+  <defs>
+    <linearGradient id="prismGrad" x1="20" y1="20" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF6B00" />
+      <stop offset="30%" stop-color="#F59E0B" />
+      <stop offset="70%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#10B981" />
+    </linearGradient>
+  </defs>
+  <rect width="140" height="140" rx="36" fill="#111827" />
+  <rect x="1" y="1" width="138" height="138" rx="35" stroke="rgba(255,255,255,0.08)" stroke-width="2" />
+
+  <!-- 4-Quadrant Station Dispatch Cross (Kitchen, Barista, Pastry, Soft Drinks) -->
+  <!-- Station 1: Kitchen (Top-Left) -->
+  <path d="M42 36H62V56H36C36 44.9543 44.9543 36 42 36Z" fill="#E85D04" rx="8" />
+  <!-- Station 2: Barista (Top-Right) -->
+  <path d="M78 36H98C101 36 104 44.9543 104 56H78V36Z" fill="#F59E0B" rx="8" />
+  <!-- Station 3: Bakery & Pastry (Bottom-Left) -->
+  <path d="M36 84H62V104H42C44.9543 104 36 95.0457 36 84Z" fill="#8B5CF6" rx="8" />
+  <!-- Station 4: Soft Drinks & Cashier (Bottom-Right) -->
+  <path d="M78 84H104C104 95.0457 95.0457 104 84 104H78V84Z" fill="#10B981" rx="8" />
+
+  <!-- Center Sub-Second Neural Router Node -->
+  <circle cx="70" cy="70" r="14" fill="#0B0F19" stroke="url(#prismGrad)" stroke-width="3" />
+  <circle cx="70" cy="70" r="6" fill="#FFF" />
+</svg>
