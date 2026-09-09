@@ -2,8 +2,33 @@ import type {
     AdminShiftDefinition,
     AdminShiftFloorResponse,
     AdminStaffListResponse,
+    AdminStaffMember,
 } from "@/domains/identity/domain/staffApi";
 import { api } from "./index";
+
+export type CreateAdminStaffBody = {
+    name: string;
+    role: string;
+    phone?: string;
+    email?: string;
+    pin?: string;
+    active?: boolean;
+    stationCode?: string;
+    preparationStationId?: string;
+    shiftDefinitionId?: string;
+    tableIds?: string[];
+};
+
+export type UpdateAdminStaffBody = {
+    name?: string;
+    role?: string;
+    phone?: string;
+    email?: string;
+    pin?: string;
+    active?: boolean;
+    stationCode?: string;
+    preparationStationId?: string;
+};
 
 export const staffApi = api.injectEndpoints({
     endpoints: builder => ({
@@ -20,6 +45,28 @@ export const staffApi = api.injectEndpoints({
                 method: "GET",
             }),
             providesTags: ["Floor"],
+        }),
+        createAdminStaff: builder.mutation<
+            { data: AdminStaffMember },
+            CreateAdminStaffBody
+        >({
+            query: body => ({
+                url: "/admin/staff",
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: ["Floor"],
+        }),
+        updateAdminStaff: builder.mutation<
+            { data: AdminStaffMember },
+            { membershipId: string; body: UpdateAdminStaffBody }
+        >({
+            query: ({ membershipId, body }) => ({
+                url: `/admin/staff/${membershipId}`,
+                method: "PATCH",
+                body,
+            }),
+            invalidatesTags: ["Floor"],
         }),
         createShiftDefinition: builder.mutation<
             { data: AdminShiftDefinition },
@@ -80,6 +127,8 @@ export const staffApi = api.injectEndpoints({
 export const {
     useAdminStaffQuery,
     useAdminShiftFloorQuery,
+    useCreateAdminStaffMutation,
+    useUpdateAdminStaffMutation,
     useCreateShiftDefinitionMutation,
     useUpdateShiftDefinitionMutation,
     useSetWaiterTableCoverageMutation,

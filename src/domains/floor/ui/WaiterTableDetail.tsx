@@ -22,6 +22,7 @@ import WaiterPaymentPanel from "@/domains/payments/ui/WaiterPaymentPanel";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { formatEtb } from "@/lib/money";
+import { toast } from "@/lib/toast";
 
 const ORDERABLE = new Set(["OPEN", "ACTIVE_ORDER", "ATTENTION_REQUIRED"]);
 const REQUESTABLE = new Set(["OPEN", "ACTIVE_ORDER", "ATTENTION_REQUIRED"]);
@@ -82,13 +83,19 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
     async function takeTable() {
         setError("");
         if (!clockedIn) {
-            setError("Clock in before taking a table.");
+            const message = "Clock in before taking a table.";
+            setError(message);
+            toast.error(message);
             return;
         }
         try {
             await startSession({ tableId }).unwrap();
-        } catch {
-            setError("Could not take this table. It may already be occupied.");
+            toast.success("Table taken");
+        } catch (err) {
+            const message =
+                "Could not take this table. It may already be occupied.";
+            setError(message);
+            toast.fromUnknown(err, message);
         }
     }
 
@@ -100,17 +107,21 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                 tableSessionId: table.tableSessionId,
                 expectedVersion: sessionVersion,
             }).unwrap();
+            toast.success("Table closed");
         } catch (err) {
             if (err && typeof err === "object" && "data" in err) {
                 const code = (err as { data?: { code?: string } }).data?.code;
                 if (code === "TABLE_CLOSE_BLOCKED") {
-                    setError(
-                        "This table still has an order. Finish payment before closing.",
-                    );
+                    const message =
+                        "This table still has an order. Finish payment before closing.";
+                    setError(message);
+                    toast.error(message);
                     return;
                 }
             }
-            setError("Could not close this table.");
+            const message = "Could not close this table.";
+            setError(message);
+            toast.fromUnknown(err, message);
         }
     }
 
@@ -122,8 +133,11 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                 tableSessionId: table.tableSessionId,
                 expectedTableSessionVersion: sessionVersion,
             }).unwrap();
-        } catch {
-            setError("Could not request the bill. Refresh and try again.");
+            toast.success("Bill requested", "Cashier has been notified.");
+        } catch (err) {
+            const message = "Could not request the bill. Refresh and try again.";
+            setError(message);
+            toast.fromUnknown(err, message);
         }
     }
 
@@ -135,8 +149,11 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                 billRequestId: pendingRequest.billRequestId,
                 tableSessionId: table.tableSessionId,
             }).unwrap();
-        } catch {
-            setError("Could not resume ordering.");
+            toast.success("Ordering resumed");
+        } catch (err) {
+            const message = "Could not resume ordering.";
+            setError(message);
+            toast.fromUnknown(err, message);
         }
     }
 

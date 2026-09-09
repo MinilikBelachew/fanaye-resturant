@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
+import { toast } from "@/lib/toast";
 
 export default function ManagerApprovalsPage() {
     const { data, isLoading, isError } = useOrderMutationApprovalsQuery(
@@ -22,6 +23,50 @@ export default function ManagerApprovalsPage() {
     const [approveChange] = useApproveChangeRequestMutation();
     const [rejectChange] = useRejectChangeRequestMutation();
     const rows = data?.data ?? [];
+
+    async function decide(
+        row: (typeof rows)[number],
+        decision: "approve" | "reject",
+    ) {
+        try {
+            if (row.type === "CANCELLATION") {
+                if (decision === "approve") {
+                    await approveCancel({
+                        requestId: row.requestId,
+                        expectedOrderItemVersion: row.itemVersion,
+                    }).unwrap();
+                } else {
+                    await rejectCancel({
+                        requestId: row.requestId,
+                        expectedOrderItemVersion: row.itemVersion,
+                        decisionReason: "Rejected",
+                    }).unwrap();
+                }
+            } else if (decision === "approve") {
+                await approveChange({
+                    requestId: row.requestId,
+                    expectedOrderItemVersion: row.itemVersion,
+                }).unwrap();
+            } else {
+                await rejectChange({
+                    requestId: row.requestId,
+                    expectedOrderItemVersion: row.itemVersion,
+                    decisionReason: "Rejected",
+                }).unwrap();
+            }
+            toast.success(
+                decision === "approve" ? "Request approved" : "Request rejected",
+                row.itemName,
+            );
+        } catch (err) {
+            toast.fromUnknown(
+                err,
+                decision === "approve"
+                    ? "Could not approve this request."
+                    : "Could not reject this request.",
+            );
+        }
+    }
 
     return (
         <DashboardFrame>
@@ -47,7 +92,9 @@ export default function ManagerApprovalsPage() {
                 {rows.map(row => {
                     const changeSummary = row.requestedChange
                         ? Object.entries(row.requestedChange)
-                              .filter(([, value]) => value != null && value !== "")
+                              .filter(
+                                  ([, value]) => value != null && value !== "",
+                              )
                               .map(([key, value]) => `${key}: ${String(value)}`)
                               .join(" · ")
                         : null;
@@ -60,7 +107,8 @@ export default function ManagerApprovalsPage() {
                             <div className="flex flex-wrap items-start justify-between gap-3">
                                 <div>
                                     <p className="text-[13px] text-slate-gray">
-                                        {row.tableDisplayName} · {row.stationName}
+                                        {row.tableDisplayName} ·{" "}
+                                        {row.stationName}
                                     </p>
                                     <h2 className="text-[18px] font-semibold">
                                         {row.type === "CANCELLATION"
@@ -87,43 +135,13 @@ export default function ManagerApprovalsPage() {
                             </div>
                             <div className="mt-4 flex gap-2">
                                 <Button
-                                    onClick={() => {
-                                        if (row.type === "CANCELLATION") {
-                                            void approveCancel({
-                                                requestId: row.requestId,
-                                                expectedOrderItemVersion:
-                                                    row.itemVersion,
-                                            });
-                                        } else {
-                                            void approveChange({
-                                                requestId: row.requestId,
-                                                expectedOrderItemVersion:
-                                                    row.itemVersion,
-                                            });
-                                        }
-                                    }}
+                                    onClick={() => void decide(row, "approve")}
                                 >
                                     Approve
                                 </Button>
                                 <Button
                                     variant="outline"
-                                    onClick={() => {
-                                        if (row.type === "CANCELLATION") {
-                                            void rejectCancel({
-                                                requestId: row.requestId,
-                                                expectedOrderItemVersion:
-                                                    row.itemVersion,
-                                                decisionReason: "Rejected",
-                                            });
-                                        } else {
-                                            void rejectChange({
-                                                requestId: row.requestId,
-                                                expectedOrderItemVersion:
-                                                    row.itemVersion,
-                                                decisionReason: "Rejected",
-                                            });
-                                        }
-                                    }}
+                                    onClick={() => void decide(row, "reject")}
                                 >
                                     Reject
                                 </Button>

@@ -12,6 +12,7 @@ import FloorLocationSections from "@/domains/floor/ui/FloorLocationSections";
 import FloorTableCard from "@/domains/floor/ui/FloorTableCard";
 import { tableNumber } from "@/domains/floor/application/groupFloor";
 import { formatEtb } from "@/lib/money";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 export default function WaiterTablesBoard({
@@ -42,14 +43,19 @@ export default function WaiterTablesBoard({
         setError("");
         if (!occupied) {
             if (!clockedIn) {
-                setError("Clock in before taking a table.");
+                const message = "Clock in before taking a table.";
+                setError(message);
+                toast.error(message);
                 return;
             }
             setBusyId(tableId);
             try {
                 await startSession({ tableId }).unwrap();
+                toast.success("Table opened");
             } catch (err) {
-                setError(floorActionError(err));
+                const message = floorActionError(err);
+                setError(message);
+                toast.error(message);
                 setBusyId(null);
                 return;
             }

@@ -8,11 +8,14 @@ import {
     ClipboardCheck,
     Clock3,
     CreditCard,
+    Flag,
     Flame,
+    Globe,
     Inbox,
     LayoutDashboard,
     LayoutGrid,
     LifeBuoy,
+    Radio,
     ScrollText,
     Settings,
     Store,
@@ -94,6 +97,11 @@ export function navForRole(role: Role): NavSection[] {
                             label: "Dashboard",
                             icon: LayoutDashboard,
                         },
+                        {
+                            href: "/super-admin/live-ops",
+                            label: "Live Ops",
+                            icon: Radio,
+                        },
                     ],
                 },
                 {
@@ -105,25 +113,20 @@ export function navForRole(role: Role): NavSection[] {
                             icon: Building2,
                         },
                         {
-                            href: "/super-admin/plans",
-                            label: "Plans",
-                            icon: CreditCard,
+                            href: "/super-admin/staff",
+                            label: "Staff Directory",
+                            icon: Users,
                         },
                         {
-                            href: "/super-admin/usage",
-                            label: "Usage",
-                            icon: Activity,
+                            href: "/super-admin/flags",
+                            label: "Feature Flags",
+                            icon: Flag,
                         },
                     ],
                 },
                 {
                     title: "Trust",
                     items: [
-                        {
-                            href: "/super-admin/support",
-                            label: "Support",
-                            icon: LifeBuoy,
-                        },
                         {
                             href: "/super-admin/audit",
                             label: "Platform Audit",
@@ -167,6 +170,11 @@ export function navForRole(role: Role): NavSection[] {
                             label: "Settings",
                             icon: Settings,
                         },
+                        {
+                            href: "/owner/website",
+                            label: "Website",
+                            icon: Globe,
+                        },
                     ],
                 },
             ];
@@ -209,6 +217,11 @@ export function navForRole(role: Role): NavSection[] {
                             href: "/manager/staff",
                             label: "Staff",
                             icon: Users,
+                        },
+                        {
+                            href: "/manager/website",
+                            label: "Website",
+                            icon: Globe,
                         },
                     ],
                 },

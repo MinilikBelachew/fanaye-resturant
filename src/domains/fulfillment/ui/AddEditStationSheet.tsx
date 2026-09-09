@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Flame, Printer, Trash2, X } from "lucide-react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useForm } from "react-hook-form";
+import { Check, Printer, Trash2, X } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/context/hooks";
 import {
     addStation,
@@ -10,7 +12,21 @@ import {
     updateStation,
 } from "@/context/slices/stationSlice";
 import type { PreparationStation } from "@/domains/fulfillment/domain/station";
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/components/ui/form";
 import { createId } from "@/lib/ids";
+import { toast } from "@/lib/toast";
+import {
+    stationFormDefaults,
+    stationFormSchema,
+    type StationFormValues,
+} from "@/lib/validators/station";
 import { cn } from "@/lib/utils";
 
 const PRESET_COLORS = [
@@ -36,37 +52,33 @@ export default function AddEditStationSheet() {
     const dispatch = useAppDispatch();
     const isOpen = useAppSelector(state => state.station.isSheetOpen);
     const editingStation = useAppSelector(state => state.station.editingStation);
-
-    const [name, setName] = useState("");
-    const [description, setDescription] = useState("");
-    const [category, setCategory] = useState("Hot Food");
-    const [color, setColor] = useState("#e85d04");
-    const [avgPrepMin, setAvgPrepMin] = useState<number>(10);
-    const [printerIp, setPrinterIp] = useState("192.168.1.105");
-    const [enabled, setEnabled] = useState(true);
     const [confirmDelete, setConfirmDelete] = useState(false);
 
+    const form = useForm<StationFormValues>({
+        resolver: zodResolver(stationFormSchema),
+        defaultValues: stationFormDefaults,
+    });
+
+    const color = form.watch("color");
+    const category = form.watch("category");
+
     useEffect(() => {
+        if (!isOpen) return;
+        setConfirmDelete(false);
         if (editingStation) {
-            setName(editingStation.name || "");
-            setDescription(editingStation.description || "");
-            setCategory(editingStation.category || "Hot Food");
-            setColor(editingStation.color || "#e85d04");
-            setAvgPrepMin(editingStation.avgPrepMin ?? 10);
-            setPrinterIp(editingStation.printerIp || "192.168.1.105");
-            setEnabled(editingStation.enabled ?? true);
-            setConfirmDelete(false);
+            form.reset({
+                name: editingStation.name || "",
+                description: editingStation.description || "",
+                category: editingStation.category || "Hot Food",
+                color: editingStation.color || "#e85d04",
+                avgPrepMin: editingStation.avgPrepMin ?? 10,
+                printerIp: editingStation.printerIp || "192.168.1.105",
+                enabled: editingStation.enabled ?? true,
+            });
         } else {
-            setName("");
-            setDescription("");
-            setCategory("Hot Food");
-            setColor("#e85d04");
-            setAvgPrepMin(10);
-            setPrinterIp("192.168.1.105");
-            setEnabled(true);
-            setConfirmDelete(false);
+            form.reset(stationFormDefaults);
         }
-    }, [editingStation, isOpen]);
+    }, [editingStation, isOpen, form]);
 
     if (!isOpen) return null;
 
@@ -74,37 +86,36 @@ export default function AddEditStationSheet() {
         dispatch(closeStationSheet());
     }
 
-    function handleSave(e: React.FormEvent) {
-        e.preventDefault();
-        if (!name.trim()) return;
-
+    function onSubmit(values: StationFormValues) {
         if (editingStation) {
             const updated: PreparationStation = {
                 ...editingStation,
-                name: name.trim(),
-                description: description.trim(),
-                category: category.trim(),
-                color,
-                avgPrepMin: Math.max(1, avgPrepMin || 5),
-                printerIp: printerIp.trim(),
-                enabled,
+                name: values.name,
+                description: values.description || "",
+                category: values.category,
+                color: values.color,
+                avgPrepMin: values.avgPrepMin,
+                printerIp: values.printerIp || "",
+                enabled: values.enabled,
             };
             dispatch(updateStation(updated));
+            toast.success("Station updated", values.name);
         } else {
             const newStation: PreparationStation = {
                 id: createId("station"),
-                name: name.trim(),
+                name: values.name,
                 description:
-                    description.trim() ||
-                    `Handles orders routed to ${name.trim()}.`,
-                category: category.trim() || "Kitchen",
-                color,
-                avgPrepMin: Math.max(1, avgPrepMin || 5),
-                printerIp: printerIp.trim() || "192.168.1.100",
-                enabled,
+                    values.description ||
+                    `Handles orders routed to ${values.name}.`,
+                category: values.category || "Kitchen",
+                color: values.color,
+                avgPrepMin: values.avgPrepMin,
+                printerIp: values.printerIp || "192.168.1.100",
+                enabled: values.enabled,
                 ticketCount: 0,
             };
             dispatch(addStation(newStation));
+            toast.success("Station created", values.name);
         }
         handleClose();
     }
@@ -116,17 +127,15 @@ export default function AddEditStationSheet() {
             return;
         }
         dispatch(deleteStation(editingStation.id));
+        toast.success("Station removed", editingStation.name);
         handleClose();
     }
 
     return (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs transition-opacity animate-in fade-in duration-200">
-            {/* Click outside to close */}
             <div className="flex-1" onClick={handleClose} aria-hidden="true" />
 
-            {/* Slide-over panel */}
             <div className="relative flex h-full w-full max-w-lg flex-col border-l border-hairline bg-card shadow-2xl animate-in slide-in-from-right duration-200">
-                {/* Header */}
                 <div className="flex shrink-0 items-center justify-between border-b border-hairline bg-surface-ivory px-6 py-4">
                     <div className="flex items-center gap-2.5">
                         <span
@@ -135,10 +144,13 @@ export default function AddEditStationSheet() {
                         />
                         <div>
                             <h2 className="text-[17px] font-semibold text-foreground">
-                                {editingStation ? "Edit Station" : "Add New Station"}
+                                {editingStation
+                                    ? "Edit Station"
+                                    : "Add New Station"}
                             </h2>
                             <p className="text-[12px] text-slate-gray">
-                                Configure order routing, thermal printer & queue parameters.
+                                Configure order routing, thermal printer & queue
+                                parameters.
                             </p>
                         </div>
                     </div>
@@ -152,161 +164,229 @@ export default function AddEditStationSheet() {
                     </button>
                 </div>
 
-                {/* Form Body */}
-                <form
-                    id="station-form"
-                    onSubmit={handleSave}
-                    className="flex-1 overflow-y-auto p-6 space-y-6"
-                >
-                    {/* Station Name */}
-                    <div className="space-y-1.5">
-                        <label className="text-[13px] font-medium text-foreground">
-                            Station Name <span className="text-destructive">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            required
-                            placeholder="e.g. Grill & BBQ, Mocktail Bar, Bakery Lab"
-                            value={name}
-                            onChange={e => setName(e.target.value)}
-                            className="w-full rounded-xl border border-hairline bg-background px-3.5 py-2.5 text-[14px] text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary"
-                        />
-                    </div>
-
-                    {/* Category Selector */}
-                    <div className="space-y-2">
-                        <label className="text-[13px] font-medium text-foreground">
-                            Category / Station Type
-                        </label>
-                        <div className="flex flex-wrap gap-1.5">
-                            {PRESET_CATEGORIES.map(cat => (
-                                <button
-                                    key={cat}
-                                    type="button"
-                                    onClick={() => setCategory(cat)}
-                                    className={cn(
-                                        "rounded-full px-3 py-1 text-[12px] font-medium transition-all",
-                                        category === cat
-                                            ? "bg-foreground text-background"
-                                            : "border border-hairline bg-secondary/60 text-slate-gray hover:text-foreground",
-                                    )}
-                                >
-                                    {cat}
-                                </button>
-                            ))}
-                        </div>
-                        <input
-                            type="text"
-                            placeholder="Or type custom category..."
-                            value={category}
-                            onChange={e => setCategory(e.target.value)}
-                            className="mt-1 w-full rounded-xl border border-hairline bg-background px-3.5 py-2 text-[13px] text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary"
-                        />
-                    </div>
-
-                    {/* Color Swatch Picker */}
-                    <div className="space-y-2">
-                        <label className="text-[13px] font-medium text-foreground">
-                            Station Tag Color
-                        </label>
-                        <div className="flex items-center gap-2.5">
-                            {PRESET_COLORS.map(c => (
-                                <button
-                                    key={c.hex}
-                                    type="button"
-                                    onClick={() => setColor(c.hex)}
-                                    title={c.label}
-                                    className="relative flex size-7 items-center justify-center rounded-full transition-transform hover:scale-110 active:scale-95"
-                                    style={{ backgroundColor: c.hex }}
-                                >
-                                    {color === c.hex ? (
-                                        <Check className="size-3.5 text-white stroke-[3]" />
-                                    ) : null}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Description */}
-                    <div className="space-y-1.5">
-                        <label className="text-[13px] font-medium text-foreground">
-                            Description & Routing Guidelines
-                        </label>
-                        <textarea
-                            rows={3}
-                            placeholder="Describe what dishes are routed here and special preparation notes..."
-                            value={description}
-                            onChange={e => setDescription(e.target.value)}
-                            className="w-full resize-none rounded-xl border border-hairline bg-background p-3 text-[13px] text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary"
-                        />
-                    </div>
-
-                    {/* Grid: Prep Time & Printer IP */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                            <label className="text-[13px] font-medium text-foreground">
-                                Target Prep Time (min)
-                            </label>
-                            <input
-                                type="number"
-                                min={1}
-                                max={120}
-                                value={avgPrepMin}
-                                onChange={e =>
-                                    setAvgPrepMin(Number(e.target.value) || 1)
-                                }
-                                className="w-full rounded-xl border border-hairline bg-background px-3.5 py-2.5 text-[14px] text-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
-                            />
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <label className="text-[13px] font-medium text-foreground">
-                                Thermal Printer IP / Port
-                            </label>
-                            <div className="relative">
-                                <Printer className="absolute left-3 top-3 size-4 text-slate-gray" />
-                                <input
-                                    type="text"
-                                    placeholder="192.168.1.105"
-                                    value={printerIp}
-                                    onChange={e => setPrinterIp(e.target.value)}
-                                    className="w-full rounded-xl border border-hairline bg-background pl-9 pr-3.5 py-2.5 text-[14px] text-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Enable Station Switch */}
-                    <div className="flex items-center justify-between rounded-xl border border-hairline bg-surface-ivory p-4">
-                        <div>
-                            <p className="text-[14px] font-medium text-foreground">
-                                Station Active & Receiving Orders
-                            </p>
-                            <p className="text-[12px] text-slate-gray">
-                                When active, waiters can route ordered items to this queue.
-                            </p>
-                        </div>
-                        <button
-                            type="button"
-                            role="switch"
-                            aria-checked={enabled}
-                            onClick={() => setEnabled(!enabled)}
-                            className={cn(
-                                "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-                                enabled ? "bg-primary" : "bg-zinc-300",
+                <Form {...form}>
+                    <form
+                        id="station-form"
+                        onSubmit={form.handleSubmit(onSubmit)}
+                        className="flex-1 space-y-6 overflow-y-auto p-6"
+                    >
+                        <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>
+                                        Station Name{" "}
+                                        <span className="text-destructive">
+                                            *
+                                        </span>
+                                    </FormLabel>
+                                    <FormControl>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. Grill & BBQ, Mocktail Bar, Bakery Lab"
+                                            className="w-full rounded-xl border border-hairline bg-background px-3.5 py-2.5 text-[14px] text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
                             )}
-                        >
-                            <span
-                                className={cn(
-                                    "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out",
-                                    enabled ? "translate-x-5" : "translate-x-0",
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="category"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>
+                                        Category / Station Type
+                                    </FormLabel>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {PRESET_CATEGORIES.map(cat => (
+                                            <button
+                                                key={cat}
+                                                type="button"
+                                                onClick={() =>
+                                                    field.onChange(cat)
+                                                }
+                                                className={cn(
+                                                    "rounded-full px-3 py-1 text-[12px] font-medium transition-all",
+                                                    category === cat
+                                                        ? "bg-foreground text-background"
+                                                        : "border border-hairline bg-secondary/60 text-slate-gray hover:text-foreground",
+                                                )}
+                                            >
+                                                {cat}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <FormControl>
+                                        <input
+                                            type="text"
+                                            placeholder="Or type custom category..."
+                                            className="mt-1 w-full rounded-xl border border-hairline bg-background px-3.5 py-2 text-[13px] text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <Controller
+                            control={form.control}
+                            name="color"
+                            render={({ field }) => (
+                                <div className="space-y-2">
+                                    <label className="text-[13px] font-medium text-foreground">
+                                        Station Tag Color
+                                    </label>
+                                    <div className="flex items-center gap-2.5">
+                                        {PRESET_COLORS.map(c => (
+                                            <button
+                                                key={c.hex}
+                                                type="button"
+                                                onClick={() =>
+                                                    field.onChange(c.hex)
+                                                }
+                                                title={c.label}
+                                                className="relative flex size-7 items-center justify-center rounded-full transition-transform hover:scale-110 active:scale-95"
+                                                style={{
+                                                    backgroundColor: c.hex,
+                                                }}
+                                            >
+                                                {field.value === c.hex ? (
+                                                    <Check className="size-3.5 text-white stroke-[3]" />
+                                                ) : null}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="description"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>
+                                        Description & Routing Guidelines
+                                    </FormLabel>
+                                    <FormControl>
+                                        <textarea
+                                            rows={3}
+                                            placeholder="Describe what dishes are routed here and special preparation notes..."
+                                            className="w-full resize-none rounded-xl border border-hairline bg-background p-3 text-[13px] text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="avgPrepMin"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>
+                                            Target Prep Time (min)
+                                        </FormLabel>
+                                        <FormControl>
+                                            <input
+                                                type="number"
+                                                min={1}
+                                                max={120}
+                                                className="w-full rounded-xl border border-hairline bg-background px-3.5 py-2.5 text-[14px] text-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
+                                                value={field.value}
+                                                onChange={e =>
+                                                    field.onChange(
+                                                        Number(e.target.value) ||
+                                                            1,
+                                                    )
+                                                }
+                                                onBlur={field.onBlur}
+                                                name={field.name}
+                                                ref={field.ref}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
                                 )}
                             />
-                        </button>
-                    </div>
-                </form>
 
-                {/* Footer Actions */}
+                            <FormField
+                                control={form.control}
+                                name="printerIp"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>
+                                            Thermal Printer IP / Port
+                                        </FormLabel>
+                                        <div className="relative">
+                                            <Printer className="absolute top-3 left-3 size-4 text-slate-gray" />
+                                            <FormControl>
+                                                <input
+                                                    type="text"
+                                                    placeholder="192.168.1.105"
+                                                    className="w-full rounded-xl border border-hairline bg-background py-2.5 pr-3.5 pl-9 text-[14px] text-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                        </div>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        <Controller
+                            control={form.control}
+                            name="enabled"
+                            render={({ field }) => (
+                                <div className="flex items-center justify-between rounded-xl border border-hairline bg-surface-ivory p-4">
+                                    <div>
+                                        <p className="text-[14px] font-medium text-foreground">
+                                            Station Active & Receiving Orders
+                                        </p>
+                                        <p className="text-[12px] text-slate-gray">
+                                            When active, waiters can route
+                                            ordered items to this queue.
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        role="switch"
+                                        aria-checked={field.value}
+                                        onClick={() =>
+                                            field.onChange(!field.value)
+                                        }
+                                        className={cn(
+                                            "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                                            field.value
+                                                ? "bg-primary"
+                                                : "bg-zinc-300",
+                                        )}
+                                    >
+                                        <span
+                                            className={cn(
+                                                "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out",
+                                                field.value
+                                                    ? "translate-x-5"
+                                                    : "translate-x-0",
+                                            )}
+                                        />
+                                    </button>
+                                </div>
+                            )}
+                        />
+                    </form>
+                </Form>
+
                 <div className="flex shrink-0 items-center justify-between border-t border-hairline bg-surface-ivory px-6 py-4">
                     {editingStation ? (
                         <button
@@ -320,7 +400,11 @@ export default function AddEditStationSheet() {
                             )}
                         >
                             <Trash2 className="size-4" />
-                            <span>{confirmDelete ? "Confirm Delete?" : "Delete"}</span>
+                            <span>
+                                {confirmDelete
+                                    ? "Confirm Delete?"
+                                    : "Delete"}
+                            </span>
                         </button>
                     ) : (
                         <div />
@@ -330,16 +414,18 @@ export default function AddEditStationSheet() {
                         <button
                             type="button"
                             onClick={handleClose}
-                            className="rounded-full border border-hairline bg-card px-4 py-2 text-[13px] font-medium text-foreground hover:bg-secondary transition-colors"
+                            className="rounded-full border border-hairline bg-card px-4 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-secondary"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             form="station-form"
-                            className="rounded-full bg-primary px-5 py-2 text-[13px] font-semibold text-primary-foreground hover:bg-primary-deep transition-colors"
+                            className="rounded-full bg-primary px-5 py-2 text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-primary-deep"
                         >
-                            {editingStation ? "Save Changes" : "Create Station"}
+                            {editingStation
+                                ? "Save Changes"
+                                : "Create Station"}
                         </button>
                     </div>
                 </div>

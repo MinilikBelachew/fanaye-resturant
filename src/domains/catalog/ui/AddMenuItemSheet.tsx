@@ -37,6 +37,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { createId } from "@/lib/ids";
 import { formatEtb } from "@/lib/money";
+import { toast } from "@/lib/toast";
+import { menuItemFormSchema } from "@/lib/validators/catalog";
 import { cn } from "@/lib/utils";
 
 interface AddMenuItemSheetProps {
@@ -297,29 +299,52 @@ export default function AddMenuItemSheet({
                 `Mark "${initialItem.name}" sold out / remove from floor?`,
             )
         ) {
-            void markSoldOut({ id: initialItem.id }).then(() => onClose());
+            void markSoldOut({ id: initialItem.id })
+                .then(() => {
+                    toast.success("Item marked sold out", initialItem.name);
+                    onClose();
+                })
+                .catch(err =>
+                    toast.fromUnknown(err, "Could not update menu item."),
+                );
         }
     }
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        if (!name.trim() || !stationId) return;
+        const parsed = menuItemFormSchema.safeParse({
+            name,
+            description,
+            price,
+            stationId,
+            category,
+            expectedPrepMinutes,
+            available,
+        });
+        if (!parsed.success) {
+            const message =
+                parsed.error.issues[0]?.message || "Check the form fields.";
+            setSubmitError(message);
+            toast.error("Validation failed", message);
+            return;
+        }
         setSubmitError("");
 
-        const finalPrice = Math.max(0, Number(price) || 0).toFixed(2);
+        const values = parsed.data;
+        const finalPrice = Math.max(0, Number(values.price) || 0).toFixed(2);
         const body = {
-            name: name.trim(),
+            name: values.name,
             description:
-                description.trim() ||
-                `${name.trim()} prepared fresh to order.`,
+                values.description ||
+                `${values.name} prepared fresh to order.`,
             price: finalPrice,
-            preparationStationId: stationId,
+            preparationStationId: values.stationId,
             categoryName:
-                category.trim() ||
-                stations.find(s => s.id === stationId)?.name ||
+                values.category ||
+                stations.find(s => s.id === values.stationId)?.name ||
                 "Kitchen",
-            expectedPrepMinutes: Math.max(1, expectedPrepMinutes || 5),
-            available,
+            expectedPrepMinutes: values.expectedPrepMinutes,
+            available: values.available,
             ...(imageFileId
                 ? { imageFileId }
                 : initialItem && !uploadPreviewUrl
@@ -338,14 +363,17 @@ export default function AddMenuItemSheet({
                         expectedVersion: initialItem.version,
                     },
                 }).unwrap();
+                toast.success("Menu item updated", values.name);
             } else {
                 await createItem(body).unwrap();
+                toast.success("Menu item created", values.name);
             }
             onClose();
-        } catch {
-            setSubmitError(
-                "Could not save menu item. Check the API is running and you are signed in as manager.",
-            );
+        } catch (err) {
+            const message =
+                "Could not save menu item. Check the API is running and you are signed in as manager.";
+            setSubmitError(message);
+            toast.fromUnknown(err, message);
         }
     }
 
@@ -365,8 +393,10 @@ export default function AddMenuItemSheet({
                 filePublicUrl(uploaded.file.path) ||
                     URL.createObjectURL(file),
             );
-        } catch {
+            toast.success("Image uploaded");
+        } catch (err) {
             setSubmitError("Could not upload image. Use JPG or PNG.");
+            toast.fromUnknown(err, "Could not upload image. Use JPG or PNG.");
         }
     }
 

@@ -148,6 +148,92 @@ export interface CreateTenantPayload {
     activeStations?: string[];
 }
 
+export interface UpdateTenantPayload {
+    name?: string;
+    legalName?: string;
+    concept?: string;
+    planCode?: string;
+    city?: string;
+    area?: string;
+    address?: string;
+    phone?: string;
+    email?: string;
+    managerName?: string;
+    managerPhone?: string;
+    managerEmail?: string;
+    managerPassword?: string;
+    branchName?: string;
+    branchCode?: string;
+    hours?: string;
+}
+
+export interface PlatformAuditEvent {
+    id: string;
+    action: string;
+    entityName: string;
+    description: string;
+    occurredAt: string;
+    severity: string;
+}
+
+export interface PlatformAuditListResponse {
+    data: PlatformAuditEvent[];
+}
+
+export interface LiveOpsBranch {
+    branchId: string;
+    branchName: string;
+    branchCode: string;
+    tenantId: string;
+    tenantName: string;
+    status: string;
+    openSessions: number;
+    openOrders: number;
+    unpaidBills: number;
+    tableCount: number;
+}
+
+export interface LiveOpsResponse {
+    summary: {
+        openSessions: number;
+        openOrders: number;
+        unpaidBills: number;
+        activeBranches: number;
+        liveTenants: number;
+    };
+    branches: LiveOpsBranch[];
+}
+
+export interface PlatformStaffMember {
+    membershipId: string;
+    userId: string;
+    displayName: string;
+    email?: string;
+    phone?: string;
+    tenantId: string;
+    tenantName: string;
+    roles: string[];
+    accountStatus: string;
+    membershipStatus: string;
+    lastLoginAt?: string | null;
+    hasPassword: boolean;
+}
+
+export interface PlatformStaffListResponse {
+    data: PlatformStaffMember[];
+}
+
+export interface FeatureFlag {
+    key: string;
+    name: string;
+    scope: string;
+    enabled: boolean;
+}
+
+export interface FeatureFlagsResponse {
+    data: FeatureFlag[];
+}
+
 export const superAdminApi = api.injectEndpoints({
     endpoints: builder => ({
         getSuperAdminDashboard: builder.query<
@@ -189,6 +275,90 @@ export const superAdminApi = api.injectEndpoints({
             }),
             invalidatesTags: ["Auth", "Floor", "DailyClose", "Shift"],
         }),
+
+        updateSuperAdminTenant: builder.mutation<
+            TenantDetailResponse,
+            { id: string; body: UpdateTenantPayload }
+        >({
+            query: ({ id, body }) => ({
+                url: `/super-admin/tenants/${id}`,
+                method: "PATCH",
+                body,
+            }),
+            invalidatesTags: ["Auth", "Floor", "DailyClose", "Shift"],
+        }),
+
+        getSuperAdminAudit: builder.query<
+            PlatformAuditListResponse,
+            { limit?: number } | void
+        >({
+            query: params => ({
+                url: "/super-admin/audit",
+                method: "GET",
+                params: params || undefined,
+            }),
+            providesTags: ["Auth"],
+        }),
+
+        getSuperAdminLiveOps: builder.query<LiveOpsResponse, void>({
+            query: () => ({
+                url: "/super-admin/live-ops",
+                method: "GET",
+            }),
+            providesTags: ["Auth", "Floor", "Shift", "DailyClose"],
+        }),
+
+        getSuperAdminStaff: builder.query<PlatformStaffListResponse, void>({
+            query: () => ({
+                url: "/super-admin/staff",
+                method: "GET",
+            }),
+            providesTags: ["Auth"],
+        }),
+
+        suspendSuperAdminStaff: builder.mutation<
+            PlatformStaffMember,
+            { membershipId: string; suspended: boolean }
+        >({
+            query: ({ membershipId, suspended }) => ({
+                url: `/super-admin/staff/${membershipId}/suspend`,
+                method: "PATCH",
+                body: { suspended },
+            }),
+            invalidatesTags: ["Auth"],
+        }),
+
+        resetSuperAdminStaffPassword: builder.mutation<
+            PlatformStaffMember,
+            { membershipId: string; password: string }
+        >({
+            query: ({ membershipId, password }) => ({
+                url: `/super-admin/staff/${membershipId}/password`,
+                method: "PATCH",
+                body: { password },
+            }),
+            invalidatesTags: ["Auth"],
+        }),
+
+        getSuperAdminFlags: builder.query<FeatureFlagsResponse, void>({
+            query: () => ({
+                url: "/super-admin/flags",
+                method: "GET",
+            }),
+            providesTags: ["Auth"],
+        }),
+
+        updateSuperAdminFlag: builder.mutation<
+            FeatureFlagsResponse,
+            { key: string; enabled: boolean }
+        >({
+            query: ({ key, enabled }) => ({
+                url: `/super-admin/flags/${key}`,
+                method: "PATCH",
+                body: { enabled },
+            }),
+            invalidatesTags: ["Auth"],
+        }),
     }),
 });
 
@@ -197,5 +367,13 @@ export const {
     useGetSuperAdminTenantsQuery,
     useGetSuperAdminTenantByIdQuery,
     useCreateSuperAdminTenantMutation,
+    useUpdateSuperAdminTenantMutation,
+    useGetSuperAdminAuditQuery,
+    useGetSuperAdminLiveOpsQuery,
+    useGetSuperAdminStaffQuery,
+    useSuspendSuperAdminStaffMutation,
+    useResetSuperAdminStaffPasswordMutation,
+    useGetSuperAdminFlagsQuery,
+    useUpdateSuperAdminFlagMutation,
 } = superAdminApi;
 

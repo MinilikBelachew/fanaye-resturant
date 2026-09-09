@@ -15,6 +15,9 @@ import "./services/reconciliationApi";
 import "./services/dailyCloseApi";
 import "./services/menuApi";
 import "./services/staffApi";
+import "./services/siteApi";
+import "./services/superAdminApi";
+import "./services/auditApi";
 
 export const store = configureStore({
     reducer: {

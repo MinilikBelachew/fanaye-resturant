@@ -31,7 +31,8 @@ export function roleAllowsPath(role: Role, pathname: string): boolean {
     if (
         rest.startsWith("/sign-in") ||
         rest.startsWith("/sign-up") ||
-        rest.startsWith("/forgot-password")
+        rest.startsWith("/forgot-password") ||
+        rest.startsWith("/r/")
     ) {
         return true;
     }

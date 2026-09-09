@@ -5,13 +5,10 @@ import {
     Activity,
     CheckCircle2,
     Clock,
-    CreditCard,
-    Filter,
     QrCode,
     Receipt,
     Search,
     Shield,
-    Store,
     User,
     UtensilsCrossed,
 } from "lucide-react";
@@ -19,148 +16,41 @@ import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import {
+    useListAuditEventsQuery,
+    type AuditCategory,
+} from "@/context/services/auditApi";
 import { cn } from "@/lib/utils";
 
-interface AuditEvent {
-    id: string;
-    timestamp: string;
-    actor: string;
-    actorRole: string;
-    action: string;
-    category: "orders" | "fulfillment" | "payments" | "system";
-    details?: string;
-    badgeLabel: string;
-    badgeVariant: "default" | "success" | "warning" | "secondary";
-}
-
-const AUDIT_EVENTS: AuditEvent[] = [
-    {
-        id: "aud-1",
-        timestamp: "Today · 12:46",
-        actor: "Karim Tesfaye",
-        actorRole: "Waiter",
-        action: "TinaVerify QR scan validation initiated",
-        category: "payments",
-        details: "Fiscal tax QR check submitted for Table 12 bill (ETB 1,480.00)",
-        badgeLabel: "Fiscal Check",
-        badgeVariant: "warning",
-    },
-    {
-        id: "aud-2",
-        timestamp: "Today · 12:44",
-        actor: "Yonas Girma",
-        actorRole: "Kitchen Cook",
-        action: "Marked Cheeseburger (x2) Ready",
-        category: "fulfillment",
-        details: "Ticket #104 completed in 6m 12s on Kitchen Station",
-        badgeLabel: "Dish Ready",
-        badgeVariant: "success",
-    },
-    {
-        id: "aud-3",
-        timestamp: "Today · 12:41",
-        actor: "Karim Tesfaye",
-        actorRole: "Waiter",
-        action: "Sent 4-item order on Table 12",
-        category: "orders",
-        details: "Items dispatched to Kitchen (2) and Barista (2)",
-        badgeLabel: "Order Sent",
-        badgeVariant: "default",
-    },
-    {
-        id: "aud-4",
-        timestamp: "Today · 12:35",
-        actor: "Sara Mekonnen",
-        actorRole: "Cashier",
-        action: "Confirmed Telebirr Payment on Table 3",
-        category: "payments",
-        details: "Transaction ref: TB-9821448 · ETB 720.00 received",
-        badgeLabel: "Payment Confirmed",
-        badgeVariant: "success",
-    },
-    {
-        id: "aud-5",
-        timestamp: "Today · 12:20",
-        actor: "Meron Alemu",
-        actorRole: "Barista",
-        action: "Marked Caramel Macchiato Ready",
-        category: "fulfillment",
-        details: "Barista station queue completed in 3m 40s",
-        badgeLabel: "Dish Ready",
-        badgeVariant: "success",
-    },
-    {
-        id: "aud-6",
-        timestamp: "Today · 11:58",
-        actor: "Hana Tadesse",
-        actorRole: "Manager",
-        action: "Assigned Tables 1-4 to Karim Tesfaye",
-        category: "system",
-        details: "Shift section zone allocation updated",
-        badgeLabel: "Table Allocation",
-        badgeVariant: "secondary",
-    },
-    {
-        id: "aud-7",
-        timestamp: "Today · 11:30",
-        actor: "Sara Mekonnen",
-        actorRole: "Cashier",
-        action: "Opened morning cash register drawer",
-        category: "payments",
-        details: "Opening float balance verified: ETB 2,500.00",
-        badgeLabel: "Shift Open",
-        badgeVariant: "secondary",
-    },
-    {
-        id: "aud-8",
-        timestamp: "Today · 09:14",
-        actor: "Hana Tadesse",
-        actorRole: "Manager",
-        action: "System health check & cloud sync completed",
-        category: "system",
-        details: "All local offline queues synchronized with cloud database",
-        badgeLabel: "System Sync",
-        badgeVariant: "secondary",
-    },
-];
-
-type CategoryFilter = "all" | "orders" | "fulfillment" | "payments" | "system";
+type CategoryFilter = "all" | AuditCategory;
 
 export default function ManagerAuditPage() {
-    const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>("all");
+    const [selectedCategory, setSelectedCategory] =
+        useState<CategoryFilter>("all");
     const [searchQuery, setSearchQuery] = useState("");
 
-    const filteredEvents = useMemo(() => {
-        return AUDIT_EVENTS.filter(event => {
-            if (selectedCategory !== "all" && event.category !== selectedCategory) {
-                return false;
-            }
+    const { data, isLoading, isError } = useListAuditEventsQuery(
+        {
+            category: selectedCategory === "all" ? undefined : selectedCategory,
+            q: searchQuery.trim() || undefined,
+            limit: 100,
+        },
+        { pollingInterval: 15000 },
+    );
 
-            if (searchQuery.trim()) {
-                const q = searchQuery.toLowerCase();
-                const matchActor = event.actor.toLowerCase().includes(q);
-                const matchAction = event.action.toLowerCase().includes(q);
-                const matchRole = event.actorRole.toLowerCase().includes(q);
-                const matchDetails = event.details ? event.details.toLowerCase().includes(q) : false;
-                if (!matchActor && !matchAction && !matchRole && !matchDetails) {
-                    return false;
-                }
-            }
+    const events = data?.data ?? [];
+    const summary = data?.summary;
 
-            return true;
-        });
-    }, [selectedCategory, searchQuery]);
+    const filteredEvents = useMemo(() => events, [events]);
 
     return (
         <DashboardFrame>
-            {/* Header */}
             <PageHeader
                 eyebrow="Security & Operations"
                 title="Audit Trail"
-                description="Append-only, immutable activity log. Records table orders, kitchen ticket completions, fiscal receipts, and system events."
+                description="Append-only activity log from live branch events — orders, kitchen tickets, payments, and system actions."
             />
 
-            {/* Summary Metrics */}
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <div className="rounded-[16px] border border-hairline bg-card p-4 transition-all hover:border-slate-300">
                     <div className="flex items-center justify-between">
@@ -170,7 +60,7 @@ export default function ManagerAuditPage() {
                         <Activity className="size-4 text-slate-gray" />
                     </div>
                     <p className="mt-2 text-[26px] font-semibold text-foreground">
-                        {AUDIT_EVENTS.length}
+                        {isLoading ? "…" : (summary?.totalToday ?? 0)}
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
                         Captured today
@@ -180,15 +70,15 @@ export default function ManagerAuditPage() {
                 <div className="rounded-[16px] border border-hairline bg-card p-4 transition-all hover:border-slate-300">
                     <div className="flex items-center justify-between">
                         <p className="text-[13px] font-medium text-slate-gray">
-                            Fiscal Scans
+                            Payments Logged
                         </p>
-                        <QrCode className="size-4 text-purple-600" />
+                        <QrCode className="size-4 text-amber-600" />
                     </div>
                     <p className="mt-2 text-[26px] font-semibold text-foreground">
-                        100%
+                        {isLoading ? "…" : (summary?.paymentToday ?? 0)}
                     </p>
-                    <p className="mt-1 text-[12px] text-emerald-600 font-medium">
-                        TinaVerify compliant
+                    <p className="mt-1 text-[12px] font-medium text-emerald-600">
+                        Cash, transfer & fiscal
                     </p>
                 </div>
 
@@ -200,7 +90,7 @@ export default function ManagerAuditPage() {
                         <CheckCircle2 className="size-4 text-emerald-600" />
                     </div>
                     <p className="mt-2 text-[26px] font-semibold text-foreground">
-                        {AUDIT_EVENTS.filter(e => e.category === "fulfillment").length}
+                        {isLoading ? "…" : (summary?.fulfillmentToday ?? 0)}
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
                         Station completions
@@ -218,30 +108,30 @@ export default function ManagerAuditPage() {
                         Locked
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
-                        Tamper-proof storage
+                        Append-only storage
                     </p>
                 </div>
             </div>
 
-            {/* Filter and Search Bar */}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                {/* Category Pills */}
                 <div className="flex flex-wrap gap-1.5 rounded-[14px] border border-hairline bg-surface-ivory/50 p-1">
-                    {[
-                        { id: "all", label: "All Activity" },
-                        { id: "orders", label: "Orders" },
-                        { id: "fulfillment", label: "Kitchen & Bar" },
-                        { id: "payments", label: "Payments & Tax" },
-                        { id: "system", label: "System & Staff" },
-                    ].map(tab => (
+                    {(
+                        [
+                            { id: "all", label: "All Activity" },
+                            { id: "orders", label: "Orders" },
+                            { id: "fulfillment", label: "Kitchen & Bar" },
+                            { id: "payments", label: "Payments & Tax" },
+                            { id: "system", label: "System & Staff" },
+                        ] as const
+                    ).map(tab => (
                         <button
                             key={tab.id}
                             type="button"
-                            onClick={() => setSelectedCategory(tab.id as CategoryFilter)}
+                            onClick={() => setSelectedCategory(tab.id)}
                             className={cn(
                                 "rounded-[10px] px-3 py-1.5 text-[12px] font-medium transition-all",
                                 selectedCategory === tab.id
-                                    ? "bg-white text-foreground shadow-xs font-semibold dark:bg-card"
+                                    ? "bg-white font-semibold text-foreground shadow-xs dark:bg-card"
                                     : "text-slate-gray hover:text-foreground",
                             )}
                         >
@@ -250,88 +140,97 @@ export default function ManagerAuditPage() {
                     ))}
                 </div>
 
-                {/* Search */}
                 <div className="relative w-full sm:w-72">
-                    <Search className="absolute left-3 top-2.5 size-4 text-slate-gray" />
+                    <Search className="absolute top-2.5 left-3 size-4 text-slate-gray" />
                     <Input
                         placeholder="Search audit actions, staff..."
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
-                        className="h-9.5 pl-9 rounded-[12px] text-[13px] bg-white dark:bg-card"
+                        className="h-9.5 rounded-[12px] bg-white pl-9 text-[13px] dark:bg-card"
                     />
                 </div>
             </div>
 
-            {/* Events Timeline List */}
+            {isError ? (
+                <p className="rounded-[16px] border border-destructive/30 bg-destructive/10 p-4 text-[13px] text-destructive">
+                    Could not load audit events. Sign in as manager and check
+                    the API.
+                </p>
+            ) : null}
+
             <div className="space-y-3">
-                {filteredEvents.length === 0 ? (
+                {isLoading ? (
+                    <p className="text-slate-gray">Loading audit trail…</p>
+                ) : null}
+                {!isLoading && !isError && filteredEvents.length === 0 ? (
                     <div className="rounded-[16px] border border-hairline bg-card p-12 text-center text-slate-gray">
                         <p className="text-[15px] font-medium text-foreground">
                             No audit events found
                         </p>
                         <p className="mt-1 text-[13px]">
-                            Try clearing your search query or choosing another category filter.
+                            Try clearing your search or choosing another
+                            category. New actions appear here as staff work the
+                            floor.
                         </p>
                     </div>
-                ) : (
-                    filteredEvents.map(event => (
-                        <article
-                            key={event.id}
-                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-[16px] border border-hairline bg-white p-5 shadow-xs transition-all hover:border-slate-300 dark:bg-card"
-                        >
-                            <div className="flex items-start gap-3.5">
-                                <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-slate-gray">
-                                    {event.category === "orders" ? (
-                                        <UtensilsCrossed className="size-4 text-primary" />
-                                    ) : event.category === "fulfillment" ? (
-                                        <CheckCircle2 className="size-4 text-emerald-600" />
-                                    ) : event.category === "payments" ? (
-                                        <Receipt className="size-4 text-amber-600" />
-                                    ) : (
-                                        <Shield className="size-4 text-blue-600" />
-                                    )}
+                ) : null}
+                {filteredEvents.map(event => (
+                    <article
+                        key={event.id}
+                        className="flex flex-col justify-between gap-4 rounded-[16px] border border-hairline bg-white p-5 shadow-xs transition-all hover:border-slate-300 sm:flex-row sm:items-center dark:bg-card"
+                    >
+                        <div className="flex items-start gap-3.5">
+                            <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-slate-gray">
+                                {event.category === "orders" ? (
+                                    <UtensilsCrossed className="size-4 text-primary" />
+                                ) : event.category === "fulfillment" ? (
+                                    <CheckCircle2 className="size-4 text-emerald-600" />
+                                ) : event.category === "payments" ? (
+                                    <Receipt className="size-4 text-amber-600" />
+                                ) : (
+                                    <Shield className="size-4 text-blue-600" />
+                                )}
+                            </div>
+
+                            <div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <h3 className="text-[14px] font-semibold text-foreground">
+                                        {event.actionLabel}
+                                    </h3>
+                                    <Badge variant={event.badgeVariant}>
+                                        {event.badgeLabel}
+                                    </Badge>
                                 </div>
 
-                                <div>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <h3 className="text-[14px] font-semibold text-foreground">
-                                            {event.action}
-                                        </h3>
-                                        <Badge variant={event.badgeVariant}>
-                                            {event.badgeLabel}
-                                        </Badge>
-                                    </div>
+                                {event.details ? (
+                                    <p className="mt-1 text-[13px] leading-relaxed text-slate-gray">
+                                        {event.details}
+                                    </p>
+                                ) : null}
 
-                                    {event.details && (
-                                        <p className="mt-1 text-[13px] text-slate-gray leading-relaxed">
-                                            {event.details}
-                                        </p>
-                                    )}
-
-                                    <div className="mt-2 flex items-center gap-3 text-[12px] text-slate-gray">
-                                        <span className="flex items-center gap-1 font-medium text-foreground">
-                                            <User className="size-3 text-slate-gray" />
-                                            {event.actor}
-                                            <span className="text-slate-gray font-normal">
-                                                ({event.actorRole})
-                                            </span>
+                                <div className="mt-2 flex items-center gap-3 text-[12px] text-slate-gray">
+                                    <span className="flex items-center gap-1 font-medium text-foreground">
+                                        <User className="size-3 text-slate-gray" />
+                                        {event.actorName}
+                                        <span className="font-normal text-slate-gray">
+                                            ({event.actorRole})
                                         </span>
-                                    </div>
+                                    </span>
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="flex sm:flex-col sm:items-end shrink-0 gap-1 text-[12px] text-slate-gray border-t sm:border-t-0 pt-2 sm:pt-0 border-hairline">
-                                <span className="flex items-center gap-1 font-medium text-slate-gray">
-                                    <Clock className="size-3" />
-                                    {event.timestamp}
-                                </span>
-                                <span className="text-[11px] text-zinc-400">
-                                    Immutable Log ID: {event.id}
-                                </span>
-                            </div>
-                        </article>
-                    ))
-                )}
+                        <div className="flex shrink-0 gap-1 border-t border-hairline pt-2 text-[12px] text-slate-gray sm:flex-col sm:items-end sm:border-t-0 sm:pt-0">
+                            <span className="flex items-center gap-1 font-medium text-slate-gray">
+                                <Clock className="size-3" />
+                                {event.timestampLabel}
+                            </span>
+                            <span className="text-[11px] text-zinc-400">
+                                Immutable Log ID: {event.id.slice(0, 8)}…
+                            </span>
+                        </div>
+                    </article>
+                ))}
             </div>
         </DashboardFrame>
     );

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useMarkOrderItemServedMutation } from "@/context/services/ordersApi";
 import type { SessionOrderItem } from "@/domains/ordering/domain/waiterMenu";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/lib/toast";
 
 export default function WaiterMarkServedButton({
     item,
@@ -27,21 +28,28 @@ export default function WaiterMarkServedButton({
                 expectedVersion: item.version,
                 tableSessionId,
             }).unwrap();
+            toast.success("Marked served", item.itemName);
         } catch (err) {
             if (err && typeof err === "object" && "data" in err) {
                 const data = err as {
                     data?: { code?: string; errors?: { version?: string } };
                 };
                 if (data.data?.errors?.version === "stale") {
-                    setError("Ticket changed. Refresh and try again.");
+                    const message = "Ticket changed. Refresh and try again.";
+                    setError(message);
+                    toast.error(message);
                     return;
                 }
                 if (data.data?.code === "INVALID_ITEM_STATE") {
-                    setError("This dish is no longer ready to serve.");
+                    const message = "This dish is no longer ready to serve.";
+                    setError(message);
+                    toast.error(message);
                     return;
                 }
             }
-            setError("Could not mark served.");
+            const message = "Could not mark served.";
+            setError(message);
+            toast.fromUnknown(err, message);
         }
     }
 

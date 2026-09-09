@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { Check, Clock3, Plus, UtensilsCrossed, X } from "lucide-react";
 import { useAdminFloorLayoutQuery } from "@/context/services/floorApi";
 import {
@@ -9,7 +11,20 @@ import {
     useSetWaiterTableCoverageMutation,
 } from "@/context/services/staffApi";
 import { Button } from "@/components/ui/button";
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/lib/toast";
+import {
+    shiftDefinitionSchema,
+    type ShiftDefinitionFormValues,
+} from "@/lib/validators/floor";
 import { cn } from "@/lib/utils";
 
 interface AssignTablesSheetProps {
@@ -53,20 +68,26 @@ export default function AssignTablesSheet({
     const [shiftId, setShiftId] = useState("");
     const [selectedTableIds, setSelectedTableIds] = useState<string[]>([]);
     const [showNewShift, setShowNewShift] = useState(false);
-    const [newShiftName, setNewShiftName] = useState("");
-    const [newStart, setNewStart] = useState("07:00");
-    const [newEnd, setNewEnd] = useState("15:00");
-    const [error, setError] = useState("");
-    const [message, setMessage] = useState("");
+
+    const shiftForm = useForm<ShiftDefinitionFormValues>({
+        resolver: zodResolver(shiftDefinitionSchema),
+        defaultValues: {
+            name: "",
+            startLocalTime: "07:00",
+            endLocalTime: "15:00",
+        },
+    });
 
     useEffect(() => {
         if (!isOpen) return;
-        const initialShift = shifts[0]?.id ?? "";
-        setShiftId(initialShift);
+        setShiftId(shifts[0]?.id ?? "");
         setShowNewShift(false);
-        setError("");
-        setMessage("");
-    }, [isOpen, shifts]);
+        shiftForm.reset({
+            name: "",
+            startLocalTime: "07:00",
+            endLocalTime: "15:00",
+        });
+    }, [isOpen, shifts, shiftForm]);
 
     useEffect(() => {
         if (!isOpen || !waiter || !shiftId) {
@@ -92,40 +113,42 @@ export default function AssignTablesSheet({
     }
 
     async function handleSave() {
-        if (!waiterMembershipId || !shiftId) return;
-        setError("");
-        setMessage("");
+        if (!waiterMembershipId || !shiftId) {
+            toast.error("Select a shift first.");
+            return;
+        }
         try {
             await setCoverage({
                 membershipId: waiterMembershipId,
                 shiftDefinitionId: shiftId,
                 tableIds: selectedTableIds,
             }).unwrap();
-            setMessage("Tables saved for this shift.");
+            toast.success(
+                "Tables saved",
+                `${selectedTableIds.length} table(s) for this shift.`,
+            );
             onClose();
-        } catch {
-            setError("Could not save table coverage.");
+        } catch (err) {
+            toast.fromUnknown(err, "Could not save table coverage.");
         }
     }
 
-    async function handleCreateShift(event: React.FormEvent) {
-        event.preventDefault();
-        if (!newShiftName.trim()) return;
-        setError("");
+    async function onCreateShift(values: ShiftDefinitionFormValues) {
         try {
-            const created = await createShift({
-                name: newShiftName.trim(),
-                startLocalTime: newStart,
-                endLocalTime: newEnd,
-            }).unwrap();
+            const created = await createShift(values).unwrap();
             setShiftId(created.data.id);
             setShowNewShift(false);
-            setNewShiftName("");
-            setMessage(
-                `Shift “${created.data.name}” created (${created.data.startLocalTime}–${created.data.endLocalTime}).`,
+            shiftForm.reset({
+                name: "",
+                startLocalTime: "07:00",
+                endLocalTime: "15:00",
+            });
+            toast.success(
+                "Shift created",
+                `${created.data.name} (${created.data.startLocalTime}–${created.data.endLocalTime}).`,
             );
-        } catch {
-            setError("Could not create shift. Use times like 07:00.");
+        } catch (err) {
+            toast.fromUnknown(err, "Could not create shift. Use times like 07:00.");
         }
     }
 
@@ -198,43 +221,78 @@ export default function AssignTablesSheet({
                     </div>
 
                     {showNewShift ? (
-                        <form
-                            onSubmit={handleCreateShift}
-                            className="space-y-2 rounded-[12px] border border-dashed border-hairline bg-surface-ivory p-3"
-                        >
-                            <p className="text-[12px] font-medium">
-                                Create shift with any times
-                            </p>
-                            <Input
-                                value={newShiftName}
-                                onChange={e => setNewShiftName(e.target.value)}
-                                placeholder="e.g. Brunch, Late night"
-                                className="h-9"
-                            />
-                            <div className="grid grid-cols-2 gap-2">
-                                <Input
-                                    type="time"
-                                    value={newStart}
-                                    onChange={e => setNewStart(e.target.value)}
-                                    className="h-9"
-                                />
-                                <Input
-                                    type="time"
-                                    value={newEnd}
-                                    onChange={e => setNewEnd(e.target.value)}
-                                    className="h-9"
-                                />
-                            </div>
-                            <Button
-                                type="submit"
-                                size="sm"
-                                disabled={
-                                    creatingShift || !newShiftName.trim()
-                                }
+                        <Form {...shiftForm}>
+                            <form
+                                onSubmit={shiftForm.handleSubmit(values =>
+                                    void onCreateShift(values),
+                                )}
+                                className="space-y-2 rounded-[12px] border border-dashed border-hairline bg-surface-ivory p-3"
                             >
-                                Save shift
-                            </Button>
-                        </form>
+                                <p className="text-[12px] font-medium">
+                                    Create shift with any times
+                                </p>
+                                <FormField
+                                    control={shiftForm.control}
+                                    name="name"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="sr-only">
+                                                Shift name
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="e.g. Brunch, Late night"
+                                                    className="h-9"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <div className="grid grid-cols-2 gap-2">
+                                    <FormField
+                                        control={shiftForm.control}
+                                        name="startLocalTime"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormControl>
+                                                    <Input
+                                                        type="time"
+                                                        className="h-9"
+                                                        {...field}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={shiftForm.control}
+                                        name="endLocalTime"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormControl>
+                                                    <Input
+                                                        type="time"
+                                                        className="h-9"
+                                                        {...field}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                                <Button
+                                    type="submit"
+                                    size="sm"
+                                    disabled={creatingShift}
+                                >
+                                    {creatingShift ? "Saving…" : "Save shift"}
+                                </Button>
+                            </form>
+                        </Form>
                     ) : null}
 
                     <div className="space-y-3">
@@ -286,13 +344,6 @@ export default function AssignTablesSheet({
                             </p>
                         ) : null}
                     </div>
-
-                    {error ? (
-                        <p className="text-[12px] text-destructive">{error}</p>
-                    ) : null}
-                    {message ? (
-                        <p className="text-[12px] text-emerald-700">{message}</p>
-                    ) : null}
                 </div>
 
                 <div className="flex gap-2 border-t border-hairline px-5 py-4">

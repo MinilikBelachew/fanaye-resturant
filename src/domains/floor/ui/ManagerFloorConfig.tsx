@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { MapPin, Plus, Save, UserRound } from "lucide-react";
 import {
     useAdminFloorLayoutQuery,
@@ -10,8 +12,24 @@ import {
 } from "@/context/services/floorApi";
 import type { AdminDiningTable } from "@/domains/floor/domain/floorLayoutApi";
 import { Button } from "@/components/ui/button";
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { toast } from "@/lib/toast";
+import {
+    diningTableCreateSchema,
+    diningTableEditSchema,
+    placeSchema,
+    type DiningTableCreateValues,
+    type DiningTableEditValues,
+    type PlaceFormValues,
+} from "@/lib/validators/floor";
 
 export default function ManagerFloorConfig() {
     const { data, isLoading, isError } = useAdminFloorLayoutQuery();
@@ -25,88 +43,99 @@ export default function ManagerFloorConfig() {
     const locations = data?.data ?? [];
     const waiters = data?.waiters ?? [];
 
-    const [placeName, setPlaceName] = useState("");
-    const [tableName, setTableName] = useState("");
-    const [tableNumber, setTableNumber] = useState("");
-    const [tableLocationId, setTableLocationId] = useState("");
-    const [tableWaiterId, setTableWaiterId] = useState("");
     const [editingTable, setEditingTable] = useState<AdminDiningTable | null>(
         null,
     );
-    const [editWaiterId, setEditWaiterId] = useState("");
-    const [editName, setEditName] = useState("");
-    const [editLocationId, setEditLocationId] = useState("");
-    const [error, setError] = useState("");
-    const [message, setMessage] = useState("");
 
-    const defaultLocationId = useMemo(
-        () => tableLocationId || locations[0]?.id || "",
-        [tableLocationId, locations],
-    );
+    const placeForm = useForm<PlaceFormValues>({
+        resolver: zodResolver(placeSchema),
+        defaultValues: { name: "" },
+    });
 
-    async function handleCreatePlace(event: React.FormEvent) {
-        event.preventDefault();
-        if (!placeName.trim()) return;
-        setError("");
-        setMessage("");
+    const tableForm = useForm<DiningTableCreateValues>({
+        resolver: zodResolver(diningTableCreateSchema),
+        defaultValues: {
+            displayName: "",
+            displayNumber: "",
+            locationId: "",
+            assignedWaiterMembershipId: "",
+        },
+    });
+
+    const editForm = useForm<DiningTableEditValues>({
+        resolver: zodResolver(diningTableEditSchema),
+        defaultValues: {
+            displayName: "",
+            locationId: "",
+            assignedWaiterMembershipId: "",
+        },
+    });
+
+    useEffect(() => {
+        if (!tableForm.getValues("locationId") && locations[0]?.id) {
+            tableForm.setValue("locationId", locations[0].id);
+        }
+    }, [locations, tableForm]);
+
+    async function onCreatePlace(values: PlaceFormValues) {
         try {
-            await createPlace({ name: placeName.trim() }).unwrap();
-            setPlaceName("");
-            setMessage("Place created.");
-        } catch {
-            setError("Could not create place. Name may already exist.");
+            await createPlace({ name: values.name }).unwrap();
+            placeForm.reset({ name: "" });
+            toast.success("Place created", values.name);
+        } catch (err) {
+            toast.fromUnknown(
+                err,
+                "Could not create place. Name may already exist.",
+            );
         }
     }
 
-    async function handleCreateTable(event: React.FormEvent) {
-        event.preventDefault();
-        const locationId = defaultLocationId;
-        if (!tableName.trim() || !locationId) return;
-        setError("");
-        setMessage("");
+    async function onCreateTable(values: DiningTableCreateValues) {
         try {
             await createTable({
-                locationId,
-                displayName: tableName.trim(),
-                displayNumber: tableNumber.trim() || undefined,
-                assignedWaiterMembershipId: tableWaiterId || null,
+                locationId: values.locationId,
+                displayName: values.displayName,
+                displayNumber: values.displayNumber || undefined,
+                assignedWaiterMembershipId:
+                    values.assignedWaiterMembershipId || null,
             }).unwrap();
-            setTableName("");
-            setTableNumber("");
-            setTableWaiterId("");
-            setMessage("Table created.");
-        } catch {
-            setError("Could not create table.");
+            tableForm.reset({
+                displayName: "",
+                displayNumber: "",
+                locationId: values.locationId,
+                assignedWaiterMembershipId: "",
+            });
+            toast.success("Table created", values.displayName);
+        } catch (err) {
+            toast.fromUnknown(err, "Could not create table.");
         }
     }
 
     function openEdit(table: AdminDiningTable) {
         setEditingTable(table);
-        setEditName(table.displayName);
-        setEditLocationId(table.locationId);
-        setEditWaiterId(table.assignedWaiterMembershipId ?? "");
-        setError("");
-        setMessage("");
+        editForm.reset({
+            displayName: table.displayName,
+            locationId: table.locationId,
+            assignedWaiterMembershipId: table.assignedWaiterMembershipId ?? "",
+        });
     }
 
-    async function handleSaveEdit(event: React.FormEvent) {
-        event.preventDefault();
+    async function onSaveEdit(values: DiningTableEditValues) {
         if (!editingTable) return;
-        setError("");
-        setMessage("");
         try {
             await updateTable({
                 id: editingTable.id,
                 body: {
-                    displayName: editName.trim(),
-                    locationId: editLocationId,
-                    assignedWaiterMembershipId: editWaiterId || null,
+                    displayName: values.displayName,
+                    locationId: values.locationId,
+                    assignedWaiterMembershipId:
+                        values.assignedWaiterMembershipId || null,
                 },
             }).unwrap();
             setEditingTable(null);
-            setMessage("Table updated.");
-        } catch {
-            setError("Could not update table.");
+            toast.success("Table updated", values.displayName);
+        } catch (err) {
+            toast.fromUnknown(err, "Could not update table.");
         }
     }
 
@@ -133,107 +162,168 @@ export default function ManagerFloorConfig() {
                 </p>
             </div>
 
-            {(error || message) && (
-                <p
-                    className={cn(
-                        "text-[13px]",
-                        error ? "text-destructive" : "text-emerald-700",
-                    )}
-                >
-                    {error || message}
-                </p>
-            )}
-
             <div className="grid gap-4 lg:grid-cols-2">
-                <form
-                    onSubmit={handleCreatePlace}
-                    className="space-y-3 rounded-[16px] border border-hairline bg-card p-4"
-                >
-                    <div className="flex items-center gap-2">
-                        <MapPin className="size-4 text-brand" />
-                        <h3 className="text-[15px] font-semibold">
-                            Create place
-                        </h3>
-                    </div>
-                    <Input
-                        value={placeName}
-                        onChange={e => setPlaceName(e.target.value)}
-                        placeholder="e.g. Terrace, VIP Lounge"
-                        className="h-10"
-                    />
-                    <Button
-                        type="submit"
-                        disabled={saving || !placeName.trim()}
-                        className="w-full sm:w-auto"
+                <Form {...placeForm}>
+                    <form
+                        onSubmit={placeForm.handleSubmit(values =>
+                            void onCreatePlace(values),
+                        )}
+                        className="space-y-3 rounded-[16px] border border-hairline bg-card p-4"
                     >
-                        <Plus className="size-4" />
-                        Add place
-                    </Button>
-                </form>
+                        <div className="flex items-center gap-2">
+                            <MapPin className="size-4 text-brand" />
+                            <h3 className="text-[15px] font-semibold">
+                                Create place
+                            </h3>
+                        </div>
+                        <FormField
+                            control={placeForm.control}
+                            name="name"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormControl>
+                                        <Input
+                                            placeholder="e.g. Terrace, VIP Lounge"
+                                            className="h-10"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <Button
+                            type="submit"
+                            disabled={saving}
+                            className="w-full sm:w-auto"
+                        >
+                            <Plus className="size-4" />
+                            Add place
+                        </Button>
+                    </form>
+                </Form>
 
-                <form
-                    onSubmit={handleCreateTable}
-                    className="space-y-3 rounded-[16px] border border-hairline bg-card p-4"
-                >
-                    <div className="flex items-center gap-2">
-                        <Plus className="size-4 text-brand" />
-                        <h3 className="text-[15px] font-semibold">
-                            Create table
-                        </h3>
-                    </div>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                        <Input
-                            value={tableName}
-                            onChange={e => setTableName(e.target.value)}
-                            placeholder="Table name"
-                            className="h-10"
-                        />
-                        <Input
-                            value={tableNumber}
-                            onChange={e => setTableNumber(e.target.value)}
-                            placeholder="Number (optional)"
-                            className="h-10"
-                        />
-                    </div>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                        <select
-                            value={defaultLocationId}
-                            onChange={e => setTableLocationId(e.target.value)}
-                            className="h-10 rounded-[10px] border border-input bg-card px-3 text-[13px]"
-                        >
-                            {locations.length === 0 ? (
-                                <option value="">Create a place first</option>
-                            ) : null}
-                            {locations.map(location => (
-                                <option key={location.id} value={location.id}>
-                                    {location.name}
-                                </option>
-                            ))}
-                        </select>
-                        <select
-                            value={tableWaiterId}
-                            onChange={e => setTableWaiterId(e.target.value)}
-                            className="h-10 rounded-[10px] border border-input bg-card px-3 text-[13px]"
-                        >
-                            <option value="">Assign waiter later</option>
-                            {waiters.map(waiter => (
-                                <option key={waiter.id} value={waiter.id}>
-                                    {waiter.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <Button
-                        type="submit"
-                        disabled={
-                            saving || !tableName.trim() || !defaultLocationId
-                        }
-                        className="w-full sm:w-auto"
+                <Form {...tableForm}>
+                    <form
+                        onSubmit={tableForm.handleSubmit(values =>
+                            void onCreateTable(values),
+                        )}
+                        className="space-y-3 rounded-[16px] border border-hairline bg-card p-4"
                     >
-                        <Plus className="size-4" />
-                        Add table
-                    </Button>
-                </form>
+                        <div className="flex items-center gap-2">
+                            <Plus className="size-4 text-brand" />
+                            <h3 className="text-[15px] font-semibold">
+                                Create table
+                            </h3>
+                        </div>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                            <FormField
+                                control={tableForm.control}
+                                name="displayName"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormControl>
+                                            <Input
+                                                placeholder="Table name"
+                                                className="h-10"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={tableForm.control}
+                                name="displayNumber"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormControl>
+                                            <Input
+                                                placeholder="Number (optional)"
+                                                className="h-10"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                            <FormField
+                                control={tableForm.control}
+                                name="locationId"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormControl>
+                                            <select
+                                                value={field.value}
+                                                onChange={e =>
+                                                    field.onChange(e.target.value)
+                                                }
+                                                className="h-10 w-full rounded-[10px] border border-input bg-card px-3 text-[13px]"
+                                            >
+                                                {locations.length === 0 ? (
+                                                    <option value="">
+                                                        Create a place first
+                                                    </option>
+                                                ) : null}
+                                                {locations.map(location => (
+                                                    <option
+                                                        key={location.id}
+                                                        value={location.id}
+                                                    >
+                                                        {location.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={tableForm.control}
+                                name="assignedWaiterMembershipId"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormControl>
+                                            <select
+                                                value={field.value || ""}
+                                                onChange={e =>
+                                                    field.onChange(e.target.value)
+                                                }
+                                                className="h-10 w-full rounded-[10px] border border-input bg-card px-3 text-[13px]"
+                                            >
+                                                <option value="">
+                                                    Assign waiter later
+                                                </option>
+                                                {waiters.map(waiter => (
+                                                    <option
+                                                        key={waiter.id}
+                                                        value={waiter.id}
+                                                    >
+                                                        {waiter.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <Button
+                            type="submit"
+                            disabled={saving}
+                            className="w-full sm:w-auto"
+                        >
+                            <Plus className="size-4" />
+                            Add table
+                        </Button>
+                    </form>
+                </Form>
             </div>
 
             <div className="space-y-4">
@@ -312,92 +402,124 @@ export default function ManagerFloorConfig() {
                         onClick={() => setEditingTable(null)}
                         aria-hidden
                     />
-                    <form
-                        onSubmit={handleSaveEdit}
-                        className="flex h-full w-full max-w-md flex-col border-l border-hairline bg-card shadow-xl"
-                    >
-                        <div className="border-b border-hairline px-5 py-4">
-                            <h2 className="text-[17px] font-semibold">
-                                Edit table
-                            </h2>
-                            <p className="text-[12px] text-slate-gray">
-                                Change place or assign a different waiter.
-                            </p>
-                        </div>
-                        <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
-                            <div className="space-y-1.5">
-                                <label className="text-[13px] font-medium">
-                                    Table name
-                                </label>
-                                <Input
-                                    value={editName}
-                                    onChange={e => setEditName(e.target.value)}
-                                    className="h-10"
+                    <Form {...editForm}>
+                        <form
+                            onSubmit={editForm.handleSubmit(values =>
+                                void onSaveEdit(values),
+                            )}
+                            className="flex h-full w-full max-w-md flex-col border-l border-hairline bg-card shadow-xl"
+                        >
+                            <div className="border-b border-hairline px-5 py-4">
+                                <h2 className="text-[17px] font-semibold">
+                                    Edit table
+                                </h2>
+                                <p className="text-[12px] text-slate-gray">
+                                    Change place or assign a different waiter.
+                                </p>
+                            </div>
+                            <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
+                                <FormField
+                                    control={editForm.control}
+                                    name="displayName"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Table name</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    className="h-10"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={editForm.control}
+                                    name="locationId"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Place</FormLabel>
+                                            <FormControl>
+                                                <select
+                                                    value={field.value}
+                                                    onChange={e =>
+                                                        field.onChange(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    className="h-10 w-full rounded-[10px] border border-input bg-card px-3 text-[13px]"
+                                                >
+                                                    {locations.map(location => (
+                                                        <option
+                                                            key={location.id}
+                                                            value={location.id}
+                                                        >
+                                                            {location.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={editForm.control}
+                                    name="assignedWaiterMembershipId"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>
+                                                Assigned waiter
+                                            </FormLabel>
+                                            <FormControl>
+                                                <select
+                                                    value={field.value || ""}
+                                                    onChange={e =>
+                                                        field.onChange(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    className="h-10 w-full rounded-[10px] border border-input bg-card px-3 text-[13px]"
+                                                >
+                                                    <option value="">
+                                                        Unassigned
+                                                    </option>
+                                                    {waiters.map(waiter => (
+                                                        <option
+                                                            key={waiter.id}
+                                                            value={waiter.id}
+                                                        >
+                                                            {waiter.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
                                 />
                             </div>
-                            <div className="space-y-1.5">
-                                <label className="text-[13px] font-medium">
-                                    Place
-                                </label>
-                                <select
-                                    value={editLocationId}
-                                    onChange={e =>
-                                        setEditLocationId(e.target.value)
-                                    }
-                                    className="h-10 w-full rounded-[10px] border border-input bg-card px-3 text-[13px]"
+                            <div className="flex gap-2 border-t border-hairline px-5 py-4">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="flex-1"
+                                    onClick={() => setEditingTable(null)}
                                 >
-                                    {locations.map(location => (
-                                        <option
-                                            key={location.id}
-                                            value={location.id}
-                                        >
-                                            {location.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="space-y-1.5">
-                                <label className="text-[13px] font-medium">
-                                    Assigned waiter
-                                </label>
-                                <select
-                                    value={editWaiterId}
-                                    onChange={e =>
-                                        setEditWaiterId(e.target.value)
-                                    }
-                                    className="h-10 w-full rounded-[10px] border border-input bg-card px-3 text-[13px]"
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    className="flex-1"
+                                    disabled={saving}
                                 >
-                                    <option value="">Unassigned</option>
-                                    {waiters.map(waiter => (
-                                        <option
-                                            key={waiter.id}
-                                            value={waiter.id}
-                                        >
-                                            {waiter.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                    <Save className="size-4" />
+                                    Save
+                                </Button>
                             </div>
-                        </div>
-                        <div className="flex gap-2 border-t border-hairline px-5 py-4">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="flex-1"
-                                onClick={() => setEditingTable(null)}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                type="submit"
-                                className="flex-1"
-                                disabled={saving || !editName.trim()}
-                            >
-                                <Save className="size-4" />
-                                Save
-                            </Button>
-                        </div>
-                    </form>
+                        </form>
+                    </Form>
                 </div>
             ) : null}
         </div>

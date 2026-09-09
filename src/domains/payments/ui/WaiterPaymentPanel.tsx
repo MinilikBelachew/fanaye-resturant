@@ -11,6 +11,7 @@ import CameraCapture from "@/domains/payments/ui/CameraCapture";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatEtb } from "@/lib/money";
+import { toast } from "@/lib/toast";
 
 function dataUrlToFile(dataUrl: string, name: string): File {
     const [meta, data] = dataUrl.split(",");
@@ -55,8 +56,12 @@ export default function WaiterPaymentPanel({
                 cashTendered: tendered,
                 expectedBillVersion: bill.version,
             }).unwrap();
-        } catch {
-            setError("Could not record cash. Check tendered amount and try again.");
+            toast.success("Cash recorded", formatEtb(due));
+        } catch (err) {
+            const message =
+                "Could not record cash. Check tendered amount and try again.";
+            setError(message);
+            toast.fromUnknown(err, message);
         }
     }
 
@@ -78,10 +83,15 @@ export default function WaiterPaymentPanel({
                 fileId: uploaded.file.id,
             }).unwrap();
             setCameraFor(null);
-        } catch {
-            setError(
-                "Could not submit the transfer receipt. Check the photo and try again.",
+            toast.success(
+                channel === "TELEBIRR" ? "Telebirr recorded" : "Bank transfer recorded",
+                formatEtb(due),
             );
+        } catch (err) {
+            const message =
+                "Could not submit the transfer receipt. Check the photo and try again.";
+            setError(message);
+            toast.fromUnknown(err, message);
         }
     }
 

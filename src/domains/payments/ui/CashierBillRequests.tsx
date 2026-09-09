@@ -7,6 +7,7 @@ import {
 } from "@/context/services/billingApi";
 import { Button } from "@/components/ui/button";
 import { formatEtb } from "@/lib/money";
+import { toast } from "@/lib/toast";
 
 export default function CashierBillRequests() {
     const { data, isLoading, isError } = useCashierBillRequestsQuery(
@@ -29,10 +30,15 @@ export default function CashierBillRequests() {
                     request.expectedTableSessionVersion,
                 tableSessionId: request.tableSessionId,
             }).unwrap();
-        } catch {
-            setError(
-                "Could not generate this bill. Refresh and try again.",
+            toast.success(
+                "Bill generated",
+                `Table ${request.tableDisplayName || request.tableSessionId}`,
             );
+        } catch (err) {
+            const message =
+                "Could not generate this bill. Refresh and try again.";
+            setError(message);
+            toast.fromUnknown(err, message);
         } finally {
             setBusyId("");
         }

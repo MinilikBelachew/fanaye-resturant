@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
     Building2,
     Calendar,
@@ -9,6 +10,7 @@ import {
     Loader2,
     Mail,
     MapPin,
+    Pencil,
     Phone,
     Shield,
     Store,
@@ -20,13 +22,16 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "@/i18n/navigation";
 import { useGetSuperAdminTenantByIdQuery } from "@/context/services/superAdminApi";
 import { formatEtb } from "@/lib/money";
+import EditTenantSheet from "./EditTenantSheet";
 
 interface TenantDetailViewProps {
     tenantId: string;
 }
 
 export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
-    const { data: response, isLoading, error } = useGetSuperAdminTenantByIdQuery(tenantId);
+    const [editOpen, setEditOpen] = useState(false);
+    const { data: response, isLoading, error, refetch } =
+        useGetSuperAdminTenantByIdQuery(tenantId);
     const tenant = response?.data;
 
     if (isLoading) {
@@ -123,6 +128,14 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                         </p>
                     </div>
                 </div>
+                <button
+                    type="button"
+                    onClick={() => setEditOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-brand/90"
+                >
+                    <Pencil className="size-3.5" />
+                    Edit tenant
+                </button>
             </div>
 
             {/* Live Metrics Row */}
@@ -231,6 +244,15 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                     })}
                 </dl>
             </div>
+
+            <EditTenantSheet
+                open={editOpen}
+                tenant={tenant}
+                onClose={() => setEditOpen(false)}
+                onSuccess={() => {
+                    void refetch();
+                }}
+            />
         </DashboardFrame>
     );
 }

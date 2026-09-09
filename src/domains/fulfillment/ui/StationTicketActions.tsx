@@ -8,6 +8,7 @@ import {
 } from "@/context/services/stationsApi";
 import type { StationTicket } from "@/domains/fulfillment/domain/stationTicket";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/lib/toast";
 
 export default function StationTicketActions({
     ticket,
@@ -28,6 +29,20 @@ export default function StationTicketActions({
         expectedVersion: ticket.version,
     };
     const busy = acknowledging || starting || markingReady || reporting;
+    const label = ticket.itemName || "Ticket";
+
+    async function run(
+        action: () => Promise<unknown>,
+        success: string,
+        fallback: string,
+    ) {
+        try {
+            await action();
+            toast.success(success, label);
+        } catch (err) {
+            toast.fromUnknown(err, fallback);
+        }
+    }
 
     if (ticket.state === "QUEUED") {
         return (
@@ -36,7 +51,11 @@ export default function StationTicketActions({
                     size={size}
                     disabled={busy}
                     onClick={() => {
-                        void acknowledge(body);
+                        void run(
+                            () => acknowledge(body).unwrap(),
+                            "Acknowledged",
+                            "Could not acknowledge ticket.",
+                        );
                     }}
                 >
                     Acknowledge
@@ -46,7 +65,11 @@ export default function StationTicketActions({
                     variant="outline"
                     disabled={busy}
                     onClick={() => {
-                        void start(body);
+                        void run(
+                            () => start(body).unwrap(),
+                            "Prep started",
+                            "Could not start preparation.",
+                        );
                     }}
                 >
                     Start
@@ -61,7 +84,11 @@ export default function StationTicketActions({
                 size={size}
                 disabled={busy}
                 onClick={() => {
-                    void start(body);
+                    void run(
+                        () => start(body).unwrap(),
+                        "Prep started",
+                        "Could not start preparation.",
+                    );
                 }}
             >
                 Start preparing
@@ -76,7 +103,11 @@ export default function StationTicketActions({
                     size={size}
                     disabled={busy}
                     onClick={() => {
-                        void ready(body);
+                        void run(
+                            () => ready(body).unwrap(),
+                            "Marked ready",
+                            "Could not mark ready.",
+                        );
                     }}
                 >
                     Mark ready
@@ -86,31 +117,20 @@ export default function StationTicketActions({
                     variant="outline"
                     disabled={busy}
                     onClick={() => {
-                        void cannotPrepare({
-                            ...body,
-                            reasonDetail: "Cannot prepare",
-                        });
+                        void run(
+                            () =>
+                                cannotPrepare({
+                                    ...body,
+                                    reasonDetail: "Cannot prepare",
+                                }).unwrap(),
+                            "Reported cannot prepare",
+                            "Could not report exception.",
+                        );
                     }}
                 >
                     Cannot prepare
                 </Button>
             </div>
-        );
-    }
-
-    if (ticket.state === "READY") {
-        return (
-            <p className="text-[13px] text-slate-gray">
-                Waiting for waiter to serve
-            </p>
-        );
-    }
-
-    if (ticket.state === "CANNOT_PREPARE") {
-        return (
-            <p className="text-[13px] text-destructive">
-                {ticket.exceptionReason ?? "Cannot prepare"}
-            </p>
         );
     }
 

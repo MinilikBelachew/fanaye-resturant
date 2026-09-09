@@ -109,6 +109,8 @@ export const api = createApi({
         "Reconciliation",
         "DailyClose",
         "Approvals",
+        "Audit",
+        "Site",
     ],
     endpoints: () => ({}),
 });
