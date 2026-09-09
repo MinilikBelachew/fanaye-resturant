@@ -3,37 +3,9 @@ import { API_BASE_URL } from "@/context/env";
 import type { MenuItem } from "@/domains/catalog/domain/menu";
 import type { ModifierGroup } from "@/domains/catalog/domain/modifiers";
 import type { AdminMenuItem } from "@/domains/catalog/domain/menuApi";
-import { imageForDish } from "@/domains/ordering/application/mapWaiterMenu";
+import { IMAGE_KEY_TO_URL, filePublicUrl, imageForDish } from "./menuImages";
 
-const IMAGE_KEY_TO_URL: Record<string, string> = {
-    burger: DISH_IMAGES.burger,
-    pizza: DISH_IMAGES.pizza,
-    pasta: DISH_IMAGES.pasta,
-    salad: DISH_IMAGES.salad,
-    macchiato: DISH_IMAGES.macchiato,
-    latte: DISH_IMAGES.latte,
-    cheesecake: DISH_IMAGES.cheesecake,
-    tiramisu: DISH_IMAGES.tiramisu,
-    cola: DISH_IMAGES.cola,
-    sprite: DISH_IMAGES.sprite,
-};
-
-export function filePublicUrl(
-    path: string | null | undefined,
-): string | undefined {
-    if (!path) return undefined;
-    if (
-        path.startsWith("http://") ||
-        path.startsWith("https://") ||
-        path.startsWith("blob:") ||
-        path.startsWith("data:")
-    ) {
-        return path;
-    }
-    const origin = API_BASE_URL.replace(/\/backend\/v1\/?$/, "");
-    const normalized = path.replace(/\\/g, "/");
-    return `${origin}${normalized.startsWith("/") ? normalized : `/${normalized}`}`;
-}
+export { IMAGE_KEY_TO_URL, filePublicUrl, imageForDish };
 
 export function urlToImageKey(url: string): string | undefined {
     const entry = Object.entries(IMAGE_KEY_TO_URL).find(

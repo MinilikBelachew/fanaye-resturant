@@ -31,6 +31,9 @@ export type WaiterMenuItem = {
     categoryName: string;
     station: { id: string; name: string };
     expectedPrepMinutes: number | null;
+    imageKey?: string | null;
+    imageFileId?: string | null;
+    imageUrl?: string | null;
     modifierGroups: WaiterModifierGroup[];
 };
 

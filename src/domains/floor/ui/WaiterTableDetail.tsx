@@ -72,13 +72,10 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
     );
     const sessionStatus =
         billing?.tableSession.status ?? table?.sessionStatus ?? null;
-    const sessionVersion =
-        billing?.tableSession.version ?? table?.version ?? 1;
+    const sessionVersion = billing?.tableSession.version ?? table?.version ?? 1;
     const bill = billing?.bill ?? null;
     const pendingRequest =
-        billing?.billRequest?.status === "PENDING"
-            ? billing.billRequest
-            : null;
+        billing?.billRequest?.status === "PENDING" ? billing.billRequest : null;
 
     async function takeTable() {
         setError("");
@@ -135,7 +132,8 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
             }).unwrap();
             toast.success("Bill requested", "Cashier has been notified.");
         } catch (err) {
-            const message = "Could not request the bill. Refresh and try again.";
+            const message =
+                "Could not request the bill. Refresh and try again.";
             setError(message);
             toast.fromUnknown(err, message);
         }
@@ -185,8 +183,7 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
         itemCount > 0 &&
         REQUESTABLE.has(sessionStatus ?? "") &&
         !bill;
-    const canClosePaid =
-        occupied && table.mine && sessionStatus === "PAID";
+    const canClosePaid = occupied && table.mine && sessionStatus === "PAID";
     const canCloseEmpty =
         occupied &&
         table.mine &&
@@ -226,7 +223,11 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
             ) : null}
 
             {!occupied && clockedIn ? (
-                <Button className="mt-4" disabled={starting} onClick={takeTable}>
+                <Button
+                    className="mt-4"
+                    disabled={starting}
+                    onClick={takeTable}
+                >
                     {starting ? "Opening…" : "Take table"}
                 </Button>
             ) : null}
@@ -251,9 +252,7 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                 disabled={cancelling}
                                 onClick={onResumeOrdering}
                             >
-                                {cancelling
-                                    ? "Resuming…"
-                                    : "Resume ordering"}
+                                {cancelling ? "Resuming…" : "Resume ordering"}
                             </Button>
                         </div>
                     ) : null}
@@ -386,10 +385,7 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                     )}
 
                     {canRequestBill ? (
-                        <Button
-                            disabled={requesting}
-                            onClick={onRequestBill}
-                        >
+                        <Button disabled={requesting} onClick={onRequestBill}>
                             {requesting ? "Requesting…" : "Request bill"}
                         </Button>
                     ) : null}
@@ -424,6 +420,7 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                 <AddOrderMenu
                     tableSessionId={table.tableSessionId}
                     expectedVersion={sessionVersion}
+                    tableLabel={`Table ${tableNumber(table)}`}
                     onClose={() => setMenuOpen(false)}
                 />
             ) : null}

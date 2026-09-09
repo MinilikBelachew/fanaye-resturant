@@ -8,19 +8,19 @@ import {
     Lock,
     MapPin,
     Phone,
+    Plus,
     Trash2,
     User,
     UtensilsCrossed,
     X,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/context/hooks";
-import {
-    closeAddEditStaff,
-} from "@/context/slices/identitySlice";
+import { closeAddEditStaff } from "@/context/slices/identitySlice";
 import {
     useAdminStaffQuery,
     useAdminShiftFloorQuery,
     useCreateAdminStaffMutation,
+    useCreateShiftDefinitionMutation,
     useSetWaiterTableCoverageMutation,
     useUpdateAdminStaffMutation,
 } from "@/context/services/staffApi";
@@ -41,6 +41,10 @@ import {
     staffFormSchema,
     type StaffFormValues,
 } from "@/lib/validators/staff";
+import {
+    shiftDefinitionSchema,
+    type ShiftDefinitionFormValues,
+} from "@/lib/validators/floor";
 import { cn } from "@/lib/utils";
 
 const ALL_ROLES: {
@@ -110,13 +114,52 @@ export default function AddEditStaffSheet() {
     const editingStaff = useAppSelector(state => state.identity.editingStaff);
     const isEditMode = Boolean(editingStaff && editingStaff.name);
 
-    const { data: staffData } = useAdminStaffQuery(undefined, { skip: !isOpen });
+    const { data: staffData } = useAdminStaffQuery(undefined, {
+        skip: !isOpen,
+    });
     const shifts = staffData?.shifts ?? [];
 
     const [saving, setSaving] = useState(false);
     const [setCoverage] = useSetWaiterTableCoverageMutation();
     const [createStaff] = useCreateAdminStaffMutation();
     const [updateStaffApi] = useUpdateAdminStaffMutation();
+    const [createShift, { isLoading: creatingShift }] =
+        useCreateShiftDefinitionMutation();
+    const [showNewShift, setShowNewShift] = useState(false);
+
+    const shiftForm = useForm<ShiftDefinitionFormValues>({
+        resolver: zodResolver(shiftDefinitionSchema),
+        defaultValues: {
+            name: "",
+            startLocalTime: "07:00",
+            endLocalTime: "15:00",
+        },
+    });
+
+    async function onCreateShift(values: ShiftDefinitionFormValues) {
+        try {
+            const created = await createShift(values).unwrap();
+            form.setValue("shiftDefinitionId", created.data.id, {
+                shouldValidate: true,
+                shouldDirty: true,
+            });
+            setShowNewShift(false);
+            shiftForm.reset({
+                name: "",
+                startLocalTime: "07:00",
+                endLocalTime: "15:00",
+            });
+            toast.success(
+                "Shift created",
+                `${created.data.name} (${created.data.startLocalTime}–${created.data.endLocalTime}).`,
+            );
+        } catch (err) {
+            toast.fromUnknown(
+                err,
+                "Could not create shift. Use times like 07:00.",
+            );
+        }
+    }
 
     const form = useForm<StaffFormValues>({
         resolver: zodResolver(staffFormSchema),
@@ -147,7 +190,8 @@ export default function AddEditStaffSheet() {
         if (editingStaff) {
             form.reset({
                 name: editingStaff.name || "",
-                role: (editingStaff.role || "waiter") as StaffFormValues["role"],
+                role: (editingStaff.role ||
+                    "waiter") as StaffFormValues["role"],
                 phone: editingStaff.phone || "",
                 email: editingStaff.email || "",
                 pin: editingStaff.pinHint || "1234",
@@ -177,10 +221,17 @@ export default function AddEditStaffSheet() {
     }, [isOpen, shifts, form]);
 
     useEffect(() => {
-        if (!isOpen || !shiftDefinitionId || !editingMembershipId || !staffData) {
+        if (
+            !isOpen ||
+            !shiftDefinitionId ||
+            !editingMembershipId ||
+            !staffData
+        ) {
             return;
         }
-        const member = staffData.data.find(row => row.id === editingMembershipId);
+        const member = staffData.data.find(
+            row => row.id === editingMembershipId,
+        );
         const coverage = member?.shiftCoverages.find(
             row => row.shiftDefinitionId === shiftDefinitionId,
         );
@@ -197,7 +248,9 @@ export default function AddEditStaffSheet() {
 
     const assignmentStats = useMemo(() => {
         const tables = shiftFloor?.locations.flatMap(loc => loc.tables) ?? [];
-        const assigned = tables.filter(table => table.assignedWaiterMembershipId);
+        const assigned = tables.filter(
+            table => table.assignedWaiterMembershipId,
+        );
         const free = tables.length - assigned.length;
         const mine = assigned.filter(
             table =>
@@ -370,7 +423,9 @@ export default function AddEditStaffSheet() {
                 <Form {...form}>
                     <form
                         id="staff-form"
-                        onSubmit={form.handleSubmit(values => void onSubmit(values))}
+                        onSubmit={form.handleSubmit(
+                            values => void onSubmit(values),
+                        )}
                         className="app-scroll flex-1 space-y-6 overflow-y-auto p-6 text-[14px]"
                     >
                         <div className="space-y-4">
@@ -385,7 +440,9 @@ export default function AddEditStaffSheet() {
                                     <FormItem>
                                         <FormLabel>
                                             Full Name{" "}
-                                            <span className="text-primary">*</span>
+                                            <span className="text-primary">
+                                                *
+                                            </span>
                                         </FormLabel>
                                         <FormControl>
                                             <Input
@@ -425,7 +482,9 @@ export default function AddEditStaffSheet() {
                                     name="pin"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Quick Access PIN</FormLabel>
+                                            <FormLabel>
+                                                Quick Access PIN
+                                            </FormLabel>
                                             <div className="relative">
                                                 <Lock className="absolute top-2.5 left-3 size-4 text-slate-gray" />
                                                 <FormControl>
@@ -470,17 +529,22 @@ export default function AddEditStaffSheet() {
                                     <FormItem>
                                         <FormLabel>
                                             Restaurant Role{" "}
-                                            <span className="text-primary">*</span>
+                                            <span className="text-primary">
+                                                *
+                                            </span>
                                         </FormLabel>
                                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                             {ALL_ROLES.map(entry => {
-                                                const selected = field.value === entry.id;
+                                                const selected =
+                                                    field.value === entry.id;
                                                 return (
                                                     <button
                                                         key={entry.id}
                                                         type="button"
                                                         onClick={() =>
-                                                            field.onChange(entry.id)
+                                                            field.onChange(
+                                                                entry.id,
+                                                            )
                                                         }
                                                         className={cn(
                                                             "flex flex-col items-start rounded-[12px] border p-3 text-left transition-all",
@@ -519,8 +583,9 @@ export default function AddEditStaffSheet() {
                                     </h4>
                                 </div>
                                 <p className="text-[12px] text-slate-gray">
-                                    Pick a shift to see the live floor: free tables,
-                                    and who already owns each table in that window.
+                                    Pick a shift to see the live floor: free
+                                    tables, and who already owns each table in
+                                    that window.
                                 </p>
 
                                 <FormField
@@ -528,28 +593,55 @@ export default function AddEditStaffSheet() {
                                     name="shiftDefinitionId"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Shift window</FormLabel>
+                                            <div className="flex items-center justify-between">
+                                                <FormLabel>
+                                                    Shift window
+                                                </FormLabel>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setShowNewShift(v => !v)
+                                                    }
+                                                    className="inline-flex items-center gap-1 text-[12px] font-medium text-primary hover:underline"
+                                                >
+                                                    <Plus className="size-3.5" />
+                                                    {showNewShift
+                                                        ? "Close"
+                                                        : "New shift"}
+                                                </button>
+                                            </div>
                                             <FormControl>
                                                 <select
                                                     value={field.value || ""}
                                                     onChange={e =>
-                                                        field.onChange(e.target.value)
+                                                        field.onChange(
+                                                            e.target.value,
+                                                        )
                                                     }
                                                     className="h-10 w-full rounded-[10px] border border-input bg-card px-3 text-[13px]"
                                                 >
                                                     {shifts.length === 0 ? (
                                                         <option value="">
-                                                            No shifts yet — create one
-                                                            on Staff → Assign tables
+                                                            No shifts yet —
+                                                            click &ldquo;+ New
+                                                            shift&rdquo; above
                                                         </option>
-                                                    ) : null}
+                                                    ) : (
+                                                        <option value="">
+                                                            Select a shift
+                                                            window
+                                                        </option>
+                                                    )}
                                                     {shifts.map(shift => (
                                                         <option
                                                             key={shift.id}
                                                             value={shift.id}
                                                         >
                                                             {shift.name} ·{" "}
-                                                            {shift.startLocalTime}–
+                                                            {
+                                                                shift.startLocalTime
+                                                            }
+                                                            –
                                                             {shift.endLocalTime}
                                                         </option>
                                                     ))}
@@ -561,13 +653,152 @@ export default function AddEditStaffSheet() {
                                                     <Clock3 className="size-3.5" />
                                                     Showing floor for{" "}
                                                     {selectedShift.name} (
-                                                    {selectedShift.startLocalTime}–
-                                                    {selectedShift.endLocalTime})
+                                                    {
+                                                        selectedShift.startLocalTime
+                                                    }
+                                                    –
+                                                    {selectedShift.endLocalTime}
+                                                    )
                                                 </p>
                                             ) : null}
                                         </FormItem>
                                     )}
                                 />
+
+                                {showNewShift ? (
+                                    <div className="space-y-2.5 rounded-[12px] border border-dashed border-primary/40 bg-surface-ivory p-3.5 dark:bg-card">
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-[12px] font-semibold text-foreground">
+                                                Create shift with custom times
+                                            </p>
+                                            <span className="text-[11px] text-slate-gray">
+                                                Adds to restaurant shifts
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <label className="sr-only">
+                                                Shift name
+                                            </label>
+                                            <Input
+                                                placeholder="e.g. Morning, Evening, Night"
+                                                className="h-9 text-[13px] bg-white dark:bg-card"
+                                                value={shiftForm.watch("name")}
+                                                onChange={e =>
+                                                    shiftForm.setValue(
+                                                        "name",
+                                                        e.target.value,
+                                                        {
+                                                            shouldValidate: true,
+                                                        },
+                                                    )
+                                                }
+                                            />
+                                            {shiftForm.formState.errors.name ? (
+                                                <p className="mt-1 text-[11px] text-red-500">
+                                                    {
+                                                        shiftForm.formState
+                                                            .errors.name.message
+                                                    }
+                                                </p>
+                                            ) : null}
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <label className="text-[11px] font-medium text-slate-gray">
+                                                    Start time
+                                                </label>
+                                                <Input
+                                                    type="time"
+                                                    className="h-9 text-[13px] bg-white dark:bg-card"
+                                                    value={shiftForm.watch(
+                                                        "startLocalTime",
+                                                    )}
+                                                    onChange={e =>
+                                                        shiftForm.setValue(
+                                                            "startLocalTime",
+                                                            e.target.value,
+                                                            {
+                                                                shouldValidate: true,
+                                                            },
+                                                        )
+                                                    }
+                                                />
+                                                {shiftForm.formState.errors
+                                                    .startLocalTime ? (
+                                                    <p className="mt-1 text-[11px] text-red-500">
+                                                        {
+                                                            shiftForm.formState
+                                                                .errors
+                                                                .startLocalTime
+                                                                .message
+                                                        }
+                                                    </p>
+                                                ) : null}
+                                            </div>
+                                            <div>
+                                                <label className="text-[11px] font-medium text-slate-gray">
+                                                    End time
+                                                </label>
+                                                <Input
+                                                    type="time"
+                                                    className="h-9 text-[13px] bg-white dark:bg-card"
+                                                    value={shiftForm.watch(
+                                                        "endLocalTime",
+                                                    )}
+                                                    onChange={e =>
+                                                        shiftForm.setValue(
+                                                            "endLocalTime",
+                                                            e.target.value,
+                                                            {
+                                                                shouldValidate: true,
+                                                            },
+                                                        )
+                                                    }
+                                                />
+                                                {shiftForm.formState.errors
+                                                    .endLocalTime ? (
+                                                    <p className="mt-1 text-[11px] text-red-500">
+                                                        {
+                                                            shiftForm.formState
+                                                                .errors
+                                                                .endLocalTime
+                                                                .message
+                                                        }
+                                                    </p>
+                                                ) : null}
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-end gap-2 pt-1">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 text-[12px]"
+                                                onClick={() =>
+                                                    setShowNewShift(false)
+                                                }
+                                            >
+                                                Cancel
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                className="h-8 text-[12px]"
+                                                disabled={creatingShift}
+                                                onClick={shiftForm.handleSubmit(
+                                                    values =>
+                                                        void onCreateShift(
+                                                            values,
+                                                        ),
+                                                )}
+                                            >
+                                                {creatingShift
+                                                    ? "Saving…"
+                                                    : "Save shift"}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ) : null}
 
                                 {shiftDefinitionId ? (
                                     <div className="flex flex-wrap gap-2 text-[11px]">
@@ -581,8 +812,8 @@ export default function AddEditStaffSheet() {
                                             {assignmentStats.assigned} assigned
                                         </span>
                                         <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-primary">
-                                            {assignedTableIds.length} selected for
-                                            this waiter
+                                            {assignedTableIds.length} selected
+                                            for this waiter
                                         </span>
                                     </div>
                                 ) : null}
@@ -594,7 +825,8 @@ export default function AddEditStaffSheet() {
                                 ) : null}
                                 {floorError ? (
                                     <p className="text-[12px] text-destructive">
-                                        Could not load shift floor. Check the API.
+                                        Could not load shift floor. Check the
+                                        API.
                                     </p>
                                 ) : null}
 
@@ -607,84 +839,88 @@ export default function AddEditStaffSheet() {
                                                     {location.name}
                                                 </p>
                                                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                                                    {location.tables.map(table => {
-                                                        const selected =
-                                                            assignedTableIds.includes(
-                                                                table.tableId,
-                                                            );
-                                                        const ownerId =
-                                                            table.assignedWaiterMembershipId;
-                                                        const ownerName =
-                                                            table.assignedWaiterName;
-                                                        const ownedByOther =
-                                                            Boolean(
-                                                                ownerId &&
-                                                                    ownerId !==
+                                                    {location.tables.map(
+                                                        table => {
+                                                            const selected =
+                                                                assignedTableIds.includes(
+                                                                    table.tableId,
+                                                                );
+                                                            const ownerId =
+                                                                table.assignedWaiterMembershipId;
+                                                            const ownerName =
+                                                                table.assignedWaiterName;
+                                                            const ownedByOther =
+                                                                Boolean(
+                                                                    ownerId &&
+                                                                        ownerId !==
+                                                                            editingMembershipId &&
+                                                                        !selected,
+                                                                );
+                                                            const ownedBySelf =
+                                                                Boolean(
+                                                                    ownerId &&
                                                                         editingMembershipId &&
-                                                                    !selected,
-                                                            );
-                                                        const ownedBySelf =
-                                                            Boolean(
-                                                                ownerId &&
-                                                                    editingMembershipId &&
-                                                                    ownerId ===
-                                                                        editingMembershipId,
-                                                            );
+                                                                        ownerId ===
+                                                                            editingMembershipId,
+                                                                );
 
-                                                        return (
-                                                            <button
-                                                                key={table.tableId}
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    handleToggleTable(
-                                                                        table.tableId,
-                                                                        ownerId,
-                                                                        ownerName,
-                                                                    )
-                                                                }
-                                                                className={cn(
-                                                                    "rounded-[12px] border px-2.5 py-2 text-left transition-all",
-                                                                    selected
-                                                                        ? "border-primary bg-primary text-primary-foreground"
-                                                                        : ownedByOther
-                                                                          ? "border-amber-300 bg-amber-50"
-                                                                          : "border-hairline bg-card hover:bg-secondary/60",
-                                                                )}
-                                                            >
-                                                                <div className="flex items-start justify-between gap-1">
-                                                                    <span className="text-[13px] font-semibold">
-                                                                        {table.displayNumber
-                                                                            ? `T-${table.displayNumber}`
-                                                                            : table.displayName}
-                                                                    </span>
-                                                                    {selected ? (
-                                                                        <span className="text-[10px] opacity-90">
-                                                                            Mine
-                                                                        </span>
-                                                                    ) : null}
-                                                                </div>
-                                                                <span
+                                                            return (
+                                                                <button
+                                                                    key={
+                                                                        table.tableId
+                                                                    }
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        handleToggleTable(
+                                                                            table.tableId,
+                                                                            ownerId,
+                                                                            ownerName,
+                                                                        )
+                                                                    }
                                                                     className={cn(
-                                                                        "mt-1 block truncate text-[11px]",
+                                                                        "rounded-[12px] border px-2.5 py-2 text-left transition-all",
                                                                         selected
-                                                                            ? "text-primary-foreground/85"
+                                                                            ? "border-primary bg-primary text-primary-foreground"
                                                                             : ownedByOther
-                                                                              ? "text-amber-800"
-                                                                              : ownedBySelf
-                                                                                ? "text-primary"
-                                                                                : "text-slate-gray",
+                                                                              ? "border-amber-300 bg-amber-50"
+                                                                              : "border-hairline bg-card hover:bg-secondary/60",
                                                                     )}
                                                                 >
-                                                                    {selected
-                                                                        ? nameValue.trim() ||
-                                                                          "This waiter"
-                                                                        : ownerName
-                                                                          ? `Assigned · ${ownerName}`
-                                                                          : "Free"}
-                                                                </span>
-                                                            </button>
-                                                        );
-                                                    })}
+                                                                    <div className="flex items-start justify-between gap-1">
+                                                                        <span className="text-[13px] font-semibold">
+                                                                            {table.displayNumber
+                                                                                ? `T-${table.displayNumber}`
+                                                                                : table.displayName}
+                                                                        </span>
+                                                                        {selected ? (
+                                                                            <span className="text-[10px] opacity-90">
+                                                                                Mine
+                                                                            </span>
+                                                                        ) : null}
+                                                                    </div>
+                                                                    <span
+                                                                        className={cn(
+                                                                            "mt-1 block truncate text-[11px]",
+                                                                            selected
+                                                                                ? "text-primary-foreground/85"
+                                                                                : ownedByOther
+                                                                                  ? "text-amber-800"
+                                                                                  : ownedBySelf
+                                                                                    ? "text-primary"
+                                                                                    : "text-slate-gray",
+                                                                        )}
+                                                                    >
+                                                                        {selected
+                                                                            ? nameValue.trim() ||
+                                                                              "This waiter"
+                                                                            : ownerName
+                                                                              ? `Assigned · ${ownerName}`
+                                                                              : "Free"}
+                                                                    </span>
+                                                                </button>
+                                                            );
+                                                        },
+                                                    )}
                                                 </div>
                                             </div>
                                         ))}
@@ -704,10 +940,11 @@ export default function AddEditStaffSheet() {
                                         </div>
                                         {!editingMembershipId ? (
                                             <p className="text-[11px] text-slate-gray">
-                                                New staff registration still saves
-                                                locally first. For live coverage on
-                                                an existing waiter, use Edit / Assign
-                                                by shift on the staff list.
+                                                New staff registration still
+                                                saves locally first. For live
+                                                coverage on an existing waiter,
+                                                use Edit / Assign by shift on
+                                                the staff list.
                                             </p>
                                         ) : null}
                                     </div>
@@ -725,7 +962,9 @@ export default function AddEditStaffSheet() {
                                 name="workingDays"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Scheduled working days</FormLabel>
+                                        <FormLabel>
+                                            Scheduled working days
+                                        </FormLabel>
                                         <div className="flex flex-wrap gap-1.5">
                                             {[
                                                 "Mon",
@@ -778,7 +1017,9 @@ export default function AddEditStaffSheet() {
                                 name="shiftStatus"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Current duty state</FormLabel>
+                                        <FormLabel>
+                                            Current duty state
+                                        </FormLabel>
                                         <div className="grid grid-cols-3 gap-2">
                                             {(
                                                 [
@@ -806,7 +1047,9 @@ export default function AddEditStaffSheet() {
                                                         key={st.id}
                                                         type="button"
                                                         onClick={() =>
-                                                            field.onChange(st.id)
+                                                            field.onChange(
+                                                                st.id,
+                                                            )
                                                         }
                                                         className={cn(
                                                             "flex items-center justify-center gap-2 rounded-[12px] border py-2.5 text-[13px] font-medium",
@@ -841,7 +1084,8 @@ export default function AddEditStaffSheet() {
                                                 Account active
                                             </p>
                                             <p className="text-[12px] text-slate-gray">
-                                                Deactivated staff cannot sign in.
+                                                Deactivated staff cannot sign
+                                                in.
                                             </p>
                                         </div>
                                         <button

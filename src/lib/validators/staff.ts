@@ -30,7 +30,12 @@ export const staffFormSchema = z
         assignedTableIds: z.array(z.string()),
     })
     .superRefine((data, ctx) => {
-        if (data.role === "waiter" && !data.shiftDefinitionId) {
+        if (
+            data.role === "waiter" &&
+            data.assignedTableIds &&
+            data.assignedTableIds.length > 0 &&
+            !data.shiftDefinitionId
+        ) {
             ctx.addIssue({
                 code: "custom",
                 path: ["shiftDefinitionId"],
