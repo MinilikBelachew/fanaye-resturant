@@ -159,7 +159,9 @@ export default function CreateTenantSheet({
     const progress = ((stepIndex + 1) / STEPS.length) * 100;
 
     const planLabel = useMemo(
-        () => PLANS.find(plan => plan.code === values.planCode)?.name ?? values.planCode,
+        () =>
+            PLANS.find(plan => plan.code === values.planCode)?.name ??
+            values.planCode,
         [values.planCode],
     );
 
@@ -200,7 +202,8 @@ export default function CreateTenantSheet({
         if (activeTab === "company") {
             const parsed = provisionCompanySchema.safeParse(current);
             if (!parsed.success) {
-                const message = parsed.error.issues[0]?.message || "Check company fields.";
+                const message =
+                    parsed.error.issues[0]?.message || "Check company fields.";
                 setErrorMsg(message);
                 toast.error(message);
                 for (const issue of parsed.error.issues) {
@@ -220,7 +223,8 @@ export default function CreateTenantSheet({
         if (activeTab === "location") {
             const parsed = provisionLocationSchema.safeParse(current);
             if (!parsed.success) {
-                const message = parsed.error.issues[0]?.message || "Check branch fields.";
+                const message =
+                    parsed.error.issues[0]?.message || "Check branch fields.";
                 setErrorMsg(message);
                 toast.error(message);
                 for (const issue of parsed.error.issues) {
@@ -240,7 +244,8 @@ export default function CreateTenantSheet({
         if (activeTab === "manager") {
             const parsed = provisionManagerSchema.safeParse(current);
             if (!parsed.success) {
-                const message = parsed.error.issues[0]?.message || "Check manager fields.";
+                const message =
+                    parsed.error.issues[0]?.message || "Check manager fields.";
                 setErrorMsg(message);
                 toast.error(message);
                 for (const issue of parsed.error.issues) {
@@ -254,6 +259,7 @@ export default function CreateTenantSheet({
                 return;
             }
             setActiveTab("ops");
+            return;
         }
     }
 
@@ -265,6 +271,11 @@ export default function CreateTenantSheet({
     }
 
     async function onSubmit(data: ProvisionTenantValues) {
+        if (activeTab !== "ops") {
+            void goNext();
+            return;
+        }
+
         setErrorMsg(null);
         const parsed = provisionTenantSchema.safeParse(data);
         if (!parsed.success) {
@@ -296,7 +307,12 @@ export default function CreateTenantSheet({
                 phone: payload.managerPhone.trim(),
                 email:
                     payload.managerEmail?.trim() ||
-                    `hello@${payload.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "") || "restaurant"}.et`,
+                    `hello@${
+                        payload.name
+                            .trim()
+                            .toLowerCase()
+                            .replace(/[^a-z0-9]+/g, "") || "restaurant"
+                    }.et`,
                 managerName: payload.managerName.trim(),
                 managerEmail: payload.managerEmail?.trim() || undefined,
                 managerPhone: payload.managerPhone.trim(),
@@ -337,38 +353,22 @@ export default function CreateTenantSheet({
             />
 
             <aside className="relative z-10 flex h-full w-full max-w-[58rem] flex-col border-l border-hairline bg-background shadow-2xl animate-in slide-in-from-right duration-300">
-                <div className="relative shrink-0 overflow-hidden border-b border-hairline bg-[linear-gradient(135deg,color-mix(in_oklab,var(--primary)_12%,transparent),transparent_55%),var(--card)] px-7 py-5">
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-3.5">
-                            <div className="mt-0.5 flex size-11 items-center justify-center rounded-[14px] bg-brand text-white shadow-sm">
-                                <Building2 className="size-5" />
-                            </div>
-                            <div>
-                                <p className="text-[11px] font-semibold tracking-[0.14em] text-brand uppercase">
-                                    Super admin
-                                </p>
-                                <h2 className="mt-0.5 text-[20px] font-semibold tracking-tight text-foreground">
-                                    Provision new tenant
-                                </h2>
-                                <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-slate-gray">
-                                    Create company, branch, manager login, and day-one
-                                    floor / KDS setup.
-                                </p>
-                            </div>
+                <div className="relative shrink-0 border-b border-hairline bg-card px-6 py-3">
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
+                            <div
+                                className="h-full rounded-full bg-brand transition-all duration-300"
+                                style={{ width: `${progress}%` }}
+                            />
                         </div>
                         <button
                             type="button"
                             onClick={onClose}
+                            aria-label="Close provision sheet"
                             className="rounded-full p-2 text-slate-gray transition-colors hover:bg-secondary hover:text-foreground"
                         >
                             <X className="size-5" />
                         </button>
-                    </div>
-                    <div className="mt-5 h-1 overflow-hidden rounded-full bg-secondary">
-                        <div
-                            className="h-full rounded-full bg-brand transition-all duration-300"
-                            style={{ width: `${progress}%` }}
-                        />
                     </div>
                 </div>
 
@@ -442,7 +442,29 @@ export default function CreateTenantSheet({
                 <Form {...form}>
                     <form
                         id="create-tenant-form"
-                        onSubmit={form.handleSubmit(values => void onSubmit(values))}
+                        onSubmit={e => {
+                            e.preventDefault();
+                            if (activeTab === "ops") {
+                                void form.handleSubmit(
+                                    values => void onSubmit(values),
+                                )();
+                            }
+                        }}
+                        onKeyDown={e => {
+                            if (
+                                e.key === "Enter" &&
+                                (e.target as HTMLElement).tagName === "INPUT"
+                            ) {
+                                e.preventDefault();
+                                if (activeTab !== "ops") {
+                                    void goNext();
+                                } else {
+                                    void form.handleSubmit(
+                                        values => void onSubmit(values),
+                                    )();
+                                }
+                            }
+                        }}
                         className="app-scroll flex min-h-0 flex-1 flex-col overflow-y-auto"
                     >
                         <div className="grid flex-1 gap-0 lg:grid-cols-[minmax(0,1fr)_250px]">
@@ -468,16 +490,21 @@ export default function CreateTenantSheet({
                                                 <FormItem>
                                                     <FormLabel>
                                                         Restaurant brand name{" "}
-                                                        <span className="text-brand">*</span>
+                                                        <span className="text-brand">
+                                                            *
+                                                        </span>
                                                     </FormLabel>
                                                     <FormControl>
                                                         <Input
                                                             placeholder="e.g. Abyssinia Grill & Lounge"
-                                                            className={fieldClass}
+                                                            className={
+                                                                fieldClass
+                                                            }
                                                             {...field}
                                                             onChange={e =>
                                                                 autofillFromBrand(
-                                                                    e.target.value,
+                                                                    e.target
+                                                                        .value,
                                                                 )
                                                             }
                                                         />
@@ -499,7 +526,9 @@ export default function CreateTenantSheet({
                                                         <FormControl>
                                                             <Input
                                                                 placeholder="e.g. Abyssinia Hospitality PLC"
-                                                                className={fieldClass}
+                                                                className={
+                                                                    fieldClass
+                                                                }
                                                                 {...field}
                                                             />
                                                         </FormControl>
@@ -524,19 +553,24 @@ export default function CreateTenantSheet({
                                                                 {...field}
                                                             >
                                                                 <option value="Casual Dining">
-                                                                    Casual Dining
+                                                                    Casual
+                                                                    Dining
                                                                 </option>
                                                                 <option value="Fine Dining & Wine Bar">
-                                                                    Fine Dining & Wine Bar
+                                                                    Fine Dining
+                                                                    & Wine Bar
                                                                 </option>
                                                                 <option value="Cafe & Roastery">
-                                                                    Cafe & Roastery
+                                                                    Cafe &
+                                                                    Roastery
                                                                 </option>
                                                                 <option value="Grill & Bistro">
-                                                                    Grill & Bistro
+                                                                    Grill &
+                                                                    Bistro
                                                                 </option>
                                                                 <option value="Lounge & Nightclub">
-                                                                    Lounge & Nightclub
+                                                                    Lounge &
+                                                                    Nightclub
                                                                 </option>
                                                                 <option value="Fast Casual">
                                                                     Fast Casual
@@ -560,10 +594,13 @@ export default function CreateTenantSheet({
                                                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                                         {PLANS.map(plan => {
                                                             const selected =
-                                                                field.value === plan.code;
+                                                                field.value ===
+                                                                plan.code;
                                                             return (
                                                                 <button
-                                                                    key={plan.code}
+                                                                    key={
+                                                                        plan.code
+                                                                    }
                                                                     type="button"
                                                                     onClick={() =>
                                                                         field.onChange(
@@ -579,7 +616,9 @@ export default function CreateTenantSheet({
                                                                 >
                                                                     <div className="flex items-start justify-between gap-2 pr-6">
                                                                         <span className="text-[14px] font-semibold">
-                                                                            {plan.name}
+                                                                            {
+                                                                                plan.name
+                                                                            }
                                                                         </span>
                                                                         <span
                                                                             className={cn(
@@ -589,14 +628,20 @@ export default function CreateTenantSheet({
                                                                                     : "bg-secondary text-slate-gray",
                                                                             )}
                                                                         >
-                                                                            {plan.badge}
+                                                                            {
+                                                                                plan.badge
+                                                                            }
                                                                         </span>
                                                                     </div>
                                                                     <p className="mt-2 text-[14px] font-medium text-brand">
-                                                                        {plan.price}
+                                                                        {
+                                                                            plan.price
+                                                                        }
                                                                     </p>
                                                                     <p className="mt-1 text-[12px] text-slate-gray">
-                                                                        {plan.desc}
+                                                                        {
+                                                                            plan.desc
+                                                                        }
                                                                     </p>
                                                                     {selected ? (
                                                                         <span className="absolute top-3.5 right-3 flex size-5 items-center justify-center rounded-full bg-brand text-white">
@@ -629,7 +674,9 @@ export default function CreateTenantSheet({
                                                         </FormLabel>
                                                         <FormControl>
                                                             <Input
-                                                                className={fieldClass}
+                                                                className={
+                                                                    fieldClass
+                                                                }
                                                                 {...field}
                                                             />
                                                         </FormControl>
@@ -665,7 +712,9 @@ export default function CreateTenantSheet({
                                                 name="city"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel>City</FormLabel>
+                                                        <FormLabel>
+                                                            City
+                                                        </FormLabel>
                                                         <FormControl>
                                                             <select
                                                                 className={cn(
@@ -674,14 +723,22 @@ export default function CreateTenantSheet({
                                                                 )}
                                                                 {...field}
                                                             >
-                                                                {CITIES.map(city => (
-                                                                    <option
-                                                                        key={city}
-                                                                        value={city}
-                                                                    >
-                                                                        {city}
-                                                                    </option>
-                                                                ))}
+                                                                {CITIES.map(
+                                                                    city => (
+                                                                        <option
+                                                                            key={
+                                                                                city
+                                                                            }
+                                                                            value={
+                                                                                city
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                city
+                                                                            }
+                                                                        </option>
+                                                                    ),
+                                                                )}
                                                             </select>
                                                         </FormControl>
                                                         <FormMessage />
@@ -698,7 +755,9 @@ export default function CreateTenantSheet({
                                                         </FormLabel>
                                                         <FormControl>
                                                             <Input
-                                                                className={fieldClass}
+                                                                className={
+                                                                    fieldClass
+                                                                }
                                                                 {...field}
                                                             />
                                                         </FormControl>
@@ -720,7 +779,9 @@ export default function CreateTenantSheet({
                                                     </FormLabel>
                                                     <FormControl>
                                                         <Input
-                                                            className={fieldClass}
+                                                            className={
+                                                                fieldClass
+                                                            }
                                                             {...field}
                                                         />
                                                     </FormControl>
@@ -738,7 +799,9 @@ export default function CreateTenantSheet({
                                                     </FormLabel>
                                                     <FormControl>
                                                         <Input
-                                                            className={fieldClass}
+                                                            className={
+                                                                fieldClass
+                                                            }
                                                             {...field}
                                                         />
                                                     </FormControl>
@@ -764,7 +827,9 @@ export default function CreateTenantSheet({
                                                     </FormLabel>
                                                     <FormControl>
                                                         <Input
-                                                            className={fieldClass}
+                                                            className={
+                                                                fieldClass
+                                                            }
                                                             {...field}
                                                         />
                                                     </FormControl>
@@ -784,7 +849,9 @@ export default function CreateTenantSheet({
                                                         <FormControl>
                                                             <Input
                                                                 type="email"
-                                                                className={fieldClass}
+                                                                className={
+                                                                    fieldClass
+                                                                }
                                                                 {...field}
                                                             />
                                                         </FormControl>
@@ -807,18 +874,27 @@ export default function CreateTenantSheet({
                                                             <Input
                                                                 inputMode="tel"
                                                                 placeholder="+251 91 234 5678"
-                                                                className={fieldClass}
-                                                                value={field.value}
+                                                                className={
+                                                                    fieldClass
+                                                                }
+                                                                value={
+                                                                    field.value
+                                                                }
                                                                 onChange={e =>
                                                                     field.onChange(
                                                                         maskEthiopianPhone(
-                                                                            e.target
+                                                                            e
+                                                                                .target
                                                                                 .value,
                                                                         ),
                                                                     )
                                                                 }
-                                                                onBlur={field.onBlur}
-                                                                name={field.name}
+                                                                onBlur={
+                                                                    field.onBlur
+                                                                }
+                                                                name={
+                                                                    field.name
+                                                                }
                                                                 ref={field.ref}
                                                             />
                                                         </FormControl>
@@ -868,11 +944,14 @@ export default function CreateTenantSheet({
                                                                 min={1}
                                                                 max={60}
                                                                 className="h-11 w-28 rounded-[12px] text-[16px] font-semibold"
-                                                                value={field.value}
+                                                                value={
+                                                                    field.value
+                                                                }
                                                                 onChange={e =>
                                                                     field.onChange(
                                                                         Number(
-                                                                            e.target
+                                                                            e
+                                                                                .target
                                                                                 .value,
                                                                         ) || 1,
                                                                     )
@@ -881,8 +960,10 @@ export default function CreateTenantSheet({
                                                         </FormControl>
                                                         <p className="text-[13px] text-slate-gray">
                                                             Provisions Table 1–
-                                                            {values.tableCount} on Main
-                                                            Floor.
+                                                            {
+                                                                values.tableCount
+                                                            }{" "}
+                                                            on Main Floor.
                                                         </p>
                                                     </div>
                                                     <FormMessage />
@@ -899,92 +980,101 @@ export default function CreateTenantSheet({
                                                         Active KDS stations
                                                     </p>
                                                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                                        {STATIONS_PRESET.map(station => {
-                                                            const active =
-                                                                field.value.includes(
-                                                                    station.id,
-                                                                );
-                                                            const Icon = station.icon;
-                                                            return (
-                                                                <button
-                                                                    key={station.id}
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        if (active) {
-                                                                            if (
-                                                                                field
-                                                                                    .value
-                                                                                    .length ===
-                                                                                1
-                                                                            )
-                                                                                return;
-                                                                            field.onChange(
-                                                                                field.value.filter(
-                                                                                    id =>
-                                                                                        id !==
-                                                                                        station.id,
-                                                                                ),
-                                                                            );
-                                                                        } else {
-                                                                            field.onChange(
-                                                                                [
-                                                                                    ...field.value,
-                                                                                    station.id,
-                                                                                ],
-                                                                            );
+                                                        {STATIONS_PRESET.map(
+                                                            station => {
+                                                                const active =
+                                                                    field.value.includes(
+                                                                        station.id,
+                                                                    );
+                                                                const Icon =
+                                                                    station.icon;
+                                                                return (
+                                                                    <button
+                                                                        key={
+                                                                            station.id
                                                                         }
-                                                                    }}
-                                                                    className={cn(
-                                                                        "flex items-center justify-between rounded-[16px] border p-3.5 text-left transition-all",
-                                                                        active
-                                                                            ? "border-brand bg-brand/[0.06] ring-1 ring-brand/20"
-                                                                            : "border-hairline bg-card hover:border-foreground/20",
-                                                                    )}
-                                                                >
-                                                                    <span className="flex items-center gap-3">
-                                                                        <span
-                                                                            className={cn(
-                                                                                "flex size-10 items-center justify-center rounded-[12px]",
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            if (
                                                                                 active
-                                                                                    ? "bg-brand text-white"
-                                                                                    : "bg-secondary text-slate-gray",
-                                                                            )}
-                                                                        >
-                                                                            <Icon className="size-4" />
-                                                                        </span>
-                                                                        <span>
-                                                                            <span className="block text-[13px] font-semibold">
-                                                                                {
-                                                                                    station.label
-                                                                                }
-                                                                            </span>
-                                                                            <span className="block text-[11px] text-slate-gray">
-                                                                                KDS display
-                                                                                queue
-                                                                            </span>
-                                                                        </span>
-                                                                    </span>
-                                                                    <span
+                                                                            ) {
+                                                                                if (
+                                                                                    field
+                                                                                        .value
+                                                                                        .length ===
+                                                                                    1
+                                                                                )
+                                                                                    return;
+                                                                                field.onChange(
+                                                                                    field.value.filter(
+                                                                                        id =>
+                                                                                            id !==
+                                                                                            station.id,
+                                                                                    ),
+                                                                                );
+                                                                            } else {
+                                                                                field.onChange(
+                                                                                    [
+                                                                                        ...field.value,
+                                                                                        station.id,
+                                                                                    ],
+                                                                                );
+                                                                            }
+                                                                        }}
                                                                         className={cn(
-                                                                            "flex size-5 items-center justify-center rounded-md border",
+                                                                            "flex items-center justify-between rounded-[16px] border p-3.5 text-left transition-all",
                                                                             active
-                                                                                ? "border-brand bg-brand text-white"
-                                                                                : "border-hairline bg-secondary",
+                                                                                ? "border-brand bg-brand/[0.06] ring-1 ring-brand/20"
+                                                                                : "border-hairline bg-card hover:border-foreground/20",
                                                                         )}
                                                                     >
-                                                                        {active ? (
-                                                                            <Check className="size-3.5 stroke-[3]" />
-                                                                        ) : null}
-                                                                    </span>
-                                                                </button>
-                                                            );
-                                                        })}
+                                                                        <span className="flex items-center gap-3">
+                                                                            <span
+                                                                                className={cn(
+                                                                                    "flex size-10 items-center justify-center rounded-[12px]",
+                                                                                    active
+                                                                                        ? "bg-brand text-white"
+                                                                                        : "bg-secondary text-slate-gray",
+                                                                                )}
+                                                                            >
+                                                                                <Icon className="size-4" />
+                                                                            </span>
+                                                                            <span>
+                                                                                <span className="block text-[13px] font-semibold">
+                                                                                    {
+                                                                                        station.label
+                                                                                    }
+                                                                                </span>
+                                                                                <span className="block text-[11px] text-slate-gray">
+                                                                                    KDS
+                                                                                    display
+                                                                                    queue
+                                                                                </span>
+                                                                            </span>
+                                                                        </span>
+                                                                        <span
+                                                                            className={cn(
+                                                                                "flex size-5 items-center justify-center rounded-md border",
+                                                                                active
+                                                                                    ? "border-brand bg-brand text-white"
+                                                                                    : "border-hairline bg-secondary",
+                                                                            )}
+                                                                        >
+                                                                            {active ? (
+                                                                                <Check className="size-3.5 stroke-[3]" />
+                                                                            ) : null}
+                                                                        </span>
+                                                                    </button>
+                                                                );
+                                                            },
+                                                        )}
                                                     </div>
                                                     {form.formState.errors
                                                         .activeStations ? (
                                                         <p className="mt-2 text-[12px] text-destructive">
                                                             {
-                                                                form.formState.errors
+                                                                form.formState
+                                                                    .errors
                                                                     .activeStations
                                                                     .message
                                                             }
@@ -1009,25 +1099,34 @@ export default function CreateTenantSheet({
                                                 Restaurant
                                             </dt>
                                             <dd className="mt-0.5 font-medium">
-                                                {values.name.trim() || "Untitled brand"}
+                                                {values.name.trim() ||
+                                                    "Untitled brand"}
                                             </dd>
                                         </div>
                                         <div>
-                                            <dt className="text-slate-gray">Plan</dt>
+                                            <dt className="text-slate-gray">
+                                                Plan
+                                            </dt>
                                             <dd className="mt-0.5 font-medium text-brand">
                                                 {planLabel}
                                             </dd>
                                         </div>
                                         <div>
-                                            <dt className="text-slate-gray">Branch</dt>
+                                            <dt className="text-slate-gray">
+                                                Branch
+                                            </dt>
                                             <dd className="mt-0.5 font-medium">
-                                                {values.branchName.trim() || "Not set"}
+                                                {values.branchName.trim() ||
+                                                    "Not set"}
                                             </dd>
                                         </div>
                                         <div>
-                                            <dt className="text-slate-gray">Manager</dt>
+                                            <dt className="text-slate-gray">
+                                                Manager
+                                            </dt>
                                             <dd className="mt-0.5 font-medium">
-                                                {values.managerName.trim() || "Not set"}
+                                                {values.managerName.trim() ||
+                                                    "Not set"}
                                             </dd>
                                             <dd className="text-slate-gray">
                                                 {values.managerPhone}
@@ -1039,7 +1138,8 @@ export default function CreateTenantSheet({
                                             </dt>
                                             <dd className="mt-0.5 font-medium">
                                                 {values.tableCount} tables ·{" "}
-                                                {values.activeStations.length} stations
+                                                {values.activeStations.length}{" "}
+                                                stations
                                             </dd>
                                         </div>
                                     </dl>
@@ -1072,6 +1172,7 @@ export default function CreateTenantSheet({
 
                         {activeTab !== "ops" ? (
                             <button
+                                key="btn-step-next"
                                 type="button"
                                 onClick={() => void goNext()}
                                 className="inline-flex min-w-[132px] items-center justify-center gap-1.5 rounded-[12px] bg-brand px-5 py-2.5 text-[13px] font-semibold text-white shadow-sm hover:bg-brand/90"
@@ -1081,8 +1182,13 @@ export default function CreateTenantSheet({
                             </button>
                         ) : (
                             <button
-                                type="submit"
-                                form="create-tenant-form"
+                                key="btn-step-submit"
+                                type="button"
+                                onClick={() => {
+                                    void form.handleSubmit(
+                                        values => void onSubmit(values),
+                                    )();
+                                }}
                                 disabled={isLoading}
                                 className="inline-flex min-w-[160px] items-center justify-center gap-2 rounded-[12px] bg-brand px-5 py-2.5 text-[13px] font-semibold text-white shadow-sm hover:bg-brand/90 disabled:opacity-50"
                             >

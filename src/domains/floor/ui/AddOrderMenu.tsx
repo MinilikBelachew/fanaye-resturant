@@ -282,7 +282,7 @@ export default function AddOrderMenu({
                     </Button>
                     <div className="h-5 w-px bg-hairline" />
                     <div className="flex items-center gap-2">
-                        <span className="text-[17px] font-bold tracking-tight text-foreground">
+                        <span className="text-[15px] font-semibold tracking-tight text-foreground">
                             {tableLabel}
                         </span>
                         <span className="hidden items-center rounded-full bg-brand/10 px-2.5 py-0.5 text-[11px] font-bold text-brand uppercase sm:inline-flex">
@@ -523,11 +523,11 @@ export default function AddOrderMenu({
                                                 onClick={() => selectItem(item)}
                                             >
                                                 <div className="flex items-start justify-between gap-2">
-                                                    <h3 className="text-[16px] font-bold text-foreground transition-colors group-hover:text-brand">
+                                                    <h3 className="text-[14.5px] font-semibold text-foreground transition-colors group-hover:text-brand">
                                                         {item.name}
                                                     </h3>
                                                 </div>
-                                                <p className="mt-1 line-clamp-2 min-h-[32px] text-[12.5px] leading-relaxed text-slate-gray">
+                                                <p className="mt-1 line-clamp-2 min-h-[32px] text-[12px] leading-relaxed text-slate-gray">
                                                     {item.description || (
                                                         <span className="italic opacity-50">
                                                             Freshly prepared to
@@ -538,9 +538,9 @@ export default function AddOrderMenu({
                                             </div>
 
                                             {/* PRICE & ACTIONS ROW */}
-                                            <div className="mt-4 flex items-center justify-between gap-2 border-t border-hairline/60 pt-3">
+                                            <div className="mt-3 flex items-center justify-between gap-2 border-t border-hairline/60 pt-2.5">
                                                 <div>
-                                                    <span className="text-[16px] font-extrabold text-foreground">
+                                                    <span className="text-[14px] font-semibold text-foreground">
                                                         {formatEtb(item.price)}
                                                     </span>
                                                 </div>
@@ -776,10 +776,10 @@ function OrderTicketContent({
             <div className="flex shrink-0 items-center justify-between border-b border-hairline bg-secondary/30 px-5 py-3.5">
                 <div className="flex items-center gap-2">
                     <Receipt className="size-4 text-brand" />
-                    <h3 className="text-[15px] font-bold text-foreground">
+                    <h3 className="text-[14px] font-semibold text-foreground">
                         {tableLabel} Ticket
                     </h3>
-                    <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-bold text-brand">
+                    <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-medium text-brand">
                         {pieceCount} {pieceCount === 1 ? "dish" : "dishes"}
                     </span>
                 </div>
@@ -842,16 +842,16 @@ function OrderTicketContent({
                             >
                                 <div className="flex items-start justify-between gap-2">
                                     <div className="min-w-0 flex-1">
-                                        <h4 className="text-[14px] font-bold text-foreground">
+                                        <h4 className="text-[13.5px] font-medium text-foreground">
                                             {item.name}
                                         </h4>
                                         {extras ? (
-                                            <p className="mt-0.5 text-[12px] text-slate-gray">
+                                            <p className="mt-0.5 text-[11.5px] text-slate-gray">
                                                 {extras}
                                             </p>
                                         ) : null}
                                     </div>
-                                    <span className="text-[14px] font-bold text-foreground shrink-0">
+                                    <span className="text-[13.5px] font-semibold text-foreground shrink-0">
                                         {formatEtb(linePrice)}
                                     </span>
                                 </div>
@@ -869,7 +869,7 @@ function OrderTicketContent({
                                         >
                                             <Minus className="size-3" />
                                         </button>
-                                        <span className="w-5 text-center text-[12px] font-bold text-foreground">
+                                        <span className="w-5 text-center text-[12px] font-medium text-foreground">
                                             {line.quantity}
                                         </span>
                                         <button
@@ -922,7 +922,7 @@ function OrderTicketContent({
                         {formatEtb(basketTotal)}
                     </span>
                 </div>
-                <div className="flex items-center justify-between text-[16px] font-extrabold text-foreground">
+                <div className="flex items-center justify-between text-[14.5px] font-semibold text-foreground">
                     <span>Total Due</span>
                     <span>{formatEtb(basketTotal)}</span>
                 </div>
@@ -934,7 +934,7 @@ function OrderTicketContent({
                 ) : null}
 
                 <Button
-                    className="h-12 w-full rounded-[16px] bg-brand text-[15px] font-bold text-white shadow-sm hover:bg-brand-deep disabled:opacity-50"
+                    className="h-11 w-full rounded-[14px] bg-brand text-[13.5px] font-medium text-white shadow-xs hover:bg-brand-deep disabled:opacity-50"
                     disabled={lines.length === 0 || sending}
                     onClick={onSubmit}
                 >
