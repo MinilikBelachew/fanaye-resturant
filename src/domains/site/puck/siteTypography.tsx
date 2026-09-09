@@ -67,7 +67,7 @@ export function typographyFields() {
                 value,
                 onChange,
             }: {
-                value: string;
+                value?: string;
                 onChange: (v: string) => void;
             }) => (
                 <ColorField
@@ -95,7 +95,7 @@ export function typographyFields() {
                 value,
                 onChange,
             }: {
-                value: string;
+                value?: string;
                 onChange: (v: string) => void;
             }) => (
                 <ColorField
