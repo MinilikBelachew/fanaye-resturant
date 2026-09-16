@@ -14,9 +14,8 @@ export const staffFormSchema = z
         pin: z
             .string()
             .trim()
-            .min(4, "PIN must be 4–6 digits.")
-            .max(6, "PIN must be 4–6 digits.")
-            .regex(/^\d+$/, "PIN must be numeric."),
+            .length(4, "PIN must be exactly 4 digits.")
+            .regex(/^\d{4}$/, "PIN must be a 4-digit number."),
         active: z.boolean(),
         shiftStatus: z.enum(["on_duty", "on_break", "off_duty"]),
         workingDays: z

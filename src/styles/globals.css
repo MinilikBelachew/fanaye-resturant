@@ -195,6 +195,12 @@
     html.dark .bg-white\/95 {
         background-color: color-mix(in oklab, var(--card) 95%, transparent);
     }
+
+    /* Hide native browser password reveal icons (Edge, IE) */
+    input::-ms-reveal,
+    input::-ms-clear {
+        display: none;
+    }
 }
 
 @layer utilities {

@@ -769,7 +769,7 @@ export default function ManagerStaffPage() {
                         <div className="space-y-4 text-[13px]">
                             <div className="space-y-1">
                                 <label className="font-medium text-foreground">
-                                    New Numeric PIN (4 to 6 digits)
+                                    New Numeric PIN (4 digits)
                                 </label>
                                 <p className="text-[11.5px] text-slate-gray">
                                     Used for quick terminal login, order
@@ -780,7 +780,8 @@ export default function ManagerStaffPage() {
                                         type={
                                             showPinValue ? "text" : "password"
                                         }
-                                        maxLength={6}
+                                        maxLength={4}
+                                        autoComplete="new-password"
                                         value={pinValue}
                                         onChange={e =>
                                             setPinValue(
@@ -790,14 +791,19 @@ export default function ManagerStaffPage() {
                                                 ),
                                             )
                                         }
-                                        placeholder="Enter 4-6 digit PIN"
+                                        placeholder="Enter 4-digit PIN"
                                         className="h-10 rounded-[10px] pr-10 font-mono tracking-wider text-[15px]"
                                         autoFocus
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPinValue(v => !v)}
-                                        className="absolute right-3 top-2.5 text-slate-gray hover:text-foreground"
+                                        className="absolute right-3 top-2.5 z-10 flex size-5 cursor-pointer items-center justify-center text-slate-gray hover:text-foreground transition-colors"
+                                        title={
+                                            showPinValue
+                                                ? "Hide PIN"
+                                                : "Show PIN"
+                                        }
                                     >
                                         {showPinValue ? (
                                             <EyeOff className="size-4" />
@@ -894,7 +900,12 @@ export default function ManagerStaffPage() {
                                         onClick={() =>
                                             setShowPasswordValue(v => !v)
                                         }
-                                        className="absolute right-3 top-2.5 text-slate-gray hover:text-foreground"
+                                        className="absolute right-3 top-2.5 z-10 flex size-5 cursor-pointer items-center justify-center text-slate-gray hover:text-foreground transition-colors"
+                                        title={
+                                            showPasswordValue
+                                                ? "Hide Password"
+                                                : "Show Password"
+                                        }
                                     >
                                         {showPasswordValue ? (
                                             <EyeOff className="size-4" />

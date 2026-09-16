@@ -64,7 +64,12 @@ export default function SignUpPage() {
         e.preventDefault();
         setError("");
 
-        if (!restaurantName.trim() || !fullName.trim() || !email.trim() || !password.trim()) {
+        if (
+            !restaurantName.trim() ||
+            !fullName.trim() ||
+            !email.trim() ||
+            !password.trim()
+        ) {
             setError("Please fill out all required fields.");
             return;
         }
@@ -85,7 +90,9 @@ export default function SignUpPage() {
     }
 
     function handleGoogleSignUp() {
-        setError("Google sign-up is not available yet. Use email and password.");
+        setError(
+            "Google sign-up is not available yet. Use email and password.",
+        );
     }
 
     return (
@@ -138,7 +145,9 @@ export default function SignUpPage() {
                             >
                                 <GoogleIcon />
                                 <span>
-                                    {socialLoading ? t("googleConnecting") : t("googleBtn")}
+                                    {socialLoading
+                                        ? t("googleConnecting")
+                                        : t("googleBtn")}
                                 </span>
                             </Button>
 
@@ -164,15 +173,22 @@ export default function SignUpPage() {
 
                                 <div className="space-y-1.5">
                                     <label className="text-[13px] font-medium text-foreground">
-                                        {t("restaurantName")} <span className="text-primary">*</span>
+                                        {t("restaurantName")}{" "}
+                                        <span className="text-primary">*</span>
                                     </label>
                                     <div className="relative">
                                         <Building2 className="absolute left-3.5 top-3 size-4 text-slate-gray" />
                                         <Input
                                             type="text"
                                             value={restaurantName}
-                                            onChange={e => setRestaurantName(e.target.value)}
-                                            placeholder={t("restaurantPlaceholder")}
+                                            onChange={e =>
+                                                setRestaurantName(
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder={t(
+                                                "restaurantPlaceholder",
+                                            )}
                                             className="h-11 pl-10 rounded-[12px] text-[14px]"
                                             required
                                         />
@@ -182,15 +198,22 @@ export default function SignUpPage() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div className="space-y-1.5">
                                         <label className="text-[13px] font-medium text-foreground">
-                                            {t("fullName")} <span className="text-primary">*</span>
+                                            {t("fullName")}{" "}
+                                            <span className="text-primary">
+                                                *
+                                            </span>
                                         </label>
                                         <div className="relative">
                                             <User className="absolute left-3.5 top-3 size-4 text-slate-gray" />
                                             <Input
                                                 type="text"
                                                 value={fullName}
-                                                onChange={e => setFullName(e.target.value)}
-                                                placeholder={t("namePlaceholder")}
+                                                onChange={e =>
+                                                    setFullName(e.target.value)
+                                                }
+                                                placeholder={t(
+                                                    "namePlaceholder",
+                                                )}
                                                 className="h-11 pl-10 rounded-[12px] text-[14px]"
                                                 required
                                             />
@@ -206,8 +229,12 @@ export default function SignUpPage() {
                                             <Input
                                                 type="text"
                                                 value={phone}
-                                                onChange={e => setPhone(e.target.value)}
-                                                placeholder={t("phonePlaceholder")}
+                                                onChange={e =>
+                                                    setPhone(e.target.value)
+                                                }
+                                                placeholder={t(
+                                                    "phonePlaceholder",
+                                                )}
                                                 className="h-11 pl-10 rounded-[12px] text-[14px]"
                                             />
                                         </div>
@@ -216,14 +243,17 @@ export default function SignUpPage() {
 
                                 <div className="space-y-1.5">
                                     <label className="text-[13px] font-medium text-foreground">
-                                        {t("workEmail")} <span className="text-primary">*</span>
+                                        {t("workEmail")}{" "}
+                                        <span className="text-primary">*</span>
                                     </label>
                                     <div className="relative">
                                         <Mail className="absolute left-3.5 top-3 size-4 text-slate-gray" />
                                         <Input
                                             type="email"
                                             value={email}
-                                            onChange={e => setEmail(e.target.value)}
+                                            onChange={e =>
+                                                setEmail(e.target.value)
+                                            }
                                             placeholder={t("emailPlaceholder")}
                                             className="h-11 pl-10 rounded-[12px] text-[14px]"
                                             required
@@ -233,22 +263,38 @@ export default function SignUpPage() {
 
                                 <div className="space-y-1.5">
                                     <label className="text-[13px] font-medium text-foreground">
-                                        {t("password")} <span className="text-primary">*</span>
+                                        {t("password")}{" "}
+                                        <span className="text-primary">*</span>
                                     </label>
                                     <div className="relative">
                                         <Lock className="absolute left-3.5 top-3 size-4 text-slate-gray" />
                                         <Input
-                                            type={showPassword ? "text" : "password"}
+                                            type={
+                                                showPassword
+                                                    ? "text"
+                                                    : "password"
+                                            }
                                             value={password}
-                                            onChange={e => setPassword(e.target.value)}
-                                            placeholder={t("passwordPlaceholder")}
+                                            onChange={e =>
+                                                setPassword(e.target.value)
+                                            }
+                                            placeholder={t(
+                                                "passwordPlaceholder",
+                                            )}
                                             className="h-11 pl-10 pr-10 rounded-[12px] text-[14px]"
                                             required
                                         />
                                         <button
                                             type="button"
-                                            onClick={() => setShowPassword(v => !v)}
-                                            className="absolute right-3.5 top-3 text-slate-gray hover:text-foreground transition-colors"
+                                            onClick={() =>
+                                                setShowPassword(v => !v)
+                                            }
+                                            className="absolute right-3.5 top-3 z-10 flex size-5 cursor-pointer items-center justify-center text-slate-gray hover:text-foreground transition-colors"
+                                            title={
+                                                showPassword
+                                                    ? "Hide Password"
+                                                    : "Show Password"
+                                            }
                                         >
                                             {showPassword ? (
                                                 <EyeOff className="size-4" />
@@ -265,14 +311,26 @@ export default function SignUpPage() {
                                     </label>
                                     <select
                                         value={concept}
-                                        onChange={e => setConcept(e.target.value)}
+                                        onChange={e =>
+                                            setConcept(e.target.value)
+                                        }
                                         className="h-11 w-full rounded-[12px] border border-hairline bg-surface-ivory/50 px-3 text-[14px] text-foreground outline-none focus:border-primary"
                                     >
-                                        <option value="casual_dining">{t("conceptCasual")}</option>
-                                        <option value="cafe_bar">{t("conceptCafe")}</option>
-                                        <option value="fast_casual">{t("conceptFastCasual")}</option>
-                                        <option value="bakery">{t("conceptBakery")}</option>
-                                        <option value="lounge">{t("conceptLounge")}</option>
+                                        <option value="casual_dining">
+                                            {t("conceptCasual")}
+                                        </option>
+                                        <option value="cafe_bar">
+                                            {t("conceptCafe")}
+                                        </option>
+                                        <option value="fast_casual">
+                                            {t("conceptFastCasual")}
+                                        </option>
+                                        <option value="bakery">
+                                            {t("conceptBakery")}
+                                        </option>
+                                        <option value="lounge">
+                                            {t("conceptLounge")}
+                                        </option>
                                     </select>
                                 </div>
 
@@ -281,11 +339,26 @@ export default function SignUpPage() {
                                         <input
                                             type="checkbox"
                                             checked={agreed}
-                                            onChange={e => setAgreed(e.target.checked)}
+                                            onChange={e =>
+                                                setAgreed(e.target.checked)
+                                            }
                                             className="mt-0.5 size-4 rounded border-hairline text-primary focus:ring-primary"
                                         />
                                         <span>
-                                            {t("termsPrefix")} <a href="#" className="text-primary hover:underline">{t("termsLink")}</a> {t("termsAnd")} <a href="#" className="text-primary hover:underline">{t("privacyLink")}</a>
+                                            {t("termsPrefix")}{" "}
+                                            <a
+                                                href="#"
+                                                className="text-primary hover:underline"
+                                            >
+                                                {t("termsLink")}
+                                            </a>{" "}
+                                            {t("termsAnd")}{" "}
+                                            <a
+                                                href="#"
+                                                className="text-primary hover:underline"
+                                            >
+                                                {t("privacyLink")}
+                                            </a>
                                         </span>
                                     </label>
                                 </div>

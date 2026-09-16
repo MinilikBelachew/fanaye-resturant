@@ -534,7 +534,12 @@ export default function SignInPage() {
                                         type="button"
                                         tabIndex={-1}
                                         onClick={() => setShowPassword(v => !v)}
-                                        className="absolute right-3 top-2.5 text-slate-gray hover:text-foreground transition-colors"
+                                        className="absolute right-3 top-2.5 z-10 flex size-5 cursor-pointer items-center justify-center text-slate-gray hover:text-foreground transition-colors"
+                                        title={
+                                            showPassword
+                                                ? "Hide Password"
+                                                : "Show Password"
+                                        }
                                     >
                                         {showPassword ? (
                                             <EyeOff className="size-3.5" />

@@ -565,7 +565,7 @@ export default function AddEditStaffSheet() {
                                                 </span>
                                             </FormLabel>
                                             <div className="relative">
-                                                <Lock className="absolute top-2.5 left-3 size-4 text-slate-gray" />
+                                                <Lock className="pointer-events-none absolute top-2.5 left-3 size-4 text-slate-gray" />
                                                 <FormControl>
                                                     <Input
                                                         type={
@@ -575,8 +575,9 @@ export default function AddEditStaffSheet() {
                                                         }
                                                         inputMode="numeric"
                                                         pattern="[0-9]*"
-                                                        maxLength={6}
-                                                        placeholder="4–6 digit numeric PIN"
+                                                        maxLength={4}
+                                                        autoComplete="new-password"
+                                                        placeholder="4-digit numeric PIN"
                                                         className="h-10 rounded-[10px] pl-9 pr-10 font-mono tracking-wider"
                                                         {...field}
                                                         onChange={e => {
@@ -597,7 +598,7 @@ export default function AddEditStaffSheet() {
                                                             prev => !prev,
                                                         )
                                                     }
-                                                    className="absolute top-2.5 right-3 text-slate-gray hover:text-foreground transition-colors"
+                                                    className="absolute top-2.5 right-3 z-10 flex size-5 cursor-pointer items-center justify-center text-slate-gray hover:text-foreground transition-colors"
                                                     title={
                                                         showPin
                                                             ? "Hide PIN"
