@@ -1,6 +1,18 @@
-import type { AuthMeResponse, LoginResponse } from "@/domains/identity/domain/authContext";
+import type {
+    AuthMeResponse,
+    LoginResponse,
+} from "@/domains/identity/domain/authContext";
 import { loginErrorMessage } from "@/domains/identity/infrastructure/authSession";
 import { api } from "./index";
+
+export interface TerminalStaffMember {
+    id: string;
+    name: string;
+    role: string;
+    email?: string | null;
+    tenantId: string;
+    tenantSlug?: string;
+}
 
 export const authApi = api.injectEndpoints({
     endpoints: builder => ({
@@ -18,6 +30,33 @@ export const authApi = api.injectEndpoints({
                 message: loginErrorMessage(response.data),
             }),
         }),
+        pinLogin: builder.mutation<
+            LoginResponse,
+            {
+                pin: string;
+                staffId?: string;
+                tenantSlug?: string;
+                remember?: boolean;
+            }
+        >({
+            query: ({ pin, staffId, tenantSlug, remember = true }) => ({
+                url: "/auth/pin-login",
+                method: "POST",
+                body: { pin, staffId, tenantSlug, remember },
+            }),
+            transformErrorResponse: response => ({
+                status: response.status,
+                message: loginErrorMessage(response.data),
+            }),
+        }),
+        getTerminalStaff: builder.query<{ staff: TerminalStaffMember[] }, void>(
+            {
+                query: () => ({
+                    url: "/auth/terminal/staff",
+                    method: "GET",
+                }),
+            },
+        ),
         refresh: builder.mutation<
             { token: string; tokenExpires: number },
             void
@@ -47,6 +86,8 @@ export const authApi = api.injectEndpoints({
 
 export const {
     useLoginMutation,
+    usePinLoginMutation,
+    useGetTerminalStaffQuery,
     useMeQuery,
     useLogoutMutation,
     useRefreshMutation,

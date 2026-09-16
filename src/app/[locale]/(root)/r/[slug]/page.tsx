@@ -40,6 +40,29 @@ export default function PublicRestaurantSitePage({
 
     const site = data.data;
 
+    const bgStyle = (() => {
+        if (
+            site.theme.backgroundType === "gradient" &&
+            site.theme.backgroundGradient
+        ) {
+            return site.theme.backgroundGradient;
+        }
+        if (
+            site.theme.backgroundType === "image" &&
+            site.theme.backgroundImageUrl
+        ) {
+            const opacity = site.theme.backgroundOverlayOpacity ?? 0.85;
+            const isDark =
+                site.theme.textColor === "#f8fafc" ||
+                site.theme.textColor === "#ffffff";
+            const overlay = isDark
+                ? `rgba(15, 23, 42, ${opacity})`
+                : `rgba(255, 255, 255, ${opacity})`;
+            return `linear-gradient(${overlay}, ${overlay}), url("${site.theme.backgroundImageUrl}") center/cover fixed no-repeat`;
+        }
+        return site.theme.backgroundColor || "#fffaf5";
+    })();
+
     return (
         <SiteRenderContext.Provider
             value={{
@@ -61,16 +84,13 @@ export default function PublicRestaurantSitePage({
                         "--site-font-body":
                             site.theme.fontBody || "system-ui, sans-serif",
                         color: site.theme.textColor,
-                        background: site.theme.backgroundColor,
+                        background: bgStyle,
                         fontFamily: "var(--site-font-body)",
                         minHeight: "100svh",
                     } as React.CSSProperties
                 }
             >
-                <Render
-                    config={sitePuckConfig}
-                    data={site.data as Data}
-                />
+                <Render config={sitePuckConfig} data={site.data as Data} />
             </main>
         </SiteRenderContext.Provider>
     );

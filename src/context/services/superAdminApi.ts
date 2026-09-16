@@ -217,10 +217,46 @@ export interface PlatformStaffMember {
     membershipStatus: string;
     lastLoginAt?: string | null;
     hasPassword: boolean;
+    hasPin?: boolean;
+    photoUrl?: string | null;
+}
+
+export interface PaginationMeta {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+}
+
+export interface PlatformStaffQueryParams {
+    page?: number;
+    limit?: number;
+    search?: string;
+    tenantId?: string;
+    role?: string;
+    status?: string;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
 }
 
 export interface PlatformStaffListResponse {
     data: PlatformStaffMember[];
+    meta?: PaginationMeta;
+}
+
+export interface CreatePlatformStaffPayload {
+    tenantId: string;
+    name: string;
+    role: string;
+    pin: string;
+    email?: string;
+    phone?: string;
+    stationCode?: string;
+}
+
+export interface ResetPlatformStaffPinPayload {
+    membershipId: string;
+    pin: string;
 }
 
 export interface FeatureFlag {
@@ -308,12 +344,40 @@ export const superAdminApi = api.injectEndpoints({
             providesTags: ["Auth", "Floor", "Shift", "DailyClose"],
         }),
 
-        getSuperAdminStaff: builder.query<PlatformStaffListResponse, void>({
-            query: () => ({
+        getSuperAdminStaff: builder.query<
+            PlatformStaffListResponse,
+            PlatformStaffQueryParams | void
+        >({
+            query: params => ({
                 url: "/super-admin/staff",
                 method: "GET",
+                params: params || undefined,
             }),
             providesTags: ["Auth"],
+        }),
+
+        createSuperAdminStaff: builder.mutation<
+            PlatformStaffMember,
+            CreatePlatformStaffPayload
+        >({
+            query: body => ({
+                url: "/super-admin/staff",
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: ["Auth"],
+        }),
+
+        resetSuperAdminStaffPin: builder.mutation<
+            PlatformStaffMember,
+            ResetPlatformStaffPinPayload
+        >({
+            query: ({ membershipId, pin }) => ({
+                url: `/super-admin/staff/${membershipId}/pin`,
+                method: "PATCH",
+                body: { pin },
+            }),
+            invalidatesTags: ["Auth"],
         }),
 
         suspendSuperAdminStaff: builder.mutation<
@@ -371,9 +435,10 @@ export const {
     useGetSuperAdminAuditQuery,
     useGetSuperAdminLiveOpsQuery,
     useGetSuperAdminStaffQuery,
+    useCreateSuperAdminStaffMutation,
+    useResetSuperAdminStaffPinMutation,
     useSuspendSuperAdminStaffMutation,
     useResetSuperAdminStaffPasswordMutation,
     useGetSuperAdminFlagsQuery,
     useUpdateSuperAdminFlagMutation,
 } = superAdminApi;
-

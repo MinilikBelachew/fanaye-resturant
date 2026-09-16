@@ -4,13 +4,17 @@ import { CookingPot, User, Utensils } from "lucide-react";
 import { useFloorTablesQuery } from "@/context/services/floorApi";
 import { tableNumber } from "@/domains/floor/application/groupFloor";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
+import { LiveFloorSkeleton } from "@/components/custom/molecules/Skeletons";
 
 export default function LiveFloorBoard() {
+    const tWaiter = useTranslations("waiter");
+    const tCommon = useTranslations("common");
     const { data, isLoading } = useFloorTablesQuery();
     const open = (data?.data ?? []).filter(table => table.tableSessionId);
 
     if (isLoading) {
-        return <p className="text-slate-gray">Loading floor…</p>;
+        return <LiveFloorSkeleton />;
     }
 
     if (open.length === 0) {
@@ -18,11 +22,9 @@ export default function LiveFloorBoard() {
             <div className="rounded-[16px] border border-hairline bg-card p-6 text-center text-slate-gray">
                 <Utensils className="mx-auto mb-2 size-6 text-slate-400" />
                 <p className="text-[14px] font-medium text-foreground">
-                    No active table sessions
+                    {tWaiter("noActiveSessions")}
                 </p>
-                <p className="mt-0.5 text-[12px]">
-                    All tables are free.
-                </p>
+                <p className="mt-0.5 text-[12px]">{tWaiter("allTablesFree")}</p>
             </div>
         );
     }
@@ -41,7 +43,7 @@ export default function LiveFloorBoard() {
                 >
                     <div>
                         <p className="text-[12px] font-medium text-slate-gray">
-                            Table
+                            {tCommon("table")}
                         </p>
                         <h2 className="text-[24px] font-bold leading-tight">
                             {tableNumber(table)}
@@ -53,12 +55,12 @@ export default function LiveFloorBoard() {
                     <div className="mt-3 space-y-1 text-[13px]">
                         <p className="flex items-center gap-1.5">
                             <User className="size-3.5" />
-                            {table.waiterName ?? "Waiter"}
+                            {table.waiterName ?? tCommon("waiter")}
                         </p>
                         <p className="flex items-center gap-1.5 text-slate-gray">
                             <CookingPot className="size-3.5" />
-                            {table.cookingItemCount} cooking ·{" "}
-                            {table.readyItemCount} ready
+                            {table.cookingItemCount} {tWaiter("cooking")} ·{" "}
+                            {table.readyItemCount} {tWaiter("readyCount")}
                         </p>
                     </div>
                 </article>

@@ -9,6 +9,7 @@ import {
     Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 export type FloorCardTone =
     | "free"
@@ -42,6 +43,8 @@ export default function FloorTableCard({
     extraStatus?: string | null;
     onClick: () => void;
 }) {
+    const tCommon = useTranslations("common");
+    const tWaiter = useTranslations("waiter");
     const isMine = badge.tone === "mine" || badge.tone === "occupied";
     const isFree = badge.tone === "free" || badge.tone === "available";
 
@@ -68,7 +71,7 @@ export default function FloorTableCard({
                 <div className="flex items-start justify-between gap-2">
                     <div>
                         <span className="text-[11px] font-medium tracking-wider text-slate-gray uppercase">
-                            Table
+                            {tCommon("table")}
                         </span>
                         <h3 className="text-[20px] font-semibold leading-none text-foreground transition-colors group-hover:text-brand">
                             {tableNumber}
@@ -107,7 +110,9 @@ export default function FloorTableCard({
                         {seats != null ? (
                             <div className="flex items-center gap-1 text-[11.5px] font-medium text-slate-gray">
                                 <Users className="size-3" />
-                                <span>{seats} seats</span>
+                                <span>
+                                    {seats} {tWaiter("guests")}
+                                </span>
                             </div>
                         ) : null}
                     </div>
@@ -122,7 +127,7 @@ export default function FloorTableCard({
                                 <User className="size-3" />
                             </div>
                             <span className="truncate">
-                                Server:{" "}
+                                {tWaiter("server")}:{" "}
                                 <strong className="font-semibold">
                                     {waiter}
                                 </strong>
@@ -138,7 +143,7 @@ export default function FloorTableCard({
                     {total ? (
                         <div className="flex items-center justify-between rounded-lg bg-secondary/40 px-2.5 py-1 text-[13px]">
                             <span className="text-[11.5px] font-medium text-slate-gray">
-                                Running Tab
+                                {tWaiter("runningTab")}
                             </span>
                             <span className="font-semibold text-foreground">
                                 {total}
@@ -175,7 +180,7 @@ export default function FloorTableCard({
                     ) : isFree ? (
                         <span className="inline-flex items-center gap-1 text-slate-gray">
                             <Sparkles className="size-3 text-emerald-500/70" />
-                            <span>Available</span>
+                            <span>{tWaiter("available")}</span>
                         </span>
                     ) : (
                         <span className="text-slate-gray">{footerLeft}</span>

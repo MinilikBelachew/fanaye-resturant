@@ -5,11 +5,17 @@ import {
     useCashierBillRequestsQuery,
     useGenerateBillMutation,
 } from "@/context/services/billingApi";
+import { Bill } from "@/domains/billing/domain/billingApi";
+import { CashierReceiptModal } from "@/domains/payments/ui/CashierReceiptModal";
 import { Button } from "@/components/ui/button";
 import { formatEtb } from "@/lib/money";
 import { toast } from "@/lib/toast";
+import { useTranslations } from "next-intl";
+import { CashierBillsSkeleton } from "@/components/custom/molecules/Skeletons";
 
 export default function CashierBillRequests() {
+    const tCashier = useTranslations("cashier");
+    const tCommon = useTranslations("common");
     const { data, isLoading, isError } = useCashierBillRequestsQuery(
         undefined,
         { pollingInterval: 5000 },
@@ -18,22 +24,33 @@ export default function CashierBillRequests() {
         useGenerateBillMutation();
     const [error, setError] = useState("");
     const [busyId, setBusyId] = useState("");
+    const [activeReceipt, setActiveReceipt] = useState<{
+        bill: Bill;
+        tableDisplayName: string;
+        waiterName: string;
+    } | null>(null);
+
     const requests = data?.data ?? [];
 
     async function generate(request: (typeof requests)[number]) {
         setError("");
         setBusyId(request.billRequestId);
         try {
-            await generateBill({
+            const bill = await generateBill({
                 billRequestId: request.billRequestId,
                 expectedTableSessionVersion:
                     request.expectedTableSessionVersion,
                 tableSessionId: request.tableSessionId,
             }).unwrap();
             toast.success(
-                "Bill generated",
-                `Table ${request.tableDisplayName || request.tableSessionId}`,
+                "Bill generated!",
+                `Table ${request.tableDisplayName || request.tableSessionId} · Ready for receipt & printing.`,
             );
+            setActiveReceipt({
+                bill,
+                tableDisplayName: request.tableDisplayName || "Table",
+                waiterName: request.waiter?.displayName || "Waiter",
+            });
         } catch (err) {
             const message =
                 "Could not generate this bill. Refresh and try again.";
@@ -45,20 +62,17 @@ export default function CashierBillRequests() {
     }
 
     if (isLoading) {
-        return <p className="text-slate-gray">Loading bill requests…</p>;
+        return <CashierBillsSkeleton />;
     }
 
     if (isError) {
-        return (
-            <p className="text-red-600">Could not load bill requests.</p>
-        );
+        return <p className="text-red-600">{tCommon("error")}</p>;
     }
 
     if (requests.length === 0) {
         return (
             <p className="rounded-[16px] border border-hairline bg-card p-5 text-slate-gray">
-                No open bill requests. After a waiter requests the bill, it
-                shows here for you to generate.
+                {tCashier("noPendingBills")}
             </p>
         );
     }
@@ -73,7 +87,7 @@ export default function CashierBillRequests() {
                         className="rounded-[16px] border border-hairline bg-card p-5"
                     >
                         <p className="text-[13px] text-slate-gray">
-                            Table {request.tableDisplayName} ·{" "}
+                            {tCommon("table")} {request.tableDisplayName} ·{" "}
                             {request.waiter.displayName}
                         </p>
                         <p className="text-[20px] font-semibold">
@@ -88,18 +102,30 @@ export default function CashierBillRequests() {
                         </p>
                         <Button
                             className="mt-4"
-                            disabled={busyId === request.billRequestId || Boolean(generatingId)}
+                            disabled={
+                                busyId === request.billRequestId ||
+                                Boolean(generatingId)
+                            }
                             onClick={() => {
                                 void generate(request);
                             }}
                         >
                             {busyId === request.billRequestId
-                                ? "Generating…"
-                                : "Generate bill"}
+                                ? tCashier("generating")
+                                : tCashier("generateBill")}
                         </Button>
                     </article>
                 ))}
             </div>
+
+            {/* Thermal POS Receipt & Print/Export Modal */}
+            <CashierReceiptModal
+                open={Boolean(activeReceipt)}
+                onOpenChange={open => !open && setActiveReceipt(null)}
+                bill={activeReceipt?.bill || null}
+                tableDisplayName={activeReceipt?.tableDisplayName}
+                waiterName={activeReceipt?.waiterName}
+            />
         </div>
     );
 }

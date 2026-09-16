@@ -5,6 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import {
     Clock3,
+    Eye,
+    EyeOff,
     Lock,
     MapPin,
     Phone,
@@ -126,6 +128,7 @@ export default function AddEditStaffSheet() {
     const [createShift, { isLoading: creatingShift }] =
         useCreateShiftDefinitionMutation();
     const [showNewShift, setShowNewShift] = useState(false);
+    const [showPin, setShowPin] = useState(false);
 
     const shiftForm = useForm<ShiftDefinitionFormValues>({
         resolver: zodResolver(shiftDefinitionSchema),
@@ -483,19 +486,57 @@ export default function AddEditStaffSheet() {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>
-                                                Quick Access PIN
+                                                Quick Access PIN{" "}
+                                                <span className="text-primary">
+                                                    *
+                                                </span>
                                             </FormLabel>
                                             <div className="relative">
                                                 <Lock className="absolute top-2.5 left-3 size-4 text-slate-gray" />
                                                 <FormControl>
                                                     <Input
-                                                        type="password"
+                                                        type={
+                                                            showPin
+                                                                ? "text"
+                                                                : "password"
+                                                        }
+                                                        inputMode="numeric"
+                                                        pattern="[0-9]*"
                                                         maxLength={6}
-                                                        placeholder="4-digit PIN"
-                                                        className="h-10 rounded-[10px] pl-9"
+                                                        placeholder="4–6 digit numeric PIN"
+                                                        className="h-10 rounded-[10px] pl-9 pr-10 font-mono tracking-wider"
                                                         {...field}
+                                                        onChange={e => {
+                                                            const val =
+                                                                e.target.value.replace(
+                                                                    /\D/g,
+                                                                    "",
+                                                                );
+                                                            field.onChange(val);
+                                                        }}
                                                     />
                                                 </FormControl>
+                                                <button
+                                                    type="button"
+                                                    tabIndex={-1}
+                                                    onClick={() =>
+                                                        setShowPin(
+                                                            prev => !prev,
+                                                        )
+                                                    }
+                                                    className="absolute top-2.5 right-3 text-slate-gray hover:text-foreground transition-colors"
+                                                    title={
+                                                        showPin
+                                                            ? "Hide PIN"
+                                                            : "Show PIN"
+                                                    }
+                                                >
+                                                    {showPin ? (
+                                                        <EyeOff className="size-4" />
+                                                    ) : (
+                                                        <Eye className="size-4" />
+                                                    )}
+                                                </button>
                                             </div>
                                             <FormMessage />
                                         </FormItem>

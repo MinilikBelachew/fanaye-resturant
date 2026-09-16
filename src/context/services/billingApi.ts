@@ -26,6 +26,13 @@ export const billingApi = api.injectEndpoints({
                 "Bill",
             ],
         }),
+        getBill: builder.query<Bill, string>({
+            query: billId => ({
+                url: `/bills/${billId}`,
+                method: "GET",
+            }),
+            providesTags: (_result, _error, id) => [{ type: "Bill", id }],
+        }),
         requestBill: builder.mutation<
             BillRequestCreated,
             { tableSessionId: string; expectedTableSessionVersion: number }
@@ -102,12 +109,7 @@ export const billingApi = api.injectEndpoints({
                 expectedBillVersion: number;
             }
         >({
-            query: ({
-                billId,
-                amount,
-                cashTendered,
-                expectedBillVersion,
-            }) => ({
+            query: ({ billId, amount, cashTendered, expectedBillVersion }) => ({
                 url: `/bills/${billId}/payments/cash`,
                 method: "POST",
                 body: { amount, cashTendered, expectedBillVersion },
@@ -182,6 +184,15 @@ export const billingApi = api.injectEndpoints({
                 };
             },
         }),
+        sendBillToWaiter: builder.mutation<
+            { success: boolean; message: string },
+            string
+        >({
+            query: billId => ({
+                url: `/bills/${billId}/send-to-waiter`,
+                method: "POST",
+            }),
+        }),
     }),
 });
 
@@ -195,4 +206,7 @@ export const {
     usePayTransferMutation,
     useCashierPaymentsQuery,
     useUploadReceiptMutation,
+    useSendBillToWaiterMutation,
+    useGetBillQuery,
+    useLazyGetBillQuery,
 } = billingApi;

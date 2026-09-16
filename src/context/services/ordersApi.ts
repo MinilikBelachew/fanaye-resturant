@@ -259,6 +259,21 @@ export const ordersApi = api.injectEndpoints({
             }),
             invalidatesTags: ["Approvals", "Floor", "Station", "Order"],
         }),
+        sendToKitchen: builder.mutation<
+            { success: boolean; count: number; message: string },
+            { tableSessionId: string; orderId?: string }
+        >({
+            query: body => ({
+                url: "/orders/send-to-kitchen",
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: (_result, _error, arg) => [
+                "Floor",
+                "Station",
+                { type: "Order", id: arg.tableSessionId },
+            ],
+        }),
     }),
 });
 
@@ -275,4 +290,5 @@ export const {
     useRejectCancellationRequestMutation,
     useApproveChangeRequestMutation,
     useRejectChangeRequestMutation,
+    useSendToKitchenMutation,
 } = ordersApi;

@@ -34,6 +34,8 @@ export type AdminMenuItem = {
     imageKey: string | null;
     imageFileId: string | null;
     imageUrl: string | null;
+    badge?: string | null;
+    showOnQrMenu?: boolean;
     modifierGroups: AdminModifierGroup[];
 };
 

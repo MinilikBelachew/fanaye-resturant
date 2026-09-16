@@ -1,565 +1,856 @@
 {
-  "nav": {
-    "stations": "Live Stations",
-    "howItWorks": "How It Works",
-    "roles": "Role Matrix",
-    "pricing": "Pricing",
-    "meshActive": "Mesh Active",
-    "meshSync": "99.99% Sync",
-    "launchDemo": "Launch Demo",
-    "openPos": "Open POS & Staff Sign-in"
-  },
-  "hero": {
-    "badge": "Real-Time Restaurant OS",
-    "headlinePrefix": "It's Not Just a POS, ",
-    "headlineHighlight": "It's an Operating System.",
-    "description": "Synchronize floor tables, specialized fulfillment stations (Kitchen KDS, Barista, Pastry, Soft Drinks), strict cashier custody, and instant TinaVerify™ transfer auditing on one synchronized timeline.",
-    "launchDemo": "Launch Live Demo",
-    "exploreStations": "Explore Stations",
-    "reviews": "Reviews",
-    "ratingText": "4.9 / 5 from restaurant operators",
-    "tableReadyBadge": "Table 08: READY",
-    "tinaVerifyBadge": "TinaVerify™: Confirmed"
-  },
-  "marquee": {
-    "liveStream": "Live Network Stream:",
-    "monthlyOrders": "$4.2M+ Monthly Orders Synced",
-    "activeKds": "350+ Active KDS Stations",
-    "attributedCustody": "100% Attributed Custody"
-  },
-  "howItWorks": {
-    "badge": "The Operational Lifecycle",
-    "titlePrefix": "How Fanaye Works. ",
-    "titleHighlight": "Step by Step.",
-    "description": "From the moment a waiter claims a table until the daily close report is filed, every action operates on one synchronized timeline.",
-    "speedBenchmark": "Speed Benchmark:",
-    "step1": {
-      "num": "01",
-      "title": "Tableside Order & Modifiers",
-      "subtitle": "Waiter Handheld POS",
-      "headline": "Take complex dine-in orders with modifiers in under 30 seconds.",
-      "metric": "< 30s Table Order Time",
-      "points": [
-        "Visual floor map with table session tracking",
-        "Instant item search with dietary modifier tags",
-        "Confirmation check before sub-second dispatch",
-        "Attributed to waiter badge and active shift"
-      ]
+    "nav": {
+        "stations": "Live Stations",
+        "howItWorks": "How It Works",
+        "roles": "Role Matrix",
+        "pricing": "Pricing",
+        "meshActive": "Mesh Active",
+        "meshSync": "99.99% Sync",
+        "launchDemo": "Launch Demo",
+        "openPos": "Open POS & Staff Sign-in"
     },
-    "step2": {
-      "num": "02",
-      "title": "Multi-Station Neural Dispatch",
-      "subtitle": "Kitchen & Barista KDS",
-      "headline": "Automatic item splitting across specialized fulfillment stations.",
-      "metric": "< 120ms Routing Latency",
-      "points": [
-        "Hot line items sent to Kitchen KDS with timer cues",
-        "Espresso & cold brews routed directly to Barista Bar",
-        "Pastries & cakes dispatched to Bakery display",
-        "Touch bump screen with acoustic 'Ready' alert"
-      ]
+    "hero": {
+        "badge": "Real-Time Restaurant OS",
+        "headlinePrefix": "It's Not Just a POS, ",
+        "headlineHighlight": "It's an Operating System.",
+        "description": "Synchronize floor tables, specialized fulfillment stations (Kitchen KDS, Barista, Pastry, Soft Drinks), strict cashier custody, and instant TinaVerify™ transfer auditing on one synchronized timeline.",
+        "launchDemo": "Launch Live Demo",
+        "exploreStations": "Explore Stations",
+        "reviews": "Reviews",
+        "ratingText": "4.9 / 5 from restaurant operators",
+        "tableReadyBadge": "Table 08: READY",
+        "tinaVerifyBadge": "TinaVerify™: Confirmed"
     },
-    "step3": {
-      "num": "03",
-      "title": "TinaVerify™ Anti-Fraud Audit",
-      "subtitle": "Bank Transfer & Cash Drops",
-      "headline": "Zero revenue leakage with cryptographic transfer validation.",
-      "metric": "0.00% Fraud Leakage",
-      "points": [
-        "Automated OCR scan of customer bank transfer slips",
-        "Instant rejection of fake SMS alerts & duplicate references",
-        "Recorded digital cash drops to Cashier desk",
-        "Immutable custody ledger tied to table session"
-      ]
+    "marquee": {
+        "liveStream": "Live Network Stream:",
+        "monthlyOrders": "$4.2M+ Monthly Orders Synced",
+        "activeKds": "350+ Active KDS Stations",
+        "attributedCustody": "100% Attributed Custody"
     },
-    "step4": {
-      "num": "04",
-      "title": "Operational Daily Close",
-      "subtitle": "Cashier Desk & Analytics",
-      "headline": "Reconcile daily shift custody and sales in under 3 minutes.",
-      "metric": "< 3 min Daily Close",
-      "points": [
-        "One-click shift audit balancing register drawer",
-        "Detailed breakdown of cash drops and transfer receipts",
-        "Individual waiter sales attribution reports",
-        "No painful manual tallying or shift-end arguments"
-      ]
+    "howItWorks": {
+        "badge": "The Operational Lifecycle",
+        "titlePrefix": "How Fanaye Works. ",
+        "titleHighlight": "Step by Step.",
+        "description": "From the moment a waiter claims a table until the daily close report is filed, every action operates on one synchronized timeline.",
+        "speedBenchmark": "Speed Benchmark:",
+        "step1": {
+            "num": "01",
+            "title": "Tableside Order & Modifiers",
+            "subtitle": "Waiter Handheld POS",
+            "headline": "Take complex dine-in orders with modifiers in under 30 seconds.",
+            "metric": "< 30s Table Order Time",
+            "points": [
+                "Visual floor map with table session tracking",
+                "Instant item search with dietary modifier tags",
+                "Confirmation check before sub-second dispatch",
+                "Attributed to waiter badge and active shift"
+            ]
+        },
+        "step2": {
+            "num": "02",
+            "title": "Multi-Station Neural Dispatch",
+            "subtitle": "Kitchen & Barista KDS",
+            "headline": "Automatic item splitting across specialized fulfillment stations.",
+            "metric": "< 120ms Routing Latency",
+            "points": [
+                "Hot line items sent to Kitchen KDS with timer cues",
+                "Espresso & cold brews routed directly to Barista Bar",
+                "Pastries & cakes dispatched to Bakery display",
+                "Touch bump screen with acoustic 'Ready' alert"
+            ]
+        },
+        "step3": {
+            "num": "03",
+            "title": "TinaVerify™ Anti-Fraud Audit",
+            "subtitle": "Bank Transfer & Cash Drops",
+            "headline": "Zero revenue leakage with cryptographic transfer validation.",
+            "metric": "0.00% Fraud Leakage",
+            "points": [
+                "Automated OCR scan of customer bank transfer slips",
+                "Instant rejection of fake SMS alerts & duplicate references",
+                "Recorded digital cash drops to Cashier desk",
+                "Immutable custody ledger tied to table session"
+            ]
+        },
+        "step4": {
+            "num": "04",
+            "title": "Operational Daily Close",
+            "subtitle": "Cashier Desk & Analytics",
+            "headline": "Reconcile daily shift custody and sales in under 3 minutes.",
+            "metric": "< 3 min Daily Close",
+            "points": [
+                "One-click shift audit balancing register drawer",
+                "Detailed breakdown of cash drops and transfer receipts",
+                "Individual waiter sales attribution reports",
+                "No painful manual tallying or shift-end arguments"
+            ]
+        }
+    },
+    "stations": {
+        "badge": "Interactive Live System Simulator",
+        "titlePrefix": "Multi-Station Orchestration. ",
+        "titleHighlight": "Zero Bottlenecks.",
+        "description": "Experience how an order flows across specialized fulfillment stations with instant item routing and verified financial settlement.",
+        "simulateBtn": "Simulate Dispatch",
+        "realtimeSync": "Realtime Sync: Active",
+        "waiterTab": "Waiter Mobile POS",
+        "kitchenTab": "Kitchen Display (KDS)",
+        "baristaTab": "Barista & Beverage",
+        "tinaVerifyTab": "TinaVerify™ AI",
+        "cashierTab": "Cashier Financial Desk",
+        "all": "Barchasi",
+        "new": "Yangi",
+        "preparing": "Jarayonda",
+        "ready": "Tayyor",
+        "exceptions": "Istisnolar",
+        "bumpItem": "Tayyor deb belgilash",
+        "cannotPrepare": "Tayyorlab bo'lmaydi",
+        "ticketAge": "Kutish vaqti",
+        "delayed": "Kechiktirilgan",
+        "orderDetail": "Buyurtma tafsilotlari",
+        "item": "Taom",
+        "extras": "Qo'shimchalar",
+        "asListed": "Ko'rsatilganidek",
+        "received": "Qabul qilindi",
+        "prep": "Tayyorlash (daq)",
+        "overdue": "Kechikkan",
+        "amount": "Miqdor",
+        "noTickets": "Navbatda chiptalar yo'q.",
+        "loadingQueue": "Navbat yuklanmoqda…",
+        "cards": "Kartalar",
+        "table": "Jadval"
+    },
+    "bento": {
+        "badge": "Core Architectural Superpowers",
+        "titlePrefix": "Built for Speed. ",
+        "titleHighlight": "Locked for Accountability.",
+        "description": "Fanaye eliminates lost tickets, prevents transfer fraud, keeps financial custody airtight, and accelerates table turnover.",
+        "routingBadge": "<100ms Routing",
+        "routingTitle": "Sub-Second Multi-Station Routing",
+        "routingDesc": "When a waiter submits an order, Fanaye instantly splits items to designated stations: Kitchen Hot Line, Barista Bar, Pastry, and Soft Drinks.",
+        "station1": "Kitchen KDS",
+        "station2": "Barista Bar",
+        "station3": "Bakery & Cakes",
+        "station4": "Soft Drinks",
+        "tinaVerifyBadge": "ZERO FRAUD",
+        "tinaVerifyTitle": "TinaVerify™ Bank Audit",
+        "tinaVerifyDesc": "Never lose revenue to fake screenshots. TinaVerify validates transfer slips against bank records before bills can be cleared.",
+        "cashDropTitle": "Shift-Aware Cash Drops",
+        "cashDropDesc": "Waiters hand cash to Cashiers through digital drop receipts. Every cent is tied to Waiter + Shift + Table Session.",
+        "floorMatrixTitle": "Live Floor State Matrix",
+        "floorMatrixDesc": "Real-time color-coded table lifecycle: Available, Seated, Ordering, Cooking, Served, Billing, and Settled.",
+        "offlineTitle": "Offline-First PWA Mesh",
+        "offlineDesc": "Internet dropouts? Tablets continue taking orders locally and sync seamlessly with the live mesh when reconnected.",
+        "closeBadge": "End-of-Day Close",
+        "closeTitle": "Automated Operational Daily Close",
+        "closeDesc": "Generate an exhaustive daily close report in minutes: reconcile total cash drops, verified transfer references, table turn velocity, and waiter performance with zero discrepancies.",
+        "closeTimeLabel": "Close Time",
+        "closeTimeValue": "< 3 mins",
+        "discrepancyLabel": "Discrepancy",
+        "discrepancyValue": "$0.00"
+    },
+    "comparison": {
+        "badge": "Why Operators Switch",
+        "titlePrefix": "Legacy POS vs. ",
+        "titleHighlight": "Fanaye Restaurant OS",
+        "description": "See why modern high-volume venues replace legacy cash registers and paper tickets with Fanaye.",
+        "tableHeaderCapability": "Operational Capability",
+        "tableHeaderLegacy": "Legacy POS & Paper Systems",
+        "tableHeaderFanaye": "Fanaye Restaurant OS",
+        "nextGen": "NEXT-GEN",
+        "rows": [
+            {
+                "feature": "Multi-Station Ticket Dispatch",
+                "legacy": "Paper kitchen printers jamming & fading in steam",
+                "fanaye": "Sub-120ms automatic split to Kitchen, Barista & Pastry KDS"
+            },
+            {
+                "feature": "Bank Transfer Fraud Prevention",
+                "legacy": "Unverified fake SMS and edited screenshots accepted",
+                "fanaye": "Automated TinaVerify™ cryptographic slip & webhook verification"
+            },
+            {
+                "feature": "Waiter Cash Custody",
+                "legacy": "High cash carried; chaotic shift-end balancing disputes",
+                "fanaye": "Recorded digital cash drops to Cashier desk per shift & table"
+            },
+            {
+                "feature": "Hardware & Terminal Lock-in",
+                "legacy": "$4,000+ proprietary bulky POS terminals & expensive repair",
+                "fanaye": "Runs natively as PWA on iPads, Android tablets & phones"
+            },
+            {
+                "feature": "Offline Service Resiliency",
+                "legacy": "System freezes completely when internet drops",
+                "fanaye": "Offline-first IndexedDB queue with deterministic live sync"
+            },
+            {
+                "feature": "Daily Operational Close",
+                "legacy": "45–60 minutes of manual tallying, void receipts & math",
+                "fanaye": "One-click 3-minute close report with 100% custody balance"
+            }
+        ]
+    },
+    "hardware": {
+        "badge": "Zero Proprietary Hardware Lock-In",
+        "titlePrefix": "Runs on Any Screen ",
+        "titleHighlight": "You Already Own.",
+        "description": "No expensive proprietary terminals or locked contracts. Open Fanaye in any modern browser or install as a PWA in seconds.",
+        "instantPwa": "Instant PWA Launch",
+        "devices": [
+            {
+                "title": "iPads & Android Tablets",
+                "desc": "Ideal for waiter handheld ordering, floor plan inspection, and tableside payment collection.",
+                "tag": "Waiter POS"
+            },
+            {
+                "title": "Large Touch Terminals",
+                "desc": "Wall-mounted kitchen bump screens and barista stations with high-contrast urgency cues.",
+                "tag": "Kitchen & Barista KDS"
+            },
+            {
+                "title": "Desktop & Laptops",
+                "desc": "Dedicated Cashier Control Desk, bill printing, open check management, and manager audits.",
+                "tag": "Cashier Desk"
+            },
+            {
+                "title": "Smartphones & Mobile",
+                "desc": "Floor Managers oversee live shift clock-ins, void authorizations, and table reassignments on the move.",
+                "tag": "Manager Mobile"
+            }
+        ]
+    },
+    "roles": {
+        "badge": "Role-Based Operational Architecture",
+        "titlePrefix": "Custom Superpowers for ",
+        "titleHighlight": "Every Team Member.",
+        "description": "Each role gets a purpose-built interface designed specifically for their operational demands.",
+        "demoPrefix": "Experience",
+        "demoSuffix": "Demo",
+        "permissionsLabel": "Role Permissions:",
+        "permissionsValue": "Strictly Scoped",
+        "auditLabel": "Audit Attribution:",
+        "auditValue": "100% Immutable",
+        "roleItems": [
+            {
+                "id": "waiter",
+                "title": "Waiter & Collector",
+                "subtitle": "Floor Speed & Custody",
+                "badge": "Customer Touchpoint",
+                "headline": "Empower floor staff with zero lag and frictionless tableside workflows.",
+                "description": "Waiters create orders in seconds with modifiers, see live station preparation status, receive instant ready alerts, collect payments via cash or TinaVerify, and perform recorded cash drops.",
+                "features": [
+                    "Interactive visual floor plan & table assignment",
+                    "Item modifier & customer instruction tags",
+                    "Sub-second dispatch to Kitchen, Barista & Pastry",
+                    "Audio-visual 'Ready for Pickup' notifications",
+                    "TinaVerify transfer validation & recorded cash drops",
+                    "Safe table handover during shift changeover"
+                ],
+                "metricValue": "+28%",
+                "metricLabel": "Table Turn Improvement"
+            },
+            {
+                "id": "fulfillment",
+                "title": "Kitchen & Barista",
+                "subtitle": "Station Display (KDS)",
+                "badge": "Production Engine",
+                "headline": "Crystal clear station displays with zero paper ticket chaos.",
+                "description": "Kitchen hot lines, Barista espresso bars, Bakery counters, and Soft Drink stations receive only the items meant for them with color-coded ticket timers.",
+                "features": [
+                    "Automatic item categorization & station isolation",
+                    "Urgency color coding (Green ➔ Amber ➔ Red)",
+                    "Touch-friendly bump bars with item recall",
+                    "Special modifier badges (Gluten-free, Extra hot)",
+                    "Real-time item 86 / Out-of-stock toggle",
+                    "Average prep turnaround telemetry"
+                ],
+                "metricValue": "3.2x",
+                "metricLabel": "Ticket Delivery Speed"
+            },
+            {
+                "id": "cashier",
+                "title": "Cashier & Custody",
+                "subtitle": "Financial Fortress",
+                "badge": "Financial Control Desk",
+                "headline": "Airtight bill control, waiter cash drops, and painless reconciliation.",
+                "description": "Track all active checks across the venue, finalize bills, verify waiter cash drops, and balance shift registers with zero mismatch.",
+                "features": [
+                    "Real-time visibility into all open restaurant checks",
+                    "Bill finalization & printable breakdown receipts",
+                    "Recorded digital cash drop verification workflow",
+                    "TinaVerify transfer reconciliation ledger",
+                    "Real-time register custody balance",
+                    "One-click Operational Daily Close report"
+                ],
+                "metricValue": "0.00%",
+                "metricLabel": "Discrepancy Rate"
+            },
+            {
+                "id": "manager",
+                "title": "Restaurant Manager",
+                "subtitle": "Floor & Staff Authority",
+                "badge": "Shift Supervisor",
+                "headline": "Supervise floor operations, enforce approvals, and prevent waste.",
+                "description": "Managers oversee live shift attendance, reassign tables between waiters, approve protected voids and cancellations, and ensure high operational speed.",
+                "features": [
+                    "Staff shift clock-in / clock-out tracking",
+                    "Pin-protected void & item cancellation approvals",
+                    "Live floor occupancy & speed-of-service alerts",
+                    "Seamless table session merge and transfer",
+                    "Operational audit trail inspection",
+                    "Station bottleneck detection"
+                ],
+                "metricValue": "-64%",
+                "metricLabel": "Void Waste Reduction"
+            },
+            {
+                "id": "owner",
+                "title": "Owner & Tenant Admin",
+                "subtitle": "Executive Intelligence",
+                "badge": "Multi-Unit Control",
+                "headline": "Real-time telemetry across revenue, menu velocity, and staff productivity.",
+                "description": "Gain total visibility into your restaurant's financial health, top-performing menu items, peak turnaround hours, and multi-branch performance from any device.",
+                "features": [
+                    "Real-time gross revenue & payment method split",
+                    "Menu item profitability & velocity rankings",
+                    "Staff sales attribution and shift analytics",
+                    "Multi-branch tenant administration",
+                    "Configurable fulfillment station routing",
+                    "Custom tax, service charge, and payment settings"
+                ],
+                "metricValue": "100% Live",
+                "metricLabel": "Revenue Visibility"
+            }
+        ],
+        "super_admin": "Bosh administrator",
+        "owner": "Restoran egasi",
+        "manager": "Menejer",
+        "cashier": "Kassir",
+        "waiter": "Ofitsiant",
+        "kitchen": "Oshxona",
+        "barista": "Barista",
+        "cakes": "Qandolat",
+        "soft_drinks": "Ichimliklar"
+    },
+    "roi": {
+        "badge": "Interactive Efficiency Engine",
+        "titlePrefix": "Calculate Your Venue's ",
+        "titleHighlight": "ROI & Velocity.",
+        "description": "Adjust your restaurant metrics below to see how Fanaye eliminates financial leakage and accelerates table turnover.",
+        "activeTables": "Active Dining Tables",
+        "tablesUnit": "Tables",
+        "tablesBoutique": "5 Tables (Boutique)",
+        "tablesLarge": "150 Tables (Large Venue)",
+        "dailyOrders": "Daily Orders / Checks",
+        "ordersUnit": "Checks / Day",
+        "ordersMin": "30 Checks",
+        "ordersMax": "1,000 Checks",
+        "avgCheck": "Average Check Size",
+        "checkCafe": "$10 (Café)",
+        "checkFineDining": "$200 (Fine Dining)",
+        "annualValue": "Estimated Annual Value",
+        "perYear": "/ year",
+        "antiFraudSavings": "Anti-Fraud",
+        "turnoverGain": "Turnover Speed",
+        "hoursSaved": "Hours Saved",
+        "perYr": "/yr",
+        "hrsMo": "hrs/mo",
+        "deployBtn": "Deploy Fanaye to Your Restaurant"
+    },
+    "architecture": {
+        "badge": "System Architecture & High-Availability Mesh",
+        "titlePrefix": "Engineered for High-Pressure ",
+        "titleHighlight": "Dinner Rushes.",
+        "description": "Fanaye's modular micro-event architecture guarantees that every order, modification, and payment confirmation propagates with sub-120ms latency.",
+        "layer1": {
+            "label": "Layer 01 • Client Edge",
+            "title": "Responsive PWA Mesh",
+            "desc": "Runs natively on iPads, Android tablets, phones, and POS touch screens with offline local storage.",
+            "p1": "Zero-install web PWA",
+            "p2": "Local IndexedDB queue"
+        },
+        "layer2": {
+            "label": "Layer 02 • Live Streaming",
+            "title": "WebSocket Event Mesh",
+            "desc": "Sub-120ms bidirectional ticket broadcasting. Stations update instantly when items are dispatched or bumped.",
+            "p1": "Sub-120ms broadcast",
+            "p2": "Instant sound notifications"
+        },
+        "layer3": {
+            "label": "Layer 03 • Security & Audit",
+            "title": "TinaVerify™ Engine",
+            "desc": "Cryptographic transaction validation with OCR slip inspection and duplicate reference locks.",
+            "p1": "Anti-tamper slip hashing",
+            "p2": "Zero unverified transfers"
+        },
+        "layer4": {
+            "label": "Layer 04 • Relational Core",
+            "title": "ACID Cloud Database",
+            "desc": "Isolated multi-tenant schemas with strict row-level security, guaranteeing tamper-proof audit logs.",
+            "p1": "Tenant data isolation",
+            "p2": "Immutable audit trail"
+        }
+    },
+    "pricing": {
+        "badge": "Transparent Pricing",
+        "titlePrefix": "Simple Plans for Restaurants of ",
+        "titleHighlight": "Any Scale.",
+        "description": "No hidden per-terminal fees. Deploy on your existing tablets and smartphones.",
+        "monthly": "Monthly Billing",
+        "annual": "Annual Billing",
+        "save20": "Save 20%",
+        "perMonth": "/ month",
+        "billedAnnually": "Billed annually",
+        "billedMonthly": "Billed monthly",
+        "includedFeatures": "Included Features",
+        "plans": [
+            {
+                "name": "Starter Cloud",
+                "tagline": "For boutique cafés and single-station bistros",
+                "monthlyPrice": 59,
+                "annualPrice": 49,
+                "highlight": false,
+                "badge": null,
+                "features": [
+                    "Up to 15 Dining Tables",
+                    "1 Dedicated Kitchen Display (KDS)",
+                    "Waiter Mobile POS & Modifiers",
+                    "Digital Cash Drop Workflow",
+                    "Basic Shift Reconciliation",
+                    "Offline PWA Resiliency",
+                    "Email Support"
+                ],
+                "cta": "Get Started"
+            },
+            {
+                "name": "Pro Multi-Station",
+                "tagline": "For high-volume restaurants & full-service dining",
+                "monthlyPrice": 159,
+                "annualPrice": 129,
+                "highlight": true,
+                "badge": "MOST POPULAR",
+                "features": [
+                    "Unlimited Tables & Floor Sections",
+                    "4 Specialized Stations (Kitchen, Barista, Pastry, Drinks)",
+                    "TinaVerify™ AI Anti-Fraud Engine",
+                    "Cashier Control Desk & Open Checks",
+                    "One-Click Operational Daily Close",
+                    "Shift & Attendance Management",
+                    "Void & Cancellation Pin Authorization",
+                    "Priority 24/7 Operational Support"
+                ],
+                "cta": "Launch Pro Plan"
+            },
+            {
+                "name": "Enterprise Multi-Unit",
+                "tagline": "For multi-location brands & restaurant franchises",
+                "monthlyPrice": 349,
+                "annualPrice": 289,
+                "highlight": false,
+                "badge": "MULTI-BRANCH",
+                "features": [
+                    "Multi-Branch Central Administration",
+                    "Custom Station Routing & Menus",
+                    "Cross-Branch Analytics & Reporting",
+                    "Role-Based Permission Scopes",
+                    "Custom Accounting Export API",
+                    "Dedicated Customer Success Manager",
+                    "99.99% Uptime SLA Guarantee"
+                ],
+                "cta": "Contact Enterprise Sales"
+            }
+        ]
+    },
+    "faq": {
+        "reviewsBadge": "Trusted by High-Volume Operators",
+        "reviewsTitlePrefix": "Proven on the ",
+        "reviewsTitleHighlight": "Busiest Dining Floors.",
+        "faqBadge": "Frequently Asked Questions",
+        "faqTitle": "Everything You Need to Know",
+        "testimonials": [
+            {
+                "quote": "Before Fanaye, we lost thousands every month to fake bank transfer screenshots and messy paper tickets. TinaVerify stopped all transfer fraud on Day 1, and our kitchen ticket turnaround dropped from 14 minutes to under 8 minutes.",
+                "author": "Mila T.",
+                "role": "Operations Lead & Executive Chef",
+                "venue": "Skyline Lounge & Grill",
+                "avatar": "M"
+            },
+            {
+                "quote": "The Cashier Desk and shift cash-drop flow is genius. Waiters hand in their cash throughout the shift, everything is linked to their badge and table session, and our daily close report takes 3 minutes instead of 45 minutes of arguing over discrepancies.",
+                "author": "Abraham (Abrsh) K.",
+                "role": "Financial Controller & General Manager",
+                "venue": "The Grand Piazza",
+                "avatar": "A"
+            }
+        ],
+        "items": [
+            {
+                "q": "How does TinaVerify™ prevent payment fraud and screenshot spoofing?",
+                "a": "TinaVerify intercepts transfer receipts and cross-references transaction reference IDs, sender data, and amounts against banking webhooks. It rejects fake SMS alerts and reused reference codes automatically, ensuring no bill can be marked as paid until the money is confirmed."
+            },
+            {
+                "q": "What hardware is required for station displays (Kitchen, Barista, Pastry)?",
+                "a": "Zero specialized hardware required. Fanaye runs as a modern, high-performance PWA on standard touchscreens, iPads, Android tablets, or all-in-one POS monitors. Stations update in real-time via WebSocket event streaming with audio alerts."
+            },
+            {
+                "q": "What happens if our restaurant loses internet connection during dinner service?",
+                "a": "Fanaye is built with an offline-first architecture. Waiters can continue taking orders and issuing checks locally on their tablets. When connectivity is restored, the local event queue synchronizes deterministically with the cloud database without losing a single ticket."
+            },
+            {
+                "q": "How does the Waiter Cash Drop workflow work with the Cashier Desk?",
+                "a": "Waiters collect cash from customers at the table. To prevent carrying high cash amounts, waiters record digital cash drops directly on their app. The Cashier verifies and accepts the custody in their drawer. The shift report attributes every dollar to the specific waiter, shift, and table session."
+            },
+            {
+                "q": "Can fulfillment stations be customized without altering waiter menu flows?",
+                "a": "Yes. Stations (Kitchen, Barista, Pastry/Cakes, Soft Drinks) are configurable tenant data. You can reroute specific categories or disable a station during off-peak hours without changing how waiters enter orders."
+            },
+            {
+                "q": "How quickly can new waitstaff and cashiers be trained?",
+                "a": "Fanaye was built with touch-first ergonomics and clear visual cues. Most waitstaff master table ordering and TinaVerify scans in under 15 minutes of hands-on training."
+            }
+        ]
+    },
+    "footer": {
+        "ctaBadge": "Zero Lost Tickets • Zero Fraud",
+        "ctaTitle": "Transform Your Restaurant Operations Today.",
+        "ctaDesc": "Save hundreds of staff hours and eliminate revenue leakage with Fanaye.",
+        "launchDemo": "Launch Live Demo",
+        "brandDesc": "The real-time operating system for modern high-volume restaurants.",
+        "meshOnline": "Real-Time Mesh Online",
+        "colStations": "Stations",
+        "colCapabilities": "Superpowers",
+        "colRoles": "Roles",
+        "copyright": "© 2026 Fanaye Restaurant Management SaaS. Built for high-speed dining operations.",
+        "encryption": "Encrypted Audit Mesh"
+    },
+    "auth": {
+        "signIn": {
+            "welcomeBack": "Fanaye POS ga xush kelibsiz",
+            "subTitle": "PIN kodni kiriting yoki menejer kirishiga o'ting",
+            "staffPinTab": "Xodimlar PIN kirishi",
+            "staffPinTabDesc": "Ofitsiantlar, kassirlar va oshxona uchun tezkor kirish",
+            "managerTab": "Menejer va Admin",
+            "managerTabDesc": "Boshqaruvchilar va egalar uchun email va parol",
+            "enterPin": "4–6 xonali PIN kodni kiriting",
+            "pinDotsLabel": "PIN-kod",
+            "selectStaffOptional": "Xodimni tanlang (ixtiyoriy):",
+            "allStaff": "To'g'ridan-to'g'ri PIN kiritish",
+            "quickLogin": "Terminalni ochish",
+            "signingIn": "Tekshirilmoqda...",
+            "clear": "Tozalash",
+            "backspace": "O'chirish",
+            "emailOrPhone": "Email yoki telefon raqami",
+            "emailPlaceholder": "name@fanaye.com yoki +251...",
+            "password": "Parol",
+            "passwordPlaceholder": "Hisob parolini kiriting",
+            "forgotPassword": "Parolni unutdingizmi?",
+            "rememberMe": "Ushbu terminalni eslab qolish",
+            "signInBtn": "Boshqaruvga kirish",
+            "resumeSession": "Seansni davom ettirish:",
+            "noAccount": "Yangi restoran kerakmi?",
+            "signUpFree": "Restoran yaratish",
+            "errorDefault": "Noto'g'ri ma'lumotlar yoki PIN. Qaytadan urinib ko'ring.",
+            "noRestaurantHome": "Faol restoran tayinlanmagan.",
+            "pinError": "Xodimning PIN kodi noto'g'ri. Qaytadan urinib ko'ring.",
+            "credentialsError": "Email/telefon yoki parol noto'g'ri. Qaytadan urinib ko'ring."
+        }
+    },
+    "appNav": {
+        "dashboard": "Boshqaruv paneli",
+        "operations": "Operatsiyalar",
+        "queue": "Buyurtmalar navbati",
+        "cashier": "Kassa va hisob-kitob",
+        "catalog": "Menyu va katalog",
+        "floor": "Zal va stollar",
+        "management": "Boshqaruv",
+        "admin": "Tizim ma'muriyati",
+        "reports": "Hisobotlar va audit",
+        "allTickets": "Barcha buyurtmalar",
+        "new": "Yangi",
+        "preparing": "Tayyorlanmoqda",
+        "ready": "Tayyor",
+        "exceptions": "Istisnolar",
+        "tables": "Stollar",
+        "activeOrders": "Faol buyurtmalar",
+        "billRequests": "Hisob so'rovlari",
+        "payments": "To'lovlar",
+        "cash": "Naqd pul nazorati",
+        "reconciliation": "Kun yakuni",
+        "menu": "Menyu katalogi",
+        "printMenu": "Chop etish menyusi",
+        "qrMenu": "QR menyu konstruktori",
+        "staff": "Xodimlar",
+        "shift": "Smena",
+        "profile": "Profil",
+        "notifications": "Bildirishnomalar",
+        "website": "Veb-sayt",
+        "tenants": "Restoranlar",
+        "audit": "Audit",
+        "kitchen": "Oshxona KDS",
+        "barista": "Barista",
+        "cakes": "Shirinliklar",
+        "softDrinks": "Ichimliklar",
+        "overview": "Umumiy ko'rinish",
+        "platform": "Platforma",
+        "trust": "Xavfsizlik",
+        "business": "Biznes",
+        "house": "Zal",
+        "control": "Nazorat",
+        "close": "Yakunlash",
+        "liveOps": "Jonli operatsiyalar",
+        "branches": "Filiallar",
+        "staffDirectory": "Xodimlar ro'yxati",
+        "featureFlags": "Funksiyalar",
+        "approvals": "Tasdiqlashlar",
+        "cashDrops": "Inkassatsiya",
+        "closedBills": "Yopilgan hisoblar",
+        "menuItems": "Menyu taomlari",
+        "stations": "Stansiyalar",
+        "settings": "Sozlamalar"
+    },
+    "topbar": {
+        "dashboard": "Boshqaruv paneli",
+        "orderDetail": "Buyurtma tafsilotlari",
+        "signedInAs": "Tizimga kirilgan",
+        "role": "Lavozim",
+        "appearance": "Mavzu",
+        "light": "Yorug'",
+        "dark": "Qorong'i",
+        "system": "Tizim",
+        "signOut": "Chiqish",
+        "toggleSidebar": "Menyuni ochish/yopish"
+    },
+    "common": {
+        "save": "Saqlash",
+        "cancel": "Bekor qilish",
+        "confirm": "Tasdiqlash",
+        "delete": "O'chirish",
+        "edit": "Tahrirlash",
+        "create": "Yaratish",
+        "add": "Qo'shish",
+        "back": "Orqaga",
+        "close": "Yopish",
+        "search": "Qidiruv...",
+        "filter": "Filtr",
+        "exportPdf": "PDF eksport",
+        "print": "Chop etish",
+        "loading": "Yuklanmoqda...",
+        "success": "Muvaffaqiyatli",
+        "error": "Xatolik",
+        "currency": "ETB",
+        "status": "Holat",
+        "actions": "Amallar",
+        "total": "Jami",
+        "subtotal": "Oraliq jami",
+        "date": "Sana",
+        "time": "Vaqt",
+        "table": "Stol",
+        "waiter": "Ofitsiant",
+        "cashier": "Kassir",
+        "guest": "Mehmon",
+        "items": "Taomlar",
+        "qty": "Soni",
+        "price": "Narxi",
+        "refresh": "Yangilash",
+        "noData": "Ma'lumot yo'q"
+    },
+    "waiter": {
+        "tables": "Zal stollari",
+        "allTables": "Barcha stollar",
+        "myTables": "Mening stollarim",
+        "vacant": "Bo'sh",
+        "occupied": "Band",
+        "billRequested": "Hisob so'ralgan",
+        "attention": "E'tibor talab",
+        "tableDetail": "Stol tafsilotlari",
+        "startSession": "Stolni ochish",
+        "closeSession": "Stolni yopish",
+        "addOrder": "Buyurtma qo'shish",
+        "sendToKitchen": "Oshxonaga yuborish",
+        "sending": "Yuborilmoqda...",
+        "needsSendToKitchen": "Oshxonaga yuborilishi kerak",
+        "readyToServe": "Tortishga tayyor",
+        "served": "Tortildi",
+        "markServed": "Tortildi deb belgilash",
+        "requestBill": "Hisob so'rash",
+        "cancelBill": "Hisob so'rovini bekor qilish",
+        "guests": "Mehmonlar",
+        "ticket": "Chek",
+        "sentSuccess": "Buyurtma oshxonaga muvaffaqiyatli yuborildi",
+        "cooking": "tayyorlanmoqda",
+        "queued": "Navbatda",
+        "inService": "Xizmat ko'rsatilmoqda",
+        "available": "Bo'sh",
+        "runningTab": "Joriy hisob",
+        "totalTab": "Stol bo'yicha jami",
+        "kitchenTickets": "Oshxona buyurtmalari",
+        "noOrders": "Hali buyurtmalar yo'q",
+        "openMenuToOrder": "Oshxona va barga yuborish uchun menyuni oching.",
+        "addFirstOrder": "Birinchi buyurtmani qo'shish",
+        "tabSummary": "Stol hisoboti",
+        "itemsOrdered": "Buyurtma qilingan taomlar",
+        "closePaidTable": "To'langan stolni yopish",
+        "closeEmptyTable": "Bo'sh stolni yopish",
+        "closeAfterPayment": "To'lov tasdiqlangach bu stolni yoping.",
+        "tableNotFound": "Stol topilmadi",
+        "tableNotFoundDesc": "Bu stol o'chirilgan yoki boshqa joyga ko'chirilgan bo'lishi mumkin.",
+        "backToFloor": "Zalga qaytish",
+        "backToFloorOverview": "Zal ko'rinishiga qaytish",
+        "server": "Ofitsiant",
+        "assignedWarning": "Faqat biriktirilgan ofitsiant bu stolni o'zgartirishi mumkin.",
+        "floorOverview": "Zal ko'rinishi",
+        "stillCooking": "Tayyorlanmoqda",
+        "shiftSales": "Smena tushumi",
+        "notClockedIn": "Smena boshlanmagan",
+        "clockInPrompt": "Stollarga xizmat ko'rsatishdan oldin smenani boshlang.",
+        "clockIn": "Smenani boshlash",
+        "addMore": "Yana qo'shish",
+        "readyCount": "tayyor",
+        "noActiveSessions": "Faol stollar yo'q",
+        "allTablesFree": "Barcha stollar bo'sh.",
+        "loadingFloor": "Zal yuklanmoqda…"
+    },
+    "cashier": {
+        "billRequests": "Hisob so'rovlari",
+        "generateBill": "Hisob shakllantirish",
+        "generating": "Shakllantirilmoqda...",
+        "noPendingBills": "Kutilayotgan hisob so'rovlari yo'q.",
+        "loadingBills": "So'rovlar yuklanmoqda...",
+        "paymentsLog": "To'lovlar jurnali",
+        "recordPayment": "To'lovni qayd etish",
+        "cash": "Naqd pul",
+        "transfer": "Bank o'tkazmasi",
+        "telebirr": "Telebirr",
+        "cashTendered": "Qabul qilingan naqd pul",
+        "change": "Qaytim",
+        "receipt": "Kassa cheki",
+        "viewReceipt": "Chekni ko'rish",
+        "sendToWaiter": "Ofitsiantga yuborish",
+        "sentToWaiter": "Ofitsiantga yuborildi ✓",
+        "noPayments": "Hali to'lovlar tushmagan.",
+        "loadingPayments": "To'lovlar yuklanmoqda...",
+        "recorded": "Qayd etildi",
+        "tableClosed": "stol yopildi",
+        "tableOpen": "to'langan, stol ochiq",
+        "waitingToGenerate": "Hisob yaratishingizni kutmoqda",
+        "totalLogged": "Jami qayd etilgan",
+        "payment": "to'lov",
+        "payments": "to'lovlar",
+        "collectedAtTable": "Stolda yig'ilgan",
+        "digital": "Raqamli",
+        "telebirrAndBank": "Telebirr va bank o'tkazmasi"
+    },
+    "receipt": {
+        "receiptTitle": "Kassa cheki",
+        "receiptNo": "Chek №",
+        "tin": "STIR (TIN)",
+        "vatReg": "QQS ro'yxati",
+        "server": "Ofitsiant",
+        "cashier": "Kassir",
+        "subtotal": "Oraliq jami",
+        "vat": "QQS (15%)",
+        "total": "Jami to'lov",
+        "tendered": "To'landi",
+        "change": "Qaytim",
+        "printReceipt": "Chekni chop etish",
+        "exportPdf": "PDF eksport",
+        "thankYou": "Tashrifingiz uchun rahmat!"
+    },
+    "manager": {
+        "menuCatalog": "Menyu katalogi",
+        "addItem": "Taom qo'shish",
+        "categories": "Kategoriyalar",
+        "qrBuilder": "QR menyu konstruktori",
+        "printBuilder": "Chop etish menyusi",
+        "staffManagement": "Xodimlarni boshqarish",
+        "reconciliation": "Kunlik hisob-kitob",
+        "exportPdf": "PDF eksport",
+        "printCards": "Stol kartalarini chop etish",
+        "refreshData": "Ma'lumotlarni yangilash",
+        "dailyRevenue": "Kunlik daromad / Sof",
+        "avgPrepTime": "O'rtacha tayyorlanish vaqti",
+        "activeTables": "Faol stollar / Zal",
+        "tinaVerifyMix": "TinaVerify tasdiqlangan o'tkazmalar ulushi"
+    },
+    "settings": {
+        "title": "Sozlamalar",
+        "description": "Restoran siyosati. Zal xodimlari buni o'zgartira olmaydi.",
+        "currency": "Valyuta",
+        "timezone": "Vaqt mintaqasi",
+        "waiterCollects": "Ofitsiant to'lov oladi",
+        "waiterCollectsDesc": "Yoqilgan · standart tartib",
+        "tinaVerify": "TinaVerify™",
+        "tinaVerifyDesc": "O'tkazmalarda majburiy",
+        "stations": "Stansiyalar",
+        "stationsDesc": "Oshxona, Barista, Shirinliklar, Ichimliklar"
+    },
+    "pageHeaders": {
+        "eyebrow_floor": "Zal",
+        "eyebrow_drawer": "Kassa",
+        "eyebrow_close": "Yopish",
+        "eyebrow_cashier_desk": "Kassir stoli",
+        "eyebrow_control": "Boshqaruv",
+        "eyebrow_security___operations": "Xavfsizlik va amallar",
+        "eyebrow_overview": "Umumiy ko'rinish",
+        "eyebrow_house": "Muassasa",
+        "eyebrow_business": "Biznes",
+        "eyebrow_trust": "Ishonch",
+        "eyebrow_platform": "Platforma",
+        "eyebrow_shift": "Smena",
+        "eyebrow_account": "Hisob",
+        "eyebrow_fanaye_saas": "Fanaye SaaS",
+        "title_business_dashboard": "Biznes paneli",
+        "title_financial_dashboard": "Moliyaviy panel",
+        "title_bill_requests": "Hisob so'rovlari",
+        "title_cash_drops": "Naqd pul topshirish",
+        "title_closed_bills": "Yopilgan hisoblar",
+        "title_payments": "To'lovlar",
+        "title_reconciliation": "Kassa solishtiruvi",
+        "title_approvals": "Tasdiqlashlar",
+        "title_audit_trail": "Audit jurnali",
+        "title_operational_daily_close": "Kunlik yopilish",
+        "title_live_operations": "Jonli operatsiyalar",
+        "title_menu": "Menyu katalogi",
+        "title_reports": "Hisobotlar",
+        "title_staff___waiters": "Xodimlar va ofitsiantlar",
+        "title_stations": "Stansiyalar",
+        "title_tables": "Stollar",
+        "title_branches": "Filiallar",
+        "title_website": "Veb-sayt",
+        "title_platform_audit": "Platforma auditi",
+        "title_feature_flags": "Funksiya bayroqlari",
+        "title_live_ops": "Jonli amallar",
+        "title_platform_dashboard": "Platforma paneli",
+        "title_staff_directory": "Xodimlar ma'lumotnomasi",
+        "title_tenants": "Restoranlar",
+        "title_cash_on_you": "Qo'ldagi naqd pul",
+        "title_profile": "Profil",
+        "title_settings": "Sozlamalar",
+        "desc_business_dashboard": "Sotuvlar, tarkib va mashhur taomlar.",
+        "desc_financial_dashboard": "Ofitsiantlar to'lovni stolda qabul qilishadi.",
+        "desc_bill_requests": "Kutayotgan stollar uchun hisob yaratish.",
+        "desc_cash_drops": "Ofitsiantlardan kassaga tushgan naqd pulni hisoblash.",
+        "desc_closed_bills": "To'lov amalga oshirilgan yopiq stollar.",
+        "desc_payments": "Qabul qilingan to'lovlar jurnali.",
+        "desc_reconciliation": "Kutilgan va sanalgan naqd pul solishtiruvi.",
+        "desc_approvals": "Bekor qilish va almashtirishlarni tasdiqlash.",
+        "desc_audit_trail": "Filial voqealarining to'liq auditi.",
+        "desc_operational_daily_close": "Smenani yakunlash va qulflash.",
+        "desc_live_operations": "Stollar, buyurtmalar va stansiyalar jonli ko'rinishda.",
+        "desc_menu": "Taomlarni boshqarish va taqsimlash.",
+        "desc_staff___waiters": "Ofitsiantlar va smenalarni taqsimlash.",
+        "desc_stations": "Tayyorlash navbatlarini sozlash.",
+        "desc_tables": "Stollarni boshqarish va zal monitoringi.",
+        "desc_branches": "Filiallar va nuqtalar.",
+        "desc_website": "Muassasa saytini boshqarish.",
+        "desc_platform_audit": "Platforma amallari auditi.",
+        "desc_feature_flags": "Tizim imkoniyatlarini boshqarish.",
+        "desc_live_ops": "Filiallar tarmog'ini monitoring qilish.",
+        "desc_platform_dashboard": "Restoranlar tarmog'i ko'rsatkichlari.",
+        "desc_staff_directory": "Boshqaruvchilar va egalar ma'lumotnomasi.",
+        "desc_tenants": "Tizim restoranlari ro'yxati.",
+        "desc_cash_on_you": "Kassaga topshirilgungacha bo'lgan naqd pul.",
+        "desc_profile": "Identifikatsiya va sozlamalar."
     }
-  },
-  "stations": {
-    "badge": "Interactive Live System Simulator",
-    "titlePrefix": "Multi-Station Orchestration. ",
-    "titleHighlight": "Zero Bottlenecks.",
-    "description": "Experience how an order flows across specialized fulfillment stations with instant item routing and verified financial settlement.",
-    "simulateBtn": "Simulate Dispatch",
-    "realtimeSync": "Realtime Sync: Active",
-    "waiterTab": "Waiter Mobile POS",
-    "kitchenTab": "Kitchen Display (KDS)",
-    "baristaTab": "Barista & Beverage",
-    "tinaVerifyTab": "TinaVerify™ AI",
-    "cashierTab": "Cashier Financial Desk"
-  },
-  "bento": {
-    "badge": "Core Architectural Superpowers",
-    "titlePrefix": "Built for Speed. ",
-    "titleHighlight": "Locked for Accountability.",
-    "description": "Fanaye eliminates lost tickets, prevents transfer fraud, keeps financial custody airtight, and accelerates table turnover.",
-    "routingBadge": "<100ms Routing",
-    "routingTitle": "Sub-Second Multi-Station Routing",
-    "routingDesc": "When a waiter submits an order, Fanaye instantly splits items to designated stations: Kitchen Hot Line, Barista Bar, Pastry, and Soft Drinks.",
-    "station1": "Kitchen KDS",
-    "station2": "Barista Bar",
-    "station3": "Bakery & Cakes",
-    "station4": "Soft Drinks",
-    "tinaVerifyBadge": "ZERO FRAUD",
-    "tinaVerifyTitle": "TinaVerify™ Bank Audit",
-    "tinaVerifyDesc": "Never lose revenue to fake screenshots. TinaVerify validates transfer slips against bank records before bills can be cleared.",
-    "cashDropTitle": "Shift-Aware Cash Drops",
-    "cashDropDesc": "Waiters hand cash to Cashiers through digital drop receipts. Every cent is tied to Waiter + Shift + Table Session.",
-    "floorMatrixTitle": "Live Floor State Matrix",
-    "floorMatrixDesc": "Real-time color-coded table lifecycle: Available, Seated, Ordering, Cooking, Served, Billing, and Settled.",
-    "offlineTitle": "Offline-First PWA Mesh",
-    "offlineDesc": "Internet dropouts? Tablets continue taking orders locally and sync seamlessly with the live mesh when reconnected.",
-    "closeBadge": "End-of-Day Close",
-    "closeTitle": "Automated Operational Daily Close",
-    "closeDesc": "Generate an exhaustive daily close report in minutes: reconcile total cash drops, verified transfer references, table turn velocity, and waiter performance with zero discrepancies.",
-    "closeTimeLabel": "Close Time",
-    "closeTimeValue": "< 3 mins",
-    "discrepancyLabel": "Discrepancy",
-    "discrepancyValue": "$0.00"
-  },
-  "comparison": {
-    "badge": "Why Operators Switch",
-    "titlePrefix": "Legacy POS vs. ",
-    "titleHighlight": "Fanaye Restaurant OS",
-    "description": "See why modern high-volume venues replace legacy cash registers and paper tickets with Fanaye.",
-    "tableHeaderCapability": "Operational Capability",
-    "tableHeaderLegacy": "Legacy POS & Paper Systems",
-    "tableHeaderFanaye": "Fanaye Restaurant OS",
-    "nextGen": "NEXT-GEN",
-    "rows": [
-      {
-        "feature": "Multi-Station Ticket Dispatch",
-        "legacy": "Paper kitchen printers jamming & fading in steam",
-        "fanaye": "Sub-120ms automatic split to Kitchen, Barista & Pastry KDS"
-      },
-      {
-        "feature": "Bank Transfer Fraud Prevention",
-        "legacy": "Unverified fake SMS and edited screenshots accepted",
-        "fanaye": "Automated TinaVerify™ cryptographic slip & webhook verification"
-      },
-      {
-        "feature": "Waiter Cash Custody",
-        "legacy": "High cash carried; chaotic shift-end balancing disputes",
-        "fanaye": "Recorded digital cash drops to Cashier desk per shift & table"
-      },
-      {
-        "feature": "Hardware & Terminal Lock-in",
-        "legacy": "$4,000+ proprietary bulky POS terminals & expensive repair",
-        "fanaye": "Runs natively as PWA on iPads, Android tablets & phones"
-      },
-      {
-        "feature": "Offline Service Resiliency",
-        "legacy": "System freezes completely when internet drops",
-        "fanaye": "Offline-first IndexedDB queue with deterministic live sync"
-      },
-      {
-        "feature": "Daily Operational Close",
-        "legacy": "45–60 minutes of manual tallying, void receipts & math",
-        "fanaye": "One-click 3-minute close report with 100% custody balance"
-      }
-    ]
-  },
-  "hardware": {
-    "badge": "Zero Proprietary Hardware Lock-In",
-    "titlePrefix": "Runs on Any Screen ",
-    "titleHighlight": "You Already Own.",
-    "description": "No expensive proprietary terminals or locked contracts. Open Fanaye in any modern browser or install as a PWA in seconds.",
-    "instantPwa": "Instant PWA Launch",
-    "devices": [
-      {
-        "title": "iPads & Android Tablets",
-        "desc": "Ideal for waiter handheld ordering, floor plan inspection, and tableside payment collection.",
-        "tag": "Waiter POS"
-      },
-      {
-        "title": "Large Touch Terminals",
-        "desc": "Wall-mounted kitchen bump screens and barista stations with high-contrast urgency cues.",
-        "tag": "Kitchen & Barista KDS"
-      },
-      {
-        "title": "Desktop & Laptops",
-        "desc": "Dedicated Cashier Control Desk, bill printing, open check management, and manager audits.",
-        "tag": "Cashier Desk"
-      },
-      {
-        "title": "Smartphones & Mobile",
-        "desc": "Floor Managers oversee live shift clock-ins, void authorizations, and table reassignments on the move.",
-        "tag": "Manager Mobile"
-      }
-    ]
-  },
-  "roles": {
-    "badge": "Role-Based Operational Architecture",
-    "titlePrefix": "Custom Superpowers for ",
-    "titleHighlight": "Every Team Member.",
-    "description": "Each role gets a purpose-built interface designed specifically for their operational demands.",
-    "demoPrefix": "Experience",
-    "demoSuffix": "Demo",
-    "permissionsLabel": "Role Permissions:",
-    "permissionsValue": "Strictly Scoped",
-    "auditLabel": "Audit Attribution:",
-    "auditValue": "100% Immutable",
-    "roleItems": [
-      {
-        "id": "waiter",
-        "title": "Waiter & Collector",
-        "subtitle": "Floor Speed & Custody",
-        "badge": "Customer Touchpoint",
-        "headline": "Empower floor staff with zero lag and frictionless tableside workflows.",
-        "description": "Waiters create orders in seconds with modifiers, see live station preparation status, receive instant ready alerts, collect payments via cash or TinaVerify, and perform recorded cash drops.",
-        "features": [
-          "Interactive visual floor plan & table assignment",
-          "Item modifier & customer instruction tags",
-          "Sub-second dispatch to Kitchen, Barista & Pastry",
-          "Audio-visual 'Ready for Pickup' notifications",
-          "TinaVerify transfer validation & recorded cash drops",
-          "Safe table handover during shift changeover"
-        ],
-        "metricValue": "+28%",
-        "metricLabel": "Table Turn Improvement"
-      },
-      {
-        "id": "fulfillment",
-        "title": "Kitchen & Barista",
-        "subtitle": "Station Display (KDS)",
-        "badge": "Production Engine",
-        "headline": "Crystal clear station displays with zero paper ticket chaos.",
-        "description": "Kitchen hot lines, Barista espresso bars, Bakery counters, and Soft Drink stations receive only the items meant for them with color-coded ticket timers.",
-        "features": [
-          "Automatic item categorization & station isolation",
-          "Urgency color coding (Green ➔ Amber ➔ Red)",
-          "Touch-friendly bump bars with item recall",
-          "Special modifier badges (Gluten-free, Extra hot)",
-          "Real-time item 86 / Out-of-stock toggle",
-          "Average prep turnaround telemetry"
-        ],
-        "metricValue": "3.2x",
-        "metricLabel": "Ticket Delivery Speed"
-      },
-      {
-        "id": "cashier",
-        "title": "Cashier & Custody",
-        "subtitle": "Financial Fortress",
-        "badge": "Financial Control Desk",
-        "headline": "Airtight bill control, waiter cash drops, and painless reconciliation.",
-        "description": "Track all active checks across the venue, finalize bills, verify waiter cash drops, and balance shift registers with zero mismatch.",
-        "features": [
-          "Real-time visibility into all open restaurant checks",
-          "Bill finalization & printable breakdown receipts",
-          "Recorded digital cash drop verification workflow",
-          "TinaVerify transfer reconciliation ledger",
-          "Real-time register custody balance",
-          "One-click Operational Daily Close report"
-        ],
-        "metricValue": "0.00%",
-        "metricLabel": "Discrepancy Rate"
-      },
-      {
-        "id": "manager",
-        "title": "Restaurant Manager",
-        "subtitle": "Floor & Staff Authority",
-        "badge": "Shift Supervisor",
-        "headline": "Supervise floor operations, enforce approvals, and prevent waste.",
-        "description": "Managers oversee live shift attendance, reassign tables between waiters, approve protected voids and cancellations, and ensure high operational speed.",
-        "features": [
-          "Staff shift clock-in / clock-out tracking",
-          "Pin-protected void & item cancellation approvals",
-          "Live floor occupancy & speed-of-service alerts",
-          "Seamless table session merge and transfer",
-          "Operational audit trail inspection",
-          "Station bottleneck detection"
-        ],
-        "metricValue": "-64%",
-        "metricLabel": "Void Waste Reduction"
-      },
-      {
-        "id": "owner",
-        "title": "Owner & Tenant Admin",
-        "subtitle": "Executive Intelligence",
-        "badge": "Multi-Unit Control",
-        "headline": "Real-time telemetry across revenue, menu velocity, and staff productivity.",
-        "description": "Gain total visibility into your restaurant's financial health, top-performing menu items, peak turnaround hours, and multi-branch performance from any device.",
-        "features": [
-          "Real-time gross revenue & payment method split",
-          "Menu item profitability & velocity rankings",
-          "Staff sales attribution and shift analytics",
-          "Multi-branch tenant administration",
-          "Configurable fulfillment station routing",
-          "Custom tax, service charge, and payment settings"
-        ],
-        "metricValue": "100% Live",
-        "metricLabel": "Revenue Visibility"
-      }
-    ]
-  },
-  "roi": {
-    "badge": "Interactive Efficiency Engine",
-    "titlePrefix": "Calculate Your Venue's ",
-    "titleHighlight": "ROI & Velocity.",
-    "description": "Adjust your restaurant metrics below to see how Fanaye eliminates financial leakage and accelerates table turnover.",
-    "activeTables": "Active Dining Tables",
-    "tablesUnit": "Tables",
-    "tablesBoutique": "5 Tables (Boutique)",
-    "tablesLarge": "150 Tables (Large Venue)",
-    "dailyOrders": "Daily Orders / Checks",
-    "ordersUnit": "Checks / Day",
-    "ordersMin": "30 Checks",
-    "ordersMax": "1,000 Checks",
-    "avgCheck": "Average Check Size",
-    "checkCafe": "$10 (Café)",
-    "checkFineDining": "$200 (Fine Dining)",
-    "annualValue": "Estimated Annual Value",
-    "perYear": "/ year",
-    "antiFraudSavings": "Anti-Fraud",
-    "turnoverGain": "Turnover Speed",
-    "hoursSaved": "Hours Saved",
-    "perYr": "/yr",
-    "hrsMo": "hrs/mo",
-    "deployBtn": "Deploy Fanaye to Your Restaurant"
-  },
-  "architecture": {
-    "badge": "System Architecture & High-Availability Mesh",
-    "titlePrefix": "Engineered for High-Pressure ",
-    "titleHighlight": "Dinner Rushes.",
-    "description": "Fanaye's modular micro-event architecture guarantees that every order, modification, and payment confirmation propagates with sub-120ms latency.",
-    "layer1": {
-      "label": "Layer 01 • Client Edge",
-      "title": "Responsive PWA Mesh",
-      "desc": "Runs natively on iPads, Android tablets, phones, and POS touch screens with offline local storage.",
-      "p1": "Zero-install web PWA",
-      "p2": "Local IndexedDB queue"
-    },
-    "layer2": {
-      "label": "Layer 02 • Live Streaming",
-      "title": "WebSocket Event Mesh",
-      "desc": "Sub-120ms bidirectional ticket broadcasting. Stations update instantly when items are dispatched or bumped.",
-      "p1": "Sub-120ms broadcast",
-      "p2": "Instant sound notifications"
-    },
-    "layer3": {
-      "label": "Layer 03 • Security & Audit",
-      "title": "TinaVerify™ Engine",
-      "desc": "Cryptographic transaction validation with OCR slip inspection and duplicate reference locks.",
-      "p1": "Anti-tamper slip hashing",
-      "p2": "Zero unverified transfers"
-    },
-    "layer4": {
-      "label": "Layer 04 • Relational Core",
-      "title": "ACID Cloud Database",
-      "desc": "Isolated multi-tenant schemas with strict row-level security, guaranteeing tamper-proof audit logs.",
-      "p1": "Tenant data isolation",
-      "p2": "Immutable audit trail"
-    }
-  },
-  "pricing": {
-    "badge": "Transparent Pricing",
-    "titlePrefix": "Simple Plans for Restaurants of ",
-    "titleHighlight": "Any Scale.",
-    "description": "No hidden per-terminal fees. Deploy on your existing tablets and smartphones.",
-    "monthly": "Monthly Billing",
-    "annual": "Annual Billing",
-    "save20": "Save 20%",
-    "perMonth": "/ month",
-    "billedAnnually": "Billed annually",
-    "billedMonthly": "Billed monthly",
-    "includedFeatures": "Included Features",
-    "plans": [
-      {
-        "name": "Starter Cloud",
-        "tagline": "For boutique cafés and single-station bistros",
-        "monthlyPrice": 59,
-        "annualPrice": 49,
-        "highlight": false,
-        "badge": null,
-        "features": [
-          "Up to 15 Dining Tables",
-          "1 Dedicated Kitchen Display (KDS)",
-          "Waiter Mobile POS & Modifiers",
-          "Digital Cash Drop Workflow",
-          "Basic Shift Reconciliation",
-          "Offline PWA Resiliency",
-          "Email Support"
-        ],
-        "cta": "Get Started"
-      },
-      {
-        "name": "Pro Multi-Station",
-        "tagline": "For high-volume restaurants & full-service dining",
-        "monthlyPrice": 159,
-        "annualPrice": 129,
-        "highlight": true,
-        "badge": "MOST POPULAR",
-        "features": [
-          "Unlimited Tables & Floor Sections",
-          "4 Specialized Stations (Kitchen, Barista, Pastry, Drinks)",
-          "TinaVerify™ AI Anti-Fraud Engine",
-          "Cashier Control Desk & Open Checks",
-          "One-Click Operational Daily Close",
-          "Shift & Attendance Management",
-          "Void & Cancellation Pin Authorization",
-          "Priority 24/7 Operational Support"
-        ],
-        "cta": "Launch Pro Plan"
-      },
-      {
-        "name": "Enterprise Multi-Unit",
-        "tagline": "For multi-location brands & restaurant franchises",
-        "monthlyPrice": 349,
-        "annualPrice": 289,
-        "highlight": false,
-        "badge": "MULTI-BRANCH",
-        "features": [
-          "Multi-Branch Central Administration",
-          "Custom Station Routing & Menus",
-          "Cross-Branch Analytics & Reporting",
-          "Role-Based Permission Scopes",
-          "Custom Accounting Export API",
-          "Dedicated Customer Success Manager",
-          "99.99% Uptime SLA Guarantee"
-        ],
-        "cta": "Contact Enterprise Sales"
-      }
-    ]
-  },
-  "faq": {
-    "reviewsBadge": "Trusted by High-Volume Operators",
-    "reviewsTitlePrefix": "Proven on the ",
-    "reviewsTitleHighlight": "Busiest Dining Floors.",
-    "faqBadge": "Frequently Asked Questions",
-    "faqTitle": "Everything You Need to Know",
-    "testimonials": [
-      {
-        "quote": "Before Fanaye, we lost thousands every month to fake bank transfer screenshots and messy paper tickets. TinaVerify stopped all transfer fraud on Day 1, and our kitchen ticket turnaround dropped from 14 minutes to under 8 minutes.",
-        "author": "Mila T.",
-        "role": "Operations Lead & Executive Chef",
-        "venue": "Skyline Lounge & Grill",
-        "avatar": "M"
-      },
-      {
-        "quote": "The Cashier Desk and shift cash-drop flow is genius. Waiters hand in their cash throughout the shift, everything is linked to their badge and table session, and our daily close report takes 3 minutes instead of 45 minutes of arguing over discrepancies.",
-        "author": "Abraham (Abrsh) K.",
-        "role": "Financial Controller & General Manager",
-        "venue": "The Grand Piazza",
-        "avatar": "A"
-      }
-    ],
-    "items": [
-      {
-        "q": "How does TinaVerify™ prevent payment fraud and screenshot spoofing?",
-        "a": "TinaVerify intercepts transfer receipts and cross-references transaction reference IDs, sender data, and amounts against banking webhooks. It rejects fake SMS alerts and reused reference codes automatically, ensuring no bill can be marked as paid until the money is confirmed."
-      },
-      {
-        "q": "What hardware is required for station displays (Kitchen, Barista, Pastry)?",
-        "a": "Zero specialized hardware required. Fanaye runs as a modern, high-performance PWA on standard touchscreens, iPads, Android tablets, or all-in-one POS monitors. Stations update in real-time via WebSocket event streaming with audio alerts."
-      },
-      {
-        "q": "What happens if our restaurant loses internet connection during dinner service?",
-        "a": "Fanaye is built with an offline-first architecture. Waiters can continue taking orders and issuing checks locally on their tablets. When connectivity is restored, the local event queue synchronizes deterministically with the cloud database without losing a single ticket."
-      },
-      {
-        "q": "How does the Waiter Cash Drop workflow work with the Cashier Desk?",
-        "a": "Waiters collect cash from customers at the table. To prevent carrying high cash amounts, waiters record digital cash drops directly on their app. The Cashier verifies and accepts the custody in their drawer. The shift report attributes every dollar to the specific waiter, shift, and table session."
-      },
-      {
-        "q": "Can fulfillment stations be customized without altering waiter menu flows?",
-        "a": "Yes. Stations (Kitchen, Barista, Pastry/Cakes, Soft Drinks) are configurable tenant data. You can reroute specific categories or disable a station during off-peak hours without changing how waiters enter orders."
-      },
-      {
-        "q": "How quickly can new waitstaff and cashiers be trained?",
-        "a": "Fanaye was built with touch-first ergonomics and clear visual cues. Most waitstaff master table ordering and TinaVerify scans in under 15 minutes of hands-on training."
-      }
-    ]
-  },
-  "footer": {
-    "ctaBadge": "Zero Lost Tickets • Zero Fraud",
-    "ctaTitle": "Transform Your Restaurant Operations Today.",
-    "ctaDesc": "Save hundreds of staff hours and eliminate revenue leakage with Fanaye.",
-    "launchDemo": "Launch Live Demo",
-    "brandDesc": "The real-time operating system for modern high-volume restaurants.",
-    "meshOnline": "Real-Time Mesh Online",
-    "colStations": "Stations",
-    "colCapabilities": "Superpowers",
-    "colRoles": "Roles",
-    "copyright": "© 2026 Fanaye Restaurant Management SaaS. Built for high-speed dining operations.",
-    "encryption": "Encrypted Audit Mesh"
-  },
-  "auth": {
-    "signIn": {
-      "welcomeBack": "Welcome back",
-      "subTitle": "Sign in with your Fanaye email or phone",
-      "emailOrPhone": "Email or Phone Number",
-      "emailPlaceholder": "name@fanaye.et or +251 91...",
-      "password": "Password",
-      "passwordPlaceholder": "Enter password",
-      "forgotPassword": "Forgot password?",
-      "rememberMe": "Remember my device",
-      "signInBtn": "Sign in",
-      "signingIn": "Signing in...",
-      "resumeSession": "Resume session as",
-      "noAccount": "Don't have a restaurant account?",
-      "signUpFree": "Sign up for free",
-      "noRestaurantHome": "Signed in, but this account has no restaurant home yet.",
-      "errorDefault": "Could not sign in. Try again."
-    },
-    "signUp": {
-      "title": "Create restaurant account",
-      "subTitle": "Start managing orders, table allocations, and kitchen queues",
-      "googleBtn": "Sign up with Google",
-      "googleConnecting": "Connecting Google...",
-      "orEmail": "or register with email",
-      "restaurantName": "Restaurant / Business Name",
-      "restaurantPlaceholder": "e.g. Bole Lounge & Cafe",
-      "fullName": "Your Full Name",
-      "namePlaceholder": "e.g. Hiwot Bekele",
-      "phone": "Phone Number",
-      "phonePlaceholder": "+251 91...",
-      "workEmail": "Work Email",
-      "emailPlaceholder": "manager@restaurant.et",
-      "password": "Password",
-      "passwordPlaceholder": "Create a secure password (min 6 chars)",
-      "concept": "Restaurant Concept",
-      "conceptCasual": "Casual Dining / Full Service",
-      "conceptCafe": "Cafe & Specialty Coffee Bar",
-      "conceptFastCasual": "Fast Casual / Burger & Pizza",
-      "conceptBakery": "Bakery & Pastry House",
-      "conceptLounge": "Lounge & Bar",
-      "termsPrefix": "I agree to the",
-      "termsLink": "Terms of Service",
-      "termsAnd": "and",
-      "privacyLink": "Privacy Policy",
-      "submitBtn": "Create Free Account",
-      "creating": "Creating your restaurant...",
-      "alreadyAccount": "Already have an account?",
-      "signIn": "Sign in",
-      "successTitle": "Account Created Successfully!",
-      "successDesc": "Welcome to Fanaye! Provisioning your digital kitchen and dining tables...",
-      "openingDashboard": "Opening Manager Dashboard..."
-    },
-    "forgotPassword": {
-      "title": "Forgot your password?",
-      "subTitle": "No worries, we'll send you password recovery instructions",
-      "emailOrPhone": "Email or Phone Number",
-      "placeholder": "e.g. manager@restaurant.et or +251 91...",
-      "helperText": "Enter the email address or phone number you registered with.",
-      "submitBtn": "Send Reset Link",
-      "sending": "Sending reset instructions...",
-      "resetDispatched": "Reset Link Dispatched!",
-      "sentDesc": "We sent instructions to",
-      "checkInbox": ". Please check your inbox or SMS messages.",
-      "resendBtn": "Resend Reset Link",
-      "returnBtn": "Return to Sign In",
-      "backToSignIn": "Back to Sign In"
-    }
-  }
 }

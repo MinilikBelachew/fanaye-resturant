@@ -3,6 +3,7 @@ import {
     Activity,
     AlertTriangle,
     Bell,
+    BookOpen,
     Building2,
     CheckCircle2,
     ClipboardCheck,
@@ -14,7 +15,7 @@ import {
     Inbox,
     LayoutDashboard,
     LayoutGrid,
-    LifeBuoy,
+    QrCode,
     Radio,
     ScrollText,
     Settings,
@@ -34,6 +35,7 @@ export interface NavItem {
     icon: LucideIcon;
     filter?: "all" | "new" | "preparing" | "ready" | "exceptions";
     badgeKey?: "new" | "preparing" | "ready" | "exceptions";
+    children?: NavItem[];
 }
 
 export interface NavSection {
@@ -175,6 +177,28 @@ export function navForRole(role: Role): NavSection[] {
                             label: "Website",
                             icon: Globe,
                         },
+                        {
+                            href: "/manager/menu",
+                            label: "Menu",
+                            icon: UtensilsCrossed,
+                            children: [
+                                {
+                                    href: "/manager/menu",
+                                    label: "Menu Items",
+                                    icon: UtensilsCrossed,
+                                },
+                                {
+                                    href: "/manager/qr-menu",
+                                    label: "QR Menu Builder",
+                                    icon: QrCode,
+                                },
+                                {
+                                    href: "/manager/print-menu",
+                                    label: "Print Menu Builder",
+                                    icon: BookOpen,
+                                },
+                            ],
+                        },
                     ],
                 },
             ];
@@ -202,6 +226,23 @@ export function navForRole(role: Role): NavSection[] {
                             href: "/manager/menu",
                             label: "Menu",
                             icon: UtensilsCrossed,
+                            children: [
+                                {
+                                    href: "/manager/menu",
+                                    label: "Menu Items",
+                                    icon: UtensilsCrossed,
+                                },
+                                {
+                                    href: "/manager/qr-menu",
+                                    label: "QR Menu Builder",
+                                    icon: QrCode,
+                                },
+                                {
+                                    href: "/manager/print-menu",
+                                    label: "Print Menu Builder",
+                                    icon: BookOpen,
+                                },
+                            ],
                         },
                         {
                             href: "/manager/stations",

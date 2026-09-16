@@ -13,17 +13,24 @@ import {
 } from "@/components/custom/organisms/Charts";
 import { useGetManagerDashboardQuery } from "@/context/services/managerDashboardApi";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
+import { KpiStatsSkeleton } from "@/components/custom/molecules/Skeletons";
 
 export default function ManagerPage() {
-    const { data, isLoading, isFetching, error, refetch } = useGetManagerDashboardQuery();
+    const tManager = useTranslations("manager");
+    const tNav = useTranslations("appNav");
+    const tRoles = useTranslations("roles");
+    const tTopBar = useTranslations("topbar");
+    const { data, isLoading, isFetching, error, refetch } =
+        useGetManagerDashboardQuery();
     const dash = data?.data;
 
     return (
         <DashboardFrame>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <PageHeader
-                    eyebrow="House"
-                    title="Manager dashboard"
+                    eyebrow={tNav("house")}
+                    title={`${tRoles("manager")} ${tTopBar("dashboard")}`}
                     description={
                         dash
                             ? `${dash.branchName} · Live telemetry for business date ${dash.businessDate}`
@@ -37,80 +44,105 @@ export default function ManagerPage() {
                     disabled={isFetching}
                     className="self-start sm:self-auto gap-2 rounded-full border-border/80 bg-background text-xs font-medium"
                 >
-                    <RefreshCw className={`size-3.5 ${isFetching ? "animate-spin" : ""}`} />
-                    <span>Refresh data</span>
+                    <RefreshCw
+                        className={`size-3.5 ${isFetching ? "animate-spin" : ""}`}
+                    />
+                    <span>{tManager("refreshData")}</span>
                 </Button>
             </div>
 
             {error && (
                 <div className="rounded-[16px] border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive">
-                    Unable to load real-time telemetry from backend. Please check connection and permissions.
+                    Unable to load real-time telemetry from backend. Please
+                    check connection and permissions.
                 </div>
             )}
 
             {/* 1. Top Modern KPI Stat Cards */}
-            <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-                <KpiCard
-                    label="Daily Revenue / Net"
-                    value={isLoading ? "..." : (dash?.kpis.dailyRevenueFormatted ?? "ETB 0")}
-                    trend={{
-                        value: dash?.kpis.dailyRevenueTrend ?? "0%",
-                        direction: dash?.kpis.dailyRevenueTrend?.startsWith("+") ? "up" : "neutral",
-                        label: dash?.kpis.dailyRevenueTrendLabel ?? "vs yesterday",
-                    }}
-                    sparkline={{
-                        badge: dash?.kpis.dailyRevenueTrend?.replace(/[^0-9%]/g, "") || "0%",
-                        color: "#e85d04",
-                        variant: "wave1",
-                    }}
-                    tone="brand"
-                />
-                <KpiCard
-                    label="Avg Prep Time / Day"
-                    value={isLoading ? "..." : (dash?.kpis.avgPrepTimeFormatted ?? "0.0 min")}
-                    trend={{
-                        value: dash?.kpis.avgPrepTimeTrend ?? "0%",
-                        direction: "up",
-                        label: dash?.kpis.avgPrepTimeTrendLabel ?? "fulfillment speed",
-                    }}
-                    sparkline={{
-                        badge: dash?.kpis.avgPrepTimeFormatted?.replace(" min", "") || "0",
-                        color: "#046645",
-                        variant: "wave2",
-                    }}
-                    tone="emerald"
-                />
-                <KpiCard
-                    label="Active Tables / Floor"
-                    value={isLoading ? "..." : (dash?.kpis.activeTablesFormatted ?? "0 / 0")}
-                    trend={{
-                        value: dash?.kpis.floorCapacityPercentage ?? "0%",
-                        direction: "neutral",
-                        label: "floor capacity",
-                    }}
-                    sparkline={{
-                        badge: dash?.kpis.floorCapacityPercentage || "0%",
-                        color: "#f97316",
-                        variant: "wave3",
-                    }}
-                    tone="amber"
-                />
-                <KpiCard
-                    label="TinaVerify Transfer Mix"
-                    value={isLoading ? "..." : (dash?.kpis.tinaVerifyMixPercentage ?? "0.0%")}
-                    trend={{
-                        value: dash?.kpis.tinaVerifyTrend ?? "0%",
-                        direction: "up",
-                        label: dash?.kpis.tinaVerifyTrendLabel ?? "digital verified",
-                    }}
-                    sparkline={{
-                        badge: dash?.kpis.tinaVerifyMixPercentage || "0%",
-                        color: "#c2410c",
-                        variant: "wave4",
-                    }}
-                    tone="brand"
-                />
-            </div>
+            {isLoading ? (
+                <KpiStatsSkeleton />
+            ) : (
+                <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+                    <KpiCard
+                        label={tManager("dailyRevenue")}
+                        value={dash?.kpis.dailyRevenueFormatted ?? "ETB 0"}
+                        trend={{
+                            value: dash?.kpis.dailyRevenueTrend ?? "0%",
+                            direction: dash?.kpis.dailyRevenueTrend?.startsWith(
+                                "+",
+                            )
+                                ? "up"
+                                : "neutral",
+                            label:
+                                dash?.kpis.dailyRevenueTrendLabel ??
+                                "vs yesterday",
+                        }}
+                        sparkline={{
+                            badge:
+                                dash?.kpis.dailyRevenueTrend?.replace(
+                                    /[^0-9%]/g,
+                                    "",
+                                ) || "0%",
+                            color: "#e85d04",
+                            variant: "wave1",
+                        }}
+                        tone="brand"
+                    />
+                    <KpiCard
+                        label={tManager("avgPrepTime")}
+                        value={dash?.kpis.avgPrepTimeFormatted ?? "0.0 min"}
+                        trend={{
+                            value: dash?.kpis.avgPrepTimeTrend ?? "0%",
+                            direction: "up",
+                            label:
+                                dash?.kpis.avgPrepTimeTrendLabel ??
+                                "fulfillment speed",
+                        }}
+                        sparkline={{
+                            badge:
+                                dash?.kpis.avgPrepTimeFormatted?.replace(
+                                    " min",
+                                    "",
+                                ) || "0",
+                            color: "#046645",
+                            variant: "wave2",
+                        }}
+                        tone="emerald"
+                    />
+                    <KpiCard
+                        label={tManager("activeTables")}
+                        value={dash?.kpis.activeTablesFormatted ?? "0 / 0"}
+                        trend={{
+                            value: dash?.kpis.floorCapacityPercentage ?? "0%",
+                            direction: "neutral",
+                            label: "floor capacity",
+                        }}
+                        sparkline={{
+                            badge: dash?.kpis.floorCapacityPercentage || "0%",
+                            color: "#f97316",
+                            variant: "wave3",
+                        }}
+                        tone="amber"
+                    />
+                    <KpiCard
+                        label={tManager("tinaVerifyMix")}
+                        value={dash?.kpis.tinaVerifyMixPercentage ?? "0.0%"}
+                        trend={{
+                            value: dash?.kpis.tinaVerifyTrend ?? "0%",
+                            direction: "up",
+                            label:
+                                dash?.kpis.tinaVerifyTrendLabel ??
+                                "digital verified",
+                        }}
+                        sparkline={{
+                            badge: dash?.kpis.tinaVerifyMixPercentage || "0%",
+                            color: "#c2410c",
+                            variant: "wave4",
+                        }}
+                        tone="brand"
+                    />
+                </div>
+            )}
 
             {/* 2. Main Dashboard Charts: Revenue vs Collections + Payment Channels */}
             <div className="grid gap-4 lg:grid-cols-3">
@@ -118,7 +150,9 @@ export default function ManagerPage() {
                     <RevenueVsCollectionsChart data={dash?.salesTrend} />
                 </div>
                 <div className="lg:col-span-1">
-                    <PaymentChannelsBreakdown channels={dash?.paymentChannels} />
+                    <PaymentChannelsBreakdown
+                        channels={dash?.paymentChannels}
+                    />
                 </div>
             </div>
 

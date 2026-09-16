@@ -25,7 +25,10 @@ import {
     useStartTableSessionMutation,
     useWaiterTablesQuery,
 } from "@/context/services/floorApi";
-import { useTableSessionOrdersQuery } from "@/context/services/ordersApi";
+import {
+    useTableSessionOrdersQuery,
+    useSendToKitchenMutation,
+} from "@/context/services/ordersApi";
 import { tableNumber } from "@/domains/floor/application/groupFloor";
 import AddOrderMenu from "@/domains/floor/ui/AddOrderMenu";
 import WaiterMarkServedButton from "@/domains/floor/ui/WaiterMarkServedButton";
@@ -37,14 +40,26 @@ import { Link } from "@/i18n/navigation";
 import { formatEtb } from "@/lib/money";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
+import { TableDetailSkeleton } from "@/components/custom/molecules/Skeletons";
 
 const ORDERABLE = new Set(["OPEN", "ACTIVE_ORDER", "ATTENTION_REQUIRED"]);
 const REQUESTABLE = new Set(["OPEN", "ACTIVE_ORDER", "ATTENTION_REQUIRED"]);
 
-function itemStateInfo(state: string) {
+function itemStateInfo(state: string, tWaiter?: (key: string) => string) {
+    if (state === "CONFIRMED") {
+        return {
+            label: tWaiter
+                ? tWaiter("needsSendToKitchen")
+                : "Needs Send to Kitchen",
+            icon: <ChefHat className="size-3 text-amber-500 animate-pulse" />,
+            badgeClass:
+                "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/40 font-bold",
+        };
+    }
     if (state === "READY") {
         return {
-            label: "Ready to serve",
+            label: tWaiter ? tWaiter("readyToServe") : "Ready to serve",
             icon: (
                 <BellRing className="size-3 animate-bounce text-emerald-500" />
             ),
@@ -54,7 +69,7 @@ function itemStateInfo(state: string) {
     }
     if (state === "IN_PREPARATION" || state === "COOKING") {
         return {
-            label: "Cooking in station",
+            label: tWaiter ? tWaiter("cooking") : "Cooking in station",
             icon: <ChefHat className="size-3 text-amber-500" />,
             badgeClass:
                 "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
@@ -62,7 +77,7 @@ function itemStateInfo(state: string) {
     }
     if (state === "QUEUED") {
         return {
-            label: "Queued",
+            label: tWaiter ? tWaiter("queued") : "Queued",
             icon: <Clock className="size-3 text-sky-500" />,
             badgeClass:
                 "bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30",
@@ -70,7 +85,7 @@ function itemStateInfo(state: string) {
     }
     if (state === "SERVED") {
         return {
-            label: "Served",
+            label: tWaiter ? tWaiter("served") : "Served",
             icon: <CheckCircle2 className="size-3 text-slate-gray" />,
             badgeClass: "bg-secondary text-slate-gray border-hairline",
         };
@@ -101,6 +116,10 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
     const [requestBill, { isLoading: requesting }] = useRequestBillMutation();
     const [cancelBillRequest, { isLoading: cancelling }] =
         useCancelBillRequestMutation();
+    const [sendToKitchen, { isLoading: isSendingToKitchen }] =
+        useSendToKitchenMutation();
+    const tWaiter = useTranslations("waiter");
+    const tCommon = useTranslations("common");
     const [error, setError] = useState("");
     const [menuOpen, setMenuOpen] = useState(false);
 
@@ -145,6 +164,34 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
             );
         }, 0);
     }, [bill, tickets]);
+
+    const pendingKitchenCount = useMemo(() => {
+        return tickets.reduce(
+            (sum, order) =>
+                sum + order.items.filter(i => i.state === "CONFIRMED").length,
+            0,
+        );
+    }, [tickets]);
+
+    async function onSendToKitchen(orderId?: string) {
+        if (!sessionId) return;
+        setError("");
+        try {
+            const res = await sendToKitchen({
+                tableSessionId: sessionId,
+                orderId,
+            }).unwrap();
+            toast.success(
+                "Sent to Kitchen!",
+                res.message ||
+                    "Items have been dispatched to kitchen stations.",
+            );
+        } catch (err) {
+            const message = "Could not send items to kitchen stations.";
+            setError(message);
+            toast.fromUnknown(err, message);
+        }
+    }
 
     async function takeTable() {
         setError("");
@@ -225,12 +272,7 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
     }
 
     if (isLoading) {
-        return (
-            <div className="flex h-64 items-center justify-center text-slate-gray">
-                <ChefHat className="size-8 animate-bounce text-brand" />
-                <span className="ml-2 font-medium">Loading table details…</span>
-            </div>
-        );
+        return <TableDetailSkeleton />;
     }
 
     if (isError || !table) {
@@ -241,14 +283,14 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                     className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-brand hover:underline"
                 >
                     <ArrowLeft className="size-4" />
-                    <span>Back to Floor</span>
+                    <span>{tWaiter("backToFloor")}</span>
                 </Link>
                 <div className="rounded-[18px] border border-hairline bg-card p-8 text-center text-slate-gray">
                     <p className="font-semibold text-foreground">
-                        Table not found
+                        {tWaiter("tableNotFound")}
                     </p>
                     <p className="mt-1 text-sm">
-                        This table may have been removed or reassigned.
+                        {tWaiter("tableNotFoundDesc")}
                     </p>
                 </div>
             </div>
@@ -286,7 +328,7 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                     className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-brand transition-colors hover:underline"
                 >
                     <ArrowLeft className="size-4" />
-                    <span>Back to Floor Overview</span>
+                    <span>{tWaiter("backToFloorOverview")}</span>
                 </Link>
             </div>
 
@@ -295,7 +337,7 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                 <div>
                     <div className="flex flex-wrap items-center gap-2.5">
                         <h1 className="text-[22px] font-semibold tracking-tight text-foreground md:text-[24px]">
-                            Table {tableNumber(table)}
+                            {tCommon("table")} {tableNumber(table)}
                         </h1>
                         <span
                             className={cn(
@@ -315,8 +357,8 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                             />
                             <span>
                                 {occupied
-                                    ? `In Service · ${sessionLabel(sessionStatus)}`
-                                    : "Available"}
+                                    ? `${tWaiter("inService")} · ${sessionLabel(sessionStatus)}`
+                                    : tWaiter("available")}
                             </span>
                         </span>
                     </div>
@@ -333,7 +375,8 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                             <div className="flex items-center gap-1 font-medium text-foreground">
                                 <User className="size-3.5 text-brand" />
                                 <span>
-                                    Server: <strong>{table.waiterName}</strong>
+                                    {tWaiter("server")}:{" "}
+                                    <strong>{table.waiterName}</strong>
                                 </span>
                             </div>
                         ) : null}
@@ -342,10 +385,7 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                             <div className="flex items-center gap-1 font-medium">
                                 <Users className="size-3.5 text-slate-gray/80" />
                                 <span>
-                                    {table.guestCount}{" "}
-                                    {table.guestCount === 1
-                                        ? "guest"
-                                        : "guests"}
+                                    {table.guestCount} {tWaiter("guests")}
                                 </span>
                             </div>
                         ) : null}
@@ -357,12 +397,27 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                     {occupied ? (
                         <div className="rounded-[14px] bg-secondary/50 px-3.5 py-1.5 text-right">
                             <span className="text-[11px] font-medium text-slate-gray uppercase">
-                                Running Tab
+                                {tWaiter("runningTab")}
                             </span>
                             <p className="text-[16px] font-semibold text-foreground">
                                 {formatEtb(runningTotal)}
                             </p>
                         </div>
+                    ) : null}
+
+                    {pendingKitchenCount > 0 && table.mine ? (
+                        <Button
+                            onClick={() => onSendToKitchen()}
+                            disabled={isSendingToKitchen}
+                            className="h-9 gap-1.5 rounded-full bg-amber-600 hover:bg-amber-700 px-4 text-[13px] font-bold text-white shadow-sm animate-pulse"
+                        >
+                            <ChefHat className="size-4" />
+                            <span>
+                                {isSendingToKitchen
+                                    ? tWaiter("sending")
+                                    : `${tWaiter("sendToKitchen")} (${pendingKitchenCount})`}
+                            </span>
+                        </Button>
                     ) : null}
 
                     {canOrder ? (
@@ -371,7 +426,7 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                             className="h-9 rounded-full bg-brand px-4 text-[13px] font-medium text-white shadow-xs hover:bg-brand-deep"
                         >
                             <Plus className="mr-1.5 size-4" />
-                            <span>Add Order</span>
+                            <span>{tWaiter("addOrder")}</span>
                         </Button>
                     ) : null}
 
@@ -381,7 +436,9 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                             disabled={starting}
                             onClick={takeTable}
                         >
-                            {starting ? "Taking Table…" : "Take Table"}
+                            {starting
+                                ? tCommon("loading")
+                                : tWaiter("startSession")}
                         </Button>
                     ) : null}
                 </div>
@@ -395,8 +452,7 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
 
             {occupied && !table.mine ? (
                 <div className="rounded-[18px] border border-amber-500/30 bg-amber-500/10 p-4 text-[14px] font-semibold text-amber-900 dark:text-amber-200">
-                    Assigned to {table.waiterName}. Only the assigned server may
-                    modify this table.
+                    {tWaiter("assignedWarning")}
                 </div>
             ) : null}
 
@@ -408,12 +464,10 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                         <div className="flex items-center justify-between">
                             <div>
                                 <h2 className="text-[15px] font-semibold text-foreground">
-                                    Kitchen Tickets & Orders
+                                    {tWaiter("kitchenTickets")}
                                 </h2>
                                 <p className="text-[12.5px] text-slate-gray">
-                                    {itemCount}{" "}
-                                    {itemCount === 1 ? "dish" : "dishes"} active
-                                    in station queues
+                                    {itemCount} {tCommon("items")}
                                 </p>
                             </div>
                             {canOrder ? (
@@ -424,7 +478,7 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                     className="h-8 gap-1.5 rounded-full border-hairline text-xs font-medium"
                                 >
                                     <Plus className="size-3.5 text-brand" />
-                                    <span>Add more</span>
+                                    <span>{tWaiter("addMore")}</span>
                                 </Button>
                             ) : null}
                         </div>
@@ -441,7 +495,8 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                             <div className="flex items-center gap-2">
                                                 <Clock className="size-3.5 text-slate-gray" />
                                                 <span className="font-medium text-foreground">
-                                                    Ticket #{orderIndex + 1}
+                                                    {tWaiter("ticket")} #
+                                                    {orderIndex + 1}
                                                 </span>
                                                 <span className="text-slate-gray">
                                                     ·{" "}
@@ -453,12 +508,36 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                                     })}
                                                 </span>
                                             </div>
-                                            <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold text-slate-gray">
-                                                {order.items.length}{" "}
-                                                {order.items.length === 1
-                                                    ? "item"
-                                                    : "items"}
-                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                {order.items.some(
+                                                    i =>
+                                                        i.state === "CONFIRMED",
+                                                ) && table.mine ? (
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            onSendToKitchen(
+                                                                order.orderId,
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            isSendingToKitchen
+                                                        }
+                                                        className="h-6 gap-1 rounded-full bg-amber-600 hover:bg-amber-700 px-2.5 text-[11px] font-bold text-white shadow-xs"
+                                                    >
+                                                        <ChefHat className="size-3" />
+                                                        <span>
+                                                            {tWaiter(
+                                                                "sendToKitchen",
+                                                            )}
+                                                        </span>
+                                                    </Button>
+                                                ) : null}
+                                                <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold text-slate-gray">
+                                                    {order.items.length}{" "}
+                                                    {tCommon("items")}
+                                                </span>
+                                            </div>
                                         </div>
 
                                         {/* Ticket Line Items */}
@@ -466,6 +545,7 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                             {order.items.map(item => {
                                                 const stateInfo = itemStateInfo(
                                                     item.state,
+                                                    tWaiter,
                                                 );
                                                 const extras = [
                                                     item.modifiers
@@ -547,6 +627,29 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                                             </span>
 
                                                             <div className="flex items-center gap-2">
+                                                                {item.state ===
+                                                                    "CONFIRMED" &&
+                                                                table.mine ? (
+                                                                    <Button
+                                                                        size="sm"
+                                                                        onClick={() =>
+                                                                            onSendToKitchen(
+                                                                                order.orderId,
+                                                                            )
+                                                                        }
+                                                                        disabled={
+                                                                            isSendingToKitchen
+                                                                        }
+                                                                        className="h-7 gap-1 rounded-full bg-amber-600 hover:bg-amber-700 px-2.5 text-[11px] font-bold text-white shadow-xs"
+                                                                    >
+                                                                        <ChefHat className="size-3" />
+                                                                        <span>
+                                                                            {tWaiter(
+                                                                                "sendToKitchen",
+                                                                            )}
+                                                                        </span>
+                                                                    </Button>
+                                                                ) : null}
                                                                 {table.tableSessionId ? (
                                                                     <>
                                                                         <WaiterMarkServedButton
@@ -583,11 +686,10 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                 </div>
                                 <div>
                                     <p className="text-[16px] font-bold text-foreground">
-                                        No orders placed yet
+                                        {tWaiter("noOrders")}
                                     </p>
                                     <p className="mt-1 text-[13px] text-slate-gray">
-                                        Open the menu to send tickets to the
-                                        kitchen & barista.
+                                        {tWaiter("openMenuToOrder")}
                                     </p>
                                 </div>
                                 {canOrder ? (
@@ -596,7 +698,7 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                         className="mt-2 rounded-full bg-brand px-5 font-bold text-white shadow-sm hover:bg-brand-deep"
                                     >
                                         <Plus className="mr-1.5 size-4" />
-                                        <span>Add First Order</span>
+                                        <span>{tWaiter("addFirstOrder")}</span>
                                     </Button>
                                 ) : null}
                             </div>
@@ -611,29 +713,29 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                 <div className="flex items-center gap-2">
                                     <Receipt className="size-4 text-brand" />
                                     <h3 className="text-[14px] font-semibold text-foreground">
-                                        Table Tab Summary
+                                        {tWaiter("tabSummary")}
                                     </h3>
                                 </div>
                                 <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-slate-gray">
-                                    Table {tableNumber(table)}
+                                    {tCommon("table")} {tableNumber(table)}
                                 </span>
                             </div>
 
                             <div className="space-y-1.5 text-[13px]">
                                 <div className="flex justify-between text-slate-gray">
-                                    <span>Items Ordered</span>
+                                    <span>{tWaiter("itemsOrdered")}</span>
                                     <span className="font-medium text-foreground">
                                         {itemCount}
                                     </span>
                                 </div>
                                 <div className="flex justify-between text-slate-gray">
-                                    <span>Subtotal</span>
+                                    <span>{tCommon("subtotal")}</span>
                                     <span className="font-medium text-foreground">
                                         {formatEtb(runningTotal)}
                                     </span>
                                 </div>
                                 <div className="border-t border-hairline pt-2 flex items-center justify-between text-[15px] font-semibold text-foreground">
-                                    <span>Total Tab</span>
+                                    <span>{tWaiter("totalTab")}</span>
                                     <span>{formatEtb(runningTotal)}</span>
                                 </div>
                             </div>
@@ -643,10 +745,10 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                             pendingRequest ? (
                                 <div className="rounded-[14px] border border-purple-500/30 bg-purple-500/10 p-3.5 text-purple-900 dark:text-purple-200">
                                     <p className="text-[13px] font-bold">
-                                        Bill requested
+                                        {tWaiter("billRequested")}
                                     </p>
                                     <p className="mt-0.5 text-[12px] opacity-80">
-                                        Cashier is preparing the check.
+                                        {tWaiter("cancelBill")}
                                     </p>
                                     <Button
                                         variant="outline"
@@ -656,8 +758,8 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                         onClick={onResumeOrdering}
                                     >
                                         {cancelling
-                                            ? "Resuming…"
-                                            : "Resume Ordering"}
+                                            ? tCommon("loading")
+                                            : tWaiter("cancelBill")}
                                     </Button>
                                 </div>
                             ) : null}
@@ -691,8 +793,8 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                         <Receipt className="mr-1.5 size-4" />
                                         <span>
                                             {requesting
-                                                ? "Requesting Bill…"
-                                                : "Request Bill"}
+                                                ? tCommon("loading")
+                                                : tWaiter("requestBill")}
                                         </span>
                                     </Button>
                                 ) : null}
@@ -705,16 +807,15 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                         onClick={releaseTable}
                                     >
                                         {closing
-                                            ? "Closing Table…"
+                                            ? tCommon("loading")
                                             : canClosePaid
-                                              ? "Close Paid Table"
-                                              : "Close Empty Table"}
+                                              ? tWaiter("closePaidTable")
+                                              : tWaiter("closeEmptyTable")}
                                     </Button>
                                 ) : itemCount > 0 &&
                                   sessionStatus !== "PAID" ? (
                                     <p className="text-center text-[12px] text-slate-gray">
-                                        Close this table once payment is
-                                        confirmed.
+                                        {tWaiter("closeAfterPayment")}
                                     </p>
                                 ) : null}
                             </div>
@@ -728,7 +829,7 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                 <AddOrderMenu
                     tableSessionId={table.tableSessionId}
                     expectedVersion={sessionVersion}
-                    tableLabel={`Table ${tableNumber(table)}`}
+                    tableLabel={`${tCommon("table")} ${tableNumber(table)}`}
                     onClose={() => setMenuOpen(false)}
                 />
             ) : null}

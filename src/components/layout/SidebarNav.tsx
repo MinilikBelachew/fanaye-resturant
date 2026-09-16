@@ -2,6 +2,7 @@
 
 import { Suspense, useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { NavSection } from "@/domains/identity/application/nav";
 import { homePathForRole } from "@/domains/identity/application/homePath";
 import {
@@ -15,9 +16,66 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
+const TITLE_KEYS: Record<string, string> = {
+    Overview: "overview",
+    Platform: "platform",
+    Trust: "trust",
+    Business: "business",
+    House: "house",
+    Control: "control",
+    Floor: "floor",
+    Close: "close",
+    Shift: "shift",
+    Queue: "queue",
+    Operations: "operations",
+    Catalog: "catalog",
+    Management: "management",
+    Cashier: "cashier",
+};
+
+const LABEL_KEYS: Record<string, string> = {
+    Dashboard: "dashboard",
+    "Live Ops": "liveOps",
+    "Live Operations": "liveOps",
+    Tenants: "tenants",
+    "Staff Directory": "staffDirectory",
+    "Feature Flags": "featureFlags",
+    "Platform Audit": "audit",
+    Audit: "audit",
+    Branches: "branches",
+    Reports: "reports",
+    "Daily Close": "reconciliation",
+    Settings: "settings",
+    Website: "website",
+    Menu: "menu",
+    "Menu Items": "menuItems",
+    "QR Menu Builder": "qrMenu",
+    "Print Menu Builder": "printMenu",
+    Stations: "stations",
+    Tables: "tables",
+    Staff: "staff",
+    Approvals: "approvals",
+    Payments: "payments",
+    "Bill requests": "billRequests",
+    "Cash drops": "cashDrops",
+    "Closed Bills": "closedBills",
+    Reconciliation: "reconciliation",
+    Cash: "cash",
+    Ready: "ready",
+    Shift: "shift",
+    Profile: "profile",
+    "All tickets": "allTickets",
+    New: "new",
+    "In progress": "preparing",
+    Exceptions: "exceptions",
+    Notifications: "notifications",
+};
+
 export default function SidebarNav(props: {
     sections: NavSection[];
-    badges?: Partial<Record<"new" | "preparing" | "ready" | "exceptions", number>>;
+    badges?: Partial<
+        Record<"new" | "preparing" | "ready" | "exceptions", number>
+    >;
     extraBadges?: Record<string, number>;
     onNavigate?: () => void;
     collapsed?: boolean;
@@ -39,9 +97,11 @@ function SidebarNavInner({
     extraBadges = {},
     onNavigate,
     collapsed = false,
-    }: {
+}: {
     sections: NavSection[];
-    badges?: Partial<Record<"new" | "preparing" | "ready" | "exceptions", number>>;
+    badges?: Partial<
+        Record<"new" | "preparing" | "ready" | "exceptions", number>
+    >;
     extraBadges?: Record<string, number>;
     onNavigate?: () => void;
     collapsed?: boolean;
@@ -49,6 +109,20 @@ function SidebarNavInner({
     const staff = useAppSelector(selectCurrentStaff);
     const pathname = usePathname();
     const searchParams = useSearchParams();
+    const tNav = useTranslations("appNav");
+
+    const translateTitle = (title: string) => {
+        const key = TITLE_KEYS[title];
+        if (key && tNav.has(key)) return tNav(key);
+        return title;
+    };
+
+    const translateLabel = (label: string) => {
+        const key = LABEL_KEYS[label];
+        if (key && tNav.has(key)) return tNav(key);
+        return label;
+    };
+
     const home = staff ? homePathForRole(staff.role) : "/";
     const [open, setOpen] = useState<Record<string, boolean>>(() =>
         Object.fromEntries(sections.map(section => [section.title, true])),
@@ -73,6 +147,20 @@ function SidebarNavInner({
 
     const items = sections.flatMap(section => section.items);
 
+    const [submenusOpen, setSubmenusOpen] = useState<Record<string, boolean>>(
+        () => {
+            const initial: Record<string, boolean> = {};
+            for (const section of sections) {
+                for (const item of section.items) {
+                    if (item.children && item.children.length > 0) {
+                        initial[item.href] = true;
+                    }
+                }
+            }
+            return initial;
+        },
+    );
+
     if (collapsed) {
         return (
             <nav className="sidebar-scroll flex min-h-0 flex-1 flex-col items-center gap-1.5 px-2 py-2">
@@ -89,12 +177,13 @@ function SidebarNavInner({
                               view,
                           })
                         : item.href;
+                    const translated = translateLabel(item.label);
                     return (
                         <div key={item.href} className="group relative">
                             <Link
                                 href={href}
                                 onClick={onNavigate}
-                                aria-label={item.label}
+                                aria-label={translated}
                                 className={cn(
                                     "relative flex size-10 items-center justify-center rounded-xl transition-all duration-150",
                                     active
@@ -108,7 +197,7 @@ function SidebarNavInner({
                                 ) : null}
                             </Link>
                             <span className="pointer-events-none absolute top-1/2 left-[calc(100%+12px)] z-50 -translate-y-1/2 rounded-lg border border-border/80 bg-popover px-2.5 py-1 text-[12px] font-semibold whitespace-nowrap text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100">
-                                {item.label}
+                                {translated}
                                 {count > 0 ? ` · ${count}` : ""}
                             </span>
                         </div>
@@ -120,7 +209,7 @@ function SidebarNavInner({
 
     return (
         <nav className="sidebar-scroll min-h-0 flex-1 px-3 py-3 space-y-4">
-            {sections.map((section, index) => {
+            {sections.map(section => {
                 const expanded = open[section.title] !== false;
                 return (
                     <div key={section.title} className="space-y-1">
@@ -134,7 +223,7 @@ function SidebarNavInner({
                                 }))
                             }
                         >
-                            <span>{section.title}</span>
+                            <span>{translateTitle(section.title)}</span>
                             <ChevronDown
                                 className={cn(
                                     "size-3 text-muted-foreground/60 transition-transform duration-200",
@@ -145,6 +234,114 @@ function SidebarNavInner({
                         {expanded ? (
                             <ul className="space-y-0.5">
                                 {section.items.map(item => {
+                                    if (
+                                        item.children &&
+                                        item.children.length > 0
+                                    ) {
+                                        const isAnyChildActive =
+                                            item.children.some(child =>
+                                                activeHref(child),
+                                            );
+                                        const isSubOpen =
+                                            submenusOpen[item.href] !== false;
+
+                                        return (
+                                            <li
+                                                key={item.href}
+                                                className="space-y-0.5"
+                                            >
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setSubmenusOpen(
+                                                            prev => ({
+                                                                ...prev,
+                                                                [item.href]:
+                                                                    !isSubOpen,
+                                                            }),
+                                                        )
+                                                    }
+                                                    className={cn(
+                                                        "group flex w-full items-center justify-between gap-2.5 py-2 px-3 text-[13px] font-medium rounded-xl transition-all duration-150",
+                                                        isAnyChildActive
+                                                            ? "bg-orange-500/10 text-orange-600 dark:text-orange-400 font-semibold"
+                                                            : "text-muted-foreground hover:bg-secondary/70 hover:text-foreground",
+                                                    )}
+                                                >
+                                                    <div className="flex items-center gap-2.5 min-w-0">
+                                                        <item.icon
+                                                            className={cn(
+                                                                "size-4 shrink-0 transition-colors",
+                                                                isAnyChildActive
+                                                                    ? "text-orange-600 dark:text-orange-400"
+                                                                    : "text-muted-foreground/70 group-hover:text-foreground",
+                                                            )}
+                                                        />
+                                                        <span className="truncate">
+                                                            {translateLabel(
+                                                                item.label,
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                    <ChevronDown
+                                                        className={cn(
+                                                            "size-3.5 shrink-0 transition-transform duration-200",
+                                                            isSubOpen
+                                                                ? "rotate-0 text-orange-500"
+                                                                : "-rotate-90 text-muted-foreground/60",
+                                                        )}
+                                                    />
+                                                </button>
+
+                                                {isSubOpen ? (
+                                                    <div className="ml-5 pl-2.5 my-0.5 border-l-2 border-orange-500/25 space-y-0.5">
+                                                        {item.children.map(
+                                                            child => {
+                                                                const childActive =
+                                                                    activeHref(
+                                                                        child,
+                                                                    );
+                                                                return (
+                                                                    <Link
+                                                                        key={
+                                                                            child.href
+                                                                        }
+                                                                        href={
+                                                                            child.href
+                                                                        }
+                                                                        onClick={
+                                                                            onNavigate
+                                                                        }
+                                                                        className={cn(
+                                                                            "group flex items-center gap-2 py-1.5 px-2.5 rounded-lg text-xs font-medium transition-all duration-150",
+                                                                            childActive
+                                                                                ? "bg-orange-500/15 text-orange-600 dark:text-orange-400 font-semibold shadow-2xs border border-orange-500/20"
+                                                                                : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+                                                                        )}
+                                                                    >
+                                                                        <child.icon
+                                                                            className={cn(
+                                                                                "size-3.5 shrink-0 transition-colors",
+                                                                                childActive
+                                                                                    ? "text-orange-600 dark:text-orange-400"
+                                                                                    : "text-muted-foreground/70 group-hover:text-foreground",
+                                                                            )}
+                                                                        />
+                                                                        <span className="truncate">
+                                                                            {translateLabel(
+                                                                                child.label,
+                                                                            )}
+                                                                        </span>
+                                                                    </Link>
+                                                                );
+                                                            },
+                                                        )}
+                                                    </div>
+                                                ) : null}
+                                            </li>
+                                        );
+                                    }
+
                                     const active = activeHref(item);
                                     const count =
                                         (item.badgeKey
@@ -182,7 +379,7 @@ function SidebarNavInner({
                                                     )}
                                                 />
                                                 <span className="min-w-0 flex-1 truncate">
-                                                    {item.label}
+                                                    {translateLabel(item.label)}
                                                 </span>
                                                 {item.badgeKey || count > 0 ? (
                                                     <span

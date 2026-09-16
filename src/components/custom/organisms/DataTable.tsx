@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ChevronDown, ChevronsUpDown, ChevronUp } from "lucide-react";
+import {
+    ChevronDown,
+    ChevronsUpDown,
+    ChevronUp,
+    ChevronLeft,
+    ChevronRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -26,6 +32,14 @@ export interface DataTableColumn<T> {
     headerClassName?: string;
 }
 
+export interface DataTablePagination {
+    page: number;
+    totalPages: number;
+    total: number;
+    limit?: number;
+    onPageChange: (page: number) => void;
+}
+
 type SortState = { id: string; dir: "asc" | "desc" } | null;
 
 export default function DataTable<T>({
@@ -36,6 +50,11 @@ export default function DataTable<T>({
     className,
     searchPlaceholder = "Search...",
     searchText,
+    searchQuery,
+    onSearchChange,
+    headerActions,
+    pagination,
+    serverSide = false,
     showColumnToggle = true,
 }: {
     columns: DataTableColumn<T>[];
@@ -45,9 +64,17 @@ export default function DataTable<T>({
     className?: string;
     searchPlaceholder?: string | null;
     searchText?: (row: T) => string;
+    searchQuery?: string;
+    onSearchChange?: (query: string) => void;
+    headerActions?: ReactNode;
+    pagination?: DataTablePagination;
+    serverSide?: boolean;
     showColumnToggle?: boolean;
 }) {
-    const [query, setQuery] = useState("");
+    const [internalQuery, setInternalQuery] = useState("");
+    const isControlledSearch = searchQuery !== undefined;
+    const query = isControlledSearch ? searchQuery : internalQuery;
+
     const [sort, setSort] = useState<SortState>(null);
     const [hidden, setHidden] = useState<Record<string, boolean>>(() =>
         Object.fromEntries(
@@ -72,6 +99,7 @@ export default function DataTable<T>({
     const visibleColumns = columns.filter(column => !hidden[column.id]);
 
     const rows = useMemo(() => {
+        if (serverSide) return data;
         const needle = query.trim().toLowerCase();
         const filtered = needle
             ? data.filter(row => {
@@ -98,7 +126,7 @@ export default function DataTable<T>({
                       });
             return sort.dir === "asc" ? compared : -compared;
         });
-    }, [columns, data, query, searchText, sort]);
+    }, [columns, data, query, searchText, serverSide, sort]);
 
     function toggleSort(column: DataTableColumn<T>) {
         if (!column.sortValue) return;
@@ -118,20 +146,31 @@ export default function DataTable<T>({
         });
     }
 
+    const handleSearchChange = (val: string) => {
+        if (onSearchChange) {
+            onSearchChange(val);
+        } else {
+            setInternalQuery(val);
+        }
+    };
+
     return (
         <div className={cn("space-y-3", className)}>
             <div className="flex flex-wrap items-center justify-between gap-3">
-                {searchPlaceholder ? (
-                    <Input
-                        value={query}
-                        onChange={event => setQuery(event.target.value)}
-                        placeholder={searchPlaceholder}
-                        className="h-9 max-w-sm rounded-md bg-card"
-                        aria-label={searchPlaceholder}
-                    />
-                ) : (
-                    <div />
-                )}
+                <div className="flex flex-1 flex-wrap items-center gap-2.5">
+                    {searchPlaceholder ? (
+                        <Input
+                            value={query}
+                            onChange={event =>
+                                handleSearchChange(event.target.value)
+                            }
+                            placeholder={searchPlaceholder}
+                            className="h-9 w-full max-w-xs rounded-md bg-card"
+                            aria-label={searchPlaceholder}
+                        />
+                    ) : null}
+                    {headerActions}
+                </div>
                 {showColumnToggle ? (
                     <div className="relative" ref={columnsRef}>
                         <Button
@@ -249,6 +288,44 @@ export default function DataTable<T>({
                     </TableBody>
                 </Table>
             </div>
+
+            {pagination && pagination.totalPages > 1 ? (
+                <div className="flex items-center justify-between px-1 py-2 text-[13px] text-slate-gray">
+                    <span>
+                        Showing page <strong>{pagination.page}</strong> of{" "}
+                        <strong>{pagination.totalPages}</strong> (
+                        {pagination.total} total)
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={pagination.page <= 1}
+                            onClick={() =>
+                                pagination.onPageChange(pagination.page - 1)
+                            }
+                            className="h-8 gap-1 px-2.5 rounded-lg text-[12px]"
+                        >
+                            <ChevronLeft className="size-3.5" />
+                            <span>Previous</span>
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={pagination.page >= pagination.totalPages}
+                            onClick={() =>
+                                pagination.onPageChange(pagination.page + 1)
+                            }
+                            className="h-8 gap-1 px-2.5 rounded-lg text-[12px]"
+                        >
+                            <span>Next</span>
+                            <ChevronRight className="size-3.5" />
+                        </Button>
+                    </div>
+                </div>
+            ) : null}
         </div>
     );
 }

@@ -12,7 +12,6 @@ import {
     parseQueueView,
     QUEUE_FILTER_LABELS,
     stationQueueHref,
-    type QueueFilter,
 } from "@/domains/fulfillment/application/queueFilter";
 import StationStatusSelect from "@/domains/fulfillment/ui/StationStatusSelect";
 import StationTicketActions from "@/domains/fulfillment/ui/StationTicketActions";
@@ -27,12 +26,17 @@ import {
     stationTicketExtras,
     type StationTicket,
 } from "@/domains/fulfillment/domain/stationTicket";
-import { imageForDish, lineTotal } from "@/domains/ordering/application/mapWaiterMenu";
+import {
+    imageForDish,
+    lineTotal,
+} from "@/domains/ordering/application/mapWaiterMenu";
 import { formatEtb } from "@/lib/money";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Suspense, useMemo } from "react";
+import { useTranslations } from "next-intl";
+import { StationQueueSkeleton } from "@/components/custom/molecules/Skeletons";
 
 const STATUS_RANK: Record<string, number> = {
     QUEUED: 0,
@@ -81,6 +85,8 @@ function TicketCard({
     role: StationRole;
     ticket: StationTicket;
 }) {
+    const tStations = useTranslations("stations");
+    const tCommon = useTranslations("common");
     const image = imageForDish(ticket.itemName);
     const customized =
         ticket.modifiers.length > 0 ||
@@ -94,7 +100,6 @@ function TicketCard({
             )}
         >
             {image ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                     src={image}
                     alt={ticket.itemName}
@@ -108,7 +113,7 @@ function TicketCard({
             <div className="relative flex min-h-[340px] flex-col justify-between p-4">
                 <div className="flex items-start justify-between gap-2">
                     <p className="rounded-full bg-black/25 px-2.5 py-1 text-[12px] font-medium text-white/90 backdrop-blur-sm">
-                        Table {ticket.tableDisplayName}
+                        {tCommon("table")} {ticket.tableDisplayName}
                     </p>
                     <StatusPill ticket={ticket} overlay />
                 </div>
@@ -126,7 +131,7 @@ function TicketCard({
                         />
                     ) : (
                         <p className="mt-3 text-[13px] text-white/60">
-                            As listed
+                            {tStations("asListed")}
                         </p>
                     )}
                     {ticket.exceptionReason ? (
@@ -136,7 +141,7 @@ function TicketCard({
                     ) : null}
                     <p className="mt-2 text-[12px] text-white/55">
                         {ticket.delayed
-                            ? `Delayed · ${stationStateLabel(ticket.state)}`
+                            ? `${tStations("delayed")} · ${stationStateLabel(ticket.state)}`
                             : stationStateLabel(ticket.state)}{" "}
                         · ~{ticket.expectedPrepMinutes} min
                     </p>
@@ -146,7 +151,7 @@ function TicketCard({
                             href={stationOrderPath(role, ticket.orderItemId)}
                             className="text-[13px] font-medium text-white/90 underline-offset-4 hover:underline"
                         >
-                            Order detail
+                            {tStations("orderDetail")}
                         </Link>
                     </div>
                 </div>
@@ -162,6 +167,7 @@ function StatusPill({
     ticket: StationTicket;
     overlay?: boolean;
 }) {
+    const tStations = useTranslations("stations");
     return (
         <span
             className={cn(
@@ -181,13 +187,15 @@ function StatusPill({
             )}
         >
             {ticket.delayed && ticket.state !== "READY"
-                ? "Delayed"
+                ? tStations("delayed")
                 : stationStateLabel(ticket.state)}
         </span>
     );
 }
 
 function StationQueueBoardInner({ role }: { role: StationRole }) {
+    const tStations = useTranslations("stations");
+    const tCommon = useTranslations("common");
     const stationName = useAppSelector(
         state => state.identity.session?.stationName,
     );
@@ -246,7 +254,7 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
         () => [
             {
                 id: "item",
-                header: "Item",
+                header: tStations("item"),
                 sortValue: row => row.ticket.itemName,
                 cell: row => (
                     <Link
@@ -259,44 +267,46 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
             },
             {
                 id: "table",
-                header: "Table",
+                header: tCommon("table"),
                 sortValue: row =>
                     Number.parseInt(row.ticket.tableDisplayName, 10) || 0,
                 cell: row => row.ticket.tableDisplayName,
             },
             {
                 id: "qty",
-                header: "Qty",
+                header: tCommon("qty"),
                 sortValue: row => row.ticket.quantity,
                 cell: row => row.ticket.quantity,
             },
             {
                 id: "extras",
-                header: "Extras",
+                header: tStations("extras"),
                 sortValue: row => row.extras,
                 cell: row =>
                     row.extras ? (
                         row.extras
                     ) : (
-                        <span className="text-slate-gray">As listed</span>
+                        <span className="text-slate-gray">
+                            {tStations("asListed")}
+                        </span>
                     ),
             },
             {
                 id: "status",
-                header: "Status",
+                header: tCommon("status"),
                 sortValue: row => STATUS_RANK[row.ticket.state] ?? 99,
                 hideable: false,
                 cell: row => <StationStatusSelect ticket={row.ticket} />,
             },
             {
                 id: "waiter",
-                header: "Waiter",
+                header: tCommon("waiter"),
                 sortValue: row => row.ticket.waiter.displayName,
                 cell: row => row.ticket.waiter.displayName,
             },
             {
                 id: "received",
-                header: "Received",
+                header: tStations("received"),
                 sortValue: row => row.receivedAt,
                 cell: row => (
                     <span className="text-slate-gray">{row.receivedLabel}</span>
@@ -304,14 +314,14 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
             },
             {
                 id: "prep",
-                header: "Prep (min)",
+                header: tStations("prep"),
                 sortValue: row => row.ticket.expectedPrepMinutes,
                 defaultHidden: true,
                 cell: row => row.ticket.expectedPrepMinutes,
             },
             {
                 id: "overdue",
-                header: "Overdue",
+                header: tStations("overdue"),
                 sortValue: row => row.overdueMinutes,
                 cell: row =>
                     row.overdueMinutes > 0 ? (
@@ -324,7 +334,7 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
             },
             {
                 id: "amount",
-                header: "Amount",
+                header: tStations("amount"),
                 sortValue: row =>
                     lineTotal(
                         row.ticket.unitPrice,
@@ -342,13 +352,10 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                     ),
             },
         ],
-        [role],
+        [role, tStations, tCommon],
     );
 
-    const emptyLabel =
-        status === "all"
-            ? "No tickets in the queue."
-            : `No tickets in ${QUEUE_FILTER_LABELS[status as QueueFilter].toLowerCase()}.`;
+    const emptyLabel = tStations("noTickets");
 
     if (!stationId) {
         return (
@@ -359,11 +366,13 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
     }
 
     if (isLoading) {
-        return <p className="text-slate-gray">Loading queue…</p>;
+        return <StationQueueSkeleton />;
     }
 
     if (isError) {
-        return <p className="text-red-600">Could not load the station queue.</p>;
+        return (
+            <p className="text-red-600">Could not load the station queue.</p>
+        );
     }
 
     return (
@@ -374,7 +383,9 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                         {stationName ?? "Queue"}
                     </p>
                     <h1 className="text-[22px] font-semibold">
-                        {QUEUE_FILTER_LABELS[status]}
+                        {tStations.has(status)
+                            ? tStations(status)
+                            : QUEUE_FILTER_LABELS[status]}
                     </h1>
                 </div>
                 <div className="flex rounded-[12px] border border-hairline bg-card p-1">
@@ -389,7 +400,7 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                         onClick={() => setView("cards")}
                     >
                         <LayoutGrid className="size-4" />
-                        Cards
+                        {tStations("cards")}
                     </button>
                     <button
                         type="button"
@@ -402,24 +413,30 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                         onClick={() => setView("table")}
                     >
                         <Table2 className="size-4" />
-                        Table
+                        {tStations("table")}
                     </button>
                 </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
                 <div className="rounded-[16px] border border-hairline bg-card p-4">
-                    <p className="text-[12px] text-slate-gray">New</p>
+                    <p className="text-[12px] text-slate-gray">
+                        {tStations("new")}
+                    </p>
                     <p className="text-[24px] font-semibold">{counts.new}</p>
                 </div>
                 <div className="rounded-[16px] border border-hairline bg-card p-4">
-                    <p className="text-[12px] text-slate-gray">In progress</p>
+                    <p className="text-[12px] text-slate-gray">
+                        {tStations("preparing")}
+                    </p>
                     <p className="text-[24px] font-semibold">
                         {counts.preparing}
                     </p>
                 </div>
                 <div className="rounded-[16px] border border-hairline bg-card p-4">
-                    <p className="text-[12px] text-slate-gray">Ready</p>
+                    <p className="text-[12px] text-slate-gray">
+                        {tStations("ready")}
+                    </p>
                     <p className="text-[24px] font-semibold text-brand">
                         {counts.ready}
                     </p>

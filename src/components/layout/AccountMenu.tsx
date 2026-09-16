@@ -2,16 +2,22 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CircleUserRound, Monitor, Moon, Settings, Sun } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useTheme, type ThemeMode } from "@/components/theme/ThemeProvider";
 import { ROLE_LABELS } from "@/domains/identity/domain/role";
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { useAppSelector } from "@/context/hooks";
 import { cn } from "@/lib/utils";
 
-const THEMES: { id: ThemeMode; label: string; icon: typeof Sun }[] = [
-    { id: "light", label: "Light", icon: Sun },
-    { id: "dark", label: "Dark", icon: Moon },
-    { id: "system", label: "System", icon: Monitor },
+const THEMES: {
+    id: ThemeMode;
+    labelKey: "light" | "dark" | "system";
+    fallback: string;
+    icon: typeof Sun;
+}[] = [
+    { id: "light", labelKey: "light", fallback: "Light", icon: Sun },
+    { id: "dark", labelKey: "dark", fallback: "Dark", icon: Moon },
+    { id: "system", labelKey: "system", fallback: "System", icon: Monitor },
 ];
 
 export default function AccountMenu({
@@ -23,6 +29,9 @@ export default function AccountMenu({
     const { mode, setMode } = useTheme();
     const [open, setOpen] = useState(false);
     const rootRef = useRef<HTMLDivElement>(null);
+    const tRoles = useTranslations("roles");
+    const tTopBar = useTranslations("topbar");
+    const tNav = useTranslations("appNav");
 
     useEffect(() => {
         function onClick(event: MouseEvent) {
@@ -35,6 +44,10 @@ export default function AccountMenu({
     }, []);
 
     if (!staff) return null;
+
+    const roleLabel = tRoles.has(staff.role)
+        ? tRoles(staff.role)
+        : ROLE_LABELS[staff.role];
 
     return (
         <div ref={rootRef} className="relative">
@@ -62,7 +75,7 @@ export default function AccountMenu({
                                 {staff.name}
                             </span>
                             <span className="block text-[11px] text-slate-gray">
-                                {ROLE_LABELS[staff.role]}
+                                {roleLabel}
                             </span>
                         </span>
                     </>
@@ -76,16 +89,20 @@ export default function AccountMenu({
                     <div className="px-3 py-2">
                         <p className="text-[14px] font-medium">{staff.name}</p>
                         <p className="text-[13px] text-slate-gray">
-                            {ROLE_LABELS[staff.role]}
+                            {roleLabel}
                         </p>
                     </div>
                     <div className="border-t border-hairline px-3 py-3">
                         <p className="mb-2 flex items-center gap-2 text-[12px] font-medium tracking-[0.08em] text-steel-gray uppercase">
                             <Settings className="size-3.5" />
-                            Settings
+                            {tNav.has("settings")
+                                ? tNav("settings")
+                                : "Settings"}
                         </p>
                         <p className="mb-2 text-[13px] text-slate-gray">
-                            Appearance
+                            {tTopBar.has("appearance")
+                                ? tTopBar("appearance")
+                                : "Appearance"}
                         </p>
                         <div
                             role="radiogroup"
@@ -95,6 +112,9 @@ export default function AccountMenu({
                             {THEMES.map(option => {
                                 const Icon = option.icon;
                                 const active = mode === option.id;
+                                const label = tTopBar.has(option.labelKey)
+                                    ? tTopBar(option.labelKey)
+                                    : option.fallback;
                                 return (
                                     <button
                                         key={option.id}
@@ -110,7 +130,7 @@ export default function AccountMenu({
                                         )}
                                     >
                                         <Icon className="size-4" />
-                                        {option.label}
+                                        {label}
                                     </button>
                                 );
                             })}

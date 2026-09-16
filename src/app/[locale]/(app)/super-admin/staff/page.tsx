@@ -1,19 +1,102 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { KeyRound, Loader2, Search, ShieldOff, ShieldCheck } from "lucide-react";
-import { Link } from "@/i18n/navigation";
+import {
+    Building2,
+    Check,
+    Eye,
+    EyeOff,
+    KeyRound,
+    Lock,
+    Plus,
+    RefreshCw,
+    Shield,
+    ShieldAlert,
+    ShieldCheck,
+    ShieldOff,
+    UserPlus,
+    Users,
+    X,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
+import DataTable, {
+    type DataTableColumn,
+} from "@/components/custom/organisms/DataTable";
 import {
+    useCreateSuperAdminStaffMutation,
     useGetSuperAdminStaffQuery,
+    useGetSuperAdminTenantsQuery,
     useResetSuperAdminStaffPasswordMutation,
+    useResetSuperAdminStaffPinMutation,
     useSuspendSuperAdminStaffMutation,
     type PlatformStaffMember,
 } from "@/context/services/superAdminApi";
 import { toast } from "@/lib/toast";
+import { cn } from "@/lib/utils";
+
+const ROLE_OPTIONS = [
+    {
+        value: "waiter",
+        label: "Waiter / Server",
+        color: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900",
+    },
+    {
+        value: "cashier",
+        label: "Cashier",
+        color: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900",
+    },
+    {
+        value: "manager",
+        label: "Floor Manager",
+        color: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900",
+    },
+    {
+        value: "owner",
+        label: "Owner / Admin",
+        color: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-900",
+    },
+    {
+        value: "kitchen",
+        label: "Kitchen Station",
+        color: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-900",
+    },
+    {
+        value: "barista",
+        label: "Barista Station",
+        color: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900",
+    },
+    {
+        value: "cakes",
+        label: "Cakes & Pastry",
+        color: "bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-950/40 dark:text-pink-400 dark:border-pink-900",
+    },
+    {
+        value: "soft_drinks",
+        label: "Soft Drinks",
+        color: "bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-400 dark:border-cyan-900",
+    },
+];
+
+function getRoleBadgeStyle(role: string) {
+    const norm = role.toLowerCase();
+    const found = ROLE_OPTIONS.find(
+        r => r.value === norm || r.label.toLowerCase() === norm,
+    );
+    if (found) return found.color;
+    if (role.includes("OWNER"))
+        return "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400";
+    if (role.includes("MANAGER"))
+        return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400";
+    if (role.includes("CASHIER"))
+        return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400";
+    if (role.includes("WAITER"))
+        return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400";
+    return "bg-secondary text-slate-gray border-hairline";
+}
 
 function formatLogin(value?: string | null) {
     if (!value) return "Never";
@@ -31,42 +114,170 @@ function formatLogin(value?: string | null) {
 }
 
 export default function StaffDirectoryPage() {
-    const [q, setQ] = useState("");
-    const [passwordTarget, setPasswordTarget] =
-        useState<PlatformStaffMember | null>(null);
-    const [password, setPassword] = useState("");
-    const { data, isLoading, error, refetch } = useGetSuperAdminStaffQuery();
+    // Search, Pagination & Filter state
+    const [page, setPage] = useState(1);
+    const [search, setSearch] = useState("");
+    const [selectedTenantId, setSelectedTenantId] = useState("");
+    const [selectedRole, setSelectedRole] = useState("");
+    const [selectedStatus, setSelectedStatus] = useState("");
+
+    // Queries & Mutations
+    const { data: tenantsData } = useGetSuperAdminTenantsQuery();
+    const {
+        data: staffData,
+        isLoading,
+        isFetching,
+        error,
+        refetch,
+    } = useGetSuperAdminStaffQuery({
+        page,
+        limit: 15,
+        search: search || undefined,
+        tenantId: selectedTenantId || undefined,
+        role: selectedRole || undefined,
+        status: selectedStatus || undefined,
+    });
+
+    const [createStaff, { isLoading: creatingStaff }] =
+        useCreateSuperAdminStaffMutation();
+    const [resetPin, { isLoading: resettingPin }] =
+        useResetSuperAdminStaffPinMutation();
+    const [resetPassword, { isLoading: resettingPassword }] =
+        useResetSuperAdminStaffPasswordMutation();
     const [suspendStaff, { isLoading: suspending }] =
         useSuspendSuperAdminStaffMutation();
-    const [resetPassword, { isLoading: resetting }] =
-        useResetSuperAdminStaffPasswordMutation();
 
-    const rows = useMemo(() => {
-        const all = data?.data ?? [];
-        const needle = q.trim().toLowerCase();
-        if (!needle) return all;
-        return all.filter(row =>
-            [
-                row.displayName,
-                row.email,
-                row.phone,
-                row.tenantName,
-                ...row.roles,
-            ]
-                .filter(Boolean)
-                .join(" ")
-                .toLowerCase()
-                .includes(needle),
-        );
-    }, [data?.data, q]);
+    // Modals state
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [pinTarget, setPinTarget] = useState<PlatformStaffMember | null>(
+        null,
+    );
+    const [passwordTarget, setPasswordTarget] =
+        useState<PlatformStaffMember | null>(null);
 
-    async function onToggleSuspend(row: PlatformStaffMember) {
-        const suspended = row.accountStatus !== "SUSPENDED";
+    // Form states for modals
+    const [newStaffTenantId, setNewStaffTenantId] = useState("");
+    const [newStaffName, setNewStaffName] = useState("");
+    const [newStaffRole, setNewStaffRole] = useState("waiter");
+    const [newStaffPin, setNewStaffPin] = useState("1234");
+    const [newStaffEmail, setNewStaffEmail] = useState("");
+    const [newStaffPhone, setNewStaffPhone] = useState("");
+    const [showNewStaffPin, setShowNewStaffPin] = useState(false);
+
+    const [pinValue, setPinValue] = useState("");
+    const [showPinValue, setShowPinValue] = useState(false);
+
+    const [passwordValue, setPasswordValue] = useState("");
+    const [showPasswordValue, setShowPasswordValue] = useState(false);
+
+    const tenantsList = tenantsData?.data ?? [];
+    const staffList = staffData?.data ?? [];
+    const meta = staffData?.meta;
+
+    // Handle Create Staff submission
+    async function handleCreateStaff(e: React.FormEvent) {
+        e.preventDefault();
+        if (!newStaffTenantId) {
+            toast.error("Please select a target restaurant tenant.");
+            return;
+        }
+        if (!newStaffName.trim()) {
+            toast.error("Staff name is required.");
+            return;
+        }
+        if (!/^\d{4,6}$/.test(newStaffPin.trim())) {
+            toast.error("PIN must be 4 to 6 numeric digits.");
+            return;
+        }
+
+        try {
+            await createStaff({
+                tenantId: newStaffTenantId,
+                name: newStaffName.trim(),
+                role: newStaffRole,
+                pin: newStaffPin.trim(),
+                email: newStaffEmail.trim() || undefined,
+                phone: newStaffPhone.trim() || undefined,
+            }).unwrap();
+
+            toast.success("Staff user created", newStaffName.trim());
+            setIsCreateOpen(false);
+            setNewStaffName("");
+            setNewStaffPin("1234");
+            setNewStaffEmail("");
+            setNewStaffPhone("");
+            void refetch();
+        } catch (err: unknown) {
+            const message =
+                (err as { data?: { message?: string } })?.data?.message ||
+                "Could not create staff user.";
+            toast.error(message);
+        }
+    }
+
+    // Handle Reset PIN submission
+    async function handleSavePin() {
+        if (!pinTarget) return;
+        if (!/^\d{4,6}$/.test(pinValue.trim())) {
+            toast.error("PIN must be 4 to 6 numeric digits.");
+            return;
+        }
+
+        try {
+            await resetPin({
+                membershipId: pinTarget.membershipId,
+                pin: pinValue.trim(),
+            }).unwrap();
+
+            toast.success("PIN updated successfully", pinTarget.displayName);
+            setPinTarget(null);
+            setPinValue("");
+            void refetch();
+        } catch (err: unknown) {
+            const message =
+                (err as { data?: { message?: string } })?.data?.message ||
+                "Could not update staff PIN.";
+            toast.error(message);
+        }
+    }
+
+    // Handle Reset Password submission
+    async function handleSavePassword() {
+        if (!passwordTarget) return;
+        if (passwordValue.trim().length < 6) {
+            toast.error("Password must be at least 6 characters.");
+            return;
+        }
+
+        try {
+            await resetPassword({
+                membershipId: passwordTarget.membershipId,
+                password: passwordValue.trim(),
+            }).unwrap();
+
+            toast.success("Password updated", passwordTarget.displayName);
+            setPasswordTarget(null);
+            setPasswordValue("");
+            void refetch();
+        } catch (err: unknown) {
+            const message =
+                (err as { data?: { message?: string } })?.data?.message ||
+                "Could not reset password.";
+            toast.error(message);
+        }
+    }
+
+    // Handle Suspend / Reactivate
+    async function handleToggleSuspend(row: PlatformStaffMember) {
+        const suspended =
+            row.accountStatus !== "SUSPENDED" &&
+            row.membershipStatus !== "INACTIVE";
         try {
             await suspendStaff({
                 membershipId: row.membershipId,
                 suspended,
             }).unwrap();
+
             toast.success(
                 suspended ? "User suspended" : "User reactivated",
                 row.displayName,
@@ -80,205 +291,714 @@ export default function StaffDirectoryPage() {
         }
     }
 
-    async function onSavePassword() {
-        if (!passwordTarget) return;
-        if (password.trim().length < 6) {
-            toast.error("Password must be at least 6 characters.");
-            return;
-        }
-        try {
-            await resetPassword({
-                membershipId: passwordTarget.membershipId,
-                password: password.trim(),
-            }).unwrap();
-            toast.success("Password updated", passwordTarget.displayName);
-            setPasswordTarget(null);
-            setPassword("");
-            void refetch();
-        } catch (err: unknown) {
-            const message =
-                (err as { data?: { message?: string } })?.data?.message ||
-                "Could not reset password.";
-            toast.error(message);
-        }
-    }
+    // DataTable Columns Definition
+    const columns: DataTableColumn<PlatformStaffMember>[] = useMemo(
+        () => [
+            {
+                id: "staff",
+                header: "Staff Member",
+                sortValue: row => row.displayName,
+                cell: row => (
+                    <div className="flex items-center gap-3">
+                        <div className="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[13px] shrink-0">
+                            {row.displayName.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <span className="font-semibold text-[13.5px] text-foreground block leading-tight">
+                                {row.displayName}
+                            </span>
+                            <span className="text-[11.5px] text-slate-gray">
+                                {row.email || row.phone || "No contact info"}
+                            </span>
+                        </div>
+                    </div>
+                ),
+            },
+            {
+                id: "tenant",
+                header: "Restaurant Tenant",
+                sortValue: row => row.tenantName,
+                cell: row => (
+                    <div className="flex items-center gap-2">
+                        <Building2 className="size-3.5 text-slate-gray shrink-0" />
+                        <span className="font-medium text-[13px] text-foreground">
+                            {row.tenantName}
+                        </span>
+                    </div>
+                ),
+            },
+            {
+                id: "role",
+                header: "Role",
+                sortValue: row => row.roles[0] || "",
+                cell: row => (
+                    <div className="flex flex-wrap gap-1">
+                        {row.roles.map(r => (
+                            <span
+                                key={r}
+                                className={cn(
+                                    "px-2.5 py-0.5 rounded-full text-[11.5px] font-semibold border",
+                                    getRoleBadgeStyle(r),
+                                )}
+                            >
+                                {r.replace("_", " ")}
+                            </span>
+                        ))}
+                    </div>
+                ),
+            },
+            {
+                id: "pinStatus",
+                header: "PIN Status",
+                cell: row => (
+                    <div className="flex items-center gap-1.5 text-[12px] font-mono text-slate-gray">
+                        <span className="text-primary font-bold text-[14px] tracking-widest">
+                            ••••
+                        </span>
+                        <span className="text-[11px] text-slate-gray">
+                            Active
+                        </span>
+                    </div>
+                ),
+            },
+            {
+                id: "status",
+                header: "Status",
+                sortValue: row => row.accountStatus,
+                cell: row => {
+                    const isSuspended =
+                        row.accountStatus === "SUSPENDED" ||
+                        row.membershipStatus === "INACTIVE";
+                    return isSuspended ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 px-2.5 py-0.5 text-[11.5px] font-medium text-red-700 dark:text-red-400">
+                            <span className="size-1.5 rounded-full bg-red-500" />
+                            Suspended
+                        </span>
+                    ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 px-2.5 py-0.5 text-[11.5px] font-medium text-emerald-700 dark:text-emerald-400">
+                            <span className="size-1.5 rounded-full bg-emerald-500" />
+                            Active
+                        </span>
+                    );
+                },
+            },
+            {
+                id: "lastLogin",
+                header: "Last Login",
+                sortValue: row => row.lastLoginAt || "",
+                cell: row => (
+                    <span className="text-[12px] text-slate-gray">
+                        {formatLogin(row.lastLoginAt)}
+                    </span>
+                ),
+            },
+            {
+                id: "actions",
+                header: "Actions",
+                headerClassName: "text-right",
+                className: "text-right",
+                cell: row => {
+                    const isSuspended =
+                        row.accountStatus === "SUSPENDED" ||
+                        row.membershipStatus === "INACTIVE";
+                    return (
+                        <div className="flex items-center justify-end gap-1.5">
+                            {/* Change PIN Button */}
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                    setPinTarget(row);
+                                    setPinValue("");
+                                }}
+                                className="h-8 gap-1.5 px-2.5 rounded-lg text-[12px] border-hairline hover:border-primary/40 hover:text-primary"
+                                title="Change PIN"
+                            >
+                                <KeyRound className="size-3.5" />
+                                <span>PIN</span>
+                            </Button>
+
+                            {/* Reset Password Button */}
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                    setPasswordTarget(row);
+                                    setPasswordValue("");
+                                }}
+                                className="h-8 gap-1.5 px-2.5 rounded-lg text-[12px] border-hairline hover:border-slate-400"
+                                title="Reset Web Password"
+                            >
+                                <Lock className="size-3.5" />
+                                <span className="hidden sm:inline">
+                                    Password
+                                </span>
+                            </Button>
+
+                            {/* Suspend / Activate Button */}
+                            <Button
+                                type="button"
+                                variant={isSuspended ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => void handleToggleSuspend(row)}
+                                className={cn(
+                                    "h-8 gap-1.5 px-2.5 rounded-lg text-[12px]",
+                                    isSuspended
+                                        ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                                        : "border-red-200 text-red-600 hover:bg-red-50 dark:border-red-950 dark:text-red-400 dark:hover:bg-red-950/40",
+                                )}
+                                title={
+                                    isSuspended
+                                        ? "Reactivate Staff"
+                                        : "Suspend Staff"
+                                }
+                            >
+                                {isSuspended ? (
+                                    <>
+                                        <ShieldCheck className="size-3.5" />
+                                        <span>Activate</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <ShieldOff className="size-3.5" />
+                                        <span>Suspend</span>
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    );
+                },
+            },
+        ],
+        [],
+    );
 
     return (
         <DashboardFrame>
-            <PageHeader
-                eyebrow="Platform"
-                title="Staff directory"
-                description="Managers and owners across tenants. Suspend access or reset login passwords."
-            />
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
+                <PageHeader
+                    eyebrow="Platform Management"
+                    title="Staff Directory"
+                    description="View, filter, manage PINs, and create staff accounts across all restaurant tenants."
+                />
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="relative w-full max-w-md">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-gray" />
-                    <Input
-                        value={q}
-                        onChange={e => setQ(e.target.value)}
-                        placeholder="Search name, email, tenant…"
-                        className="pl-9"
-                    />
+                <div className="flex items-center gap-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => void refetch()}
+                        disabled={isFetching}
+                        className="h-9 gap-1.5 rounded-xl border-hairline text-[13px]"
+                    >
+                        <RefreshCw
+                            className={cn(
+                                "size-3.5",
+                                isFetching && "animate-spin",
+                            )}
+                        />
+                        <span>Refresh</span>
+                    </Button>
+
+                    <Button
+                        type="button"
+                        onClick={() => {
+                            if (tenantsList.length > 0 && !newStaffTenantId) {
+                                setNewStaffTenantId(tenantsList[0].id);
+                            }
+                            setIsCreateOpen(true);
+                        }}
+                        className="h-9 gap-1.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary-deep text-[13px] font-semibold shadow-sm shadow-primary/20"
+                    >
+                        <UserPlus className="size-4" />
+                        <span>Create Staff User</span>
+                    </Button>
                 </div>
-                <p className="text-[12px] text-slate-gray">
-                    {rows.length} manager / owner accounts
-                </p>
             </div>
 
             {error && (
-                <div className="rounded-[16px] border border-destructive/20 bg-destructive/10 p-4 text-[13px] text-destructive">
-                    Unable to load staff directory.
+                <div className="mb-4 rounded-[16px] border border-red-200 bg-red-50 p-4 text-[13px] text-red-700 dark:border-red-950 dark:bg-red-950/40 dark:text-red-400">
+                    Unable to load staff directory from the platform backend.
                 </div>
             )}
 
-            <div className="overflow-hidden rounded-[16px] border border-hairline bg-card">
-                {isLoading ? (
-                    <div className="flex items-center justify-center gap-2 py-16 text-[13px] text-slate-gray">
-                        <Loader2 className="size-4 animate-spin text-brand" />
-                        Loading staff…
-                    </div>
-                ) : rows.length === 0 ? (
-                    <p className="px-5 py-10 text-center text-[13px] text-slate-gray">
-                        No manager or owner accounts found yet.
-                    </p>
-                ) : (
-                    <ul className="divide-y divide-hairline">
-                        {rows.map(row => {
-                            const suspended =
-                                row.accountStatus === "SUSPENDED" ||
-                                row.membershipStatus === "INACTIVE";
-                            return (
-                                <li
-                                    key={row.membershipId}
-                                    className="flex flex-col gap-4 px-5 py-4 lg:flex-row lg:items-center lg:justify-between"
-                                >
-                                    <div className="min-w-0">
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <p className="truncate font-semibold text-[14px]">
-                                                {row.displayName}
-                                            </p>
-                                            {row.roles.map(role => (
-                                                <Badge
-                                                    key={role}
-                                                    variant="outline"
-                                                >
-                                                    {role.replace("_", " ")}
-                                                </Badge>
-                                            ))}
-                                            <Badge
-                                                variant={
-                                                    suspended
-                                                        ? "secondary"
-                                                        : "success"
-                                                }
-                                            >
-                                                {suspended
-                                                    ? "Suspended"
-                                                    : "Active"}
-                                            </Badge>
-                                        </div>
-                                        <p className="mt-1 text-[12px] text-slate-gray">
-                                            <Link
-                                                href={`/super-admin/tenants/${row.tenantId}`}
-                                                className="text-brand hover:underline"
-                                            >
-                                                {row.tenantName}
-                                            </Link>
-                                            {row.email ? ` · ${row.email}` : ""}
-                                            {row.phone ? ` · ${row.phone}` : ""}
-                                        </p>
-                                        <p className="mt-1 text-[11px] text-slate-gray">
-                                            Last login:{" "}
-                                            {formatLogin(row.lastLoginAt)}
-                                            {" · "}
-                                            {row.hasPassword
-                                                ? "Password set"
-                                                : "No password yet"}
-                                        </p>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        <button
-                                            type="button"
-                                            disabled={suspending}
-                                            onClick={() =>
-                                                void onToggleSuspend(row)
-                                            }
-                                            className="inline-flex items-center gap-1.5 rounded-xl border border-hairline px-3 py-2 text-[12px] font-medium hover:bg-surface-ivory"
-                                        >
-                                            {suspended ? (
-                                                <ShieldCheck className="size-3.5 text-brand" />
-                                            ) : (
-                                                <ShieldOff className="size-3.5 text-destructive" />
-                                            )}
-                                            {suspended
-                                                ? "Reactivate"
-                                                : "Suspend"}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setPasswordTarget(row);
-                                                setPassword("");
-                                            }}
-                                            className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-3 py-2 text-[12px] font-semibold text-white hover:bg-brand/90"
-                                        >
-                                            <KeyRound className="size-3.5" />
-                                            Change password
-                                        </button>
-                                    </div>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                )}
-            </div>
+            {/* Custom Filter Controls for DataTable */}
+            <DataTable
+                columns={columns}
+                data={staffList}
+                rowKey={row => row.membershipId}
+                searchPlaceholder="Search staff by name, email, phone, tenant…"
+                searchQuery={search}
+                onSearchChange={val => {
+                    setSearch(val);
+                    setPage(1);
+                }}
+                serverSide={true}
+                empty={
+                    isLoading ? (
+                        <div className="flex items-center justify-center gap-2 py-10 text-[13px] text-slate-gray">
+                            <span className="size-4 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                            <span>Loading staff across tenants…</span>
+                        </div>
+                    ) : (
+                        "No staff members matching your filters."
+                    )
+                }
+                headerActions={
+                    <div className="flex flex-wrap items-center gap-2">
+                        {/* Tenant Dropdown */}
+                        <select
+                            value={selectedTenantId}
+                            onChange={e => {
+                                setSelectedTenantId(e.target.value);
+                                setPage(1);
+                            }}
+                            className="h-9 rounded-md border border-hairline bg-card px-2.5 text-[12.5px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        >
+                            <option value="">All Restaurant Tenants</option>
+                            {tenantsList.map(t => (
+                                <option key={t.id} value={t.id}>
+                                    {t.name}
+                                </option>
+                            ))}
+                        </select>
 
+                        {/* Role Dropdown */}
+                        <select
+                            value={selectedRole}
+                            onChange={e => {
+                                setSelectedRole(e.target.value);
+                                setPage(1);
+                            }}
+                            className="h-9 rounded-md border border-hairline bg-card px-2.5 text-[12.5px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        >
+                            <option value="">All Roles</option>
+                            <option value="WAITER">Waiters</option>
+                            <option value="CASHIER">Cashiers</option>
+                            <option value="MANAGER">Managers</option>
+                            <option value="OWNER_ADMIN">Owners & Admins</option>
+                            <option value="STATION_OPERATOR">
+                                Station Operators
+                            </option>
+                        </select>
+
+                        {/* Status Dropdown */}
+                        <select
+                            value={selectedStatus}
+                            onChange={e => {
+                                setSelectedStatus(e.target.value);
+                                setPage(1);
+                            }}
+                            className="h-9 rounded-md border border-hairline bg-card px-2.5 text-[12.5px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                        >
+                            <option value="">All Statuses</option>
+                            <option value="ACTIVE">Active</option>
+                            <option value="SUSPENDED">Suspended</option>
+                        </select>
+                    </div>
+                }
+                pagination={
+                    meta
+                        ? {
+                              page: meta.page,
+                              totalPages: meta.totalPages,
+                              total: meta.total,
+                              onPageChange: p => setPage(p),
+                          }
+                        : undefined
+                }
+            />
+
+            {/* CREATE STAFF MODAL DIALOG */}
+            {isCreateOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4">
+                    <div
+                        className="fixed inset-0"
+                        onClick={() => setIsCreateOpen(false)}
+                    />
+                    <div className="relative z-10 w-full max-w-md rounded-[20px] border border-hairline bg-white dark:bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95">
+                        <div className="flex items-center justify-between border-b border-hairline pb-3 mb-4">
+                            <div className="flex items-center gap-2">
+                                <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                                    <UserPlus className="size-4" />
+                                </div>
+                                <h3 className="font-bold text-[16px] text-foreground">
+                                    Create Staff Under Tenant
+                                </h3>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setIsCreateOpen(false)}
+                                className="size-7 rounded-full flex items-center justify-center text-slate-gray hover:bg-secondary"
+                            >
+                                <X className="size-4" />
+                            </button>
+                        </div>
+
+                        <form
+                            onSubmit={handleCreateStaff}
+                            className="space-y-3.5 text-[13px]"
+                        >
+                            {/* Target Tenant */}
+                            <div className="space-y-1">
+                                <label className="font-medium text-foreground">
+                                    Restaurant Tenant{" "}
+                                    <span className="text-primary">*</span>
+                                </label>
+                                <select
+                                    value={newStaffTenantId}
+                                    onChange={e =>
+                                        setNewStaffTenantId(e.target.value)
+                                    }
+                                    required
+                                    className="w-full h-10 rounded-[10px] border border-hairline bg-card px-3 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                                >
+                                    <option value="" disabled>
+                                        Select restaurant...
+                                    </option>
+                                    {tenantsList.map(t => (
+                                        <option key={t.id} value={t.id}>
+                                            {t.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Staff Name */}
+                            <div className="space-y-1">
+                                <label className="font-medium text-foreground">
+                                    Full Name{" "}
+                                    <span className="text-primary">*</span>
+                                </label>
+                                <Input
+                                    value={newStaffName}
+                                    onChange={e =>
+                                        setNewStaffName(e.target.value)
+                                    }
+                                    placeholder="e.g. Dawit Alemu"
+                                    required
+                                    className="h-10 rounded-[10px]"
+                                />
+                            </div>
+
+                            {/* Role Picker */}
+                            <div className="space-y-1">
+                                <label className="font-medium text-foreground">
+                                    Role <span className="text-primary">*</span>
+                                </label>
+                                <select
+                                    value={newStaffRole}
+                                    onChange={e =>
+                                        setNewStaffRole(e.target.value)
+                                    }
+                                    required
+                                    className="w-full h-10 rounded-[10px] border border-hairline bg-card px-3 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary capitalize"
+                                >
+                                    {ROLE_OPTIONS.map(opt => (
+                                        <option
+                                            key={opt.value}
+                                            value={opt.value}
+                                        >
+                                            {opt.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* PIN with Eye Toggle */}
+                            <div className="space-y-1">
+                                <label className="font-medium text-foreground">
+                                    Quick Access PIN{" "}
+                                    <span className="text-primary">*</span>
+                                </label>
+                                <div className="relative">
+                                    <Input
+                                        type={
+                                            showNewStaffPin
+                                                ? "text"
+                                                : "password"
+                                        }
+                                        inputMode="numeric"
+                                        pattern="[0-9]*"
+                                        maxLength={6}
+                                        value={newStaffPin}
+                                        onChange={e =>
+                                            setNewStaffPin(
+                                                e.target.value.replace(
+                                                    /\D/g,
+                                                    "",
+                                                ),
+                                            )
+                                        }
+                                        placeholder="4 to 6-digit numeric PIN"
+                                        required
+                                        className="h-10 rounded-[10px] pr-10 font-mono tracking-wider"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setShowNewStaffPin(v => !v)
+                                        }
+                                        className="absolute right-3 top-2.5 text-slate-gray hover:text-foreground"
+                                    >
+                                        {showNewStaffPin ? (
+                                            <EyeOff className="size-4" />
+                                        ) : (
+                                            <Eye className="size-4" />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Email (Optional) */}
+                            <div className="space-y-1">
+                                <label className="font-medium text-foreground">
+                                    Email Address{" "}
+                                    <span className="text-slate-gray font-normal">
+                                        (Optional)
+                                    </span>
+                                </label>
+                                <Input
+                                    type="email"
+                                    value={newStaffEmail}
+                                    onChange={e =>
+                                        setNewStaffEmail(e.target.value)
+                                    }
+                                    placeholder="optional@fanaye.et"
+                                    className="h-10 rounded-[10px]"
+                                />
+                            </div>
+
+                            {/* Phone (Optional) */}
+                            <div className="space-y-1">
+                                <label className="font-medium text-foreground">
+                                    Phone Number{" "}
+                                    <span className="text-slate-gray font-normal">
+                                        (Optional)
+                                    </span>
+                                </label>
+                                <Input
+                                    type="tel"
+                                    value={newStaffPhone}
+                                    onChange={e =>
+                                        setNewStaffPhone(e.target.value)
+                                    }
+                                    placeholder="+251 91 123 4567"
+                                    className="h-10 rounded-[10px]"
+                                />
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2 pt-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setIsCreateOpen(false)}
+                                    className="h-9 rounded-xl text-[13px]"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    disabled={creatingStaff}
+                                    className="h-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary-deep text-[13px] font-semibold"
+                                >
+                                    {creatingStaff
+                                        ? "Creating..."
+                                        : "Create Staff"}
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* CHANGE PIN MODAL DIALOG */}
+            {pinTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4">
+                    <div
+                        className="fixed inset-0"
+                        onClick={() => setPinTarget(null)}
+                    />
+                    <div className="relative z-10 w-full max-w-sm rounded-[20px] border border-hairline bg-white dark:bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95">
+                        <div className="flex items-center justify-between border-b border-hairline pb-3 mb-4">
+                            <div className="flex items-center gap-2">
+                                <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                                    <KeyRound className="size-4" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-[15px] text-foreground">
+                                        Change Quick Access PIN
+                                    </h3>
+                                    <p className="text-[12px] text-slate-gray">
+                                        {pinTarget.displayName} (
+                                        {pinTarget.tenantName})
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setPinTarget(null)}
+                                className="size-7 rounded-full flex items-center justify-center text-slate-gray hover:bg-secondary"
+                            >
+                                <X className="size-4" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4 text-[13px]">
+                            <div className="space-y-1">
+                                <label className="font-medium text-foreground">
+                                    New Numeric PIN (4–6 digits)
+                                </label>
+                                <div className="relative">
+                                    <Input
+                                        type={
+                                            showPinValue ? "text" : "password"
+                                        }
+                                        inputMode="numeric"
+                                        pattern="[0-9]*"
+                                        maxLength={6}
+                                        value={pinValue}
+                                        onChange={e =>
+                                            setPinValue(
+                                                e.target.value.replace(
+                                                    /\D/g,
+                                                    "",
+                                                ),
+                                            )
+                                        }
+                                        placeholder="Enter new PIN"
+                                        className="h-10 rounded-[10px] pr-10 font-mono tracking-wider text-[15px]"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPinValue(v => !v)}
+                                        className="absolute right-3 top-2.5 text-slate-gray hover:text-foreground"
+                                    >
+                                        {showPinValue ? (
+                                            <EyeOff className="size-4" />
+                                        ) : (
+                                            <Eye className="size-4" />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2 pt-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setPinTarget(null)}
+                                    className="h-9 rounded-xl text-[13px]"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="button"
+                                    disabled={
+                                        resettingPin || pinValue.length < 4
+                                    }
+                                    onClick={() => void handleSavePin()}
+                                    className="h-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary-deep text-[13px] font-semibold"
+                                >
+                                    {resettingPin ? "Saving..." : "Update PIN"}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* RESET PASSWORD MODAL DIALOG */}
             {passwordTarget && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <button
-                        type="button"
-                        aria-label="Close"
-                        className="absolute inset-0 bg-foreground/40"
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4">
+                    <div
+                        className="fixed inset-0"
                         onClick={() => setPasswordTarget(null)}
                     />
-                    <div className="relative z-10 w-full max-w-md rounded-[18px] border border-hairline bg-background p-5 shadow-2xl">
-                        <h3 className="text-[16px] font-semibold">
-                            Change password
-                        </h3>
-                        <p className="mt-1 text-[13px] text-slate-gray">
-                            Set a new login password for{" "}
-                            <strong>{passwordTarget.displayName}</strong> at{" "}
-                            {passwordTarget.tenantName}. Active sessions will be
-                            revoked.
-                        </p>
-                        <Input
-                            type="password"
-                            className="mt-4"
-                            placeholder="New password (min 6)"
-                            value={password}
-                            onChange={e => setPassword(e.target.value)}
-                            autoComplete="new-password"
-                        />
-                        <div className="mt-4 flex justify-end gap-2">
+                    <div className="relative z-10 w-full max-w-sm rounded-[20px] border border-hairline bg-white dark:bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95">
+                        <div className="flex items-center justify-between border-b border-hairline pb-3 mb-4">
+                            <div className="flex items-center gap-2">
+                                <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                                    <Lock className="size-4" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-[15px] text-foreground">
+                                        Reset Web Password
+                                    </h3>
+                                    <p className="text-[12px] text-slate-gray">
+                                        {passwordTarget.displayName}
+                                    </p>
+                                </div>
+                            </div>
                             <button
                                 type="button"
                                 onClick={() => setPasswordTarget(null)}
-                                className="rounded-xl border border-hairline px-3 py-2 text-[12px] font-medium"
+                                className="size-7 rounded-full flex items-center justify-center text-slate-gray hover:bg-secondary"
                             >
-                                Cancel
+                                <X className="size-4" />
                             </button>
-                            <button
-                                type="button"
-                                disabled={resetting}
-                                onClick={() => void onSavePassword()}
-                                className="inline-flex items-center gap-2 rounded-xl bg-brand px-3 py-2 text-[12px] font-semibold text-white disabled:opacity-60"
-                            >
-                                {resetting && (
-                                    <Loader2 className="size-3.5 animate-spin" />
-                                )}
-                                Save password
-                            </button>
+                        </div>
+
+                        <div className="space-y-4 text-[13px]">
+                            <div className="space-y-1">
+                                <label className="font-medium text-foreground">
+                                    New Password (min 6 chars)
+                                </label>
+                                <div className="relative">
+                                    <Input
+                                        type={
+                                            showPasswordValue
+                                                ? "text"
+                                                : "password"
+                                        }
+                                        value={passwordValue}
+                                        onChange={e =>
+                                            setPasswordValue(e.target.value)
+                                        }
+                                        placeholder="Enter new password"
+                                        className="h-10 rounded-[10px] pr-10"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setShowPasswordValue(v => !v)
+                                        }
+                                        className="absolute right-3 top-2.5 text-slate-gray hover:text-foreground"
+                                    >
+                                        {showPasswordValue ? (
+                                            <EyeOff className="size-4" />
+                                        ) : (
+                                            <Eye className="size-4" />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2 pt-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setPasswordTarget(null)}
+                                    className="h-9 rounded-xl text-[13px]"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="button"
+                                    disabled={
+                                        resettingPassword ||
+                                        passwordValue.length < 6
+                                    }
+                                    onClick={() => void handleSavePassword()}
+                                    className="h-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary-deep text-[13px] font-semibold"
+                                >
+                                    {resettingPassword
+                                        ? "Saving..."
+                                        : "Update Password"}
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </div>

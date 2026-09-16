@@ -20,7 +20,13 @@ const notoSansEthiopic = Noto_Sans_Ethiopic({
 
 export const metadata: Metadata = {
     title: "Fanaye Restaurant Management OS",
-    description: "The live real-time operating system for modern high-volume restaurants",
+    description:
+        "The live real-time operating system for modern high-volume restaurants",
+    icons: {
+        icon: "/media/logos/logo_07_golden_cloche.svg",
+        shortcut: "/media/logos/logo_07_golden_cloche.svg",
+        apple: "/media/logos/logo_07_golden_cloche.svg",
+    },
 };
 
 export default async function RootLayout({

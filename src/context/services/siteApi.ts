@@ -8,6 +8,11 @@ export interface SiteTheme {
     logoUrl?: string | null;
     fontDisplay?: string;
     fontBody?: string;
+    backgroundType?: "solid" | "gradient" | "image" | null;
+    backgroundGradient?: string | null;
+    backgroundImageUrl?: string | null;
+    backgroundOverlayOpacity?: number | null;
+    borderRadius?: "none" | "md" | "xl" | "full" | null;
 }
 
 export interface TenantSite {

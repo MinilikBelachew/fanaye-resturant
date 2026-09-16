@@ -8,9 +8,11 @@ import {
     Eye,
     LayoutGrid,
     Plus,
+    QrCode,
     Search,
     Table as TableIcon,
 } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import {
     useAdminMenuItemsQuery,
     useAdminMenuMetaQuery,
@@ -32,6 +34,7 @@ import CreateModifierGroupSheet from "@/domains/catalog/ui/CreateModifierGroupSh
 import MenuItemDetailSheet from "@/domains/catalog/ui/MenuItemDetailSheet";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { MenuCatalogSkeleton } from "@/components/custom/molecules/Skeletons";
 
 export default function ManagerMenuPage() {
     const { data: metaData } = useAdminMenuMetaQuery();
@@ -69,8 +72,7 @@ export default function ManagerMenuPage() {
     const filteredItems = useMemo(() => {
         return menuItems.filter(item => {
             const matchesStation =
-                selectedStation === "all" ||
-                item.stationId === selectedStation;
+                selectedStation === "all" || item.stationId === selectedStation;
             const matchesQuery =
                 !searchQuery.trim() ||
                 item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -123,7 +125,6 @@ export default function ManagerMenuPage() {
                     <div className="flex items-center gap-3">
                         {row.image ? (
                             <div className="size-10 shrink-0 overflow-hidden rounded-[8px] border border-hairline bg-secondary">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
                                     src={row.image}
                                     alt={row.name}
@@ -154,9 +155,7 @@ export default function ManagerMenuPage() {
                 id: "station",
                 header: "Station",
                 sortValue: row => row.category,
-                cell: row => (
-                    <Badge variant="outline">{row.category}</Badge>
-                ),
+                cell: row => <Badge variant="outline">{row.category}</Badge>,
             },
             {
                 id: "price",
@@ -187,9 +186,7 @@ export default function ManagerMenuPage() {
                             void handleToggleAvailability(row);
                         }}
                     >
-                        <Badge
-                            variant={row.available ? "success" : "warning"}
-                        >
+                        <Badge variant={row.available ? "success" : "warning"}>
                             {row.available ? "Active" : "86 / Sold out"}
                         </Badge>
                     </button>
@@ -230,6 +227,15 @@ export default function ManagerMenuPage() {
                 description="Add dishes, route them to stations, and 86 items when stock runs out."
                 action={
                     <div className="flex flex-wrap items-center gap-2">
+                        <Link href="/manager/qr-menu">
+                            <Button
+                                variant="outline"
+                                className="gap-2 border-amber-500/40 text-amber-800 bg-amber-50/50 hover:bg-amber-100/50"
+                            >
+                                <QrCode className="size-4 text-amber-600" />
+                                QR Menu Builder
+                            </Button>
+                        </Link>
                         <Button
                             variant="outline"
                             onClick={() => setModifierSheetOpen(true)}
@@ -293,9 +299,7 @@ export default function ManagerMenuPage() {
                 </div>
             </div>
 
-            {isLoading ? (
-                <p className="text-slate-gray">Loading menu…</p>
-            ) : null}
+            {isLoading ? <MenuCatalogSkeleton /> : null}
             {isError ? (
                 <p className="text-red-600">
                     Could not load menu from the server. Sign in as manager and
@@ -320,7 +324,6 @@ export default function ManagerMenuPage() {
                         >
                             <div className="relative aspect-[4/3] bg-secondary">
                                 {item.image ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
                                     <img
                                         src={item.image}
                                         alt={item.name}

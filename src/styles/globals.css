@@ -89,8 +89,8 @@
     --chart-3: #046645;
     --chart-4: #6736eb;
     --chart-5: #121722;
-    --shadow-subtle: 0 1px 1px rgba(0, 0, 0, 0.06),
-        inset 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+    --shadow-subtle:
+        0 1px 1px rgba(0, 0, 0, 0.06), inset 0 0 0 0.5px rgba(0, 0, 0, 0.08);
     --scrollbar-thumb: rgb(24 24 27 / 22%);
     --scrollbar-thumb-hover: rgb(24 24 27 / 38%);
     color-scheme: light;
@@ -219,5 +219,11 @@
 
     .no-scrollbar::-webkit-scrollbar {
         display: none;
+    }
+
+    @keyframes shimmer {
+        100% {
+            transform: translateX(100%);
+        }
     }
 }

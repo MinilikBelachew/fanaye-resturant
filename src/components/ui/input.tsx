@@ -2,7 +2,18 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+function Input({
+    className,
+    type,
+    value,
+    ...props
+}: React.ComponentProps<"input">) {
+    // Prevent controlled-to-uncontrolled / uncontrolled-to-controlled React warnings
+    const isControlled =
+        value !== undefined ||
+        (props.onChange !== undefined && props.defaultValue === undefined);
+    const controlledProps = isControlled ? { value: value ?? "" } : {};
+
     return (
         <input
             type={type}
@@ -14,6 +25,7 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
                 className,
             )}
             {...props}
+            {...controlledProps}
         />
     );
 }

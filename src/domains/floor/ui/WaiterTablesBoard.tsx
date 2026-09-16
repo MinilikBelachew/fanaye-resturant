@@ -23,6 +23,8 @@ import { tableNumber } from "@/domains/floor/application/groupFloor";
 import { formatEtb } from "@/lib/money";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
+import { FloorGridSkeleton } from "@/components/custom/molecules/Skeletons";
 
 type TableFilter = "all" | "mine" | "free" | "ready";
 
@@ -31,6 +33,8 @@ export default function WaiterTablesBoard({
 }: {
     hideIntro?: boolean;
 }) {
+    const tWaiter = useTranslations("waiter");
+    const tCommon = useTranslations("common");
     const staff = useAppSelector(selectCurrentStaff);
     const clockedIn = Boolean(
         useAppSelector(state => state.identity.session?.shiftSessionId),
@@ -105,7 +109,7 @@ export default function WaiterTablesBoard({
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                             <h1 className="text-[20px] font-semibold tracking-tight text-foreground md:text-[22px]">
-                                Floor Overview
+                                {tWaiter("floorOverview")}
                             </h1>
                             <p className="mt-0.5 text-[14px] text-slate-gray">
                                 Real-time table status at{" "}
@@ -119,7 +123,9 @@ export default function WaiterTablesBoard({
                             <div className="mt-2 flex items-center gap-2 sm:mt-0">
                                 <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-card px-3 py-1 text-xs font-semibold text-foreground shadow-xs">
                                     <span className="size-2 rounded-full bg-emerald-500" />
-                                    <span>Server: {staff.name}</span>
+                                    <span>
+                                        {tWaiter("server")}: {staff.name}
+                                    </span>
                                 </span>
                             </div>
                         ) : null}
@@ -129,7 +135,7 @@ export default function WaiterTablesBoard({
                     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                         <MetricTile
                             icon={<Armchair className="size-5 text-brand" />}
-                            label="My Tables"
+                            label={tWaiter("myTables")}
                             value={String(mine.length)}
                             hint={`${tables.length} total on floor`}
                             tone="brand"
@@ -138,7 +144,7 @@ export default function WaiterTablesBoard({
                             icon={
                                 <BellRing className="size-5 text-emerald-500" />
                             }
-                            label="Ready to Serve"
+                            label={tWaiter("readyToServe")}
                             value={String(readyCount)}
                             hint={
                                 readyCount > 0 ? "Items waiting!" : "All served"
@@ -148,7 +154,7 @@ export default function WaiterTablesBoard({
                         />
                         <MetricTile
                             icon={<ChefHat className="size-5 text-amber-500" />}
-                            label="Still Cooking"
+                            label={tWaiter("stillCooking")}
                             value={String(cookingCount)}
                             hint="In kitchen stations"
                             tone="amber"
@@ -157,7 +163,7 @@ export default function WaiterTablesBoard({
                             icon={
                                 <TrendingUp className="size-5 text-sky-500" />
                             }
-                            label="Shift Sales"
+                            label={tWaiter("shiftSales")}
                             value={formatEtb(0)}
                             hint="Current shift"
                             tone="default"
@@ -167,20 +173,20 @@ export default function WaiterTablesBoard({
                     {/* INTERACTIVE FILTER TABS */}
                     <div className="flex flex-wrap items-center gap-2 border-b border-hairline pb-3">
                         <FilterButton
-                            label="All Tables"
+                            label={tWaiter("allTables")}
                             count={tables.length}
                             active={filter === "all"}
                             onClick={() => setFilter("all")}
                         />
                         <FilterButton
-                            label="My Tables"
+                            label={tWaiter("myTables")}
                             count={mine.length}
                             active={filter === "mine"}
                             onClick={() => setFilter("mine")}
                             dotColor="bg-brand"
                         />
                         <FilterButton
-                            label="Available"
+                            label={tWaiter("vacant")}
                             count={freeTables.length}
                             active={filter === "free"}
                             onClick={() => setFilter("free")}
@@ -188,7 +194,7 @@ export default function WaiterTablesBoard({
                         />
                         {readyTables.length > 0 ? (
                             <FilterButton
-                                label="Ready to Serve"
+                                label={tWaiter("readyToServe")}
                                 count={readyTables.length}
                                 active={filter === "ready"}
                                 onClick={() => setFilter("ready")}
@@ -209,11 +215,10 @@ export default function WaiterTablesBoard({
                         </div>
                         <div>
                             <p className="text-[14px] font-bold">
-                                You are not clocked in
+                                {tWaiter("notClockedIn")}
                             </p>
                             <p className="text-[12.5px] opacity-80">
-                                Please clock in on your shift before taking or
-                                serving tables.
+                                {tWaiter("clockInPrompt")}
                             </p>
                         </div>
                     </div>
@@ -221,7 +226,7 @@ export default function WaiterTablesBoard({
                         href="/waiter/shifts"
                         className="inline-flex items-center gap-1.5 rounded-full bg-amber-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-amber-700"
                     >
-                        <span>Clock in</span>
+                        <span>{tWaiter("clockIn")}</span>
                         <ArrowRight className="size-3" />
                     </Link>
                 </div>
@@ -234,12 +239,7 @@ export default function WaiterTablesBoard({
             ) : null}
 
             {isLoading ? (
-                <div className="flex h-48 flex-col items-center justify-center gap-2 text-slate-gray">
-                    <ChefHat className="size-8 animate-bounce text-brand" />
-                    <p className="text-[14px] font-medium">
-                        Loading floor tables…
-                    </p>
-                </div>
+                <FloorGridSkeleton />
             ) : isError ? (
                 <div className="rounded-[16px] border border-destructive/30 bg-destructive/10 p-6 text-center text-destructive">
                     <p className="font-semibold">
@@ -263,11 +263,17 @@ export default function WaiterTablesBoard({
                     renderTable={table => {
                         const free = !table.tableSessionId;
                         const badge = free
-                            ? { label: "Free", tone: "free" as const }
+                            ? {
+                                  label: tWaiter("vacant"),
+                                  tone: "free" as const,
+                              }
                             : table.mine
-                              ? { label: "Mine", tone: "mine" as const }
+                              ? {
+                                    label: tWaiter("myTables"),
+                                    tone: "mine" as const,
+                                }
                               : {
-                                    label: "Other waiter",
+                                    label: tWaiter("server"),
                                     tone: "other" as const,
                                 };
                         const footerLeft = free
