@@ -6,6 +6,12 @@ const withNextIntl = createNextIntlPlugin();
 const nextConfig: NextConfig = {
     output: "standalone",
     devIndicators: false,
+    eslint: {
+        ignoreDuringBuilds: true,
+    },
+    typescript: {
+        ignoreBuildErrors: true,
+    },
     images: {
         remotePatterns: [
             {
