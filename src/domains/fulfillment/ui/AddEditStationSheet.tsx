@@ -3,15 +3,14 @@
 import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { Check, Printer, Trash2, X } from "lucide-react";
+import { Check, Loader2, Trash2, X } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/context/hooks";
+import { closeStationSheet } from "@/context/slices/stationSlice";
 import {
-    addStation,
-    closeStationSheet,
-    deleteStation,
-    updateStation,
-} from "@/context/slices/stationSlice";
-import type { PreparationStation } from "@/domains/fulfillment/domain/station";
+    useCreateStationMutation,
+    useDeleteStationMutation,
+    useUpdateStationMutation,
+} from "@/context/services/stationsApi";
 import {
     Form,
     FormControl,
@@ -20,7 +19,6 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form";
-import { createId } from "@/lib/ids";
 import { toast } from "@/lib/toast";
 import {
     stationFormDefaults,
@@ -51,8 +49,19 @@ const PRESET_CATEGORIES = [
 export default function AddEditStationSheet() {
     const dispatch = useAppDispatch();
     const isOpen = useAppSelector(state => state.station.isSheetOpen);
-    const editingStation = useAppSelector(state => state.station.editingStation);
+    const editingStation = useAppSelector(
+        state => state.station.editingStation,
+    );
     const [confirmDelete, setConfirmDelete] = useState(false);
+
+    const [createStation, { isLoading: isCreating }] =
+        useCreateStationMutation();
+    const [updateStation, { isLoading: isUpdating }] =
+        useUpdateStationMutation();
+    const [deleteStation, { isLoading: isDeleting }] =
+        useDeleteStationMutation();
+
+    const isSubmitting = isCreating || isUpdating || isDeleting;
 
     const form = useForm<StationFormValues>({
         resolver: zodResolver(stationFormSchema),
@@ -68,12 +77,17 @@ export default function AddEditStationSheet() {
         if (editingStation) {
             form.reset({
                 name: editingStation.name || "",
+                code: editingStation.code || "",
                 description: editingStation.description || "",
                 category: editingStation.category || "Hot Food",
                 color: editingStation.color || "#e85d04",
-                avgPrepMin: editingStation.avgPrepMin ?? 10,
-                printerIp: editingStation.printerIp || "192.168.1.105",
-                enabled: editingStation.enabled ?? true,
+                avgPrepMin:
+                    editingStation.avgPrepMin ??
+                    editingStation.defaultDelayThresholdMinutes ??
+                    10,
+                enabled:
+                    editingStation.enabled ??
+                    editingStation.status === "ACTIVE",
             });
         } else {
             form.reset(stationFormDefaults);
@@ -86,49 +100,60 @@ export default function AddEditStationSheet() {
         dispatch(closeStationSheet());
     }
 
-    function onSubmit(values: StationFormValues) {
-        if (editingStation) {
-            const updated: PreparationStation = {
-                ...editingStation,
-                name: values.name,
-                description: values.description || "",
-                category: values.category,
-                color: values.color,
-                avgPrepMin: values.avgPrepMin,
-                printerIp: values.printerIp || "",
-                enabled: values.enabled,
-            };
-            dispatch(updateStation(updated));
-            toast.success("Station updated", values.name);
-        } else {
-            const newStation: PreparationStation = {
-                id: createId("station"),
-                name: values.name,
-                description:
-                    values.description ||
-                    `Handles orders routed to ${values.name}.`,
-                category: values.category || "Kitchen",
-                color: values.color,
-                avgPrepMin: values.avgPrepMin,
-                printerIp: values.printerIp || "192.168.1.100",
-                enabled: values.enabled,
-                ticketCount: 0,
-            };
-            dispatch(addStation(newStation));
-            toast.success("Station created", values.name);
+    async function onSubmit(values: StationFormValues) {
+        try {
+            if (editingStation) {
+                await updateStation({
+                    id: editingStation.id,
+                    name: values.name,
+                    code: values.code || undefined,
+                    description: values.description || "",
+                    category: values.category,
+                    color: values.color,
+                    avgPrepMin: values.avgPrepMin,
+                    enabled: values.enabled,
+                }).unwrap();
+                toast.success("Station updated", values.name);
+            } else {
+                await createStation({
+                    name: values.name,
+                    code: values.code || undefined,
+                    description: values.description || "",
+                    category: values.category || "Hot Food",
+                    color: values.color,
+                    avgPrepMin: values.avgPrepMin,
+                    status: values.enabled ? "ACTIVE" : "DISABLED",
+                }).unwrap();
+                toast.success("Station created", values.name);
+            }
+            handleClose();
+        } catch (err: unknown) {
+            const msg =
+                (err as { data?: { message?: string } })?.data?.message ||
+                "Failed to save preparation station.";
+            toast.error("Operation failed", msg);
         }
-        handleClose();
     }
 
-    function handleDelete() {
+    async function handleDelete() {
         if (!editingStation) return;
         if (!confirmDelete) {
             setConfirmDelete(true);
             return;
         }
-        dispatch(deleteStation(editingStation.id));
-        toast.success("Station removed", editingStation.name);
-        handleClose();
+        try {
+            const res = await deleteStation(editingStation.id).unwrap();
+            toast.success(
+                "Station removed",
+                res.message || editingStation.name,
+            );
+            handleClose();
+        } catch (err: unknown) {
+            const msg =
+                (err as { data?: { message?: string } })?.data?.message ||
+                "Failed to remove station.";
+            toast.error("Delete failed", msg);
+        }
     }
 
     return (
@@ -149,8 +174,8 @@ export default function AddEditStationSheet() {
                                     : "Add New Station"}
                             </h2>
                             <p className="text-[12px] text-slate-gray">
-                                Configure order routing, thermal printer & queue
-                                parameters.
+                                Configure order routing, preparation time &
+                                queue parameters.
                             </p>
                         </div>
                     </div>
@@ -287,62 +312,35 @@ export default function AddEditStationSheet() {
                             )}
                         />
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="avgPrepMin"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>
-                                            Target Prep Time (min)
-                                        </FormLabel>
-                                        <FormControl>
-                                            <input
-                                                type="number"
-                                                min={1}
-                                                max={120}
-                                                className="w-full rounded-xl border border-hairline bg-background px-3.5 py-2.5 text-[14px] text-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
-                                                value={field.value}
-                                                onChange={e =>
-                                                    field.onChange(
-                                                        Number(e.target.value) ||
-                                                            1,
-                                                    )
-                                                }
-                                                onBlur={field.onBlur}
-                                                name={field.name}
-                                                ref={field.ref}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="printerIp"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>
-                                            Thermal Printer IP / Port
-                                        </FormLabel>
-                                        <div className="relative">
-                                            <Printer className="absolute top-3 left-3 size-4 text-slate-gray" />
-                                            <FormControl>
-                                                <input
-                                                    type="text"
-                                                    placeholder="192.168.1.105"
-                                                    className="w-full rounded-xl border border-hairline bg-background py-2.5 pr-3.5 pl-9 text-[14px] text-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
-                                                    {...field}
-                                                />
-                                            </FormControl>
-                                        </div>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
+                        <FormField
+                            control={form.control}
+                            name="avgPrepMin"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>
+                                        Target Preparation Time (minutes)
+                                    </FormLabel>
+                                    <FormControl>
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            max={120}
+                                            className="w-full rounded-xl border border-hairline bg-background px-3.5 py-2.5 text-[14px] text-foreground outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
+                                            value={field.value}
+                                            onChange={e =>
+                                                field.onChange(
+                                                    Number(e.target.value) || 1,
+                                                )
+                                            }
+                                            onBlur={field.onBlur}
+                                            name={field.name}
+                                            ref={field.ref}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
                         <Controller
                             control={form.control}
@@ -354,8 +352,9 @@ export default function AddEditStationSheet() {
                                             Station Active & Receiving Orders
                                         </p>
                                         <p className="text-[12px] text-slate-gray">
-                                            When active, waiters can route
-                                            ordered items to this queue.
+                                            When active, kitchen staff and
+                                            waiters can route ordered items to
+                                            this queue.
                                         </p>
                                     </div>
                                     <button
@@ -391,9 +390,10 @@ export default function AddEditStationSheet() {
                     {editingStation ? (
                         <button
                             type="button"
+                            disabled={isSubmitting}
                             onClick={handleDelete}
                             className={cn(
-                                "inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-medium transition-colors",
+                                "inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-medium transition-colors disabled:opacity-50",
                                 confirmDelete
                                     ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                     : "text-destructive hover:bg-destructive/10",
@@ -401,9 +401,7 @@ export default function AddEditStationSheet() {
                         >
                             <Trash2 className="size-4" />
                             <span>
-                                {confirmDelete
-                                    ? "Confirm Delete?"
-                                    : "Delete"}
+                                {confirmDelete ? "Confirm Delete?" : "Delete"}
                             </span>
                         </button>
                     ) : (
@@ -413,19 +411,26 @@ export default function AddEditStationSheet() {
                     <div className="flex items-center gap-2.5">
                         <button
                             type="button"
+                            disabled={isSubmitting}
                             onClick={handleClose}
-                            className="rounded-full border border-hairline bg-card px-4 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-secondary"
+                            className="rounded-full border border-hairline bg-card px-4 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-secondary disabled:opacity-50"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             form="station-form"
-                            className="rounded-full bg-primary px-5 py-2 text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-primary-deep"
+                            disabled={isSubmitting}
+                            className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-primary-deep disabled:opacity-50"
                         >
-                            {editingStation
-                                ? "Save Changes"
-                                : "Create Station"}
+                            {isSubmitting ? (
+                                <Loader2 className="size-4 animate-spin" />
+                            ) : null}
+                            <span>
+                                {editingStation
+                                    ? "Save Changes"
+                                    : "Create Station"}
+                            </span>
                         </button>
                     </div>
                 </div>

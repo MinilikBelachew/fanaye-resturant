@@ -145,11 +145,11 @@ function TicketCard({
                             : stationStateLabel(ticket.state)}{" "}
                         · ~{ticket.expectedPrepMinutes} min
                     </p>
-                    <div className="mt-4 flex flex-wrap items-center gap-2">
-                        <StationTicketActions ticket={ticket} />
+                    <div className="mt-4 flex flex-wrap items-center gap-2.5">
+                        <StationTicketActions ticket={ticket} overlay />
                         <Link
                             href={stationOrderPath(role, ticket.orderItemId)}
-                            className="text-[13px] font-medium text-white/90 underline-offset-4 hover:underline"
+                            className="inline-flex items-center rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-[13px] font-medium text-white backdrop-blur-md transition-all hover:bg-white/20"
                         >
                             {tStations("orderDetail")}
                         </Link>

@@ -26,7 +26,7 @@ import {
     useSetWaiterTableCoverageMutation,
     useUpdateAdminStaffMutation,
 } from "@/context/services/staffApi";
-import { type Role } from "@/domains/identity/domain/role";
+import { useGetStationsQuery } from "@/context/services/stationsApi";
 import { Button } from "@/components/ui/button";
 import {
     Form,
@@ -49,61 +49,6 @@ import {
 } from "@/lib/validators/floor";
 import { cn } from "@/lib/utils";
 
-const ALL_ROLES: {
-    id: Role;
-    label: string;
-    description: string;
-    isStation?: boolean;
-}[] = [
-    {
-        id: "waiter",
-        label: "Waiter / Server",
-        description:
-            "Takes table orders, manages table guests, handles bill requests",
-    },
-    {
-        id: "manager",
-        label: "Floor Manager",
-        description:
-            "Live floor oversight, table assignment, financial reports, audit",
-    },
-    {
-        id: "cashier",
-        label: "Cashier",
-        description:
-            "Settles checks, confirms cash/Telebirr/CBE payments, prints receipts",
-    },
-    {
-        id: "kitchen",
-        label: "Kitchen Station",
-        description: "Food prep queue, burger, pasta, pizza hot tickets",
-        isStation: true,
-    },
-    {
-        id: "barista",
-        label: "Barista Station",
-        description: "Espresso, macchiato, hot tea, specialty coffee bar",
-        isStation: true,
-    },
-    {
-        id: "cakes",
-        label: "Cakes & Pastry",
-        description: "Desserts, croissants, tiramisu pastry queue",
-        isStation: true,
-    },
-    {
-        id: "soft_drinks",
-        label: "Beverages / Soft Drinks",
-        description: "Fresh juices, bottled sodas, water station",
-        isStation: true,
-    },
-    {
-        id: "owner",
-        label: "Owner / Administrator",
-        description: "Full restaurant administrative privileges",
-    },
-];
-
 function isUuid(id: string) {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
         id,
@@ -119,7 +64,95 @@ export default function AddEditStaffSheet() {
     const { data: staffData } = useAdminStaffQuery(undefined, {
         skip: !isOpen,
     });
-    const shifts = staffData?.shifts ?? [];
+    const { data: dbStations = [] } = useGetStationsQuery(undefined, {
+        skip: !isOpen,
+    });
+    const shifts = useMemo(() => staffData?.shifts ?? [], [staffData?.shifts]);
+
+    const activeStations = useMemo(() => {
+        return dbStations.filter(
+            st => st.status !== "INACTIVE" && st.enabled !== false,
+        );
+    }, [dbStations]);
+
+    const allRoles = useMemo(() => {
+        const baseRoles = [
+            {
+                id: "waiter",
+                label: "Waiter / Server",
+                description:
+                    "Takes table orders, manages table guests, handles bill requests",
+            },
+            {
+                id: "manager",
+                label: "Floor Manager",
+                description:
+                    "Live floor oversight, table assignment, financial reports, audit",
+            },
+            {
+                id: "cashier",
+                label: "Cashier",
+                description:
+                    "Settles checks, confirms cash/Telebirr/CBE payments, prints receipts",
+            },
+        ];
+
+        const stationRoles = activeStations.map(st => ({
+            id: `station:${st.id}`,
+            stationId: st.id,
+            stationCode: st.code || st.name.toUpperCase().replace(/\s+/g, "_"),
+            label: `${st.name} Station`,
+            description:
+                st.description ||
+                `Food prep queue, order ticket dispatch for ${st.name}`,
+            isStation: true,
+            color: st.color,
+        }));
+
+        const fallbackStations =
+            activeStations.length === 0
+                ? [
+                      {
+                          id: "kitchen",
+                          label: "Kitchen Station",
+                          description:
+                              "Food prep queue, burger, pasta, pizza hot tickets",
+                          isStation: true,
+                      },
+                      {
+                          id: "barista",
+                          label: "Barista Station",
+                          description:
+                              "Espresso, macchiato, hot tea, specialty coffee bar",
+                          isStation: true,
+                      },
+                      {
+                          id: "cakes",
+                          label: "Cakes & Pastry",
+                          description:
+                              "Desserts, croissants, tiramisu pastry queue",
+                          isStation: true,
+                      },
+                      {
+                          id: "soft_drinks",
+                          label: "Beverages / Soft Drinks",
+                          description:
+                              "Fresh juices, bottled sodas, water station",
+                          isStation: true,
+                      },
+                  ]
+                : [];
+
+        return [
+            ...baseRoles,
+            ...(activeStations.length > 0 ? stationRoles : fallbackStations),
+            {
+                id: "owner",
+                label: "Owner / Administrator",
+                description: "Full restaurant administrative privileges",
+            },
+        ];
+    }, [activeStations]);
 
     const [saving, setSaving] = useState(false);
     const [setCoverage] = useSetWaiterTableCoverageMutation();
@@ -191,10 +224,32 @@ export default function AddEditStaffSheet() {
     useEffect(() => {
         if (!isOpen) return;
         if (editingStaff) {
+            let selectedRole = editingStaff.role || "waiter";
+            if (activeStations.length > 0) {
+                const match = activeStations.find(
+                    st =>
+                        st.id === editingStaff.stationId ||
+                        st.code?.toLowerCase() ===
+                            editingStaff.role?.toLowerCase() ||
+                        st.name.toLowerCase() ===
+                            editingStaff.role?.toLowerCase() ||
+                        (editingStaff.role === "kitchen" &&
+                            st.name.toLowerCase().includes("kitchen")) ||
+                        (editingStaff.role === "barista" &&
+                            st.name.toLowerCase().includes("barista")) ||
+                        (editingStaff.role === "cakes" &&
+                            st.name.toLowerCase().includes("cake")) ||
+                        (editingStaff.role === "soft_drinks" &&
+                            st.name.toLowerCase().includes("soft")),
+                );
+                if (match) {
+                    selectedRole = `station:${match.id}`;
+                }
+            }
+
             form.reset({
                 name: editingStaff.name || "",
-                role: (editingStaff.role ||
-                    "waiter") as StaffFormValues["role"],
+                role: selectedRole,
                 phone: editingStaff.phone || "",
                 email: editingStaff.email || "",
                 pin: editingStaff.pinHint || "1234",
@@ -214,7 +269,7 @@ export default function AddEditStaffSheet() {
         } else {
             form.reset(staffFormDefaults);
         }
-    }, [editingStaff, isOpen, form]);
+    }, [editingStaff, isOpen, form, activeStations]);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -296,16 +351,32 @@ export default function AddEditStaffSheet() {
     }
 
     async function onSubmit(values: StaffFormValues) {
-        const stationCode = [
-            "kitchen",
-            "barista",
-            "cakes",
-            "soft_drinks",
-        ].includes(values.role)
-            ? values.role === "soft_drinks"
-                ? "SOFT_DRINKS"
-                : values.role.toUpperCase()
-            : undefined;
+        let stationCode: string | undefined = undefined;
+        let preparationStationId: string | undefined = undefined;
+        let apiRole = values.role;
+
+        if (values.role.startsWith("station:")) {
+            const rawId = values.role.replace("station:", "");
+            const stationMatch = activeStations.find(st => st.id === rawId);
+            preparationStationId = stationMatch?.id;
+            stationCode = stationMatch?.code || undefined;
+            apiRole = "kitchen"; // Backend maps to STATION_OPERATOR
+        } else if (
+            ["kitchen", "barista", "cakes", "soft_drinks"].includes(values.role)
+        ) {
+            const stationMatch = activeStations.find(
+                st =>
+                    st.code?.toLowerCase() === values.role.toLowerCase() ||
+                    st.name.toLowerCase().includes(values.role.toLowerCase()),
+            );
+            preparationStationId = stationMatch?.id;
+            stationCode =
+                stationMatch?.code ||
+                (values.role === "soft_drinks"
+                    ? "SOFT_DRINKS"
+                    : values.role.toUpperCase());
+            apiRole = values.role;
+        }
 
         setSaving(true);
         try {
@@ -314,12 +385,13 @@ export default function AddEditStaffSheet() {
                     membershipId: editingMembershipId,
                     body: {
                         name: values.name.trim(),
-                        role: values.role,
+                        role: apiRole,
                         phone: values.phone?.trim() || undefined,
                         email: values.email?.trim() || undefined,
                         pin: values.pin.trim() || undefined,
                         active: values.active,
                         stationCode,
+                        preparationStationId,
                     },
                 }).unwrap();
 
@@ -335,12 +407,13 @@ export default function AddEditStaffSheet() {
             } else {
                 await createStaff({
                     name: values.name.trim(),
-                    role: values.role,
+                    role: apiRole,
                     phone: values.phone?.trim() || undefined,
                     email: values.email?.trim() || undefined,
                     pin: values.pin.trim() || "1234",
                     active: values.active,
                     stationCode,
+                    preparationStationId,
                     shiftDefinitionId:
                         values.role === "waiter"
                             ? values.shiftDefinitionId || undefined
@@ -575,7 +648,7 @@ export default function AddEditStaffSheet() {
                                             </span>
                                         </FormLabel>
                                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                            {ALL_ROLES.map(entry => {
+                                            {allRoles.map(entry => {
                                                 const selected =
                                                     field.value === entry.id;
                                                 return (

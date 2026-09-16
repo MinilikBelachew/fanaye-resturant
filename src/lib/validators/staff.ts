@@ -1,15 +1,11 @@
 import { z } from "zod";
-import { ROLES } from "@/domains/identity/domain/role";
-
-const staffRoleValues = ROLES.filter(role => role !== "super_admin") as [
-    Exclude<(typeof ROLES)[number], "super_admin">,
-    ...Exclude<(typeof ROLES)[number], "super_admin">[],
-];
 
 export const staffFormSchema = z
     .object({
         name: z.string().trim().min(1, "Staff full name is required."),
-        role: z.enum(staffRoleValues),
+        role: z.string().trim().min(1, "Role is required."),
+        preparationStationId: z.string().optional().or(z.literal("")),
+        stationCode: z.string().optional().or(z.literal("")),
         phone: z.string().trim().optional(),
         email: z.union([
             z.literal(""),
@@ -49,6 +45,8 @@ export type StaffFormValues = z.infer<typeof staffFormSchema>;
 export const staffFormDefaults: StaffFormValues = {
     name: "",
     role: "waiter",
+    preparationStationId: "",
+    stationCode: "",
     phone: "",
     email: "",
     pin: "1234",

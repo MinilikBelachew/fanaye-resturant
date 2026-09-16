@@ -15,7 +15,8 @@ export const ROLES = [
     "soft_drinks",
 ] as const;
 
-export type Role = (typeof ROLES)[number];
+export type StandardRole = (typeof ROLES)[number];
+export type Role = StandardRole | string;
 
 export const STATION_ROLES = [
     "kitchen",
@@ -24,9 +25,9 @@ export const STATION_ROLES = [
     "soft_drinks",
 ] as const;
 
-export type StationRole = (typeof STATION_ROLES)[number];
+export type StationRole = (typeof STATION_ROLES)[number] | string;
 
-export const ROLE_LABELS: Record<Role, string> = {
+export const ROLE_LABELS: Record<string, string> = {
     super_admin: "Platform Super Admin",
     owner: "Owner / Tenant Admin",
     manager: "Manager",
@@ -38,16 +39,23 @@ export const ROLE_LABELS: Record<Role, string> = {
     soft_drinks: "Soft Drinks",
 };
 
-export function isStationRole(role: Role): role is StationRole {
-    return (STATION_ROLES as readonly string[]).includes(role);
+export function isStationRole(role: string): boolean {
+    return (
+        (STATION_ROLES as readonly string[]).includes(role) ||
+        role.startsWith("station:") ||
+        role.toLowerCase().startsWith("station")
+    );
 }
 
-export function stationIdForRole(role: StationRole): StationId {
-    const map: Record<StationRole, StationId> = {
+export function stationIdForRole(role: string): StationId {
+    if (role.startsWith("station:")) {
+        return role.replace("station:", "");
+    }
+    const map: Record<string, StationId> = {
         kitchen: STATION_IDS.kitchen,
         barista: STATION_IDS.barista,
         cakes: STATION_IDS.cakes,
         soft_drinks: STATION_IDS.soft_drinks,
     };
-    return map[role];
+    return map[role] || role;
 }

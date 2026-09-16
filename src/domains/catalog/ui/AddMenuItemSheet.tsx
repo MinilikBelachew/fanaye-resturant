@@ -13,6 +13,7 @@ import {
     UtensilsCrossed,
     X,
 } from "lucide-react";
+import { useAppSelector } from "@/context/hooks";
 import {
     useAdminMenuMetaQuery,
     useAdminModifierGroupsQuery,
@@ -21,6 +22,7 @@ import {
     useUpdateAdminMenuItemMutation,
     useUploadMenuImageMutation,
 } from "@/context/services/menuApi";
+import { useGetStationsQuery } from "@/context/services/stationsApi";
 import {
     catalogModifiersToApi,
     filePublicUrl,
@@ -66,16 +68,16 @@ const DEFAULT_STATION_META: Record<
     [STATION_IDS.kitchen]: {
         label: "Kitchen",
         icon: CookingPot,
-        categoryDefault: "Kitchen",
+        categoryDefault: "Main Kitchen",
         defaultPrepMin: 12,
         color: "text-amber-600 bg-amber-500/10 border-amber-500/20",
     },
     [STATION_IDS.barista]: {
         label: "Barista",
         icon: Coffee,
-        categoryDefault: "Barista",
+        categoryDefault: "Hot Drinks",
         defaultPrepMin: 5,
-        color: "text-amber-800 bg-amber-800/10 border-amber-800/20",
+        color: "text-orange-600 bg-orange-500/10 border-orange-500/20",
     },
     [STATION_IDS.cakes]: {
         label: "Cakes",
@@ -95,9 +97,19 @@ const DEFAULT_STATION_META: Record<
 
 function stationIconForName(name: string) {
     const value = name.toLowerCase();
-    if (value.includes("barista")) return Coffee;
-    if (value.includes("cake")) return UtensilsCrossed;
-    if (value.includes("soft") || value.includes("drink")) return CupSoda;
+    if (value.includes("barista") || value.includes("coffee")) return Coffee;
+    if (
+        value.includes("cake") ||
+        value.includes("pastry") ||
+        value.includes("bakery")
+    )
+        return UtensilsCrossed;
+    if (
+        value.includes("soft") ||
+        value.includes("drink") ||
+        value.includes("beverage")
+    )
+        return CupSoda;
     return CookingPot;
 }
 
@@ -106,6 +118,10 @@ export default function AddMenuItemSheet({
     onClose,
     initialItem,
 }: AddMenuItemSheetProps) {
+    const reduxStations = useAppSelector(state => state.station.stations);
+    const { data: dbStations } = useGetStationsQuery(undefined, {
+        skip: !isOpen,
+    });
     const { data: metaData } = useAdminMenuMetaQuery(undefined, {
         skip: !isOpen,
     });
@@ -122,25 +138,53 @@ export default function AddMenuItemSheet({
 
     const libraryGroups = libraryData?.data ?? [];
 
-    const stations = useMemo(
-        () =>
-            (metaData?.data.stations ?? []).map(station => ({
-                id: station.id,
-                name: station.name,
-                category: station.name,
-                avgPrepMin:
-                    DEFAULT_STATION_META[
-                        station.name.toLowerCase().includes("barista")
-                            ? STATION_IDS.barista
-                            : station.name.toLowerCase().includes("cake")
-                              ? STATION_IDS.cakes
-                              : station.name.toLowerCase().includes("soft")
-                                ? STATION_IDS.soft_drinks
-                                : STATION_IDS.kitchen
-                    ]?.defaultPrepMin ?? 10,
-            })),
-        [metaData],
-    );
+    const stations = useMemo(() => {
+        if (dbStations && dbStations.length > 0) {
+            return dbStations
+                .filter(st => st.enabled !== false && st.status !== "DISABLED")
+                .map(st => ({
+                    id: st.id,
+                    name: st.name,
+                    category: st.category || st.name,
+                    avgPrepMin:
+                        st.avgPrepMin || st.defaultDelayThresholdMinutes || 10,
+                }));
+        }
+
+        if (reduxStations && reduxStations.length > 0) {
+            return reduxStations
+                .filter(st => st.enabled !== false && st.status !== "DISABLED")
+                .map(st => {
+                    const backendMatch = (metaData?.data.stations ?? []).find(
+                        b =>
+                            b.name.toLowerCase() === st.name.toLowerCase() ||
+                            b.id === st.id,
+                    );
+                    return {
+                        id: backendMatch?.id || st.id,
+                        name: st.name,
+                        category: st.category || st.name,
+                        avgPrepMin: st.avgPrepMin || 10,
+                    };
+                });
+        }
+
+        return (metaData?.data.stations ?? []).map(station => ({
+            id: station.id,
+            name: station.name,
+            category: station.name,
+            avgPrepMin:
+                DEFAULT_STATION_META[
+                    station.name.toLowerCase().includes("barista")
+                        ? STATION_IDS.barista
+                        : station.name.toLowerCase().includes("cake")
+                          ? STATION_IDS.cakes
+                          : station.name.toLowerCase().includes("soft")
+                            ? STATION_IDS.soft_drinks
+                            : STATION_IDS.kitchen
+                ]?.defaultPrepMin ?? 10,
+        }));
+    }, [dbStations, reduxStations, metaData]);
 
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
@@ -186,7 +230,9 @@ export default function AddMenuItemSheet({
             setSelectedLibraryIds(
                 attached.map(group => group.id).filter(isPersistedId),
             );
-            setModifierGroups(attached.filter(group => !isPersistedId(group.id)));
+            setModifierGroups(
+                attached.filter(group => !isPersistedId(group.id)),
+            );
         } else {
             setName("");
             setDescription("");
@@ -295,9 +341,7 @@ export default function AddMenuItemSheet({
     function handleDeleteItem() {
         if (!initialItem) return;
         if (
-            confirm(
-                `Mark "${initialItem.name}" sold out / remove from floor?`,
-            )
+            confirm(`Mark "${initialItem.name}" sold out / remove from floor?`)
         ) {
             void markSoldOut({ id: initialItem.id })
                 .then(() => {
@@ -335,8 +379,7 @@ export default function AddMenuItemSheet({
         const body = {
             name: values.name,
             description:
-                values.description ||
-                `${values.name} prepared fresh to order.`,
+                values.description || `${values.name} prepared fresh to order.`,
             price: finalPrice,
             preparationStationId: values.stationId,
             categoryName:
@@ -390,8 +433,7 @@ export default function AddMenuItemSheet({
             const uploaded = await uploadImage(file).unwrap();
             setImageFileId(uploaded.file.id);
             setUploadPreviewUrl(
-                filePublicUrl(uploaded.file.path) ||
-                    URL.createObjectURL(file),
+                filePublicUrl(uploaded.file.path) || URL.createObjectURL(file),
             );
             toast.success("Image uploaded");
         } catch (err) {
@@ -448,7 +490,8 @@ export default function AddMenuItemSheet({
                     <div className="space-y-3.5">
                         <div>
                             <label className="text-[13px] font-medium text-foreground">
-                                Item name <span className="text-destructive">*</span>
+                                Item name{" "}
+                                <span className="text-destructive">*</span>
                             </label>
                             <Input
                                 required
@@ -475,7 +518,8 @@ export default function AddMenuItemSheet({
                         <div className="grid grid-cols-2 gap-3">
                             <div>
                                 <label className="text-[13px] font-medium text-foreground">
-                                    Base price (ETB) <span className="text-destructive">*</span>
+                                    Base price (ETB){" "}
+                                    <span className="text-destructive">*</span>
                                 </label>
                                 <div className="relative mt-1">
                                     <span className="absolute inset-y-0 left-3 flex items-center text-[12px] font-medium text-slate-gray">
@@ -609,7 +653,6 @@ export default function AddMenuItemSheet({
                             <div className="relative aspect-[16/10] bg-secondary/40">
                                 {effectiveImage ? (
                                     <>
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img
                                             src={effectiveImage}
                                             alt={name || "Dish preview"}
@@ -651,7 +694,8 @@ export default function AddMenuItemSheet({
                                                 : "Click to upload photo"}
                                         </span>
                                         <span className="text-[11px] text-slate-gray">
-                                            JPG or PNG · best at least 800px wide
+                                            JPG or PNG · best at least 800px
+                                            wide
                                         </span>
                                         <input
                                             type="file"
@@ -810,7 +854,8 @@ export default function AddMenuItemSheet({
                                                     <span>{opt.name}</span>
                                                     {opt.priceDelta > 0 ? (
                                                         <span className="font-semibold text-brand">
-                                                            +ETB {opt.priceDelta}
+                                                            +ETB{" "}
+                                                            {opt.priceDelta}
                                                         </span>
                                                     ) : null}
                                                     <button
@@ -907,8 +952,7 @@ export default function AddMenuItemSheet({
                                     value={newGroupKind}
                                     onChange={e =>
                                         setNewGroupKind(
-                                            e.target
-                                                .value as ModifierGroupKind,
+                                            e.target.value as ModifierGroupKind,
                                         )
                                     }
                                     className="h-8 rounded-[8px] border border-input bg-card px-2 text-[11px]"
