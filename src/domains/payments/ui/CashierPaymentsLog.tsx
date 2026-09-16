@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
     useCashierPaymentsQuery,
     useLazyGetBillQuery,
@@ -10,13 +10,16 @@ import { CashierReceiptModal } from "@/domains/payments/ui/CashierReceiptModal";
 import { Button } from "@/components/ui/button";
 import { formatEtb } from "@/lib/money";
 import { toast } from "@/lib/toast";
-import { Loader2, Receipt } from "lucide-react";
+import { exportElementToPdf } from "@/lib/pdfExport";
+import { FileDown, Loader2, Receipt } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { CashierPaymentsSkeleton } from "@/components/custom/molecules/Skeletons";
 
 export default function CashierPaymentsLog() {
     const tCashier = useTranslations("cashier");
     const tCommon = useTranslations("common");
+    const logRef = useRef<HTMLUListElement>(null);
+    const [isExportingPdf, setIsExportingPdf] = useState(false);
     const { data, isLoading, isError } = useCashierPaymentsQuery(undefined, {
         pollingInterval: 5000,
     });
@@ -29,6 +32,25 @@ export default function CashierPaymentsLog() {
     const [loadingBillId, setLoadingBillId] = useState<string | null>(null);
 
     const payments = data?.data ?? [];
+
+    const totalCollected = payments.reduce(
+        (sum, p) => sum + Number(p.amount || 0),
+        0,
+    );
+
+    async function handleExportPdf() {
+        if (!logRef.current) return;
+        setIsExportingPdf(true);
+        try {
+            await exportElementToPdf(logRef.current, {
+                filename: `cashier-payments-log-${new Date().toISOString().slice(0, 10)}.pdf`,
+                scale: 2.5,
+                orientation: "portrait",
+            });
+        } finally {
+            setIsExportingPdf(false);
+        }
+    }
 
     function methodLabel(method: string, channel: string | null) {
         if (method === "CASH") return tCashier("cash");
@@ -70,8 +92,36 @@ export default function CashierPaymentsLog() {
     }
 
     return (
-        <>
-            <ul className="space-y-3">
+        <div className="space-y-4">
+            {/* Action & Summary Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[16px] border border-hairline bg-card p-4">
+                <div>
+                    <span className="text-[12px] text-slate-gray block">
+                        Total Shift Collections ({payments.length} orders)
+                    </span>
+                    <span className="text-[20px] font-bold text-foreground">
+                        {formatEtb(totalCollected)}
+                    </span>
+                </div>
+                <Button
+                    onClick={() => void handleExportPdf()}
+                    disabled={isExportingPdf}
+                    variant="outline"
+                    className="h-9 gap-2 rounded-xl text-xs font-semibold"
+                >
+                    {isExportingPdf ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                        <FileDown className="size-3.5" />
+                    )}
+                    Export PDF Log
+                </Button>
+            </div>
+
+            <ul
+                ref={logRef}
+                className="space-y-3 bg-card/40 p-1 rounded-[16px]"
+            >
                 {payments.map(payment => (
                     <li
                         key={payment.paymentId}
@@ -131,6 +181,6 @@ export default function CashierPaymentsLog() {
                 tableDisplayName={activeReceipt?.tableDisplayName}
                 waiterName={activeReceipt?.waiterName}
             />
-        </>
+        </div>
     );
 }

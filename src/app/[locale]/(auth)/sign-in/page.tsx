@@ -5,19 +5,24 @@ import { useTranslations } from "next-intl";
 import {
     AlertCircle,
     ArrowRight,
+    Building2,
+    Check,
     Delete,
     Eye,
     EyeOff,
     KeyRound,
     Lock,
     Mail,
+    RefreshCw,
     ShieldCheck,
     UserCheck,
+    X,
 } from "lucide-react";
 import { useAppSelector } from "@/context/hooks";
 import {
     useLoginMutation,
     usePinLoginMutation,
+    type PinTenantMatch,
 } from "@/context/services/authApi";
 import { homePathForRole } from "@/domains/identity/application/homePath";
 import { mapRoleCodeToRole } from "@/domains/identity/application/mapAuthToStaff";
@@ -26,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useRouter } from "@/i18n/navigation";
 import LocaleSwitcher from "@/components/theme/LocaleSwitcher";
+import { getAvatarSolidColor } from "@/lib/avatarColors";
 import { cn } from "@/lib/utils";
 
 type AuthMode = "pin" | "credentials";
@@ -44,9 +50,28 @@ export default function SignInPage() {
     const [error, setError] = useState("");
     const [shake, setShake] = useState(false);
 
+    // Multi-tenant disambiguation & terminal state
+    const [configuredTenantName, setConfiguredTenantName] = useState<
+        string | null
+    >(null);
+    const [multipleMatches, setMultipleMatches] = useState<
+        PinTenantMatch[] | null
+    >(null);
+    const [pendingPin, setPendingPin] = useState<string>("");
+
     const [loginWithPin, { isLoading: isPinLoading }] = usePinLoginMutation();
     const [loginWithCredentials, { isLoading: isCredLoading }] =
         useLoginMutation();
+
+    // Check localStorage on mount
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const name = localStorage.getItem("terminal_tenant_name");
+            if (name) {
+                setConfiguredTenantName(name);
+            }
+        }
+    }, []);
 
     const triggerPinError = (msg?: string) => {
         setError(msg || t("pinError"));
@@ -65,8 +90,17 @@ export default function SignInPage() {
 
             setError("");
             try {
+                const storedTenant =
+                    typeof window !== "undefined"
+                        ? localStorage.getItem("terminal_tenant_id") ||
+                          localStorage.getItem("tenant_slug") ||
+                          localStorage.getItem("selected_tenant_id") ||
+                          undefined
+                        : undefined;
+
                 const session = await loginWithPin({
                     pin: code,
+                    tenantSlug: storedTenant,
                     remember: rememberMe,
                 }).unwrap();
 
@@ -81,6 +115,22 @@ export default function SignInPage() {
 
                 router.push(homePathForRole(role));
             } catch (err: unknown) {
+                const errObj = err as {
+                    error?: string;
+                    matches?: PinTenantMatch[];
+                    message?: string;
+                };
+
+                if (
+                    errObj?.error === "MULTIPLE_TENANTS_FOUND" &&
+                    errObj?.matches &&
+                    errObj.matches.length > 0
+                ) {
+                    setMultipleMatches(errObj.matches);
+                    setPendingPin(code);
+                    return;
+                }
+
                 let message = t("pinError");
                 if (
                     err &&
@@ -96,6 +146,43 @@ export default function SignInPage() {
         },
         [pin, rememberMe, loginWithPin, router, t],
     );
+
+    const handleSelectTenantMatch = async (match: PinTenantMatch) => {
+        if (typeof window !== "undefined") {
+            localStorage.setItem("terminal_tenant_id", match.tenantId);
+            localStorage.setItem("terminal_tenant_name", match.tenantName);
+            setConfiguredTenantName(match.tenantName);
+        }
+        setMultipleMatches(null);
+
+        try {
+            const session = await loginWithPin({
+                pin: pendingPin || pin,
+                tenantSlug: match.tenantId,
+                remember: rememberMe,
+            }).unwrap();
+
+            const role = mapRoleCodeToRole(
+                session.context.roleCode,
+                session.context.stationCode,
+            );
+            router.push(homePathForRole(role));
+        } catch (err: unknown) {
+            const message =
+                (err as { message?: string })?.message || t("pinError");
+            triggerPinError(message);
+        }
+    };
+
+    const handleClearTerminal = () => {
+        if (typeof window !== "undefined") {
+            localStorage.removeItem("terminal_tenant_id");
+            localStorage.removeItem("terminal_tenant_name");
+            localStorage.removeItem("tenant_slug");
+            localStorage.removeItem("selected_tenant_id");
+        }
+        setConfiguredTenantName(null);
+    };
 
     const handleKeypadPress = (digit: string) => {
         if (isPinLoading) return;
@@ -518,6 +605,81 @@ export default function SignInPage() {
                     </Link>
                 </p>
             </div>
+
+            {/* MULTI-TENANT DISAMBIGUATION MODAL */}
+            {multipleMatches && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+                    <div
+                        className="fixed inset-0"
+                        onClick={() => setMultipleMatches(null)}
+                    />
+                    <div className="relative z-10 w-full max-w-sm rounded-[22px] border border-hairline bg-white dark:bg-card p-5 shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between border-b border-hairline pb-3 mb-3">
+                            <div>
+                                <h3 className="font-bold text-[16px] text-foreground">
+                                    Select Restaurant
+                                </h3>
+                                <p className="text-[12px] text-slate-gray">
+                                    Multiple accounts match PIN{" "}
+                                    <strong className="font-mono tracking-wider">
+                                        {pendingPin}
+                                    </strong>
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setMultipleMatches(null)}
+                                className="size-7 rounded-full flex items-center justify-center text-slate-gray hover:bg-secondary"
+                            >
+                                <X className="size-4" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+                            {multipleMatches.map(match => (
+                                <button
+                                    key={`${match.tenantId}-${match.userId}`}
+                                    type="button"
+                                    onClick={() =>
+                                        void handleSelectTenantMatch(match)
+                                    }
+                                    className="w-full text-left flex items-center gap-3 p-3 rounded-xl border border-hairline hover:border-primary hover:bg-secondary/40 transition-all group shadow-2xs"
+                                >
+                                    <div
+                                        className={cn(
+                                            "size-9 rounded-full flex items-center justify-center font-bold text-[13px] shrink-0 shadow-xs",
+                                            getAvatarSolidColor(
+                                                match.displayName,
+                                            ),
+                                        )}
+                                    >
+                                        {match.displayName
+                                            .charAt(0)
+                                            .toUpperCase()}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="font-semibold text-[13.5px] text-foreground truncate block">
+                                                {match.tenantName}
+                                            </span>
+                                        </div>
+                                        <span className="text-[12px] text-slate-gray block truncate">
+                                            {match.displayName} (
+                                            {match.role.replace("_", " ")})
+                                        </span>
+                                    </div>
+                                    <ArrowRight className="size-4 text-slate-gray group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+                                </button>
+                            ))}
+                        </div>
+
+                        <p className="mt-3 text-center text-[11px] text-slate-gray leading-tight">
+                            This device will remember your choice for instant
+                            1-tap logins.
+                        </p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

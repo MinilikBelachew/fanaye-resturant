@@ -69,7 +69,11 @@ export const identitySlice = createSlice({
             state.hydrated = true;
         },
         hydrateStaff: (state, action: PayloadAction<Staff[] | null>) => {
-            if (action.payload && Array.isArray(action.payload) && action.payload.length > 0) {
+            if (
+                action.payload &&
+                Array.isArray(action.payload) &&
+                action.payload.length > 0
+            ) {
                 state.staffMembers = action.payload;
             }
         },
@@ -79,7 +83,9 @@ export const identitySlice = createSlice({
             state.editingStaff = null;
         },
         updateStaff: (state, action: PayloadAction<Staff>) => {
-            const index = state.staffMembers.findIndex(s => s.id === action.payload.id);
+            const index = state.staffMembers.findIndex(
+                s => s.id === action.payload.id,
+            );
             if (index !== -1) {
                 state.staffMembers[index] = action.payload;
             }
@@ -87,7 +93,9 @@ export const identitySlice = createSlice({
             state.editingStaff = null;
         },
         deleteStaff: (state, action: PayloadAction<string>) => {
-            state.staffMembers = state.staffMembers.filter(s => s.id !== action.payload);
+            state.staffMembers = state.staffMembers.filter(
+                s => s.id !== action.payload,
+            );
             state.isAddEditOpen = false;
             state.editingStaff = null;
         },
@@ -104,7 +112,9 @@ export const identitySlice = createSlice({
                 status: "on_duty" | "on_break" | "off_duty";
             }>,
         ) => {
-            const staff = state.staffMembers.find(s => s.id === action.payload.staffId);
+            const staff = state.staffMembers.find(
+                s => s.id === action.payload.staffId,
+            );
             if (staff) {
                 staff.shiftStatus = action.payload.status;
             }
@@ -113,26 +123,33 @@ export const identitySlice = createSlice({
             state,
             action: PayloadAction<{ waiterId: string; tableIds: string[] }>,
         ) => {
-            const waiter = state.staffMembers.find(s => s.id === action.payload.waiterId);
+            const waiter = state.staffMembers.find(
+                s => s.id === action.payload.waiterId,
+            );
             if (waiter) {
                 waiter.assignedTableIds = action.payload.tableIds;
             }
             state.isAssignTablesOpen = false;
             state.assigningWaiter = null;
         },
-        openAddStaff: (state, action: PayloadAction<Staff["role"] | undefined>) => {
+        openAddStaff: (
+            state,
+            action: PayloadAction<Staff["role"] | undefined>,
+        ) => {
             state.isAddEditOpen = true;
-            state.editingStaff = action.payload ? {
-                id: `staff-${Date.now().toString(36)}`,
-                name: "",
-                role: action.payload,
-                pinHint: "1234",
-                phone: "",
-                active: true,
-                shiftStatus: "on_duty",
-                assignedTableIds: [],
-                joinedDate: new Date().toISOString().split("T")[0],
-            } : null;
+            state.editingStaff = action.payload
+                ? {
+                      id: `staff-${Date.now().toString(36)}`,
+                      name: "",
+                      role: action.payload,
+                      pinHint: "1234",
+                      phone: "",
+                      active: true,
+                      shiftStatus: "on_duty",
+                      assignedTableIds: [],
+                      joinedDate: new Date().toISOString().split("T")[0],
+                  }
+                : null;
         },
         openEditStaff: (state, action: PayloadAction<Staff>) => {
             state.isAddEditOpen = true;
@@ -152,32 +169,67 @@ export const identitySlice = createSlice({
         },
     },
     extraReducers: builder => {
-        builder.addMatcher(authApi.endpoints.login.matchFulfilled, (state, action) => {
-            state.session = action.payload.context;
-            state.accessToken = action.payload.token;
-            state.tokenExpires = action.payload.tokenExpires;
-        });
-        builder.addMatcher(authApi.endpoints.refresh.matchFulfilled, (state, action) => {
-            state.accessToken = action.payload.token;
-            state.tokenExpires = action.payload.tokenExpires;
-        });
-        builder.addMatcher(authApi.endpoints.me.matchFulfilled, (state, action) => {
-            state.session = action.payload.context;
-        });
+        builder.addMatcher(
+            authApi.endpoints.login.matchFulfilled,
+            (state, action) => {
+                state.session = action.payload.context;
+                state.accessToken = action.payload.token;
+                state.tokenExpires = action.payload.tokenExpires;
+            },
+        );
+        builder.addMatcher(
+            authApi.endpoints.pinLogin.matchFulfilled,
+            (state, action) => {
+                state.session = action.payload.context;
+                state.accessToken = action.payload.token;
+                state.tokenExpires = action.payload.tokenExpires;
+            },
+        );
+        builder.addMatcher(
+            authApi.endpoints.refresh.matchFulfilled,
+            (state, action) => {
+                state.accessToken = action.payload.token;
+                state.tokenExpires = action.payload.tokenExpires;
+            },
+        );
+        builder.addMatcher(
+            authApi.endpoints.me.matchFulfilled,
+            (state, action) => {
+                state.session = action.payload.context;
+            },
+        );
         builder.addMatcher(authApi.endpoints.logout.matchFulfilled, state => {
             state.session = null;
             state.accessToken = null;
             state.tokenExpires = null;
         });
-        builder.addMatcher(shiftsApi.endpoints.currentShift.matchFulfilled, (state, action) => {
-            state.session = applyShiftToSession(state.session, action.payload);
-        });
-        builder.addMatcher(shiftsApi.endpoints.clockIn.matchFulfilled, (state, action) => {
-            state.session = applyShiftToSession(state.session, action.payload);
-        });
-        builder.addMatcher(shiftsApi.endpoints.clockOut.matchFulfilled, (state, action) => {
-            state.session = applyShiftToSession(state.session, action.payload);
-        });
+        builder.addMatcher(
+            shiftsApi.endpoints.currentShift.matchFulfilled,
+            (state, action) => {
+                state.session = applyShiftToSession(
+                    state.session,
+                    action.payload,
+                );
+            },
+        );
+        builder.addMatcher(
+            shiftsApi.endpoints.clockIn.matchFulfilled,
+            (state, action) => {
+                state.session = applyShiftToSession(
+                    state.session,
+                    action.payload,
+                );
+            },
+        );
+        builder.addMatcher(
+            shiftsApi.endpoints.clockOut.matchFulfilled,
+            (state, action) => {
+                state.session = applyShiftToSession(
+                    state.session,
+                    action.payload,
+                );
+            },
+        );
     },
 });
 

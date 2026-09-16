@@ -25,6 +25,28 @@ import AddEditStaffSheet from "@/domains/identity/ui/AddEditStaffSheet";
 import AssignTablesSheet from "@/domains/identity/ui/AssignTablesSheet";
 import { cn } from "@/lib/utils";
 
+const AVATAR_SOLID_PALETTES = [
+    "bg-emerald-600 text-white",
+    "bg-blue-600 text-white",
+    "bg-indigo-600 text-white",
+    "bg-violet-600 text-white",
+    "bg-teal-600 text-white",
+    "bg-rose-600 text-white",
+    "bg-cyan-700 text-white",
+    "bg-amber-600 text-white",
+    "bg-sky-600 text-white",
+];
+
+function getAvatarSolidColor(name: string): string {
+    if (!name) return AVATAR_SOLID_PALETTES[0];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % AVATAR_SOLID_PALETTES.length;
+    return AVATAR_SOLID_PALETTES[index];
+}
+
 type FilterTab = "all" | "waiters" | "stations" | "management";
 
 function mapRoleCode(code: string): Role {
@@ -90,7 +112,8 @@ export default function ManagerStaffPage() {
             }
             if (searchQuery.trim()) {
                 const q = searchQuery.toLowerCase();
-                const hay = `${member.name} ${member.roleLabel} ${member.phone ?? ""}`.toLowerCase();
+                const hay =
+                    `${member.name} ${member.roleLabel} ${member.phone ?? ""}`.toLowerCase();
                 if (!hay.includes(q)) return false;
             }
             return true;
@@ -160,8 +183,8 @@ export default function ManagerStaffPage() {
                         ))}
                     </div>
                     <p className="mt-2 text-[12px] text-slate-gray">
-                        Create more shifts (any times) when assigning tables to a
-                        waiter.
+                        Create more shifts (any times) when assigning tables to
+                        a waiter.
                     </p>
                 </div>
             ) : null}
@@ -229,7 +252,9 @@ export default function ManagerStaffPage() {
                             [
                                 "management",
                                 "Management",
-                                totalStaffCount - waitersCount - stationStaffCount,
+                                totalStaffCount -
+                                    waitersCount -
+                                    stationStaffCount,
                             ],
                         ] as const
                     ).map(([id, label, count]) => (
@@ -275,7 +300,9 @@ export default function ManagerStaffPage() {
                         <table className="w-full text-left text-[14px]">
                             <thead className="border-b border-hairline bg-surface-ivory/40 text-[12px] font-medium tracking-[0.05em] text-slate-gray uppercase">
                                 <tr>
-                                    <th className="px-6 py-3.5">Staff Member</th>
+                                    <th className="px-6 py-3.5">
+                                        Staff Member
+                                    </th>
                                     <th className="px-6 py-3.5">Role</th>
                                     <th className="px-6 py-3.5">
                                         Tables by shift
@@ -307,10 +334,17 @@ export default function ManagerStaffPage() {
                                             >
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="flex size-10 items-center justify-center rounded-full bg-secondary text-[14px] font-bold">
-                                                            {member.name.charAt(
-                                                                0,
+                                                        <div
+                                                            className={cn(
+                                                                "flex size-10 items-center justify-center rounded-full font-bold text-[14px] shrink-0 shadow-xs",
+                                                                getAvatarSolidColor(
+                                                                    member.name,
+                                                                ),
                                                             )}
+                                                        >
+                                                            {member.name
+                                                                .charAt(0)
+                                                                .toUpperCase()}
                                                         </div>
                                                         <div>
                                                             <p className="font-semibold">
@@ -363,6 +397,7 @@ export default function ManagerStaffPage() {
                                                                                 {
                                                                                     coverage.startLocalTime
                                                                                 }
+
                                                                                 –
                                                                                 {
                                                                                     coverage.endLocalTime

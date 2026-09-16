@@ -14,6 +14,15 @@ export interface TerminalStaffMember {
     tenantSlug?: string;
 }
 
+export interface PinTenantMatch {
+    userId: string;
+    email: string;
+    displayName: string;
+    tenantId: string;
+    tenantName: string;
+    role: string;
+}
+
 export const authApi = api.injectEndpoints({
     endpoints: builder => ({
         login: builder.mutation<
@@ -44,10 +53,22 @@ export const authApi = api.injectEndpoints({
                 method: "POST",
                 body: { pin, staffId, tenantSlug, remember },
             }),
-            transformErrorResponse: response => ({
-                status: response.status,
-                message: loginErrorMessage(response.data),
-            }),
+            transformErrorResponse: (response: {
+                status: number;
+                data: unknown;
+            }) => {
+                const data = response.data as {
+                    message?: string;
+                    error?: string;
+                    matches?: PinTenantMatch[];
+                };
+                return {
+                    status: response.status,
+                    message: loginErrorMessage(response.data),
+                    error: data?.error,
+                    matches: data?.matches,
+                };
+            },
         }),
         getTerminalStaff: builder.query<{ staff: TerminalStaffMember[] }, void>(
             {

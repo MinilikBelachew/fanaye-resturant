@@ -38,64 +38,41 @@ import {
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
+const AVATAR_SOLID_PALETTES = [
+    "bg-emerald-600 text-white",
+    "bg-blue-600 text-white",
+    "bg-indigo-600 text-white",
+    "bg-violet-600 text-white",
+    "bg-teal-600 text-white",
+    "bg-rose-600 text-white",
+    "bg-cyan-700 text-white",
+    "bg-amber-600 text-white",
+    "bg-sky-600 text-white",
+];
+
+export function getAvatarSolidColor(name: string): string {
+    if (!name) return AVATAR_SOLID_PALETTES[0];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % AVATAR_SOLID_PALETTES.length;
+    return AVATAR_SOLID_PALETTES[index];
+}
+
 const ROLE_OPTIONS = [
-    {
-        value: "waiter",
-        label: "Waiter / Server",
-        color: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900",
-    },
-    {
-        value: "cashier",
-        label: "Cashier",
-        color: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900",
-    },
-    {
-        value: "manager",
-        label: "Floor Manager",
-        color: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900",
-    },
-    {
-        value: "owner",
-        label: "Owner / Admin",
-        color: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-900",
-    },
-    {
-        value: "kitchen",
-        label: "Kitchen Station",
-        color: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-900",
-    },
-    {
-        value: "barista",
-        label: "Barista Station",
-        color: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900",
-    },
-    {
-        value: "cakes",
-        label: "Cakes & Pastry",
-        color: "bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-950/40 dark:text-pink-400 dark:border-pink-900",
-    },
-    {
-        value: "soft_drinks",
-        label: "Soft Drinks",
-        color: "bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-400 dark:border-cyan-900",
-    },
+    { value: "waiter", label: "Waiter / Server" },
+    { value: "cashier", label: "Cashier" },
+    { value: "manager", label: "Floor Manager" },
+    { value: "owner", label: "Owner / Admin" },
+    { value: "kitchen", label: "Kitchen Station" },
+    { value: "barista", label: "Barista Station" },
+    { value: "cakes", label: "Cakes & Pastry" },
+    { value: "soft_drinks", label: "Soft Drinks" },
 ];
 
 function getRoleBadgeStyle(role: string) {
-    const norm = role.toLowerCase();
-    const found = ROLE_OPTIONS.find(
-        r => r.value === norm || r.label.toLowerCase() === norm,
-    );
-    if (found) return found.color;
-    if (role.includes("OWNER"))
-        return "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400";
-    if (role.includes("MANAGER"))
-        return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400";
-    if (role.includes("CASHIER"))
-        return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400";
-    if (role.includes("WAITER"))
-        return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400";
-    return "bg-secondary text-slate-gray border-hairline";
+    return "bg-secondary text-foreground border-border/80 font-medium";
 }
 
 function formatLogin(value?: string | null) {
@@ -300,7 +277,12 @@ export default function StaffDirectoryPage() {
                 sortValue: row => row.displayName,
                 cell: row => (
                     <div className="flex items-center gap-3">
-                        <div className="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[13px] shrink-0">
+                        <div
+                            className={cn(
+                                "size-9 rounded-full flex items-center justify-center font-bold text-[13px] shrink-0 shadow-xs",
+                                getAvatarSolidColor(row.displayName),
+                            )}
+                        >
                             {row.displayName.charAt(0).toUpperCase()}
                         </div>
                         <div>
@@ -337,7 +319,7 @@ export default function StaffDirectoryPage() {
                             <span
                                 key={r}
                                 className={cn(
-                                    "px-2.5 py-0.5 rounded-full text-[11.5px] font-semibold border",
+                                    "px-2.5 py-0.5 rounded-full text-[11.5px] font-medium border",
                                     getRoleBadgeStyle(r),
                                 )}
                             >
@@ -351,11 +333,11 @@ export default function StaffDirectoryPage() {
                 id: "pinStatus",
                 header: "PIN Status",
                 cell: row => (
-                    <div className="flex items-center gap-1.5 text-[12px] font-mono text-slate-gray">
-                        <span className="text-primary font-bold text-[14px] tracking-widest">
+                    <div className="flex items-center gap-1.5 text-[12px] font-mono text-muted-foreground">
+                        <span className="text-foreground font-bold text-[14px] tracking-widest">
                             ••••
                         </span>
-                        <span className="text-[11px] text-slate-gray">
+                        <span className="text-[11.5px] text-muted-foreground font-sans">
                             Active
                         </span>
                     </div>
@@ -621,7 +603,7 @@ export default function StaffDirectoryPage() {
                     <div className="relative z-10 w-full max-w-md rounded-[20px] border border-hairline bg-white dark:bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95">
                         <div className="flex items-center justify-between border-b border-hairline pb-3 mb-4">
                             <div className="flex items-center gap-2">
-                                <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                                <div className="size-8 rounded-lg bg-secondary text-foreground flex items-center justify-center border border-border/60">
                                     <UserPlus className="size-4" />
                                 </div>
                                 <h3 className="font-bold text-[16px] text-foreground">
@@ -824,7 +806,7 @@ export default function StaffDirectoryPage() {
                     <div className="relative z-10 w-full max-w-sm rounded-[20px] border border-hairline bg-white dark:bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95">
                         <div className="flex items-center justify-between border-b border-hairline pb-3 mb-4">
                             <div className="flex items-center gap-2">
-                                <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                                <div className="size-8 rounded-lg bg-secondary text-foreground flex items-center justify-center border border-border/60">
                                     <KeyRound className="size-4" />
                                 </div>
                                 <div>
@@ -920,7 +902,7 @@ export default function StaffDirectoryPage() {
                     <div className="relative z-10 w-full max-w-sm rounded-[20px] border border-hairline bg-white dark:bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95">
                         <div className="flex items-center justify-between border-b border-hairline pb-3 mb-4">
                             <div className="flex items-center gap-2">
-                                <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                                <div className="size-8 rounded-lg bg-secondary text-foreground flex items-center justify-center border border-border/60">
                                     <Lock className="size-4" />
                                 </div>
                                 <div>
