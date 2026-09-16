@@ -148,11 +148,6 @@ export function navForRole(role: Role): NavSection[] {
                             icon: LayoutDashboard,
                         },
                         {
-                            href: "/owner/branches",
-                            label: "Branches",
-                            icon: Store,
-                        },
-                        {
                             href: "/owner/live",
                             label: "Live Operations",
                             icon: Activity,
@@ -168,36 +163,9 @@ export function navForRole(role: Role): NavSection[] {
                             icon: ClipboardCheck,
                         },
                         {
-                            href: "/owner/settings",
-                            label: "Settings",
-                            icon: Settings,
-                        },
-                        {
                             href: "/owner/website",
                             label: "Website",
                             icon: Globe,
-                        },
-                        {
-                            href: "/manager/menu",
-                            label: "Menu",
-                            icon: UtensilsCrossed,
-                            children: [
-                                {
-                                    href: "/manager/menu",
-                                    label: "Menu Items",
-                                    icon: UtensilsCrossed,
-                                },
-                                {
-                                    href: "/manager/qr-menu",
-                                    label: "QR Menu Builder",
-                                    icon: QrCode,
-                                },
-                                {
-                                    href: "/manager/print-menu",
-                                    label: "Print Menu Builder",
-                                    icon: BookOpen,
-                                },
-                            ],
                         },
                     ],
                 },
