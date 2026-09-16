@@ -38,12 +38,15 @@ export const cashApi = api.injectEndpoints({
         }),
         cashierCashDrops: builder.query<
             { data: CashDrop[] },
-            { status?: string } | void
+            { status?: string; dateFilter?: string } | void
         >({
             query: arg => ({
                 url: "/cashier/cash-drops",
                 method: "GET",
-                params: arg?.status ? { status: arg.status } : undefined,
+                params: {
+                    ...(arg?.status ? { status: arg.status } : {}),
+                    ...(arg?.dateFilter ? { dateFilter: arg.dateFilter } : {}),
+                },
             }),
             providesTags: ["Cash"],
         }),
