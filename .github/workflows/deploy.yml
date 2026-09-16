@@ -136,7 +136,7 @@ jobs:
             fi
             docker rm -f "${PREFIX}-frontend" 2>/dev/null || true
 
-            IMAGE_TAG="$IMAGE_TAG" docker compose -p "${PROJECT_NAME}-frontend" -f docker-compose.prod.yml up -d --build
+            DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 IMAGE_TAG="$IMAGE_TAG" docker compose -p "${PROJECT_NAME}-frontend" -f docker-compose.prod.yml up -d --build
 
             # 6. Clean up unused Docker images to save space
             echo "Pruning unused Docker images..."

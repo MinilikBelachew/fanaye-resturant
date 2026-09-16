@@ -102,6 +102,22 @@ export const authApi = api.injectEndpoints({
             }),
             invalidatesTags: ["Auth", "Shift"],
         }),
+        verifyTenant: builder.mutation<
+            {
+                tenant: {
+                    id: string;
+                    name: string;
+                    slug: string;
+                };
+            },
+            { identifier: string }
+        >({
+            query: body => ({
+                url: "/auth/verify-tenant",
+                method: "POST",
+                body,
+            }),
+        }),
     }),
 });
 
@@ -112,4 +128,5 @@ export const {
     useMeQuery,
     useLogoutMutation,
     useRefreshMutation,
+    useVerifyTenantMutation,
 } = authApi;

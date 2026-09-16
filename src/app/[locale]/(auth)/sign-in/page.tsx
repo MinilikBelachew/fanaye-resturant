@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import {
     AlertCircle,
+    ArrowLeftRight,
     ArrowRight,
     Building2,
     Check,
@@ -14,7 +15,9 @@ import {
     Lock,
     Mail,
     RefreshCw,
+    Search,
     ShieldCheck,
+    Store,
     UserCheck,
     X,
 } from "lucide-react";
@@ -22,6 +25,7 @@ import { useAppSelector } from "@/context/hooks";
 import {
     useLoginMutation,
     usePinLoginMutation,
+    useVerifyTenantMutation,
     type PinTenantMatch,
 } from "@/context/services/authApi";
 import { homePathForRole } from "@/domains/identity/application/homePath";
@@ -50,10 +54,15 @@ export default function SignInPage() {
     const [error, setError] = useState("");
     const [shake, setShake] = useState(false);
 
-    // Multi-tenant disambiguation & terminal state
+    // Multi-tenant pairing & terminal state
+    const [configuredTenantId, setConfiguredTenantId] = useState<string | null>(
+        null,
+    );
     const [configuredTenantName, setConfiguredTenantName] = useState<
         string | null
     >(null);
+    const [pairingInput, setPairingInput] = useState<string>("");
+    const [isPairingManual, setIsPairingManual] = useState<boolean>(false);
     const [multipleMatches, setMultipleMatches] = useState<
         PinTenantMatch[] | null
     >(null);
@@ -62,12 +71,16 @@ export default function SignInPage() {
     const [loginWithPin, { isLoading: isPinLoading }] = usePinLoginMutation();
     const [loginWithCredentials, { isLoading: isCredLoading }] =
         useLoginMutation();
+    const [verifyTenant, { isLoading: isVerifyingTenant }] =
+        useVerifyTenantMutation();
 
     // Check localStorage on mount
     useEffect(() => {
         if (typeof window !== "undefined") {
+            const id = localStorage.getItem("terminal_tenant_id");
             const name = localStorage.getItem("terminal_tenant_name");
-            if (name) {
+            if (id && name) {
+                setConfiguredTenantId(id);
                 setConfiguredTenantName(name);
             }
         }
@@ -78,6 +91,58 @@ export default function SignInPage() {
         setShake(true);
         setTimeout(() => setShake(false), 500);
         setPin("");
+    };
+
+    const handlePairRestaurant = (tenant: { id: string; name: string }) => {
+        if (typeof window !== "undefined") {
+            localStorage.setItem("terminal_tenant_id", tenant.id);
+            localStorage.setItem("terminal_tenant_name", tenant.name);
+        }
+        setConfiguredTenantId(tenant.id);
+        setConfiguredTenantName(tenant.name);
+        setIsPairingManual(false);
+        setPairingInput("");
+        setError("");
+    };
+
+    const handleVerifyAndPair = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        const trimmed = pairingInput.trim();
+        if (!trimmed) {
+            setError("Please enter your restaurant name or code.");
+            return;
+        }
+
+        setError("");
+        try {
+            const result = await verifyTenant({ identifier: trimmed }).unwrap();
+            if (result?.tenant) {
+                handlePairRestaurant({
+                    id: result.tenant.id,
+                    name: result.tenant.name,
+                });
+            }
+        } catch (err: unknown) {
+            const message =
+                (err as { data?: { message?: string }; message?: string })?.data
+                    ?.message ||
+                (err as { message?: string })?.message ||
+                "Restaurant not found. Please enter the exact restaurant name or code provided by your administrator.";
+            setError(message);
+        }
+    };
+
+    const handleUnpairTerminal = () => {
+        if (typeof window !== "undefined") {
+            localStorage.removeItem("terminal_tenant_id");
+            localStorage.removeItem("terminal_tenant_name");
+        }
+        setConfiguredTenantId(null);
+        setConfiguredTenantName(null);
+        setIsPairingManual(true);
+        setPairingInput("");
+        setPin("");
+        setError("");
     };
 
     const handlePinSubmit = useCallback(
@@ -91,12 +156,13 @@ export default function SignInPage() {
             setError("");
             try {
                 const storedTenant =
-                    typeof window !== "undefined"
+                    configuredTenantId ||
+                    (typeof window !== "undefined"
                         ? localStorage.getItem("terminal_tenant_id") ||
                           localStorage.getItem("tenant_slug") ||
                           localStorage.getItem("selected_tenant_id") ||
                           undefined
-                        : undefined;
+                        : undefined);
 
                 const session = await loginWithPin({
                     pin: code,
@@ -144,15 +210,11 @@ export default function SignInPage() {
                 triggerPinError(message);
             }
         },
-        [pin, rememberMe, loginWithPin, router, t],
+        [pin, rememberMe, loginWithPin, router, t, configuredTenantId],
     );
 
     const handleSelectTenantMatch = async (match: PinTenantMatch) => {
-        if (typeof window !== "undefined") {
-            localStorage.setItem("terminal_tenant_id", match.tenantId);
-            localStorage.setItem("terminal_tenant_name", match.tenantName);
-            setConfiguredTenantName(match.tenantName);
-        }
+        handlePairRestaurant({ id: match.tenantId, name: match.tenantName });
         setMultipleMatches(null);
 
         try {
@@ -172,16 +234,6 @@ export default function SignInPage() {
                 (err as { message?: string })?.message || t("pinError");
             triggerPinError(message);
         }
-    };
-
-    const handleClearTerminal = () => {
-        if (typeof window !== "undefined") {
-            localStorage.removeItem("terminal_tenant_id");
-            localStorage.removeItem("terminal_tenant_name");
-            localStorage.removeItem("tenant_slug");
-            localStorage.removeItem("selected_tenant_id");
-        }
-        setConfiguredTenantName(null);
     };
 
     const handleKeypadPress = (digit: string) => {
@@ -378,103 +430,212 @@ export default function SignInPage() {
                     )}
 
                     {mode === "pin" ? (
-                        /* STAFF PIN PAD INTERFACE */
-                        <div className="space-y-3.5">
-                            {/* PIN Dots Indicator */}
-                            <div className="flex flex-col items-center justify-center pt-0.5">
-                                <span className="text-[11px] font-semibold text-slate-gray uppercase tracking-wider mb-2">
-                                    {t("enterPin")}
-                                </span>
-                                <div
-                                    className={cn(
-                                        "flex items-center gap-3 py-1.5 px-3 rounded-xl bg-surface-ivory/50 dark:bg-secondary/30 transition-transform",
-                                        shake && "animate-bounce text-red-500",
-                                    )}
-                                >
-                                    {Array.from({
-                                        length: Math.min(
-                                            6,
-                                            Math.max(4, maxPinDots),
-                                        ),
-                                    }).map((_, idx) => {
-                                        const filled = idx < pin.length;
-                                        return (
-                                            <div
-                                                key={idx}
-                                                className={cn(
-                                                    "size-3 sm:size-3.5 rounded-full border-2 transition-all duration-150",
-                                                    filled
-                                                        ? "bg-primary border-primary scale-110 shadow-xs shadow-primary/40"
-                                                        : "border-slate-300 dark:border-slate-700 bg-transparent",
-                                                )}
-                                            />
-                                        );
-                                    })}
+                        !configuredTenantId || isPairingManual ? (
+                            /* EXACT RESTAURANT TERMINAL PAIRING INTERFACE */
+                            <form
+                                onSubmit={handleVerifyAndPair}
+                                className="space-y-4"
+                            >
+                                <div className="flex items-center justify-between pb-2.5 border-b border-hairline">
+                                    <div>
+                                        <h2 className="text-[13px] font-bold text-foreground">
+                                            Pair This Terminal
+                                        </h2>
+                                        <p className="text-[11.5px] text-slate-gray">
+                                            Enter your restaurant name or code
+                                        </p>
+                                    </div>
+                                    <Store className="size-4 text-slate-gray" />
                                 </div>
-                            </div>
 
-                            {/* Keypad Buttons Grid */}
-                            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 max-w-[280px] mx-auto">
-                                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-                                    <button
-                                        key={num}
-                                        type="button"
-                                        onClick={() =>
-                                            handleKeypadPress(String(num))
+                                <div className="space-y-1.5">
+                                    <label className="text-[11px] font-semibold text-slate-gray uppercase tracking-wider block">
+                                        Restaurant Name or Slug
+                                    </label>
+                                    <div className="relative">
+                                        <Building2 className="absolute left-3 top-2.5 size-3.5 text-slate-gray" />
+                                        <Input
+                                            value={pairingInput}
+                                            onChange={e => {
+                                                setPairingInput(e.target.value);
+                                                if (error) setError("");
+                                            }}
+                                            placeholder="e.g. Fanaye Coffee or fanaye-coffee"
+                                            className="h-9 pl-9 rounded-[10px] text-[13px]"
+                                            autoFocus
+                                            disabled={isVerifyingTenant}
+                                        />
+                                    </div>
+                                    <p className="text-[10.5px] text-slate-gray/80 leading-normal">
+                                        Must be entered accurately to connect
+                                        this device.
+                                    </p>
+                                </div>
+
+                                <div className="pt-1 space-y-2">
+                                    <Button
+                                        type="submit"
+                                        disabled={
+                                            !pairingInput.trim() ||
+                                            isVerifyingTenant
                                         }
+                                        className="w-full h-9 rounded-xl font-semibold text-[12px] flex items-center justify-center gap-1.5 cursor-pointer"
+                                    >
+                                        {isVerifyingTenant ? (
+                                            <>
+                                                <RefreshCw className="size-3.5 animate-spin" />
+                                                <span>
+                                                    Verifying Restaurant...
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span>Pair Terminal</span>
+                                                <ArrowRight className="size-3.5" />
+                                            </>
+                                        )}
+                                    </Button>
+
+                                    {configuredTenantId && (
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            disabled={isVerifyingTenant}
+                                            onClick={() => {
+                                                setIsPairingManual(false);
+                                                setError("");
+                                            }}
+                                            className="w-full h-8 text-[11.5px] text-slate-gray hover:text-foreground rounded-xl"
+                                        >
+                                            Cancel (Keep {configuredTenantName})
+                                        </Button>
+                                    )}
+                                </div>
+                            </form>
+                        ) : (
+                            /* PAIRED STAFF PIN PAD INTERFACE */
+                            <div className="space-y-3.5">
+                                {/* Paired Restaurant Pill Header */}
+                                <div className="flex items-center justify-between pb-2 border-b border-hairline">
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                        <Store className="size-3.5 text-slate-gray shrink-0" />
+                                        <span className="text-[12.5px] font-semibold text-foreground truncate">
+                                            {configuredTenantName}
+                                        </span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleUnpairTerminal}
+                                        className="text-[11px] text-slate-gray hover:text-foreground hover:underline transition-colors shrink-0 flex items-center gap-1"
+                                        title="Switch or pair another restaurant on this device"
+                                    >
+                                        <ArrowLeftRight className="size-3" />
+                                        <span>Switch</span>
+                                    </button>
+                                </div>
+
+                                {/* PIN Dots Indicator */}
+                                <div className="flex flex-col items-center justify-center pt-0.5">
+                                    <span className="text-[11px] font-semibold text-slate-gray uppercase tracking-wider mb-2">
+                                        {t("enterPin")}
+                                    </span>
+                                    <div
+                                        className={cn(
+                                            "flex items-center gap-3 py-1.5 px-3 rounded-xl bg-surface-ivory/50 dark:bg-secondary/30 transition-transform",
+                                            shake &&
+                                                "animate-bounce text-red-500",
+                                        )}
+                                    >
+                                        {Array.from({
+                                            length: Math.min(
+                                                6,
+                                                Math.max(4, maxPinDots),
+                                            ),
+                                        }).map((_, idx) => {
+                                            const filled = idx < pin.length;
+                                            return (
+                                                <div
+                                                    key={idx}
+                                                    className={cn(
+                                                        "size-3 sm:size-3.5 rounded-full border-2 transition-all duration-150",
+                                                        filled
+                                                            ? "bg-primary border-primary scale-110 shadow-xs shadow-primary/40"
+                                                            : "border-slate-300 dark:border-slate-700 bg-transparent",
+                                                    )}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Keypad Buttons Grid */}
+                                <div className="grid grid-cols-3 gap-1.5 sm:gap-2 max-w-[280px] mx-auto">
+                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                                        <button
+                                            key={num}
+                                            type="button"
+                                            onClick={() =>
+                                                handleKeypadPress(String(num))
+                                            }
+                                            disabled={isPinLoading}
+                                            className="h-11 sm:h-12 rounded-[14px] border border-hairline bg-surface-ivory/60 dark:bg-secondary/40 text-[18px] sm:text-[19px] font-semibold text-foreground hover:bg-primary/10 hover:border-primary/40 hover:text-primary active:scale-95 transition-all flex items-center justify-center select-none shadow-2xs disabled:opacity-50"
+                                        >
+                                            {num}
+                                        </button>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        onClick={handleClear}
+                                        disabled={
+                                            isPinLoading || pin.length === 0
+                                        }
+                                        className="h-11 sm:h-12 rounded-[14px] border border-hairline bg-surface-ivory/40 dark:bg-secondary/20 text-[12px] font-semibold text-slate-gray hover:text-foreground hover:bg-secondary active:scale-95 transition-all flex items-center justify-center select-none disabled:opacity-30"
+                                    >
+                                        {t("clear")}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleKeypadPress("0")}
                                         disabled={isPinLoading}
                                         className="h-11 sm:h-12 rounded-[14px] border border-hairline bg-surface-ivory/60 dark:bg-secondary/40 text-[18px] sm:text-[19px] font-semibold text-foreground hover:bg-primary/10 hover:border-primary/40 hover:text-primary active:scale-95 transition-all flex items-center justify-center select-none shadow-2xs disabled:opacity-50"
                                     >
-                                        {num}
+                                        0
                                     </button>
-                                ))}
-                                <button
-                                    type="button"
-                                    onClick={handleClear}
-                                    disabled={isPinLoading || pin.length === 0}
-                                    className="h-11 sm:h-12 rounded-[14px] border border-hairline bg-surface-ivory/40 dark:bg-secondary/20 text-[12px] font-semibold text-slate-gray hover:text-foreground hover:bg-secondary active:scale-95 transition-all flex items-center justify-center select-none disabled:opacity-30"
-                                >
-                                    {t("clear")}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => handleKeypadPress("0")}
-                                    disabled={isPinLoading}
-                                    className="h-11 sm:h-12 rounded-[14px] border border-hairline bg-surface-ivory/60 dark:bg-secondary/40 text-[18px] sm:text-[19px] font-semibold text-foreground hover:bg-primary/10 hover:border-primary/40 hover:text-primary active:scale-95 transition-all flex items-center justify-center select-none shadow-2xs disabled:opacity-50"
-                                >
-                                    0
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleBackspace}
-                                    disabled={isPinLoading || pin.length === 0}
-                                    className="h-11 sm:h-12 rounded-[14px] border border-hairline bg-surface-ivory/40 dark:bg-secondary/20 text-slate-gray hover:text-foreground hover:bg-secondary active:scale-95 transition-all flex items-center justify-center select-none disabled:opacity-30"
-                                    title={t("backspace")}
-                                >
-                                    <Delete className="size-4.5" />
-                                </button>
-                            </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleBackspace}
+                                        disabled={
+                                            isPinLoading || pin.length === 0
+                                        }
+                                        className="h-11 sm:h-12 rounded-[14px] border border-hairline bg-surface-ivory/40 dark:bg-secondary/20 text-slate-gray hover:text-foreground hover:bg-secondary active:scale-95 transition-all flex items-center justify-center select-none disabled:opacity-30"
+                                        title={t("backspace")}
+                                    >
+                                        <Delete className="size-4.5" />
+                                    </button>
+                                </div>
 
-                            {/* Submit Button */}
-                            <Button
-                                type="button"
-                                onClick={() => void handlePinSubmit()}
-                                disabled={isPinLoading || pin.length < 4}
-                                className="w-full h-10 rounded-xl bg-primary text-primary-foreground hover:bg-primary-deep text-[13px] font-semibold shadow-sm shadow-primary/20 transition-all disabled:opacity-50"
-                            >
-                                {isPinLoading ? (
-                                    <span className="flex items-center gap-1.5">
-                                        <span className="size-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                                        <span>{t("signingIn")}</span>
-                                    </span>
-                                ) : (
-                                    <span className="flex items-center gap-1.5">
-                                        <KeyRound className="size-3.5" />
-                                        <span>{t("quickLogin")}</span>
-                                    </span>
-                                )}
-                            </Button>
-                        </div>
+                                {/* Submit Button */}
+                                <Button
+                                    type="button"
+                                    onClick={() => void handlePinSubmit()}
+                                    disabled={isPinLoading || pin.length < 4}
+                                    className="w-full h-10 rounded-xl bg-primary text-primary-foreground hover:bg-primary-deep text-[13px] font-semibold shadow-sm shadow-primary/20 transition-all disabled:opacity-50 cursor-pointer"
+                                >
+                                    {isPinLoading ? (
+                                        <span className="flex items-center gap-1.5">
+                                            <span className="size-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                                            <span>{t("signingIn")}</span>
+                                        </span>
+                                    ) : (
+                                        <span className="flex items-center gap-1.5">
+                                            <KeyRound className="size-3.5" />
+                                            <span>{t("quickLogin")}</span>
+                                        </span>
+                                    )}
+                                </Button>
+                            </div>
+                        )
                     ) : (
                         /* MANAGER / ADMIN CREDENTIALS INTERFACE */
                         <form
