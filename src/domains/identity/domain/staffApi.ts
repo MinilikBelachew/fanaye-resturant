@@ -30,6 +30,8 @@ export type AdminStaffMember = {
     active: boolean;
     phone: string | null;
     email: string | null;
+    hasPin?: boolean;
+    hasPassword?: boolean;
     shiftCoverages: AdminStaffShiftCoverage[];
 };
 

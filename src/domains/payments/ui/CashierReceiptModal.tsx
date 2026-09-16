@@ -21,6 +21,8 @@ interface CashierReceiptModalProps {
     restaurantName?: string;
     branchName?: string;
     cashierName?: string;
+    showSendToWaiter?: boolean;
+    showPrintActions?: boolean;
 }
 
 export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
@@ -32,6 +34,8 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
     restaurantName = "Fanaye Restaurant & Lounge",
     branchName = "Bole Medhanialem Branch",
     cashierName = "Cashier",
+    showSendToWaiter = true,
+    showPrintActions = true,
 }) => {
     const tReceipt = useTranslations("receipt");
     const tCommon = useTranslations("common");
@@ -69,6 +73,7 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
                 filename: `receipt-${bill?.billNumber || "bill"}.pdf`,
                 scale: 3,
                 orientation: "portrait",
+                isReceipt: true,
             });
         } finally {
             setIsExportingPdf(false);
@@ -119,11 +124,13 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
                         top: 0;
                         width: 78mm !important;
                         margin: 0 !important;
-                        padding: 4mm !important;
+                        padding: 4mm 4mm 8mm 4mm !important;
                         background: white !important;
                         color: black !important;
                         box-shadow: none !important;
                         border: none !important;
+                        page-break-inside: avoid !important;
+                        break-inside: avoid !important;
                     }
                     .no-print {
                         display: none !important;
@@ -150,54 +157,60 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <Button
-                            size="sm"
-                            onClick={handleExportPdf}
-                            disabled={isExportingPdf}
-                            className="h-8 gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-xs"
-                        >
-                            {isExportingPdf ? (
-                                <Loader2 className="size-3.5 animate-spin" />
-                            ) : (
-                                <FileDown className="size-3.5" />
-                            )}
-                            {isExportingPdf
-                                ? tCommon("loading")
-                                : tReceipt("exportPdf")}
-                        </Button>
+                        {showPrintActions ? (
+                            <>
+                                <Button
+                                    size="sm"
+                                    onClick={handleExportPdf}
+                                    disabled={isExportingPdf}
+                                    className="h-8 gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-xs"
+                                >
+                                    {isExportingPdf ? (
+                                        <Loader2 className="size-3.5 animate-spin" />
+                                    ) : (
+                                        <FileDown className="size-3.5" />
+                                    )}
+                                    {isExportingPdf
+                                        ? tCommon("loading")
+                                        : tReceipt("exportPdf")}
+                                </Button>
 
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={handlePrint}
-                            className="h-8 gap-1.5 border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                        >
-                            <Printer className="size-3.5 text-slate-600" />
-                            {tReceipt("printReceipt")}
-                        </Button>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={handlePrint}
+                                    className="h-8 gap-1.5 border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                                >
+                                    <Printer className="size-3.5 text-slate-600" />
+                                    {tReceipt("printReceipt")}
+                                </Button>
+                            </>
+                        ) : null}
 
-                        <Button
-                            size="sm"
-                            variant={sentSuccess ? "secondary" : "default"}
-                            onClick={handleSendToWaiter}
-                            disabled={isSending || sentSuccess}
-                            className={`h-8 gap-1.5 text-xs font-semibold ${
-                                sentSuccess
-                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-300"
-                                    : "bg-slate-900 hover:bg-black text-white"
-                            }`}
-                        >
-                            {isSending ? (
-                                <Loader2 className="size-3.5 animate-spin" />
-                            ) : sentSuccess ? (
-                                <Check className="size-3.5 text-emerald-600" />
-                            ) : (
-                                <Send className="size-3.5 text-amber-400" />
-                            )}
-                            {sentSuccess
-                                ? tCashier("sentToWaiter")
-                                : tCashier("sendToWaiter")}
-                        </Button>
+                        {showSendToWaiter ? (
+                            <Button
+                                size="sm"
+                                variant={sentSuccess ? "secondary" : "default"}
+                                onClick={handleSendToWaiter}
+                                disabled={isSending || sentSuccess}
+                                className={`h-8 gap-1.5 text-xs font-semibold ${
+                                    sentSuccess
+                                        ? "bg-emerald-50 text-emerald-700 border border-emerald-300"
+                                        : "bg-slate-900 hover:bg-black text-white"
+                                }`}
+                            >
+                                {isSending ? (
+                                    <Loader2 className="size-3.5 animate-spin" />
+                                ) : sentSuccess ? (
+                                    <Check className="size-3.5 text-emerald-600" />
+                                ) : (
+                                    <Send className="size-3.5 text-amber-400" />
+                                )}
+                                {sentSuccess
+                                    ? tCashier("sentToWaiter")
+                                    : tCashier("sendToWaiter")}
+                            </Button>
+                        ) : null}
 
                         <button
                             onClick={() => onOpenChange(false)}
@@ -209,12 +222,12 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
                 </div>
 
                 {/* Scrollable Receipt Preview Viewport */}
-                <div className="flex-1 overflow-y-auto bg-slate-100 p-6 flex justify-center">
+                <div className="flex-1 overflow-y-auto bg-slate-200/60 p-6 flex justify-center items-start">
                     {/* Authentic 80mm POS Thermal Slip Container */}
                     <div
                         id="pos-thermal-receipt"
                         ref={receiptRef}
-                        className="w-[340px] rounded-2xl bg-white p-6 shadow-md border border-slate-200/80 font-mono text-[11px] leading-relaxed text-slate-800"
+                        className="w-[340px] rounded-2xl bg-white p-6 pb-6 shadow-xl border border-slate-300/80 font-mono text-[11px] leading-relaxed text-slate-800"
                         style={{ boxSizing: "border-box" }}
                     >
                         {/* Top Brand & Header */}
@@ -349,21 +362,21 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
                         </div>
 
                         {/* Barcode / QR Code Slip Verification */}
-                        <div className="pt-3 text-center flex flex-col items-center">
-                            <div className="p-2 bg-white rounded-lg border border-slate-200/80 inline-block shadow-xs">
+                        <div className="pt-4 pb-2 text-center flex flex-col items-center">
+                            <div className="p-1.5 bg-white rounded-lg border border-slate-300/80 inline-flex items-center justify-center">
                                 <QrCodeSvg
                                     value={receiptVerifyUrl}
-                                    size={76}
+                                    size={84}
                                     fgColor="#0f172a"
                                 />
                             </div>
-                            <p className="text-[8px] text-slate-400 mt-1 font-mono">
-                                SCAN TO VERIFY OR VIEW E-RECEIPT
+                            <p className="text-[8.5px] font-semibold tracking-wider text-slate-500 mt-2 font-mono uppercase">
+                                Scan to verify or view e-receipt
                             </p>
-                            <p className="text-[10px] font-bold text-slate-800 mt-2 font-sans">
+                            <p className="text-[11px] font-bold text-slate-900 mt-1.5 font-sans">
                                 {tReceipt("thankYou")}
                             </p>
-                            <p className="text-[8px] text-slate-400 font-sans">
+                            <p className="text-[9px] text-slate-400 font-sans mt-0.5">
                                 Golden Cloche POS System · fanaye.et
                             </p>
                         </div>
@@ -373,9 +386,19 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
                 {/* Footer info bar */}
                 <div className="no-print bg-slate-50 px-6 py-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                     <span>
-                        💡 Click <strong>&ldquo;Send to Waiter&rdquo;</strong>{" "}
-                        to dispatch an instant alert to the server to collect
-                        the bill.
+                        {showSendToWaiter ? (
+                            <>
+                                💡 Click{" "}
+                                <strong>&ldquo;Send to Waiter&rdquo;</strong> to
+                                dispatch an instant alert to the server to
+                                collect the bill.
+                            </>
+                        ) : (
+                            <>
+                                💡 Present this digital receipt to the guest to
+                                scan and verify or collect payment.
+                            </>
+                        )}
                     </span>
                     <Button
                         size="sm"

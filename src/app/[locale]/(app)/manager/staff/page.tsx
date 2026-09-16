@@ -4,25 +4,38 @@ import { useMemo, useState } from "react";
 import {
     CookingPot,
     Edit3,
+    Eye,
+    EyeOff,
+    KeyRound,
+    Lock,
+    MoreVertical,
     Plus,
     Search,
+    Shield,
     UserCheck,
     UserPlus,
     Users,
     UtensilsCrossed,
+    X,
 } from "lucide-react";
 import { useAppDispatch } from "@/context/hooks";
 import { openAddStaff, openEditStaff } from "@/context/slices/identitySlice";
-import { useAdminStaffQuery } from "@/context/services/staffApi";
+import {
+    useAdminStaffQuery,
+    useResetAdminStaffPasswordMutation,
+    useResetAdminStaffPinMutation,
+} from "@/context/services/staffApi";
 import type { AdminStaffMember } from "@/domains/identity/domain/staffApi";
 import type { Staff } from "@/domains/identity/domain/staff";
 import type { Role } from "@/domains/identity/domain/role";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import AddEditStaffSheet from "@/domains/identity/ui/AddEditStaffSheet";
 import AssignTablesSheet from "@/domains/identity/ui/AssignTablesSheet";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 const AVATAR_SOLID_PALETTES = [
@@ -71,7 +84,7 @@ function toLegacyStaff(member: AdminStaffMember): Staff {
         id: member.id,
         name: member.name,
         role: mapRoleCode(member.roleCode),
-        pinHint: "••••",
+        pinHint: member.hasPin ? "••••" : "",
         phone: member.phone ?? undefined,
         email: member.email ?? undefined,
         active: member.active,
@@ -83,14 +96,33 @@ function toLegacyStaff(member: AdminStaffMember): Staff {
 
 export default function ManagerStaffPage() {
     const dispatch = useAppDispatch();
-    const { data, isLoading, isError } = useAdminStaffQuery();
+    const { data, isLoading, isError, refetch } = useAdminStaffQuery();
     const liveStaff = data?.data ?? [];
     const shifts = data?.shifts ?? [];
+
+    const [resetPin, { isLoading: resettingPin }] =
+        useResetAdminStaffPinMutation();
+    const [resetPassword, { isLoading: resettingPassword }] =
+        useResetAdminStaffPasswordMutation();
 
     const [activeTab, setActiveTab] = useState<FilterTab>("all");
     const [searchQuery, setSearchQuery] = useState("");
     const [assignWaiterId, setAssignWaiterId] = useState<string | null>(null);
     const [assignWaiterName, setAssignWaiterName] = useState<string | null>(
+        null,
+    );
+
+    // Modal state for PIN & Password resets
+    const [pinTarget, setPinTarget] = useState<AdminStaffMember | null>(null);
+    const [pinValue, setPinValue] = useState("");
+    const [showPinValue, setShowPinValue] = useState(false);
+
+    const [passwordTarget, setPasswordTarget] =
+        useState<AdminStaffMember | null>(null);
+    const [passwordValue, setPasswordValue] = useState("");
+    const [showPasswordValue, setShowPasswordValue] = useState(false);
+
+    const [menuOpenMemberId, setMenuOpenMemberId] = useState<string | null>(
         null,
     );
 
@@ -138,19 +170,69 @@ export default function ManagerStaffPage() {
         setAssignWaiterName(member.name);
     }
 
+    async function handleSavePin() {
+        if (!pinTarget) return;
+        if (!/^\d{4,6}$/.test(pinValue.trim())) {
+            toast.error("PIN must be 4 to 6 numeric digits.");
+            return;
+        }
+
+        try {
+            await resetPin({
+                membershipId: pinTarget.id,
+                pin: pinValue.trim(),
+            }).unwrap();
+
+            toast.success("PIN updated successfully", pinTarget.name);
+            setPinTarget(null);
+            setPinValue("");
+            void refetch();
+        } catch (err: unknown) {
+            const message =
+                (err as { data?: { message?: string } })?.data?.message ||
+                "Could not update staff PIN.";
+            toast.error(message);
+        }
+    }
+
+    async function handleSavePassword() {
+        if (!passwordTarget) return;
+        if (passwordValue.trim().length < 6) {
+            toast.error("Password must be at least 6 characters.");
+            return;
+        }
+
+        try {
+            await resetPassword({
+                membershipId: passwordTarget.id,
+                password: passwordValue.trim(),
+            }).unwrap();
+
+            toast.success("Password updated", passwordTarget.name);
+            setPasswordTarget(null);
+            setPasswordValue("");
+            void refetch();
+        } catch (err: unknown) {
+            const message =
+                (err as { data?: { message?: string } })?.data?.message ||
+                "Could not reset password.";
+            toast.error(message);
+        }
+    }
+
     return (
         <DashboardFrame>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <PageHeader
                     eyebrow="House"
                     title="Staff & Waiters"
-                    description="Assign dining tables per shift window. Create shifts with any start/end time."
+                    description="Assign dining tables per shift window. Manage staff credentials, PINs, and passwords."
                 />
                 <div className="flex flex-wrap items-center gap-2.5">
                     <button
                         type="button"
                         onClick={() => dispatch(openAddStaff("waiter"))}
-                        className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-2.5 text-[13px] font-semibold text-primary"
+                        className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-2.5 text-[13px] font-semibold text-primary shadow-xs hover:bg-primary/15 transition-colors"
                     >
                         <UtensilsCrossed className="size-4" />
                         Register Waiter
@@ -158,7 +240,7 @@ export default function ManagerStaffPage() {
                     <button
                         type="button"
                         onClick={() => dispatch(openAddStaff(undefined))}
-                        className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-[13px] font-semibold text-primary-foreground"
+                        className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-[13px] font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition-colors"
                     >
                         <UserPlus className="size-4" />
                         Register Staff
@@ -263,10 +345,10 @@ export default function ManagerStaffPage() {
                             type="button"
                             onClick={() => setActiveTab(id)}
                             className={cn(
-                                "rounded-[10px] px-3.5 py-1.5 text-[13px] font-medium",
+                                "rounded-[10px] px-3.5 py-1.5 text-[13px] font-medium transition-all",
                                 activeTab === id
-                                    ? "bg-white font-semibold shadow-xs dark:bg-card"
-                                    : "text-slate-gray",
+                                    ? "bg-white font-semibold shadow-xs dark:bg-card text-foreground"
+                                    : "text-slate-gray hover:text-foreground",
                             )}
                         >
                             {label}{" "}
@@ -304,6 +386,7 @@ export default function ManagerStaffPage() {
                                         Staff Member
                                     </th>
                                     <th className="px-6 py-3.5">Role</th>
+                                    <th className="px-6 py-3.5">Credentials</th>
                                     <th className="px-6 py-3.5">
                                         Tables by shift
                                     </th>
@@ -317,20 +400,23 @@ export default function ManagerStaffPage() {
                                 {filteredStaff.length === 0 ? (
                                     <tr>
                                         <td
-                                            colSpan={5}
+                                            colSpan={6}
                                             className="px-6 py-12 text-center text-slate-gray"
                                         >
                                             No staff members found
                                         </td>
                                     </tr>
                                 ) : (
-                                    filteredStaff.map(member => {
+                                    filteredStaff.map((member, idx) => {
                                         const isWaiter =
                                             member.roleCode === "WAITER";
+                                        const isNearBottom =
+                                            idx >= filteredStaff.length - 2 &&
+                                            filteredStaff.length > 2;
                                         return (
                                             <tr
                                                 key={member.id}
-                                                className="hover:bg-secondary/40"
+                                                className="hover:bg-secondary/40 transition-colors"
                                             >
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
@@ -347,12 +433,13 @@ export default function ManagerStaffPage() {
                                                                 .toUpperCase()}
                                                         </div>
                                                         <div>
-                                                            <p className="font-semibold">
+                                                            <p className="font-semibold text-foreground">
                                                                 {member.name}
                                                             </p>
                                                             <p className="text-[12px] text-slate-gray">
-                                                                {member.phone ||
-                                                                    "No phone"}
+                                                                {member.email ||
+                                                                    member.phone ||
+                                                                    "No contact info"}
                                                             </p>
                                                         </div>
                                                     </div>
@@ -360,14 +447,47 @@ export default function ManagerStaffPage() {
                                                 <td className="px-6 py-4">
                                                     <span
                                                         className={cn(
-                                                            "inline-flex rounded-full px-2.5 py-1 text-[12px] font-medium",
+                                                            "inline-flex rounded-full px-2.5 py-1 text-[12px] font-medium border",
                                                             isWaiter
-                                                                ? "bg-primary/10 text-primary"
-                                                                : "bg-secondary text-foreground",
+                                                                ? "bg-primary/10 border-primary/20 text-primary"
+                                                                : "bg-secondary text-foreground border-border/80",
                                                         )}
                                                     >
                                                         {member.roleLabel}
                                                     </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col gap-1 text-[11.5px]">
+                                                        <div className="flex items-center gap-1.5 font-mono">
+                                                            <KeyRound className="size-3 text-slate-gray" />
+                                                            <span className="font-sans text-slate-gray">
+                                                                PIN:
+                                                            </span>
+                                                            <span className="font-bold tracking-widest text-foreground">
+                                                                {member.hasPin
+                                                                    ? "••••"
+                                                                    : "None"}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Lock className="size-3 text-slate-gray" />
+                                                            <span className="text-slate-gray">
+                                                                Password:
+                                                            </span>
+                                                            <span
+                                                                className={cn(
+                                                                    "font-medium",
+                                                                    member.hasPassword
+                                                                        ? "text-emerald-600 dark:text-emerald-400"
+                                                                        : "text-amber-600 dark:text-amber-400",
+                                                                )}
+                                                            >
+                                                                {member.hasPassword
+                                                                    ? "Set"
+                                                                    : "Not set"}
+                                                            </span>
+                                                        </div>
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     {isWaiter ? (
@@ -427,7 +547,7 @@ export default function ManagerStaffPage() {
                                                                         member,
                                                                     )
                                                                 }
-                                                                className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary"
+                                                                className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors"
                                                             >
                                                                 <Plus className="size-3" />
                                                                 Assign by shift
@@ -453,37 +573,156 @@ export default function ManagerStaffPage() {
                                                     </Badge>
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        {isWaiter ? (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    openAssign(
-                                                                        member,
-                                                                    )
-                                                                }
-                                                                className="inline-flex items-center gap-1 rounded-full border border-hairline px-2.5 py-1 text-[12px] font-medium"
-                                                            >
-                                                                <UtensilsCrossed className="size-3" />
-                                                                Tables
-                                                            </button>
-                                                        ) : null}
-                                                        <button
+                                                    <div className="relative inline-block text-left">
+                                                        {/* Three-dots menu trigger */}
+                                                        <Button
                                                             type="button"
-                                                            onClick={() =>
-                                                                dispatch(
-                                                                    openEditStaff(
-                                                                        toLegacyStaff(
-                                                                            member,
-                                                                        ),
-                                                                    ),
-                                                                )
-                                                            }
-                                                            className="inline-flex items-center gap-1 rounded-full border border-hairline px-2.5 py-1 text-[12px] font-medium"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={e => {
+                                                                e.stopPropagation();
+                                                                setMenuOpenMemberId(
+                                                                    menuOpenMemberId ===
+                                                                        member.id
+                                                                        ? null
+                                                                        : member.id,
+                                                                );
+                                                            }}
+                                                            className={cn(
+                                                                "size-8 p-0 rounded-lg text-slate-gray hover:text-foreground hover:bg-secondary transition-colors",
+                                                                menuOpenMemberId ===
+                                                                    member.id &&
+                                                                    "bg-secondary text-foreground",
+                                                            )}
+                                                            title="Staff options"
                                                         >
-                                                            <Edit3 className="size-3" />
-                                                            Edit
-                                                        </button>
+                                                            <MoreVertical className="size-4" />
+                                                        </Button>
+
+                                                        {/* Dropdown Menu Popup */}
+                                                        {menuOpenMemberId ===
+                                                            member.id && (
+                                                            <>
+                                                                {/* Click outside backdrop */}
+                                                                <div
+                                                                    className="fixed inset-0 z-30"
+                                                                    onClick={() =>
+                                                                        setMenuOpenMemberId(
+                                                                            null,
+                                                                        )
+                                                                    }
+                                                                />
+
+                                                                <div
+                                                                    className={cn(
+                                                                        "absolute right-0 z-40 w-48 rounded-xl border border-hairline bg-white dark:bg-card p-1 shadow-xl animate-in fade-in zoom-in-95",
+                                                                        isNearBottom
+                                                                            ? "bottom-full mb-1.5 origin-bottom-right"
+                                                                            : "top-full mt-1.5 origin-top-right",
+                                                                    )}
+                                                                >
+                                                                    {/* Change PIN Option */}
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setMenuOpenMemberId(
+                                                                                null,
+                                                                            );
+                                                                            setPinTarget(
+                                                                                member,
+                                                                            );
+                                                                            setPinValue(
+                                                                                "",
+                                                                            );
+                                                                            setShowPinValue(
+                                                                                false,
+                                                                            );
+                                                                        }}
+                                                                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-foreground hover:bg-secondary/70 transition-colors"
+                                                                    >
+                                                                        <KeyRound className="size-3.5 text-primary" />
+                                                                        <span>
+                                                                            Change
+                                                                            PIN
+                                                                        </span>
+                                                                    </button>
+
+                                                                    {/* Reset Password Option */}
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setMenuOpenMemberId(
+                                                                                null,
+                                                                            );
+                                                                            setPasswordTarget(
+                                                                                member,
+                                                                            );
+                                                                            setPasswordValue(
+                                                                                "",
+                                                                            );
+                                                                            setShowPasswordValue(
+                                                                                false,
+                                                                            );
+                                                                        }}
+                                                                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-foreground hover:bg-secondary/70 transition-colors"
+                                                                    >
+                                                                        <Lock className="size-3.5 text-slate-gray" />
+                                                                        <span>
+                                                                            Reset
+                                                                            Password
+                                                                        </span>
+                                                                    </button>
+
+                                                                    {/* Assign Tables Option (Waiters only) */}
+                                                                    {isWaiter ? (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                setMenuOpenMemberId(
+                                                                                    null,
+                                                                                );
+                                                                                openAssign(
+                                                                                    member,
+                                                                                );
+                                                                            }}
+                                                                            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-foreground hover:bg-secondary/70 transition-colors"
+                                                                        >
+                                                                            <UtensilsCrossed className="size-3.5 text-slate-gray" />
+                                                                            <span>
+                                                                                Assign
+                                                                                Tables
+                                                                            </span>
+                                                                        </button>
+                                                                    ) : null}
+
+                                                                    <div className="my-1 border-t border-hairline" />
+
+                                                                    {/* Edit Staff Details */}
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setMenuOpenMemberId(
+                                                                                null,
+                                                                            );
+                                                                            dispatch(
+                                                                                openEditStaff(
+                                                                                    toLegacyStaff(
+                                                                                        member,
+                                                                                    ),
+                                                                                ),
+                                                                            );
+                                                                        }}
+                                                                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-foreground hover:bg-secondary/70 transition-colors"
+                                                                    >
+                                                                        <Edit3 className="size-3.5 text-slate-gray" />
+                                                                        <span>
+                                                                            Edit
+                                                                            Staff
+                                                                        </span>
+                                                                    </button>
+                                                                </div>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -495,6 +734,204 @@ export default function ManagerStaffPage() {
                     </div>
                 )}
             </div>
+
+            {/* RESET PIN MODAL DIALOG */}
+            {pinTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4">
+                    <div
+                        className="fixed inset-0"
+                        onClick={() => setPinTarget(null)}
+                    />
+                    <div className="relative z-10 w-full max-w-sm rounded-[20px] border border-hairline bg-white dark:bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95">
+                        <div className="flex items-center justify-between border-b border-hairline pb-3 mb-4">
+                            <div className="flex items-center gap-2">
+                                <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                                    <KeyRound className="size-4" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-[15px] text-foreground">
+                                        Change Staff PIN
+                                    </h3>
+                                    <p className="text-[12px] text-slate-gray">
+                                        {pinTarget.name} ({pinTarget.roleLabel})
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setPinTarget(null)}
+                                className="size-7 rounded-full flex items-center justify-center text-slate-gray hover:bg-secondary"
+                            >
+                                <X className="size-4" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4 text-[13px]">
+                            <div className="space-y-1">
+                                <label className="font-medium text-foreground">
+                                    New Numeric PIN (4 to 6 digits)
+                                </label>
+                                <p className="text-[11.5px] text-slate-gray">
+                                    Used for quick terminal login, order
+                                    transfers, and waiter authorization.
+                                </p>
+                                <div className="relative mt-1">
+                                    <Input
+                                        type={
+                                            showPinValue ? "text" : "password"
+                                        }
+                                        maxLength={6}
+                                        value={pinValue}
+                                        onChange={e =>
+                                            setPinValue(
+                                                e.target.value.replace(
+                                                    /\D/g,
+                                                    "",
+                                                ),
+                                            )
+                                        }
+                                        placeholder="Enter 4-6 digit PIN"
+                                        className="h-10 rounded-[10px] pr-10 font-mono tracking-wider text-[15px]"
+                                        autoFocus
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPinValue(v => !v)}
+                                        className="absolute right-3 top-2.5 text-slate-gray hover:text-foreground"
+                                    >
+                                        {showPinValue ? (
+                                            <EyeOff className="size-4" />
+                                        ) : (
+                                            <Eye className="size-4" />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2 pt-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setPinTarget(null)}
+                                    className="h-9 rounded-xl text-[13px]"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="button"
+                                    disabled={
+                                        resettingPin || pinValue.length < 4
+                                    }
+                                    onClick={() => void handleSavePin()}
+                                    className="h-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-[13px] font-semibold"
+                                >
+                                    {resettingPin ? "Saving..." : "Update PIN"}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* RESET PASSWORD MODAL DIALOG */}
+            {passwordTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4">
+                    <div
+                        className="fixed inset-0"
+                        onClick={() => setPasswordTarget(null)}
+                    />
+                    <div className="relative z-10 w-full max-w-sm rounded-[20px] border border-hairline bg-white dark:bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95">
+                        <div className="flex items-center justify-between border-b border-hairline pb-3 mb-4">
+                            <div className="flex items-center gap-2">
+                                <div className="size-8 rounded-lg bg-secondary text-foreground flex items-center justify-center border border-border/60">
+                                    <Lock className="size-4" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-[15px] text-foreground">
+                                        Reset Web Password
+                                    </h3>
+                                    <p className="text-[12px] text-slate-gray">
+                                        {passwordTarget.name} (
+                                        {passwordTarget.roleLabel})
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setPasswordTarget(null)}
+                                className="size-7 rounded-full flex items-center justify-center text-slate-gray hover:bg-secondary"
+                            >
+                                <X className="size-4" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4 text-[13px]">
+                            <div className="space-y-1">
+                                <label className="font-medium text-foreground">
+                                    New Password (min 6 chars)
+                                </label>
+                                <p className="text-[11.5px] text-slate-gray">
+                                    Used to sign in via email or phone with
+                                    standard credentials.
+                                </p>
+                                <div className="relative mt-1">
+                                    <Input
+                                        type={
+                                            showPasswordValue
+                                                ? "text"
+                                                : "password"
+                                        }
+                                        value={passwordValue}
+                                        onChange={e =>
+                                            setPasswordValue(e.target.value)
+                                        }
+                                        placeholder="Enter new password"
+                                        className="h-10 rounded-[10px] pr-10"
+                                        autoFocus
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setShowPasswordValue(v => !v)
+                                        }
+                                        className="absolute right-3 top-2.5 text-slate-gray hover:text-foreground"
+                                    >
+                                        {showPasswordValue ? (
+                                            <EyeOff className="size-4" />
+                                        ) : (
+                                            <Eye className="size-4" />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2 pt-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setPasswordTarget(null)}
+                                    className="h-9 rounded-xl text-[13px]"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="button"
+                                    disabled={
+                                        resettingPassword ||
+                                        passwordValue.length < 6
+                                    }
+                                    onClick={() => void handleSavePassword()}
+                                    className="h-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-[13px] font-semibold"
+                                >
+                                    {resettingPassword
+                                        ? "Saving..."
+                                        : "Update Password"}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <AddEditStaffSheet />
             <AssignTablesSheet

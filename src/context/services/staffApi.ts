@@ -92,7 +92,7 @@ export const staffApi = api.injectEndpoints({
                     name?: string;
                     startLocalTime?: string;
                     endLocalTime?: string;
-                }
+                };
             }
         >({
             query: ({ id, body }) => ({
@@ -121,6 +121,28 @@ export const staffApi = api.injectEndpoints({
             }),
             invalidatesTags: ["Floor"],
         }),
+        resetAdminStaffPin: builder.mutation<
+            { success: boolean; message: string },
+            { membershipId: string; pin: string }
+        >({
+            query: ({ membershipId, pin }) => ({
+                url: `/admin/staff/${membershipId}/reset-pin`,
+                method: "POST",
+                body: { pin },
+            }),
+            invalidatesTags: ["Floor"],
+        }),
+        resetAdminStaffPassword: builder.mutation<
+            { success: boolean; message: string },
+            { membershipId: string; password: string }
+        >({
+            query: ({ membershipId, password }) => ({
+                url: `/admin/staff/${membershipId}/reset-password`,
+                method: "POST",
+                body: { password },
+            }),
+            invalidatesTags: ["Floor"],
+        }),
     }),
 });
 
@@ -132,4 +154,6 @@ export const {
     useCreateShiftDefinitionMutation,
     useUpdateShiftDefinitionMutation,
     useSetWaiterTableCoverageMutation,
+    useResetAdminStaffPinMutation,
+    useResetAdminStaffPasswordMutation,
 } = staffApi;

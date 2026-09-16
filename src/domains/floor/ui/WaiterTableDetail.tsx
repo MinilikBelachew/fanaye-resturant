@@ -9,6 +9,7 @@ import {
     Clock,
     MapPin,
     Plus,
+    QrCode,
     Receipt,
     User,
     Users,
@@ -35,6 +36,8 @@ import WaiterMarkServedButton from "@/domains/floor/ui/WaiterMarkServedButton";
 import WaiterOrderItemActions from "@/domains/floor/ui/WaiterOrderItemActions";
 import { lineTotal } from "@/domains/ordering/application/mapWaiterMenu";
 import WaiterPaymentPanel from "@/domains/payments/ui/WaiterPaymentPanel";
+import { CashierReceiptModal } from "@/domains/payments/ui/CashierReceiptModal";
+import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { formatEtb } from "@/lib/money";
@@ -120,8 +123,10 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
         useSendToKitchenMutation();
     const tWaiter = useTranslations("waiter");
     const tCommon = useTranslations("common");
+    const staff = useAppSelector(selectCurrentStaff);
     const [error, setError] = useState("");
     const [menuOpen, setMenuOpen] = useState(false);
+    const [receiptModalOpen, setReceiptModalOpen] = useState(false);
 
     const table = data?.data.find(entry => entry.tableId === tableId);
     const sessionId = table?.tableSessionId ?? "";
@@ -456,6 +461,42 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                 </div>
             ) : null}
 
+            {/* 2.5 BILL READY BANNER (Instant Visibility for Waiter) */}
+            {bill &&
+            table.tableSessionId &&
+            bill.status !== "PAID" &&
+            bill.status !== "CLOSED" ? (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-[20px] border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-transparent p-4.5 sm:p-5 shadow-xs">
+                    <div className="flex items-center gap-3.5">
+                        <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                            <Receipt className="size-6" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <span className="rounded-full bg-amber-500/20 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 dark:text-amber-300">
+                                    Bill Ready to Deliver
+                                </span>
+                                <span className="text-xs text-slate-gray font-mono">
+                                    Bill #{bill.billNumber}
+                                </span>
+                            </div>
+                            <p className="text-[18px] font-bold text-foreground mt-0.5">
+                                {formatEtb(Number(bill.total))}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            onClick={() => setReceiptModalOpen(true)}
+                            className="h-9 gap-1.5 rounded-full bg-slate-900 hover:bg-black text-white text-xs font-semibold px-4 shadow-xs"
+                        >
+                            <QrCode className="size-3.5 text-amber-400" />
+                            <span>Show QR E-Receipt</span>
+                        </Button>
+                    </div>
+                </div>
+            ) : null}
+
             {/* 3. SPLIT WORKSPACE: ACTIVE ORDERS (LEFT) & TABLE SUMMARY (RIGHT) */}
             {occupied && table.mine ? (
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
@@ -767,13 +808,24 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                             {/* Bill generated details */}
                             {bill && table.tableSessionId ? (
                                 <div className="space-y-3 border-t border-hairline pt-3">
-                                    <div className="rounded-[14px] bg-secondary/40 p-3">
+                                    <div className="rounded-[14px] bg-secondary/40 p-3 space-y-2">
                                         <div className="flex justify-between text-[12px] font-semibold text-slate-gray">
                                             <span>BILL #{bill.billNumber}</span>
-                                            <span>
+                                            <span className="text-foreground font-bold">
                                                 {formatEtb(Number(bill.total))}
                                             </span>
                                         </div>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() =>
+                                                setReceiptModalOpen(true)
+                                            }
+                                            className="w-full h-8 gap-1.5 rounded-xl border-slate-300 text-xs font-semibold text-slate-800 hover:bg-slate-100"
+                                        >
+                                            <QrCode className="size-3.5 text-amber-600" />
+                                            <span>View & Show QR Receipt</span>
+                                        </Button>
                                     </div>
                                     <WaiterPaymentPanel
                                         bill={bill}
@@ -831,6 +883,19 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                     expectedVersion={sessionVersion}
                     tableLabel={`${tCommon("table")} ${tableNumber(table)}`}
                     onClose={() => setMenuOpen(false)}
+                />
+            ) : null}
+
+            {/* Waiter QR E-Receipt & Bill Modal */}
+            {bill ? (
+                <CashierReceiptModal
+                    open={receiptModalOpen}
+                    onOpenChange={setReceiptModalOpen}
+                    bill={bill}
+                    tableDisplayName={tableNumber(table)}
+                    waiterName={table.waiterName || staff?.name || "Server"}
+                    showSendToWaiter={false}
+                    showPrintActions={false}
                 />
             ) : null}
         </div>

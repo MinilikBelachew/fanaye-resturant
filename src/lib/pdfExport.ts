@@ -8,6 +8,8 @@ interface ExportPdfOptions {
     filename?: string;
     orientation?: "portrait" | "landscape";
     scale?: number;
+    isReceipt?: boolean;
+    format?: "a4" | "receipt";
 }
 
 /**
@@ -25,11 +27,15 @@ export async function exportElementToPdf(
         filename = "menu-export.pdf",
         orientation = "portrait",
         scale = 2.5,
+        isReceipt = false,
+        format = "a4",
     } = options;
 
     toast.info(
         "Generating PDF...",
-        "Rendering pixel-perfect vector menu via browser engine...",
+        isReceipt
+            ? "Rendering 80mm thermal POS receipt..."
+            : "Rendering pixel-perfect vector menu via browser engine...",
     );
 
     try {
@@ -69,42 +75,72 @@ export async function exportElementToPdf(
                 reject(new Error("Failed to load captured menu image."));
         });
 
-        const pdf = new jsPDF({
-            orientation,
-            unit: "mm",
-            format: "a4",
-            compress: true,
-        });
+        let pdf: jsPDF;
 
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-
-        const imgWidth = pageWidth;
-        const imgHeight = (img.height * imgWidth) / img.width;
-
-        // Single-page fit (with small tolerance for margins)
-        if (imgHeight <= pageHeight + 3) {
+        if (isReceipt || format === "receipt") {
+            // Thermal 80mm continuous slip dimensions (never slice across multiple pages)
+            const receiptWidthMm = 80;
+            const receiptHeightMm =
+                Math.ceil((img.height * receiptWidthMm) / img.width) + 8;
+            pdf = new jsPDF({
+                orientation: "portrait",
+                unit: "mm",
+                format: [receiptWidthMm, receiptHeightMm],
+                compress: true,
+            });
             pdf.addImage(
                 dataUrl,
                 "PNG",
                 0,
-                0,
-                imgWidth,
-                Math.min(imgHeight, pageHeight),
+                4,
+                receiptWidthMm,
+                receiptHeightMm - 8,
             );
         } else {
-            // Multi-page slicing for longer menus
-            let heightLeft = imgHeight;
-            let position = 0;
+            pdf = new jsPDF({
+                orientation,
+                unit: "mm",
+                format: "a4",
+                compress: true,
+            });
 
-            pdf.addImage(dataUrl, "PNG", 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
 
-            while (heightLeft > 0) {
-                position = heightLeft - imgHeight;
-                pdf.addPage();
+            const imgWidth = pageWidth;
+            const imgHeight = (img.height * imgWidth) / img.width;
+
+            // Single-page fit (with small tolerance for margins)
+            if (imgHeight <= pageHeight + 3) {
+                pdf.addImage(
+                    dataUrl,
+                    "PNG",
+                    0,
+                    0,
+                    imgWidth,
+                    Math.min(imgHeight, pageHeight),
+                );
+            } else {
+                // Multi-page slicing for longer menus
+                let heightLeft = imgHeight;
+                let position = 0;
+
                 pdf.addImage(dataUrl, "PNG", 0, position, imgWidth, imgHeight);
                 heightLeft -= pageHeight;
+
+                while (heightLeft > 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(
+                        dataUrl,
+                        "PNG",
+                        0,
+                        position,
+                        imgWidth,
+                        imgHeight,
+                    );
+                    heightLeft -= pageHeight;
+                }
             }
         }
 
