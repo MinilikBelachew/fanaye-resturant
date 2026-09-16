@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Sparkles, Check, Flame, Layers, ShieldCheck, Zap, Radio } from "lucide-react";
+import { Sparkles, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function LandingLogoShowcase() {
@@ -69,7 +69,10 @@ export default function LandingLogoShowcase() {
     const current = systemLogos[selectedLogo];
 
     return (
-        <section id="logos" className="relative py-12 md:py-16 border-t border-border/60 bg-secondary/20">
+        <section
+            id="logos"
+            className="relative py-12 md:py-16 border-t border-border/60 bg-secondary/20"
+        >
             <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                 <div className="text-center max-w-2xl mx-auto">
                     <div className="inline-flex items-center gap-1.5 rounded-full border border-orange-500/20 bg-orange-500/10 px-3 py-0.5 text-[11px] font-medium text-orange-600 dark:text-orange-400">
@@ -83,9 +86,10 @@ export default function LandingLogoShowcase() {
                         </span>
                     </h2>
                     <p className="mt-2 text-xs sm:text-sm text-muted-foreground">
-                        Each of these 5 custom vector logos directly represents a core
-                        architectural pillar of Fanaye: the Unified Timeline, Station
-                        Dispatch, TinaVerify Custody, Fanaye Beacon, or Kinetic Flow.
+                        Each of these 5 custom vector logos directly represents
+                        a core architectural pillar of Fanaye: the Unified
+                        Timeline, Station Dispatch, TinaVerify Custody, Fanaye
+                        Beacon, or Kinetic Flow.
                     </p>
                 </div>
 
@@ -126,12 +130,20 @@ export default function LandingLogoShowcase() {
 
                             <div className="pt-2 flex flex-wrap items-center gap-4 text-xs">
                                 <div>
-                                    <span className="text-[10px] text-muted-foreground block">System Pillar</span>
-                                    <span className="font-bold text-foreground">{current.coreSystemPillar}</span>
+                                    <span className="text-[10px] text-muted-foreground block">
+                                        System Pillar
+                                    </span>
+                                    <span className="font-bold text-foreground">
+                                        {current.coreSystemPillar}
+                                    </span>
                                 </div>
                                 <div>
-                                    <span className="text-[10px] text-muted-foreground block">Palette</span>
-                                    <span className="font-semibold text-orange-600 dark:text-orange-400">{current.accent}</span>
+                                    <span className="text-[10px] text-muted-foreground block">
+                                        Palette
+                                    </span>
+                                    <span className="font-semibold text-orange-600 dark:text-orange-400">
+                                        {current.accent}
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -156,7 +168,9 @@ export default function LandingLogoShowcase() {
                             >
                                 <div className="flex w-full items-center justify-between text-[10px] font-mono text-muted-foreground">
                                     <span>{opt.num}</span>
-                                    {isSelected && <Check className="size-3 text-orange-500" />}
+                                    {isSelected && (
+                                        <Check className="size-3 text-orange-500" />
+                                    )}
                                 </div>
 
                                 <div className="relative size-16 my-2 transition-transform hover:scale-105">
@@ -170,7 +184,8 @@ export default function LandingLogoShowcase() {
 
                                 <div className="w-full">
                                     <p className="text-xs font-bold text-foreground line-clamp-1">
-                                        {opt.name.split(" ")[0]} {opt.name.split(" ")[1]}
+                                        {opt.name.split(" ")[0]}{" "}
+                                        {opt.name.split(" ")[1]}
                                     </p>
                                     <p className="text-[10px] text-muted-foreground line-clamp-1 mt-0.5">
                                         {opt.systemRole}
