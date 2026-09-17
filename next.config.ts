@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     output: "standalone",
     devIndicators: false,
 
+    productionBrowserSourceMaps: false,
     typescript: {
         ignoreBuildErrors: true,
     },
