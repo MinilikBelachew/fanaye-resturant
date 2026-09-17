@@ -8,9 +8,6 @@ const nextConfig: NextConfig = {
     devIndicators: false,
 
     productionBrowserSourceMaps: false,
-    eslint: {
-        ignoreDuringBuilds: true,
-    },
     typescript: {
         ignoreBuildErrors: true,
     },
