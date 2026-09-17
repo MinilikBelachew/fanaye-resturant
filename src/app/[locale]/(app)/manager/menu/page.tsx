@@ -9,6 +9,7 @@ import {
     LayoutGrid,
     Plus,
     QrCode,
+    ScanLine,
     Search,
     Table as TableIcon,
 } from "lucide-react";
@@ -32,6 +33,7 @@ import DataTable, {
 import AddMenuItemSheet from "@/domains/catalog/ui/AddMenuItemSheet";
 import CreateModifierGroupSheet from "@/domains/catalog/ui/CreateModifierGroupSheet";
 import MenuItemDetailSheet from "@/domains/catalog/ui/MenuItemDetailSheet";
+import MenuScanSheet from "@/domains/catalog/ui/MenuScanSheet";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { MenuCatalogSkeleton } from "@/components/custom/molecules/Skeletons";
@@ -53,6 +55,7 @@ export default function ManagerMenuPage() {
     const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
     const [sheetOpen, setSheetOpen] = useState(false);
     const [modifierSheetOpen, setModifierSheetOpen] = useState(false);
+    const [scanSheetOpen, setScanSheetOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
     const [detailItem, setDetailItem] = useState<MenuItem | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
@@ -236,6 +239,14 @@ export default function ManagerMenuPage() {
                                 QR Menu Builder
                             </Button>
                         </Link>
+                        <Button
+                            variant="outline"
+                            className="gap-2 border-brand/30"
+                            onClick={() => setScanSheetOpen(true)}
+                        >
+                            <ScanLine className="size-4 text-brand" />
+                            Scan menu photo
+                        </Button>
                         <Button
                             variant="outline"
                             onClick={() => setModifierSheetOpen(true)}
@@ -455,6 +466,11 @@ export default function ManagerMenuPage() {
             <CreateModifierGroupSheet
                 isOpen={modifierSheetOpen}
                 onClose={() => setModifierSheetOpen(false)}
+            />
+
+            <MenuScanSheet
+                isOpen={scanSheetOpen}
+                onClose={() => setScanSheetOpen(false)}
             />
 
             <MenuItemDetailSheet

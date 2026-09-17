@@ -1,5 +1,5 @@
 import OpsNotificationsPage from "@/domains/notifications/ui/OpsNotificationsPage";
 
-export default function WaiterNotificationsInboxPage() {
+export default function ManagerNotificationsPage() {
     return <OpsNotificationsPage />;
 }

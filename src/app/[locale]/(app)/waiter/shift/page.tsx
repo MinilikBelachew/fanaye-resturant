@@ -1,13 +1,6 @@
 "use client";
 
-import {
-    Bell,
-    Flame,
-    LayoutGrid,
-    LogIn,
-    LogOut,
-    Wallet,
-} from "lucide-react";
+import { Bell, Flame, LayoutGrid, LogIn, LogOut, Wallet } from "lucide-react";
 import { useState } from "react";
 import { useAppSelector } from "@/context/hooks";
 import { useWaiterCashSummaryQuery } from "@/context/services/cashApi";
@@ -70,7 +63,11 @@ function formatClock(value?: string | null) {
 
 function shiftErrorMessage(error: unknown) {
     if (error && typeof error === "object" && "data" in error) {
-        const data = (error as { data?: { errors?: { shift?: string }; openTables?: number } }).data;
+        const data = (
+            error as {
+                data?: { errors?: { shift?: string }; openTables?: number };
+            }
+        ).data;
         if (data?.errors?.shift === "openTables") {
             const count = data.openTables ?? 0;
             return `Close ${count} open table${count === 1 ? "" : "s"} before clocking out.`;
@@ -174,7 +171,9 @@ export default function WaiterShiftPage() {
                             <span
                                 className={cn(
                                     "absolute top-1 right-1 size-2.5 rounded-full ring-2 ring-white dark:ring-card",
-                                    clockedIn ? "bg-emerald-500" : "bg-slate-400",
+                                    clockedIn
+                                        ? "bg-emerald-500"
+                                        : "bg-slate-400",
                                 )}
                             />
                         </span>
@@ -193,7 +192,15 @@ export default function WaiterShiftPage() {
                         </div>
                     </div>
 
-                    <Badge variant={clockedIn ? (tablesOpen ? "warning" : "success") : "secondary"}>
+                    <Badge
+                        variant={
+                            clockedIn
+                                ? tablesOpen
+                                    ? "warning"
+                                    : "success"
+                                : "secondary"
+                        }
+                    >
                         {!clockedIn
                             ? "Clocked out"
                             : tablesOpen
@@ -205,22 +212,34 @@ export default function WaiterShiftPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-hairline pt-3.5 text-[13px]">
                     <div>
                         <p className="font-semibold text-foreground">
-                            {session?.definitionName || upcoming?.definitionName || "Shift"}
+                            {session?.definitionName ||
+                                upcoming?.definitionName ||
+                                "Shift"}
                         </p>
                         <p className="text-[12px] text-slate-gray">
-                            {formatClock(session?.scheduledStartAt ?? upcoming?.scheduledStartAt)}
+                            {formatClock(
+                                session?.scheduledStartAt ??
+                                    upcoming?.scheduledStartAt,
+                            )}
                             {" – "}
-                            {formatClock(session?.scheduledEndAt ?? upcoming?.scheduledEndAt)}
+                            {formatClock(
+                                session?.scheduledEndAt ??
+                                    upcoming?.scheduledEndAt,
+                            )}
                         </p>
                     </div>
                     <div>
-                        <p className="font-semibold text-foreground">Clock in</p>
+                        <p className="font-semibold text-foreground">
+                            Clock in
+                        </p>
                         <p className="text-[12px] text-slate-gray">
                             {formatClock(session?.clockInAt)}
                         </p>
                     </div>
                     <div>
-                        <p className="font-semibold text-foreground">Clock out</p>
+                        <p className="font-semibold text-foreground">
+                            Clock out
+                        </p>
                         <p className="text-[12px] text-slate-gray">
                             {formatClock(session?.clockOutAt)}
                         </p>
@@ -299,7 +318,7 @@ export default function WaiterShiftPage() {
                     </p>
                 </Link>
                 <Link
-                    href="/waiter/notifications"
+                    href="/waiter/ready"
                     className="rounded-[20px] border border-hairline bg-card p-5 shadow-subtle transition-colors hover:bg-secondary/50"
                 >
                     <p className="text-[13px] font-medium text-slate-gray">

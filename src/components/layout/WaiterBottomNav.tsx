@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Clock3, LayoutGrid, UserRound } from "lucide-react";
+import { CheckCircle2, Clock3, LayoutGrid, UserRound } from "lucide-react";
 import { useAppSelector } from "@/context/hooks";
 import {
     selectCurrentStaff,
@@ -18,7 +18,7 @@ export default function WaiterBottomNav() {
 
     const items = [
         { href: "/waiter/tables", label: "Tables", icon: LayoutGrid },
-        { href: "/waiter/notifications", label: "Ready", icon: Bell },
+        { href: "/waiter/ready", label: "Ready", icon: CheckCircle2 },
         { href: "/waiter/shift", label: "Shift", icon: Clock3 },
         { href: "/waiter/profile", label: "Profile", icon: UserRound },
     ];
@@ -35,15 +35,12 @@ export default function WaiterBottomNav() {
                                 href={item.href}
                                 className={cn(
                                     "relative flex flex-col items-center gap-1 py-3 text-[12px] font-medium",
-                                    active
-                                        ? "text-brand"
-                                        : "text-slate-gray",
+                                    active ? "text-brand" : "text-slate-gray",
                                 )}
                             >
                                 <Icon className="size-5" />
                                 {item.label}
-                                {item.href === "/waiter/notifications" &&
-                                unread > 0 ? (
+                                {item.href === "/waiter/ready" && unread > 0 ? (
                                     <span className="absolute top-2 right-6 flex size-4 items-center justify-center rounded-full bg-brand text-[10px] text-white">
                                         {unread}
                                     </span>

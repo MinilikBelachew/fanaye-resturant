@@ -5,6 +5,7 @@ import StationTopBarTools from "@/components/layout/StationTopBarTools";
 import { useSidebarUi } from "@/components/layout/SidebarUi";
 import { ThemeToggleButton } from "@/components/theme/ThemeSwitcher";
 import LocaleSwitcher from "@/components/theme/LocaleSwitcher";
+import OpsNotificationsBell from "@/domains/notifications/ui/OpsNotificationsBell";
 import { navForRole } from "@/domains/identity/application/nav";
 import { homePathForRole } from "@/domains/identity/application/homePath";
 import { isStationRole } from "@/domains/identity/domain/role";
@@ -54,6 +55,7 @@ const LABEL_KEYS: Record<string, string> = {
     "In progress": "preparing",
     Exceptions: "exceptions",
     Notifications: "notifications",
+    Alerts: "notifications",
 };
 
 const headerClass =
@@ -127,7 +129,10 @@ function AppTopBarInner({ className }: { className?: string }) {
                 />
             ) : null}
             <div className="ml-auto flex shrink-0 items-center gap-2">
-                {stationQueue ? <StationTopBarTools search={false} /> : null}
+                {stationQueue ? (
+                    <StationTopBarTools search={false} notify={false} />
+                ) : null}
+                <OpsNotificationsBell />
                 <LocaleSwitcher />
                 <ThemeToggleButton />
                 <AccountMenu compact />

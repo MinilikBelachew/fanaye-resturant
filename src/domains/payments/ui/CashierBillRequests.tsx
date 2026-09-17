@@ -18,7 +18,7 @@ export default function CashierBillRequests() {
     const tCommon = useTranslations("common");
     const { data, isLoading, isError } = useCashierBillRequestsQuery(
         undefined,
-        { pollingInterval: 5000 },
+        { pollingInterval: 3000, refetchOnFocus: true },
     );
     const [generateBill, { isLoading: generatingId }] =
         useGenerateBillMutation();

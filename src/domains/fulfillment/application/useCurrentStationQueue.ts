@@ -10,7 +10,10 @@ export function useCurrentStationQueue() {
     );
     const query = useStationQueueQuery(stationId ?? "", {
         skip: !stationId,
-        pollingInterval: 5000,
+        // Keep board fresh; sockets also invalidate this tag instantly.
+        pollingInterval: 3000,
+        refetchOnFocus: true,
+        refetchOnReconnect: true,
     });
     const tickets = query.data?.data ?? [];
 

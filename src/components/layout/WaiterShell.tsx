@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { Bell, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useAppSelector } from "@/context/hooks";
 import AccountMenu from "@/components/layout/AccountMenu";
 import { ThemeToggleButton } from "@/components/theme/ThemeSwitcher";
@@ -9,38 +9,31 @@ import AppTopBar from "@/components/layout/AppTopBar";
 import WaiterBottomNav from "@/components/layout/WaiterBottomNav";
 import WaiterNavPanel from "@/components/layout/WaiterNavPanel";
 import { useSidebarUi } from "@/components/layout/SidebarUi";
-import {
-    selectCurrentStaff,
-    selectUnreadReadyCount,
-} from "@/domains/ordering/application/selectors";
-import { Link, usePathname } from "@/i18n/navigation";
+import OpsNotificationsBell from "@/domains/notifications/ui/OpsNotificationsBell";
+import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
+import { usePathname } from "@/i18n/navigation";
 
-export default function WaiterShell({
-    children,
-}: {
-    children: ReactNode;
-}) {
+export default function WaiterShell({ children }: { children: ReactNode }) {
     const [open, setOpen] = useState(false);
     const pathname = usePathname();
     const { collapsed } = useSidebarUi();
     const staff = useAppSelector(selectCurrentStaff);
-    const unread = useAppSelector(state =>
-        staff ? selectUnreadReadyCount(state, staff.id) : 0,
-    );
 
     useEffect(() => {
         setOpen(false);
     }, [pathname]);
 
-    const title = pathname.startsWith("/waiter/notifications")
+    const title = pathname.startsWith("/waiter/ready")
         ? "Ready"
-        : pathname.startsWith("/waiter/shift")
-          ? "Shift"
-          : pathname.startsWith("/waiter/profile")
-            ? "Profile"
-            : pathname.startsWith("/waiter/tables/")
-              ? "Table"
-              : "Tables";
+        : pathname.startsWith("/waiter/notifications")
+          ? "Notifications"
+          : pathname.startsWith("/waiter/shift")
+            ? "Shift"
+            : pathname.startsWith("/waiter/profile")
+              ? "Profile"
+              : pathname.startsWith("/waiter/tables/")
+                ? "Table"
+                : "Tables";
 
     return (
         <div className="flex h-svh overflow-hidden bg-white dark:bg-background">
@@ -86,17 +79,13 @@ export default function WaiterShell({
                         <p className="truncate text-[15px] font-medium tracking-tight">
                             {title}
                         </p>
-                    </div>
-                    <Link
-                        href="/waiter/notifications"
-                        className="relative ml-auto flex size-8 items-center justify-center rounded-md text-slate-gray hover:bg-secondary hover:text-foreground"
-                        aria-label="Ready alerts"
-                    >
-                        <Bell className="size-4" />
-                        {unread > 0 ? (
-                            <span className="absolute top-1 right-1 size-1.5 rounded-full bg-brand" />
+                        {staff ? (
+                            <p className="truncate text-[11px] text-slate-gray">
+                                {staff.name}
+                            </p>
                         ) : null}
-                    </Link>
+                    </div>
+                    <OpsNotificationsBell />
                     <ThemeToggleButton />
                     <AccountMenu compact />
                 </header>

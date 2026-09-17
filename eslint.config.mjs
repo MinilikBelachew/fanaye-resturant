@@ -76,6 +76,8 @@ export default [
             "out/**",
             "coverage/**",
             ".clerk/**",
+            "public/sw.js",
+            "scripts/**",
         ],
     },
 ];

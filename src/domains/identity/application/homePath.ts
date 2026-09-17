@@ -49,3 +49,10 @@ export function roleAllowsPath(role: Role, pathname: string): boolean {
 export function stationOrderPath(role: Role, itemId: string): string {
     return `${homePathForRole(role)}/orders/${itemId}`;
 }
+
+/** Full inbox page for the signed-in role. */
+export function notificationsPathForRole(role: Role): string {
+    if (role === "waiter") return "/waiter/notifications";
+    if (role === "super_admin") return "/super-admin";
+    return `${homePathForRole(role)}/notifications`;
+}

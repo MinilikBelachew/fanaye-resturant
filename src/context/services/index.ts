@@ -19,7 +19,11 @@ const rawBaseQuery = fetchBaseQuery({
         if (token) {
             headers.set("Authorization", `Bearer ${token}`);
         }
-        if (endpoint !== "uploadReceipt" && endpoint !== "uploadMenuImage") {
+        if (
+            endpoint !== "uploadReceipt" &&
+            endpoint !== "uploadMenuImage" &&
+            endpoint !== "scanMenuFromImage"
+        ) {
             headers.set("Content-Type", "application/json");
         }
         return headers;
@@ -112,6 +116,7 @@ export const api = createApi({
         "Audit",
         "Site",
         "QrMenu",
+        "Notifications",
     ],
     endpoints: () => ({}),
 });

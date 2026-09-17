@@ -7,6 +7,7 @@ import AppTopBar from "@/components/layout/AppTopBar";
 import DesktopSidebar from "@/components/layout/DesktopSidebar";
 import StationKdsNav from "@/components/layout/StationKdsNav";
 import StationTopBarTools from "@/components/layout/StationTopBarTools";
+import OpsNotificationsBell from "@/domains/notifications/ui/OpsNotificationsBell";
 import { navForRole } from "@/domains/identity/application/nav";
 import { homePathForRole } from "@/domains/identity/application/homePath";
 import {
@@ -17,6 +18,7 @@ import {
 import RoleSwitcher from "@/domains/identity/ui/RoleSwitcher";
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
+import LocaleSwitcher from "@/components/theme/LocaleSwitcher";
 
 function CompactNav({ role }: { role: Role }) {
     const pathname = usePathname();
@@ -29,8 +31,7 @@ function CompactNav({ role }: { role: Role }) {
                 const pathOnly = item.href.split("?")[0];
                 const active =
                     pathname === pathOnly ||
-                    (pathOnly !== home &&
-                        pathname.startsWith(`${pathOnly}/`));
+                    (pathOnly !== home && pathname.startsWith(`${pathOnly}/`));
                 return (
                     <Link
                         key={item.href}
@@ -76,13 +77,13 @@ export default function ResponsiveDeskShell({
                                 {station ? (
                                     <StationTopBarTools search={false} />
                                 ) : null}
+                                <OpsNotificationsBell />
+                                <LocaleSwitcher />
                                 <ThemeToggleButton />
                                 <AccountMenu compact />
                             </div>
                         </div>
-                        {station ? (
-                            <StationTopBarTools notify={false} />
-                        ) : null}
+                        {station ? <StationTopBarTools notify={false} /> : null}
                         <div className="pb-1">
                             <RoleSwitcher />
                         </div>

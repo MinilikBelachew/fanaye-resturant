@@ -3,6 +3,7 @@ import menuReducer from "./slices/menuSlice";
 import identityReducer from "./slices/identitySlice";
 import opsReducer from "./slices/opsSlice";
 import stationReducer from "./slices/stationSlice";
+import notificationsReducer from "./slices/notificationsSlice";
 import { api } from "./services";
 import "./services/authApi";
 import "./services/shiftsApi";
@@ -18,6 +19,7 @@ import "./services/staffApi";
 import "./services/siteApi";
 import "./services/superAdminApi";
 import "./services/auditApi";
+import "./services/notificationsApi";
 
 export const store = configureStore({
     reducer: {
@@ -25,6 +27,7 @@ export const store = configureStore({
         identity: identityReducer,
         ops: opsReducer,
         station: stationReducer,
+        notifications: notificationsReducer,
         [api.reducerPath]: api.reducer,
     },
     middleware: getDefaultMiddleware =>

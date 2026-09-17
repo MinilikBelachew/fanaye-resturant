@@ -39,6 +39,17 @@ export type AdminMenuItem = {
     modifierGroups: AdminModifierGroup[];
 };
 
+export type ScannedMenuItem = {
+    name: string;
+    description?: string;
+    price: string;
+    categoryName?: string;
+    preparationStationId?: string;
+    suggestedStationName?: string;
+    expectedPrepMinutes?: number;
+    selected?: boolean;
+};
+
 export type AdminMenuMeta = {
     menuId: string;
     defaultPeriodId: string | null;

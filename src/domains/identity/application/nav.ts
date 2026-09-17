@@ -18,7 +18,6 @@ import {
     QrCode,
     Radio,
     ScrollText,
-    Settings,
     Store,
     UserRound,
     Users,
@@ -81,6 +80,16 @@ function stationQueueNav(home: string): NavSection[] {
                     icon: AlertTriangle,
                     filter: "exceptions",
                     badgeKey: "exceptions",
+                },
+            ],
+        },
+        {
+            title: "Alerts",
+            items: [
+                {
+                    href: `${home}/notifications`,
+                    label: "Notifications",
+                    icon: Bell,
                 },
             ],
         },
@@ -161,6 +170,11 @@ export function navForRole(role: Role): NavSection[] {
                             href: "/owner/daily-close",
                             label: "Daily Close",
                             icon: ClipboardCheck,
+                        },
+                        {
+                            href: "/owner/notifications",
+                            label: "Notifications",
+                            icon: Bell,
                         },
                         {
                             href: "/owner/website",
@@ -257,6 +271,11 @@ export function navForRole(role: Role): NavSection[] {
                             label: "Audit",
                             icon: ScrollText,
                         },
+                        {
+                            href: "/manager/notifications",
+                            label: "Notifications",
+                            icon: Bell,
+                        },
                     ],
                 },
             ];
@@ -269,6 +288,11 @@ export function navForRole(role: Role): NavSection[] {
                             href: "/cashier",
                             label: "Dashboard",
                             icon: LayoutDashboard,
+                        },
+                        {
+                            href: "/cashier/notifications",
+                            label: "Notifications",
+                            icon: Bell,
                         },
                         {
                             href: "/cashier/payments",
@@ -314,8 +338,13 @@ export function navForRole(role: Role): NavSection[] {
                             icon: LayoutGrid,
                         },
                         {
-                            href: "/waiter/notifications",
+                            href: "/waiter/ready",
                             label: "Ready",
+                            icon: CheckCircle2,
+                        },
+                        {
+                            href: "/waiter/notifications",
+                            label: "Notifications",
                             icon: Bell,
                         },
                     ],

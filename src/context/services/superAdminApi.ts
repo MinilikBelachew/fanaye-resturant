@@ -170,14 +170,42 @@ export interface UpdateTenantPayload {
 export interface PlatformAuditEvent {
     id: string;
     action: string;
+    category?: string;
     entityName: string;
+    entityType?: string;
+    entityId?: string;
+    tenantId?: string | null;
+    tenantName?: string;
+    actorName?: string;
+    actorRole?: string;
     description: string;
     occurredAt: string;
     severity: string;
+    metadataJson?: any;
+}
+
+export interface PlatformAuditSummary {
+    totalToday: number;
+    securityToday: number;
+    operationsToday: number;
+    systemToday: number;
+}
+
+export interface PlatformAuditQueryParams {
+    page?: number;
+    limit?: number;
+    search?: string;
+    tenantId?: string;
+    category?: string;
+    action?: string;
+    startDate?: string;
+    endDate?: string;
 }
 
 export interface PlatformAuditListResponse {
     data: PlatformAuditEvent[];
+    meta?: PaginationMeta;
+    summary?: PlatformAuditSummary;
 }
 
 export interface LiveOpsBranch {
@@ -326,7 +354,7 @@ export const superAdminApi = api.injectEndpoints({
 
         getSuperAdminAudit: builder.query<
             PlatformAuditListResponse,
-            { limit?: number } | void
+            PlatformAuditQueryParams | void
         >({
             query: params => ({
                 url: "/super-admin/audit",

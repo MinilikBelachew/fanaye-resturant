@@ -4,6 +4,7 @@ import type {
     AdminModifierGroup,
     CreateAdminMenuItemBody,
     CreateAdminModifierGroupBody,
+    ScannedMenuItem,
     UpdateAdminMenuItemBody,
 } from "@/domains/catalog/domain/menuApi";
 import { api } from "./index";
@@ -24,7 +25,10 @@ export const menuApi = api.injectEndpoints({
             }),
             providesTags: ["Menu"],
         }),
-        adminModifierGroups: builder.query<{ data: AdminModifierGroup[] }, void>({
+        adminModifierGroups: builder.query<
+            { data: AdminModifierGroup[] },
+            void
+        >({
             query: () => ({
                 url: "/admin/modifier-groups",
                 method: "GET",
@@ -78,6 +82,39 @@ export const menuApi = api.injectEndpoints({
                 };
             },
         }),
+        scanMenuFromImage: builder.mutation<
+            {
+                data: ScannedMenuItem[];
+                itemCount: number;
+                rawText?: string | null;
+            },
+            File
+        >({
+            query: file => {
+                const body = new FormData();
+                body.append("file", file);
+                return {
+                    url: "/admin/menu-items/scan-from-image",
+                    method: "POST",
+                    body,
+                };
+            },
+        }),
+        importScannedMenu: builder.mutation<
+            {
+                createdCount: number;
+                createdIds: string[];
+                errors?: string[];
+            },
+            { items: ScannedMenuItem[] }
+        >({
+            query: body => ({
+                url: "/admin/menu-items/import-scanned",
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: ["Menu"],
+        }),
         markMenuItemSoldOut: builder.mutation<
             { data: AdminMenuItem },
             { id: string }
@@ -110,6 +147,8 @@ export const {
     useCreateAdminMenuItemMutation,
     useUpdateAdminMenuItemMutation,
     useUploadMenuImageMutation,
+    useScanMenuFromImageMutation,
+    useImportScannedMenuMutation,
     useMarkMenuItemSoldOutMutation,
     useClearMenuItemSoldOutMutation,
 } = menuApi;

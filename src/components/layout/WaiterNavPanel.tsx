@@ -29,7 +29,7 @@ export default function WaiterNavPanel({
     if (!staff) return null;
 
     const extraBadges: Record<string, number> =
-        readyCount > 0 ? { "/waiter/notifications": readyCount } : {};
+        readyCount > 0 ? { "/waiter/ready": readyCount } : {};
 
     async function logOut() {
         await performSignOut(dispatch);
