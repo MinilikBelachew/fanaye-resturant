@@ -292,7 +292,7 @@ export default function ManagerQrMenuPage() {
                                             welcomeMessage: e.target.value,
                                         }))
                                     }
-                                    placeholder="e.g. Welcome to Fanaye Rooftop & Lounge"
+                                    placeholder="e.g. Welcome to our Rooftop & Lounge"
                                     className="mt-1 text-xs"
                                 />
                             </div>
@@ -483,7 +483,7 @@ export default function ManagerQrMenuPage() {
                                             wifiSsid: e.target.value,
                                         }))
                                     }
-                                    placeholder="Fanaye_Guest"
+                                    placeholder="Guest_Wifi"
                                     className="mt-1 text-xs"
                                 />
                             </div>
@@ -597,7 +597,7 @@ export default function ManagerQrMenuPage() {
                             "Table 4 · Rooftop Terrace"
                         }
                         restaurantName={
-                            form.welcomeMessage || "Fanaye Restaurant"
+                            form.welcomeMessage || "Your Restaurant"
                         }
                     />
                 </div>
@@ -609,7 +609,7 @@ export default function ManagerQrMenuPage() {
                 onOpenChange={setPrintModalOpen}
                 tables={tables}
                 config={form}
-                restaurantName={form.welcomeMessage || "Fanaye Restaurant"}
+                restaurantName={form.welcomeMessage || "Your Restaurant"}
                 slug={slug}
             />
         </DashboardFrame>

@@ -187,7 +187,7 @@ export default function WaiterShiftPage() {
                                 </span>
                             </div>
                             <p className="text-[13px] text-slate-gray">
-                                {staff?.phone || "Fanaye Floor"}
+                                {staff?.phone || "Floor staff"}
                             </p>
                         </div>
                     </div>

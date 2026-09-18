@@ -62,6 +62,7 @@ export interface PublicSiteResponse {
 }
 
 export interface UpdateSitePayload {
+    tenantName?: string;
     slug?: string;
     theme?: Partial<SiteTheme>;
     draftData?: Record<string, unknown>;

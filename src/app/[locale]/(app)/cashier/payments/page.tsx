@@ -6,9 +6,10 @@ export default function CashierPaymentsPage() {
     return (
         <DashboardFrame>
             <PageHeader
+                compact
                 eyebrow="Floor"
                 title="Payments"
-                description="Payments the waiter already collected. Cash stays with the waiter until cash drop — nothing to confirm."
+                description="Waiter-collected payments, logged for the desk."
             />
             <CashierPaymentsLog />
         </DashboardFrame>

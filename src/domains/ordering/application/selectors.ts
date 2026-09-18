@@ -1,6 +1,5 @@
 import type { RootState } from "@/context/store";
 import { mapAuthContextToStaff } from "@/domains/identity/application/mapAuthToStaff";
-import { DEMO_STAFF } from "@/domains/identity/infrastructure/demoStaff";
 import type { StationId } from "@/domains/fulfillment/domain/station";
 import {
     isExceptionStatus,
@@ -9,7 +8,7 @@ import {
 } from "@/domains/ordering/domain/order";
 
 export function selectStaffList(state: RootState) {
-    return state.identity.staffMembers ?? DEMO_STAFF;
+    return state.identity.staffMembers ?? [];
 }
 
 export function selectCurrentStaff(state: RootState) {
@@ -18,20 +17,16 @@ export function selectCurrentStaff(state: RootState) {
 }
 
 export function selectWaitersList(state: RootState) {
-    const list = state.identity.staffMembers ?? DEMO_STAFF;
+    const list = state.identity.staffMembers ?? [];
     return list.filter(person => person.role === "waiter" && person.active);
 }
 
-export function selectSessionForTable(
-    state: RootState,
-    tableId: string,
-) {
+export function selectSessionForTable(state: RootState, tableId: string) {
     const table = state.ops.tables.find(entry => entry.id === tableId);
     if (!table?.currentSessionId) return null;
     const session =
-        state.ops.sessions.find(
-            entry => entry.id === table.currentSessionId,
-        ) ?? null;
+        state.ops.sessions.find(entry => entry.id === table.currentSessionId) ??
+        null;
     if (!session || session.status === "paid" || session.status === "closed") {
         return null;
     }

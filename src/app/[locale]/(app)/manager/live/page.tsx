@@ -6,9 +6,10 @@ export default function ManagerLivePage() {
     return (
         <DashboardFrame>
             <PageHeader
+                compact
                 eyebrow="Overview"
                 title="Live operations"
-                description="Tables, orders, and station exceptions on one timeline."
+                description="Tables, orders, and station exceptions — auto-updating."
             />
             <LiveFloorBoard />
         </DashboardFrame>

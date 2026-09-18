@@ -6,9 +6,10 @@ export default function OwnerDailyClosePage() {
     return (
         <DashboardFrame>
             <PageHeader
+                compact
                 eyebrow="Business"
-                title="Operational Daily Close"
-                description="Not a fiscal Z-report. Waiter lines plus cashier custody. Locked after manager approval."
+                title="Daily close"
+                description="Waiter collections plus cashier custody. Locked after manager approval."
             />
             <DailyClosePanel />
         </DashboardFrame>

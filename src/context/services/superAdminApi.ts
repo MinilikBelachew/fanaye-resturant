@@ -32,6 +32,23 @@ export interface PlatformHealthRadarPoint {
     benchmark: number;
 }
 
+export interface OpsHealth {
+    dailyCloseCompliancePct: number;
+    branchesClosedToday: number;
+    activeBranches: number;
+    offlineStations: number;
+    totalStations: number;
+    stationAvailabilityPct: number;
+    pendingCashDrops: number;
+    openProductionExceptions: number;
+    unpaidBills: number;
+    openSessions: number;
+    cashVarianceAbsTotal: number;
+    cashVarianceBranches: number;
+    cashHealthPct: number;
+    digitalSettlementPct: number;
+}
+
 export interface PlanDistributionItem {
     planCode: string;
     name: string;
@@ -73,6 +90,7 @@ export interface SuperAdminDashboardData {
     kpis: SuperAdminKpis;
     gmvTrend: NetworkGmvTrendPoint[];
     healthRadar: PlatformHealthRadarPoint[];
+    opsHealth: OpsHealth;
     planDistribution: PlanDistributionItem[];
     cityDistribution: CityDistributionItem[];
     tenants: TenantFleetItem[];
@@ -181,7 +199,7 @@ export interface PlatformAuditEvent {
     description: string;
     occurredAt: string;
     severity: string;
-    metadataJson?: any;
+    metadataJson?: Record<string, unknown> | null;
 }
 
 export interface PlatformAuditSummary {
@@ -285,17 +303,6 @@ export interface CreatePlatformStaffPayload {
 export interface ResetPlatformStaffPinPayload {
     membershipId: string;
     pin: string;
-}
-
-export interface FeatureFlag {
-    key: string;
-    name: string;
-    scope: string;
-    enabled: boolean;
-}
-
-export interface FeatureFlagsResponse {
-    data: FeatureFlag[];
 }
 
 export const superAdminApi = api.injectEndpoints({
@@ -431,26 +438,6 @@ export const superAdminApi = api.injectEndpoints({
             }),
             invalidatesTags: ["Auth"],
         }),
-
-        getSuperAdminFlags: builder.query<FeatureFlagsResponse, void>({
-            query: () => ({
-                url: "/super-admin/flags",
-                method: "GET",
-            }),
-            providesTags: ["Auth"],
-        }),
-
-        updateSuperAdminFlag: builder.mutation<
-            FeatureFlagsResponse,
-            { key: string; enabled: boolean }
-        >({
-            query: ({ key, enabled }) => ({
-                url: `/super-admin/flags/${key}`,
-                method: "PATCH",
-                body: { enabled },
-            }),
-            invalidatesTags: ["Auth"],
-        }),
     }),
 });
 
@@ -467,6 +454,4 @@ export const {
     useResetSuperAdminStaffPinMutation,
     useSuspendSuperAdminStaffMutation,
     useResetSuperAdminStaffPasswordMutation,
-    useGetSuperAdminFlagsQuery,
-    useUpdateSuperAdminFlagMutation,
 } = superAdminApi;

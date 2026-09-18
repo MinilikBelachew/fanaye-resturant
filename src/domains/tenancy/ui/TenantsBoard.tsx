@@ -30,7 +30,10 @@ export default function TenantsBoard() {
         isLoading,
         isFetching,
         refetch,
-    } = useGetSuperAdminTenantsQuery();
+    } = useGetSuperAdminTenantsQuery(undefined, {
+        pollingInterval: 20_000,
+        refetchOnFocus: true,
+    });
 
     const tenants = response?.data || [];
 
@@ -53,7 +56,8 @@ export default function TenantsBoard() {
                                 {row.name}
                             </p>
                             <p className="text-[12px] text-slate-gray">
-                                {row.area ? `${row.area}, ` : ""}{row.city}
+                                {row.area ? `${row.area}, ` : ""}
+                                {row.city}
                             </p>
                         </div>
                     </Link>
@@ -100,7 +104,8 @@ export default function TenantsBoard() {
                 sortValue: row => row.branches,
                 cell: row => (
                     <span className="font-medium text-[13px]">
-                        {row.branches} {row.branches === 1 ? "branch" : "branches"}
+                        {row.branches}{" "}
+                        {row.branches === 1 ? "branch" : "branches"}
                     </span>
                 ),
             },
@@ -141,12 +146,17 @@ export default function TenantsBoard() {
                         title="Refresh Tenant Fleet"
                     >
                         <RefreshCw
-                            className={cn("size-3.5", isFetching && "animate-spin")}
+                            className={cn(
+                                "size-3.5",
+                                isFetching && "animate-spin",
+                            )}
                         />
                         <span>Sync</span>
                     </button>
                     <span className="text-[12px] text-slate-gray">
-                        {isLoading ? "Loading fleet..." : `${tenants.length} tenants provisioned`}
+                        {isLoading
+                            ? "Loading fleet..."
+                            : `${tenants.length} tenants provisioned`}
                     </span>
                 </div>
 
@@ -244,15 +254,20 @@ export default function TenantsBoard() {
                                 {tenant.name}
                             </h2>
                             <p className="mt-1 text-[13px] text-slate-gray">
-                                {tenant.area ? `${tenant.area}, ` : ""}{tenant.city}
+                                {tenant.area ? `${tenant.area}, ` : ""}
+                                {tenant.city}
                             </p>
                             <p className="mt-3 text-[12px] text-slate-gray">
-                                <span className="capitalize">{tenant.plan}</span>
+                                <span className="capitalize">
+                                    {tenant.plan}
+                                </span>
                                 {" · "}
                                 {tenant.branches} branch
                                 {tenant.branches > 1 ? "es" : ""}
                                 {" · "}
-                                {tenant.gmvTodayFormatted || formatEtb(tenant.gmvToday)} today
+                                {tenant.gmvTodayFormatted ||
+                                    formatEtb(tenant.gmvToday)}{" "}
+                                today
                             </p>
                         </Link>
                     ))}
@@ -268,4 +283,3 @@ export default function TenantsBoard() {
         </div>
     );
 }
-

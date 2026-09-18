@@ -37,9 +37,12 @@ export function SiteCarousel({
     useEffect(() => {
         if (slides.length <= 1) return;
         if (variant === "filmstrip") return;
-        const id = window.setInterval(() => {
-            setIndex(current => (current + 1) % slides.length);
-        }, Math.max(intervalMs, 2000));
+        const id = window.setInterval(
+            () => {
+                setIndex(current => (current + 1) % slides.length);
+            },
+            Math.max(intervalMs, 2000),
+        );
         return () => window.clearInterval(id);
     }, [slides.length, intervalMs, variant]);
 
@@ -90,7 +93,9 @@ export function SiteCarousel({
                         className="h-2.5 w-2.5 rounded-full transition"
                         style={{
                             background:
-                                i === index ? accentColor : "rgba(255,255,255,.55)",
+                                i === index
+                                    ? accentColor
+                                    : "rgba(255,255,255,.55)",
                         }}
                     />
                 ))}
@@ -120,7 +125,6 @@ export function SiteCarousel({
                                     : undefined
                             }
                         >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                                 src={src}
                                 alt=""
@@ -144,7 +148,6 @@ export function SiteCarousel({
                 <div
                     className={`relative overflow-hidden rounded-2xl ${heightClass}`}
                 >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                         src={slides[index]}
                         alt=""
@@ -171,7 +174,6 @@ export function SiteCarousel({
                                     i === index ? accentColor : "transparent",
                             }}
                         >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                                 src={src}
                                 alt=""
@@ -205,7 +207,6 @@ export function SiteCarousel({
                                           : "z-10 h-[72%] w-[42%] translate-x-[62%] scale-95 opacity-60"
                                 }`}
                             >
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
                                     src={slides[slideIndex]}
                                     alt=""
@@ -231,8 +232,10 @@ export function SiteCarousel({
                     style={{ transform: `translateX(-${index * 100}%)` }}
                 >
                     {slides.map((src, i) => (
-                        <div key={`${src}-${i}`} className="relative h-full w-full shrink-0">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <div
+                            key={`${src}-${i}`}
+                            className="relative h-full w-full shrink-0"
+                        >
                             <img
                                 src={src}
                                 alt=""
@@ -258,7 +261,6 @@ export function SiteCarousel({
     return (
         <div className={`relative overflow-hidden rounded-2xl ${heightClass}`}>
             {slides.map((src, i) => (
-                // eslint-disable-next-line @next/next/no-img-element
                 <img
                     key={`${src}-${i}`}
                     src={src}

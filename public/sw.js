@@ -1,4 +1,4 @@
-/* Fanaye PWA service worker — static assets + offline shell */
+/* Restaurant OS PWA service worker — static assets + offline shell */
 const CACHE_VERSION = "fanaye-pwa-v1";
 const PRECACHE = [
     "/en",

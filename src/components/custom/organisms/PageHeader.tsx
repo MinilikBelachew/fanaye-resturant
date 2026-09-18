@@ -8,11 +8,13 @@ export default function PageHeader({
     title,
     description,
     action,
+    compact = false,
 }: {
     eyebrow?: string;
     title: string;
     description?: string;
     action?: ReactNode;
+    compact?: boolean;
 }) {
     const tHeaders = useTranslations("pageHeaders");
     const tNav = useTranslations("appNav");
@@ -53,18 +55,42 @@ export default function PageHeader({
     }
 
     return (
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div
+            className={
+                compact
+                    ? "mb-4 flex flex-wrap items-end justify-between gap-3"
+                    : "mb-6 flex flex-wrap items-end justify-between gap-4"
+            }
+        >
             <div>
                 {localizedEyebrow ? (
-                    <p className="mb-1 text-[12px] font-medium tracking-[0.08em] text-steel-gray uppercase">
+                    <p
+                        className={
+                            compact
+                                ? "mb-0.5 text-[11px] font-medium tracking-[0.08em] text-steel-gray uppercase"
+                                : "mb-1 text-[12px] font-medium tracking-[0.08em] text-steel-gray uppercase"
+                        }
+                    >
                         {localizedEyebrow}
                     </p>
                 ) : null}
-                <h1 className="text-[32px] leading-[1.2] font-semibold tracking-tight">
+                <h1
+                    className={
+                        compact
+                            ? "text-[18px] leading-tight font-medium tracking-tight"
+                            : "text-[28px] leading-[1.2] font-medium tracking-tight"
+                    }
+                >
                     {localizedTitle}
                 </h1>
                 {localizedDesc ? (
-                    <p className="mt-1 max-w-2xl text-[15px] text-slate-gray">
+                    <p
+                        className={
+                            compact
+                                ? "mt-0.5 max-w-2xl text-[12px] text-slate-gray"
+                                : "mt-1 max-w-2xl text-[14px] text-slate-gray"
+                        }
+                    >
                         {localizedDesc}
                     </p>
                 ) : null}

@@ -25,7 +25,7 @@ export const LivePhoneSimulator: React.FC<LivePhoneSimulatorProps> = ({
     config,
     menuItems,
     tableName = "Table 4 · Rooftop Terrace",
-    restaurantName = "Fanaye Lounge & Grill",
+    restaurantName = "Restaurant Lounge & Grill",
 }) => {
     const [activeTab, setActiveTab] = useState<string>("all");
     const [search, setSearch] = useState("");

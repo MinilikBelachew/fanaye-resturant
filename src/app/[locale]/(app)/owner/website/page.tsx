@@ -7,6 +7,7 @@ import {
     Loader2,
     ExternalLink,
     Globe2,
+    LayoutTemplate,
     Sparkles,
     Palette,
     Layers,
@@ -35,8 +36,17 @@ import { adminMenuItemToCatalog } from "@/domains/catalog/application/mapAdminMe
 import { ImageUploadField } from "@/domains/site/puck/ImageUploadField";
 import {
     SiteRenderContext,
+    bindSiteRender,
     sitePuckConfig,
 } from "@/domains/site/puck/sitePuckConfig";
+import {
+    buildScratchDraft,
+    buildTemplateDraft,
+    getTemplate,
+    looksLikeStarterDraft,
+    type WebsiteTemplateId,
+} from "@/domains/site/templates/restaurantTemplates";
+import WebsiteTemplatePicker from "@/domains/site/ui/WebsiteTemplatePicker";
 
 // International Curated Mood Themes (1-Click Presets)
 interface ThemePreset {
@@ -229,13 +239,104 @@ export default function WebsiteEditorPage() {
     const [draftData, setDraftData] = useState<Data | null>(null);
     const [activeTab, setActiveTab] = useState<CustomizerTab>("mood");
     const [isCustomizerOpen, setIsCustomizerOpen] = useState(true);
+    const [showTemplateGate, setShowTemplateGate] = useState(false);
+    const [templateBusy, setTemplateBusy] = useState(false);
+    const [gateHydrated, setGateHydrated] = useState(false);
 
     useEffect(() => {
         if (!site) return;
         setSlug(site.slug);
         setTheme(site.theme);
         setDraftData(site.draftData as Data);
-    }, [site]);
+        if (!gateHydrated) {
+            const key = `fanaye-site-template-gate:${site.id}`;
+            const dismissed =
+                typeof window !== "undefined" &&
+                window.localStorage.getItem(key) === "dismissed";
+            const starter = looksLikeStarterDraft(site.draftData as Data);
+            setShowTemplateGate(!dismissed && (starter || !site.draftData));
+            setGateHydrated(true);
+        }
+    }, [site, gateHydrated]);
+
+    function dismissTemplateGate() {
+        if (site?.id && typeof window !== "undefined") {
+            window.localStorage.setItem(
+                `fanaye-site-template-gate:${site.id}`,
+                "dismissed",
+            );
+        }
+        setShowTemplateGate(false);
+    }
+
+    async function applyTemplate(
+        templateId: WebsiteTemplateId,
+        action: "customize" | "publish",
+    ) {
+        if (!theme || !site) return;
+        setTemplateBusy(true);
+        try {
+            const mergedTheme = {
+                ...theme,
+                ...getTemplate(templateId).theme,
+            };
+            const nextDraft = buildTemplateDraft(
+                templateId,
+                site.tenantName || "Restaurant",
+            );
+            const result = await updateSite({
+                slug: slug.trim() || undefined,
+                theme: mergedTheme,
+                draftData: nextDraft as unknown as Record<string, unknown>,
+            }).unwrap();
+            setSlug(result.data.slug);
+            setTheme(result.data.theme);
+            setDraftData(result.data.draftData as Data);
+            if (action === "publish") {
+                await publishSite().unwrap();
+                toast.success("Template applied & published");
+            } else {
+                toast.success("Template applied — customize below");
+            }
+            dismissTemplateGate();
+            void refetch();
+        } catch (err: unknown) {
+            const message =
+                (err as { data?: { message?: string } })?.data?.message ||
+                "Could not apply template.";
+            toast.error(message);
+        } finally {
+            setTemplateBusy(false);
+        }
+    }
+
+    async function startFromScratch() {
+        if (!theme || !site) return;
+        setTemplateBusy(true);
+        try {
+            const nextDraft = buildScratchDraft(
+                site.tenantName || "Restaurant",
+            );
+            const result = await updateSite({
+                slug: slug.trim() || undefined,
+                theme,
+                draftData: nextDraft as unknown as Record<string, unknown>,
+            }).unwrap();
+            setSlug(result.data.slug);
+            setTheme(result.data.theme);
+            setDraftData(result.data.draftData as Data);
+            toast.success("Blank site ready — add your sections");
+            dismissTemplateGate();
+            void refetch();
+        } catch (err: unknown) {
+            const message =
+                (err as { data?: { message?: string } })?.data?.message ||
+                "Could not start blank site.";
+            toast.error(message);
+        } finally {
+            setTemplateBusy(false);
+        }
+    }
 
     const previewMenuItems = useMemo<PublicMenuItem[]>(() => {
         return (menuData?.data || []).map(item => {
@@ -274,6 +375,8 @@ export default function WebsiteEditorPage() {
         }),
         [theme, site?.theme, site?.tenantName, previewMenuItems],
     );
+
+    bindSiteRender(renderContext);
 
     // Compute live background style for Puck wrapper
     const computedBackgroundStyle = useMemo(() => {
@@ -381,6 +484,24 @@ export default function WebsiteEditorPage() {
     const publicHref = site.publicPath;
     const published = site.status === "PUBLISHED";
 
+    if (showTemplateGate) {
+        return (
+            <DashboardFrame>
+                <WebsiteTemplatePicker
+                    tenantName={site.tenantName || "Restaurant"}
+                    busy={templateBusy || saving || publishing}
+                    onApply={(id, action) => void applyTemplate(id, action)}
+                    onScratch={() => void startFromScratch()}
+                    onCancel={
+                        gateHydrated && !looksLikeStarterDraft(draftData)
+                            ? () => setShowTemplateGate(false)
+                            : undefined
+                    }
+                />
+            </DashboardFrame>
+        );
+    }
+
     return (
         <DashboardFrame>
             {/* Top Bar Actions */}
@@ -394,6 +515,14 @@ export default function WebsiteEditorPage() {
                     <Badge variant={published ? "success" : "secondary"}>
                         {published ? "Published" : "Draft"}
                     </Badge>
+                    <button
+                        type="button"
+                        onClick={() => setShowTemplateGate(true)}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-hairline px-3 py-2 text-[12px] font-medium hover:bg-surface-ivory"
+                    >
+                        <LayoutTemplate className="size-3.5" />
+                        Templates
+                    </button>
                     <a
                         href={publicHref}
                         target="_blank"
@@ -436,8 +565,8 @@ export default function WebsiteEditorPage() {
             {/* International Theme & Brand Studio Drawer */}
             <div className="mb-5 overflow-hidden rounded-3xl border border-hairline bg-card shadow-xs">
                 {/* Customizer Navigation Tabs */}
-                <div className="flex flex-wrap items-center justify-between border-b border-hairline bg-surface-ivory/50 px-4 py-2.5">
-                    <div className="flex items-center gap-1">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-hairline bg-surface-ivory/50 px-3 py-2.5 sm:px-4">
+                    <div className="flex max-w-full items-center gap-1 overflow-x-auto">
                         {[
                             {
                                 id: "mood",
@@ -574,7 +703,7 @@ export default function WebsiteEditorPage() {
                                     </div>
 
                                     {/* Mode Selector */}
-                                    <div className="inline-flex rounded-xl border border-hairline bg-slate-100 p-1 text-xs">
+                                    <div className="inline-flex max-w-full overflow-x-auto rounded-xl border border-hairline bg-slate-100 p-1 text-xs">
                                         {[
                                             {
                                                 id: "solid",

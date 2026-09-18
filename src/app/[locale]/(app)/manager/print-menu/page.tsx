@@ -129,10 +129,9 @@ export default function ManagerPrintMenuPage() {
     const origin =
         typeof window !== "undefined"
             ? window.location.origin
-            : "https://fanaye.et";
+            : "https://example.com";
     const tenantLogoUrl = siteData?.data?.theme?.logoUrl || null;
-    const tenantName =
-        siteData?.data?.tenantName || "Fanaye Restaurant & Lounge";
+    const tenantName = siteData?.data?.tenantName || "Restaurant & Lounge";
 
     const allItems = menuData?.data || [];
 
@@ -475,7 +474,7 @@ export default function ManagerPrintMenuPage() {
                                             title: e.target.value,
                                         }))
                                     }
-                                    placeholder="Fanaye Restaurant & Lounge"
+                                    placeholder="Restaurant & Lounge"
                                     className="mt-1 text-xs"
                                 />
                             </div>

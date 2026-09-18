@@ -20,6 +20,7 @@ export interface PreparationStation {
     defaultDelayThresholdMinutes?: number | null;
     sortOrder?: number;
     ticketCount?: number;
+    menuItemCount?: number;
 }
 
 export const DEFAULT_STATIONS: PreparationStation[] = [

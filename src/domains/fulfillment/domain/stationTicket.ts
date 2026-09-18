@@ -27,6 +27,7 @@ export type StationQueueResponse = {
     stationId: string;
     stationName: string;
     stationCode: string | null;
+    stationOffline?: boolean;
     data: StationTicket[];
 };
 

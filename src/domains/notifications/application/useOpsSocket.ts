@@ -36,6 +36,11 @@ function invalidateForType(
             ]),
         );
     }
+    if (type === "station.status.changed" || type === "floor.updated") {
+        dispatch(
+            api.util.invalidateTags(["Station", "Menu", "Order", "Floor"]),
+        );
+    }
     if (type === "bill.request.created" || type === "bill.ready") {
         dispatch(api.util.invalidateTags(["Bill", "Floor", "Notifications"]));
     }

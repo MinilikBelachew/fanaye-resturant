@@ -31,7 +31,7 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
     bill,
     tableDisplayName,
     waiterName,
-    restaurantName = "Fanaye Restaurant & Lounge",
+    restaurantName = "Restaurant & Lounge",
     branchName = "Bole Medhanialem Branch",
     cashierName = "Cashier",
     showSendToWaiter = true,
@@ -104,7 +104,7 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
     const receiptVerifyUrl =
         typeof window !== "undefined"
             ? `${window.location.origin}/receipt/${bill.billId}`
-            : `https://fanaye.et/receipt/${bill.billId}`;
+            : `https://example.com/receipt/${bill.billId}`;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-xs p-3 sm:p-6 animate-in fade-in duration-200">
@@ -377,7 +377,7 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
                                 {tReceipt("thankYou")}
                             </p>
                             <p className="text-[9px] text-slate-400 font-sans mt-0.5">
-                                Golden Cloche POS System · fanaye.et
+                                Restaurant POS System
                             </p>
                         </div>
                     </div>

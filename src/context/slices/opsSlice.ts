@@ -1,21 +1,22 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import { DEMO_MENU, unitPriceFor, type MenuItem } from "@/domains/catalog/domain/menu";
+import {
+    DEMO_MENU,
+    unitPriceFor,
+    type MenuItem,
+} from "@/domains/catalog/domain/menu";
 import {
     modifiersKey,
     type SelectedModifier,
 } from "@/domains/catalog/domain/modifiers";
-import {
-    createFloorTables,
-    withTableLocations,
-} from "@/domains/floor/domain/table";
-import type {
-    DiningTable,
-    TableSession,
-} from "@/domains/floor/domain/table";
+import { withTableLocations } from "@/domains/floor/domain/table";
+import type { DiningTable, TableSession } from "@/domains/floor/domain/table";
 import type { StaffNotification } from "@/domains/notifications/domain/notification";
 import type { Order, OrderItem } from "@/domains/ordering/domain/order";
 import type { Payment } from "@/domains/payments/domain/payment";
-import { isDigitalMethod, isLoggedPayment } from "@/domains/payments/domain/payment";
+import {
+    isDigitalMethod,
+    isLoggedPayment,
+} from "@/domains/payments/domain/payment";
 import { createId } from "@/lib/ids";
 
 export const OPS_KEY = "fanaye.demo.ops.v1";
@@ -32,7 +33,7 @@ export interface OpsState {
 
 function emptyOps(): OpsState {
     return {
-        tables: createFloorTables(),
+        tables: [],
         sessions: [],
         orders: [],
         items: [],
@@ -120,8 +121,7 @@ export const STATION_SETTABLE_STATUSES = [
     "rejected_by_station",
 ] as const;
 
-export type StationSettableStatus =
-    (typeof STATION_SETTABLE_STATUSES)[number];
+export type StationSettableStatus = (typeof STATION_SETTABLE_STATUSES)[number];
 
 export const opsSlice = createSlice({
     name: "ops",
@@ -169,7 +169,9 @@ export const opsSlice = createSlice({
             const table = findTable(state, action.payload.tableId);
             if (!table) return;
             const current = table.currentSessionId
-                ? state.sessions.find(entry => entry.id === table.currentSessionId)
+                ? state.sessions.find(
+                      entry => entry.id === table.currentSessionId,
+                  )
                 : undefined;
             if (isLiveSession(current)) return;
             table.currentSessionId = null;
@@ -225,8 +227,7 @@ export const opsSlice = createSlice({
                 quantity: action.payload.quantity,
                 unitPrice: unitPriceFor(menuItem, modifiers),
                 stationId: menuItem.stationId,
-                expectedPreparationMinutes:
-                    menuItem.expectedPreparationMinutes,
+                expectedPreparationMinutes: menuItem.expectedPreparationMinutes,
                 modifiers,
                 instruction,
                 status: "draft",
@@ -386,10 +387,7 @@ export const opsSlice = createSlice({
             );
             if (note) note.read = true;
         },
-        markAllNotificationsRead: (
-            state,
-            action: PayloadAction<string>,
-        ) => {
+        markAllNotificationsRead: (state, action: PayloadAction<string>) => {
             state.notifications.forEach(note => {
                 if (note.waiterId === action.payload) note.read = true;
             });
@@ -441,10 +439,7 @@ export const opsSlice = createSlice({
                         item.status !== "cancelled" &&
                         item.status !== "draft",
                 )
-                .reduce(
-                    (sum, item) => sum + item.unitPrice * item.quantity,
-                    0,
-                );
+                .reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
             const table = findTable(state, session.tableId);
             const now = new Date().toISOString();
             state.payments.unshift({

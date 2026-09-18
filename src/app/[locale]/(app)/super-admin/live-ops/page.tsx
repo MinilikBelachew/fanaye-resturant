@@ -9,8 +9,11 @@ import PageHeader from "@/components/custom/organisms/PageHeader";
 import { useGetSuperAdminLiveOpsQuery } from "@/context/services/superAdminApi";
 
 export default function LiveOpsPage() {
-    const { data, isLoading, error, refetch, isFetching } =
-        useGetSuperAdminLiveOpsQuery();
+    const { data, isLoading, isFetching, error, refetch } =
+        useGetSuperAdminLiveOpsQuery(undefined, {
+            pollingInterval: 10_000,
+            refetchOnFocus: true,
+        });
     const summary = data?.summary;
     const branches = data?.branches ?? [];
 
@@ -75,7 +78,9 @@ export default function LiveOpsPage() {
 
             <div className="overflow-hidden rounded-[16px] border border-hairline bg-card">
                 <div className="border-b border-hairline bg-surface-ivory/50 px-5 py-3.5">
-                    <h2 className="text-[15px] font-semibold">Branch network</h2>
+                    <h2 className="text-[15px] font-semibold">
+                        Branch network
+                    </h2>
                     <p className="text-[12px] text-slate-gray">
                         Real-time activity by branch
                     </p>
@@ -109,7 +114,9 @@ export default function LiveOpsPage() {
                                             </p>
                                             <Badge
                                                 variant={
-                                                    hot ? "success" : "secondary"
+                                                    hot
+                                                        ? "success"
+                                                        : "secondary"
                                                 }
                                             >
                                                 {hot ? "Live" : "Quiet"}
@@ -131,7 +138,9 @@ export default function LiveOpsPage() {
                                     </div>
                                     <div className="flex flex-wrap gap-4 text-[12px]">
                                         <span>
-                                            <strong>{branch.openSessions}</strong>{" "}
+                                            <strong>
+                                                {branch.openSessions}
+                                            </strong>{" "}
                                             sessions
                                         </span>
                                         <span>
@@ -139,7 +148,9 @@ export default function LiveOpsPage() {
                                             orders
                                         </span>
                                         <span>
-                                            <strong>{branch.unpaidBills}</strong>{" "}
+                                            <strong>
+                                                {branch.unpaidBills}
+                                            </strong>{" "}
                                             unpaid
                                         </span>
                                     </div>

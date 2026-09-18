@@ -39,7 +39,7 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
     onOpenChange,
     tables,
     config,
-    restaurantName = "Fanaye Restaurant",
+    restaurantName = "Your Restaurant",
     slug,
 }) => {
     const [selectedLocation, setSelectedLocation] = useState<string>("all");
@@ -60,7 +60,7 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
     const defaultOrigin =
         typeof window !== "undefined"
             ? window.location.origin
-            : "https://fanaye.et";
+            : "https://example.com";
     const origin = (customOrigin.trim() || defaultOrigin).replace(/\/+$/, "");
 
     const locations = Array.from(

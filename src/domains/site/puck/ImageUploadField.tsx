@@ -37,7 +37,6 @@ export function ImageUploadField({
             <p className="text-[12px] font-medium text-slate-600">{label}</p>
             {preview ? (
                 <div className="relative overflow-hidden rounded-xl border border-hairline">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                         src={preview}
                         alt=""
@@ -85,7 +84,10 @@ interface GalleryUploadFieldProps {
     onChange: (value: string) => void;
 }
 
-export function GalleryUploadField({ value, onChange }: GalleryUploadFieldProps) {
+export function GalleryUploadField({
+    value,
+    onChange,
+}: GalleryUploadFieldProps) {
     const inputRef = useRef<HTMLInputElement>(null);
     const [upload, { isLoading }] = useUploadMenuImageMutation();
     const urls = String(value || "")
@@ -113,7 +115,9 @@ export function GalleryUploadField({ value, onChange }: GalleryUploadFieldProps)
 
     return (
         <div className="space-y-2">
-            <p className="text-[12px] font-medium text-slate-600">Gallery images</p>
+            <p className="text-[12px] font-medium text-slate-600">
+                Gallery images
+            </p>
             <div className="grid grid-cols-2 gap-2">
                 {urls.map((url, index) => {
                     const src = filePublicUrl(url) || url;
@@ -122,8 +126,11 @@ export function GalleryUploadField({ value, onChange }: GalleryUploadFieldProps)
                             key={`${url}-${index}`}
                             className="relative overflow-hidden rounded-lg border border-hairline"
                         >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={src} alt="" className="aspect-square w-full object-cover" />
+                            <img
+                                src={src}
+                                alt=""
+                                className="aspect-square w-full object-cover"
+                            />
                             <button
                                 type="button"
                                 onClick={() => removeAt(index)}

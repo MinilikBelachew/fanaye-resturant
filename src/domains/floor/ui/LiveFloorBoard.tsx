@@ -10,7 +10,9 @@ import { LiveFloorSkeleton } from "@/components/custom/molecules/Skeletons";
 export default function LiveFloorBoard() {
     const tWaiter = useTranslations("waiter");
     const tCommon = useTranslations("common");
-    const { data, isLoading } = useFloorTablesQuery();
+    const { data, isLoading } = useFloorTablesQuery(undefined, {
+        pollingInterval: 8000,
+    });
     const open = (data?.data ?? []).filter(table => table.tableSessionId);
 
     if (isLoading) {

@@ -1,7 +1,6 @@
 import type { Role } from "../domain/role";
 import type { AuthContext } from "../domain/authContext";
 import type { Staff } from "../domain/staff";
-import { DEMO_STAFF } from "../infrastructure/demoStaff";
 
 const STATION_CODE_TO_ROLE: Record<string, Role> = {
     KITCHEN: "kitchen",
@@ -38,30 +37,24 @@ export function mapRoleCodeToRole(
 
 export function mapAuthContextToStaff(context: AuthContext): Staff {
     const role = mapRoleCodeToRole(context.roleCode, context.stationCode);
-    const demo = DEMO_STAFF.find(
-        person =>
-            person.email &&
-            context.email &&
-            person.email.toLowerCase() === context.email.toLowerCase(),
-    );
 
     return {
-        id: demo?.id ?? context.staffMembershipId ?? context.userId,
+        id: context.staffMembershipId ?? context.userId,
         name: context.displayName,
         role,
         pinHint: "",
-        phone: context.phone ?? demo?.phone,
-        email: context.email ?? demo?.email,
-        stationId: context.stationId ?? demo?.stationId,
-        stationRole: role === "kitchen" || role === "barista" || role === "cakes" || role === "soft_drinks"
-            ? role
-            : undefined,
+        phone: context.phone ?? undefined,
+        email: context.email ?? undefined,
+        stationId: context.stationId ?? undefined,
+        stationRole:
+            role === "kitchen" ||
+            role === "barista" ||
+            role === "cakes" ||
+            role === "soft_drinks"
+                ? role
+                : undefined,
         active: true,
-        assignedTableIds: demo?.assignedTableIds ?? [],
+        assignedTableIds: [],
         shiftStatus: context.shiftSessionId ? "on_duty" : "off_duty",
-        shiftSchedule: demo?.shiftSchedule,
-        shiftHours: demo?.shiftHours,
-        workingDays: demo?.workingDays,
-        joinedDate: demo?.joinedDate,
     };
 }

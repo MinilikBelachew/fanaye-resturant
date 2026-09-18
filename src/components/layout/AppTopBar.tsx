@@ -4,7 +4,7 @@ import AccountMenu from "@/components/layout/AccountMenu";
 import StationTopBarTools from "@/components/layout/StationTopBarTools";
 import { useSidebarUi } from "@/components/layout/SidebarUi";
 import { ThemeToggleButton } from "@/components/theme/ThemeSwitcher";
-import LocaleSwitcher from "@/components/theme/LocaleSwitcher";
+import { LocaleSwitcher } from "@/components/theme/LocaleSwitcher";
 import OpsNotificationsBell from "@/domains/notifications/ui/OpsNotificationsBell";
 import { navForRole } from "@/domains/identity/application/nav";
 import { homePathForRole } from "@/domains/identity/application/homePath";
@@ -25,7 +25,6 @@ const LABEL_KEYS: Record<string, string> = {
     "Live Operations": "liveOps",
     Tenants: "tenants",
     "Staff Directory": "staffDirectory",
-    "Feature Flags": "featureFlags",
     "Platform Audit": "audit",
     Audit: "audit",
     Branches: "branches",
@@ -128,12 +127,13 @@ function AppTopBarInner({ className }: { className?: string }) {
                     className="hidden min-w-0 max-w-md flex-1 md:flex"
                 />
             ) : null}
-            <div className="ml-auto flex shrink-0 items-center gap-2">
+            <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
                 {stationQueue ? (
-                    <StationTopBarTools search={false} notify={false} />
-                ) : null}
-                <OpsNotificationsBell />
-                <LocaleSwitcher />
+                    <StationTopBarTools search={false} />
+                ) : (
+                    <OpsNotificationsBell />
+                )}
+                <LocaleSwitcher className="hidden sm:inline-flex" />
                 <ThemeToggleButton />
                 <AccountMenu compact />
             </div>

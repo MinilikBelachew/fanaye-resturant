@@ -11,13 +11,7 @@ import { performSignOut } from "@/domains/identity/application/signOut";
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { useRouter } from "@/i18n/navigation";
 
-function InfoRow({
-    label,
-    value,
-}: {
-    label: string;
-    value: string;
-}) {
+function InfoRow({ label, value }: { label: string; value: string }) {
     return (
         <div className="flex items-center justify-between gap-4 border-b border-hairline py-3 last:border-b-0">
             <p className="text-[13px] text-slate-gray">{label}</p>
@@ -55,7 +49,11 @@ export default function WaiterProfilePage() {
                             {ROLE_LABELS[staff.role]}
                         </p>
                     </div>
-                    <Badge variant={session?.shiftSessionId ? "success" : "secondary"}>
+                    <Badge
+                        variant={
+                            session?.shiftSessionId ? "success" : "secondary"
+                        }
+                    >
                         {session?.shiftSessionId ? "On shift" : "Off shift"}
                     </Badge>
                 </div>
@@ -65,7 +63,7 @@ export default function WaiterProfilePage() {
                     <InfoRow label="Phone" value={staff.phone || "—"} />
                     <InfoRow
                         label="Branch"
-                        value={session?.branchName || "Fanaye"}
+                        value={session?.branchName || "This branch"}
                     />
                 </div>
             </div>

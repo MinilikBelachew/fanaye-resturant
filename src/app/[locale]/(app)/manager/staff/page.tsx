@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import {
-    CookingPot,
     Edit3,
     Eye,
     EyeOff,
@@ -11,10 +10,7 @@ import {
     MoreVertical,
     Plus,
     Search,
-    Shield,
-    UserCheck,
     UserPlus,
-    Users,
     UtensilsCrossed,
     X,
 } from "lucide-react";
@@ -224,102 +220,74 @@ export default function ManagerStaffPage() {
         <DashboardFrame>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <PageHeader
+                    compact
                     eyebrow="House"
-                    title="Staff & Waiters"
-                    description="Assign dining tables per shift window. Manage staff credentials, PINs, and passwords."
+                    title="Staff"
+                    description="Register team members, set PINs and passwords, and assign waiter tables by shift."
                 />
-                <div className="flex flex-wrap items-center gap-2.5">
-                    <button
-                        type="button"
-                        onClick={() => dispatch(openAddStaff("waiter"))}
-                        className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-2.5 text-[13px] font-semibold text-primary shadow-xs hover:bg-primary/15 transition-colors"
-                    >
-                        <UtensilsCrossed className="size-4" />
-                        Register Waiter
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => dispatch(openAddStaff(undefined))}
-                        className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-[13px] font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition-colors"
-                    >
-                        <UserPlus className="size-4" />
-                        Register Staff
-                    </button>
-                </div>
+                <button
+                    type="button"
+                    onClick={() => dispatch(openAddStaff(undefined))}
+                    className="inline-flex shrink-0 items-center gap-2 self-start rounded-full bg-primary px-4 py-2.5 text-[13px] font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition-colors sm:self-auto"
+                >
+                    <UserPlus className="size-4" />
+                    Register Staff
+                </button>
             </div>
 
             {shifts.length > 0 ? (
-                <div className="rounded-[16px] border border-hairline bg-card p-4">
-                    <p className="text-[12px] font-medium uppercase tracking-wide text-slate-gray">
-                        Shift windows (admin-defined)
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-2">
+                <div className="rounded-[16px] border border-hairline bg-card px-4 py-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-[12px] font-medium text-slate-gray">
+                            Shifts
+                        </p>
                         {shifts.map(shift => (
                             <span
                                 key={shift.id}
-                                className="rounded-full border border-hairline bg-surface-ivory px-3 py-1 text-[12px] font-medium"
+                                className="rounded-full border border-hairline bg-secondary/50 px-2.5 py-1 text-[12px] font-medium"
                             >
                                 {shift.name} · {shift.startLocalTime}–
                                 {shift.endLocalTime}
                             </span>
                         ))}
                     </div>
-                    <p className="mt-2 text-[12px] text-slate-gray">
-                        Create more shifts (any times) when assigning tables to
-                        a waiter.
-                    </p>
                 </div>
             ) : null}
 
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <div className="rounded-[16px] border border-hairline bg-card p-4.5">
-                    <div className="flex items-center justify-between">
-                        <p className="text-[13px] font-medium text-slate-gray">
-                            Total Personnel
-                        </p>
-                        <Users className="size-4 text-slate-gray" />
-                    </div>
-                    <p className="mt-2 text-[26px] font-semibold">
+            <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+                <div className="rounded-[16px] border border-hairline bg-card px-4 py-3">
+                    <p className="text-[11px] uppercase tracking-wide text-slate-gray">
+                        Total
+                    </p>
+                    <p className="mt-1 text-[22px] font-semibold">
                         {totalStaffCount}
                     </p>
                 </div>
-                <div className="rounded-[16px] border border-hairline bg-card p-4.5">
-                    <div className="flex items-center justify-between">
-                        <p className="text-[13px] font-medium text-slate-gray">
-                            Floor Waiters
-                        </p>
-                        <UtensilsCrossed className="size-4 text-primary" />
-                    </div>
-                    <p className="mt-2 text-[26px] font-semibold">
+                <div className="rounded-[16px] border border-hairline bg-card px-4 py-3">
+                    <p className="text-[11px] uppercase tracking-wide text-slate-gray">
+                        Waiters
+                    </p>
+                    <p className="mt-1 text-[22px] font-semibold text-brand">
                         {waitersCount}
                     </p>
-                    <p className="mt-1 text-[12px] text-slate-gray">
-                        {allocatedTables} tables covered across shifts
+                    <p className="mt-0.5 text-[11px] text-slate-gray">
+                        {allocatedTables} tables covered
                     </p>
                 </div>
-                <div className="rounded-[16px] border border-hairline bg-card p-4.5">
-                    <div className="flex items-center justify-between">
-                        <p className="text-[13px] font-medium text-slate-gray">
-                            Station Staff
-                        </p>
-                        <CookingPot className="size-4 text-amber-500" />
-                    </div>
-                    <p className="mt-2 text-[26px] font-semibold">
+                <div className="rounded-[16px] border border-hairline bg-card px-4 py-3">
+                    <p className="text-[11px] uppercase tracking-wide text-slate-gray">
+                        Stations
+                    </p>
+                    <p className="mt-1 text-[22px] font-semibold">
                         {stationStaffCount}
                     </p>
                 </div>
-                <div className="rounded-[16px] border border-hairline bg-card p-4.5">
-                    <div className="flex items-center justify-between">
-                        <p className="text-[13px] font-medium text-slate-gray">
-                            Shifts
-                        </p>
-                        <UserCheck className="size-4 text-blue-500" />
-                    </div>
-                    <p className="mt-2 text-[26px] font-semibold">
-                        {shifts.length}
+                <div className="rounded-[16px] border border-hairline bg-card px-4 py-3">
+                    <p className="text-[11px] uppercase tracking-wide text-slate-gray">
+                        Shifts
                     </p>
-                    <p className="mt-1 text-[12px] text-slate-gray">
-                        Dynamic time windows
+                    <p className="mt-1 text-[22px] font-semibold">
+                        {shifts.length}
                     </p>
                 </div>
             </div>
@@ -369,29 +337,29 @@ export default function ManagerStaffPage() {
                 </div>
             </div>
 
-            <div className="overflow-hidden rounded-[16px] border border-hairline bg-white shadow-xs dark:bg-card">
+            <div className="overflow-hidden rounded-[16px] border border-hairline bg-card">
                 {isLoading ? (
-                    <p className="px-6 py-10 text-slate-gray">Loading staff…</p>
+                    <p className="px-6 py-10 text-center text-[13px] text-slate-gray">
+                        Loading staff…
+                    </p>
                 ) : isError ? (
-                    <p className="px-6 py-10 text-red-600">
-                        Could not load live staff. Check the API and manager
-                        login.
+                    <p className="px-6 py-10 text-center text-[13px] text-destructive">
+                        Could not load staff. Sign in as manager and check the
+                        API.
                     </p>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-[14px]">
-                            <thead className="border-b border-hairline bg-surface-ivory/40 text-[12px] font-medium tracking-[0.05em] text-slate-gray uppercase">
+                            <thead className="border-b border-hairline bg-secondary/30 text-[11px] font-medium tracking-wide text-slate-gray uppercase">
                                 <tr>
-                                    <th className="px-6 py-3.5">
-                                        Staff Member
-                                    </th>
-                                    <th className="px-6 py-3.5">Role</th>
-                                    <th className="px-6 py-3.5">Credentials</th>
-                                    <th className="px-6 py-3.5">
+                                    <th className="px-5 py-3">Staff</th>
+                                    <th className="px-5 py-3">Role</th>
+                                    <th className="px-5 py-3">Credentials</th>
+                                    <th className="px-5 py-3">
                                         Tables by shift
                                     </th>
-                                    <th className="px-6 py-3.5">Status</th>
-                                    <th className="px-6 py-3.5 text-right">
+                                    <th className="px-5 py-3">Status</th>
+                                    <th className="px-5 py-3 text-right">
                                         Actions
                                     </th>
                                 </tr>
@@ -555,7 +523,7 @@ export default function ManagerStaffPage() {
                                                         </div>
                                                     ) : (
                                                         <span className="text-[12px] text-slate-gray">
-                                                            N/A
+                                                            —
                                                         </span>
                                                     )}
                                                 </td>

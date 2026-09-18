@@ -6,6 +6,7 @@ export default function CashierBillsPage() {
     return (
         <DashboardFrame>
             <PageHeader
+                compact
                 eyebrow="Floor"
                 title="Bill requests"
                 description="Generate bills for tables waiting after a waiter request."

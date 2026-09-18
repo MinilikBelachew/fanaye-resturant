@@ -11,7 +11,7 @@ export function useCurrentStationQueue() {
     const query = useStationQueueQuery(stationId ?? "", {
         skip: !stationId,
         // Keep board fresh; sockets also invalidate this tag instantly.
-        pollingInterval: 3000,
+        pollingInterval: 5000,
         refetchOnFocus: true,
         refetchOnReconnect: true,
     });

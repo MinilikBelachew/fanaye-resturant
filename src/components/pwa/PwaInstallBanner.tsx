@@ -43,7 +43,7 @@ export default function PwaInstallBanner() {
                 </div>
                 <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold tracking-tight">
-                        Install Fanaye
+                        Install app
                     </p>
                     <p className="mt-0.5 text-[12px] text-slate-gray">
                         Add to your home screen for faster staff access — works

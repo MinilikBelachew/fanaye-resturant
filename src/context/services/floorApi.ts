@@ -80,13 +80,33 @@ export const floorApi = api.injectEndpoints({
                     displayName?: string;
                     displayNumber?: string;
                     assignedWaiterMembershipId?: string | null;
-                }
+                };
             }
         >({
             query: ({ id, body }) => ({
                 url: `/admin/dining-tables/${id}`,
                 method: "PATCH",
                 body,
+            }),
+            invalidatesTags: ["Floor"],
+        }),
+        deleteTableLocation: builder.mutation<
+            { success: boolean; message: string },
+            string
+        >({
+            query: id => ({
+                url: `/admin/table-locations/${id}`,
+                method: "DELETE",
+            }),
+            invalidatesTags: ["Floor"],
+        }),
+        deleteDiningTable: builder.mutation<
+            { success: boolean; message: string },
+            string
+        >({
+            query: id => ({
+                url: `/admin/dining-tables/${id}`,
+                method: "DELETE",
             }),
             invalidatesTags: ["Floor"],
         }),
@@ -140,8 +160,10 @@ export const {
     useAdminFloorLayoutQuery,
     useCreateTableLocationMutation,
     useUpdateTableLocationMutation,
+    useDeleteTableLocationMutation,
     useCreateDiningTableMutation,
     useUpdateDiningTableMutation,
+    useDeleteDiningTableMutation,
     useWaiterTablesQuery,
     useTableSessionQuery,
     useStartTableSessionMutation,

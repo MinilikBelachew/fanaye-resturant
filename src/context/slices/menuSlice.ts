@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import { DEMO_MENU, type MenuItem } from "@/domains/catalog/domain/menu";
+import type { MenuItem } from "@/domains/catalog/domain/menu";
 
 export const MENU_STORAGE_KEY = "fanaye.demo.menu.v1";
 
@@ -10,7 +10,7 @@ export interface MenuState {
 }
 
 const initialState: MenuState = {
-    items: DEMO_MENU,
+    items: [],
     isOpen: false,
     hydrated: false,
 };
@@ -20,11 +20,7 @@ export const menuSlice = createSlice({
     initialState,
     reducers: {
         hydrateMenu: (state, action: PayloadAction<MenuItem[] | null>) => {
-            if (action.payload && action.payload.length > 0) {
-                state.items = action.payload;
-            } else {
-                state.items = DEMO_MENU;
-            }
+            state.items = Array.isArray(action.payload) ? action.payload : [];
             state.hydrated = true;
         },
         toggleMenu: state => {
@@ -59,7 +55,7 @@ export const menuSlice = createSlice({
             );
         },
         resetMenu: state => {
-            state.items = DEMO_MENU;
+            state.items = [];
         },
     },
 });

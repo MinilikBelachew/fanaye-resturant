@@ -1,12 +1,21 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CircleUserRound, Monitor, Moon, Settings, Sun } from "lucide-react";
+import {
+    CircleUserRound,
+    LogOut,
+    Monitor,
+    Moon,
+    Settings,
+    Sun,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useTheme, type ThemeMode } from "@/components/theme/ThemeProvider";
+import { performSignOut } from "@/domains/identity/application/signOut";
 import { ROLE_LABELS } from "@/domains/identity/domain/role";
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
-import { useAppSelector } from "@/context/hooks";
+import { useAppDispatch, useAppSelector } from "@/context/hooks";
+import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 
 const THEMES: {
@@ -26,8 +35,11 @@ export default function AccountMenu({
     compact?: boolean;
 }) {
     const staff = useAppSelector(selectCurrentStaff);
+    const dispatch = useAppDispatch();
+    const router = useRouter();
     const { mode, setMode } = useTheme();
     const [open, setOpen] = useState(false);
+    const [signingOut, setSigningOut] = useState(false);
     const rootRef = useRef<HTMLDivElement>(null);
     const tRoles = useTranslations("roles");
     const tTopBar = useTranslations("topbar");
@@ -48,6 +60,18 @@ export default function AccountMenu({
     const roleLabel = tRoles.has(staff.role)
         ? tRoles(staff.role)
         : ROLE_LABELS[staff.role];
+
+    async function logOut() {
+        if (signingOut) return;
+        setSigningOut(true);
+        setOpen(false);
+        try {
+            await performSignOut(dispatch);
+            router.push("/sign-in");
+        } finally {
+            setSigningOut(false);
+        }
+    }
 
     return (
         <div ref={rootRef} className="relative">
@@ -135,6 +159,18 @@ export default function AccountMenu({
                                 );
                             })}
                         </div>
+                    </div>
+                    <div className="border-t border-hairline p-1 pt-2">
+                        <button
+                            type="button"
+                            role="menuitem"
+                            disabled={signingOut}
+                            onClick={() => void logOut()}
+                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-60"
+                        >
+                            <LogOut className="size-4 shrink-0" />
+                            {signingOut ? "Signing out…" : "Log out"}
+                        </button>
                     </div>
                 </div>
             ) : null}

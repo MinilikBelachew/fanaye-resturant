@@ -56,6 +56,7 @@ export default function DataTable<T>({
     pagination,
     serverSide = false,
     showColumnToggle = true,
+    rowClassName,
 }: {
     columns: DataTableColumn<T>[];
     data: T[];
@@ -70,6 +71,7 @@ export default function DataTable<T>({
     pagination?: DataTablePagination;
     serverSide?: boolean;
     showColumnToggle?: boolean;
+    rowClassName?: (row: T) => string | undefined;
 }) {
     const [internalQuery, setInternalQuery] = useState("");
     const isControlledSearch = searchQuery !== undefined;
@@ -217,8 +219,8 @@ export default function DataTable<T>({
                 ) : null}
             </div>
 
-            <div className="overflow-hidden rounded-[12px] border border-hairline bg-card">
-                <Table>
+            <div className="overflow-x-auto rounded-[12px] border border-hairline bg-card">
+                <Table className="min-w-[640px]">
                     <TableHeader className="bg-muted [&_tr]:hover:bg-muted">
                         <TableRow className="border-hairline hover:bg-muted">
                             {visibleColumns.map(column => {
@@ -228,7 +230,7 @@ export default function DataTable<T>({
                                     <TableHead
                                         key={column.id}
                                         className={cn(
-                                            "h-12 text-[13px] font-medium tracking-normal text-slate-gray normal-case",
+                                            "h-10 text-[11px] font-medium tracking-[0.06em] text-slate-gray uppercase",
                                             column.headerClassName,
                                         )}
                                     >
@@ -263,19 +265,22 @@ export default function DataTable<T>({
                             <TableRow className="hover:bg-transparent">
                                 <TableCell
                                     colSpan={Math.max(visibleColumns.length, 1)}
-                                    className="h-28 text-center text-slate-gray"
+                                    className="h-24 text-center text-[12px] text-slate-gray"
                                 >
                                     {empty}
                                 </TableCell>
                             </TableRow>
                         ) : (
                             rows.map(row => (
-                                <TableRow key={rowKey(row)}>
+                                <TableRow
+                                    key={rowKey(row)}
+                                    className={rowClassName?.(row)}
+                                >
                                     {visibleColumns.map(column => (
                                         <TableCell
                                             key={column.id}
                                             className={cn(
-                                                "py-4",
+                                                "py-2.5 text-[12px]",
                                                 column.className,
                                             )}
                                         >
@@ -290,11 +295,10 @@ export default function DataTable<T>({
             </div>
 
             {pagination && pagination.totalPages > 1 ? (
-                <div className="flex items-center justify-between px-1 py-2 text-[13px] text-slate-gray">
+                <div className="flex items-center justify-between px-1 py-2 text-[11px] text-slate-gray">
                     <span>
-                        Showing page <strong>{pagination.page}</strong> of{" "}
-                        <strong>{pagination.totalPages}</strong> (
-                        {pagination.total} total)
+                        Page {pagination.page} of {pagination.totalPages} ·{" "}
+                        {pagination.total} total
                     </span>
                     <div className="flex items-center gap-1.5">
                         <Button
@@ -305,10 +309,10 @@ export default function DataTable<T>({
                             onClick={() =>
                                 pagination.onPageChange(pagination.page - 1)
                             }
-                            className="h-8 gap-1 px-2.5 rounded-lg text-[12px]"
+                            className="h-7 gap-1 rounded-full px-2.5 text-[11px] font-normal"
                         >
                             <ChevronLeft className="size-3.5" />
-                            <span>Previous</span>
+                            <span>Prev</span>
                         </Button>
                         <Button
                             type="button"
@@ -318,7 +322,7 @@ export default function DataTable<T>({
                             onClick={() =>
                                 pagination.onPageChange(pagination.page + 1)
                             }
-                            className="h-8 gap-1 px-2.5 rounded-lg text-[12px]"
+                            className="h-7 gap-1 rounded-full px-2.5 text-[11px] font-normal"
                         >
                             <span>Next</span>
                             <ChevronRight className="size-3.5" />

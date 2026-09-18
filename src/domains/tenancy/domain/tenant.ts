@@ -7,7 +7,7 @@ export interface Tenant {
 
 export const DEMO_TENANT: Tenant = {
     id: "tenant-fanaye",
-    name: "Fanaye Restaurant",
+    name: "Demo Restaurant",
     plan: "pro",
     active: true,
 };

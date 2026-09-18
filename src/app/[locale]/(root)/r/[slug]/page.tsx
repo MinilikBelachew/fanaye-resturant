@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { useGetPublicSiteQuery } from "@/context/services/siteApi";
 import {
     SiteRenderContext,
+    bindSiteRender,
     sitePuckConfig,
 } from "@/domains/site/puck/sitePuckConfig";
 
@@ -63,19 +64,20 @@ export default function PublicRestaurantSitePage({
         return site.theme.backgroundColor || "#fffaf5";
     })();
 
+    const renderContext = {
+        theme: site.theme,
+        tenantName: site.tenantName,
+        phone: site.phone,
+        email: site.email,
+        city: site.city,
+        address: site.address,
+        hours: site.hours,
+        menuItems: site.menuItems,
+    };
+    bindSiteRender(renderContext);
+
     return (
-        <SiteRenderContext.Provider
-            value={{
-                theme: site.theme,
-                tenantName: site.tenantName,
-                phone: site.phone,
-                email: site.email,
-                city: site.city,
-                address: site.address,
-                hours: site.hours,
-                menuItems: site.menuItems,
-            }}
-        >
+        <SiteRenderContext.Provider value={renderContext}>
             <main
                 style={
                     {

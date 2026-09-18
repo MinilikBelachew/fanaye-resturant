@@ -1,8 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import {
-    DEFAULT_STATIONS,
-    type PreparationStation,
-} from "@/domains/fulfillment/domain/station";
+import type { PreparationStation } from "@/domains/fulfillment/domain/station";
 
 export const STATIONS_STORAGE_KEY = "fanaye.demo.stations.v1";
 
@@ -14,7 +11,7 @@ export interface StationState {
 }
 
 const initialState: StationState = {
-    stations: DEFAULT_STATIONS,
+    stations: [],
     isSheetOpen: false,
     editingStation: null,
     hydrated: false,
@@ -28,21 +25,16 @@ export const stationSlice = createSlice({
             state,
             action: PayloadAction<PreparationStation[] | null>,
         ) => {
-            if (action.payload && action.payload.length > 0) {
-                state.stations = action.payload;
-            } else {
-                state.stations = DEFAULT_STATIONS;
-            }
+            state.stations = Array.isArray(action.payload)
+                ? action.payload
+                : [];
             state.hydrated = true;
         },
         openAddStation: state => {
             state.editingStation = null;
             state.isSheetOpen = true;
         },
-        openEditStation: (
-            state,
-            action: PayloadAction<PreparationStation>,
-        ) => {
+        openEditStation: (state, action: PayloadAction<PreparationStation>) => {
             state.editingStation = action.payload;
             state.isSheetOpen = true;
         },
@@ -73,7 +65,7 @@ export const stationSlice = createSlice({
             );
         },
         resetStations: state => {
-            state.stations = DEFAULT_STATIONS;
+            state.stations = [];
         },
     },
 });

@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Noto_Sans_Ethiopic } from "next/font/google";
 import Providers from "./providers";
 import PwaInstallBanner from "@/components/pwa/PwaInstallBanner";
 import PwaRegister from "@/components/pwa/PwaRegister";
@@ -10,29 +9,18 @@ import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { setRequestLocale } from "next-intl/server";
 
-const inter = Inter({
-    subsets: ["latin"],
-    variable: "--font-roobert",
-});
-
-const notoSansEthiopic = Noto_Sans_Ethiopic({
-    subsets: ["ethiopic"],
-    variable: "--font-ethiopic",
-});
-
 export const metadata: Metadata = {
-    applicationName: "Fanaye",
+    applicationName: "Restaurant OS",
     title: {
-        default: "Fanaye Restaurant Management OS",
-        template: "%s · Fanaye",
+        default: "Restaurant Management",
+        template: "%s · Restaurant OS",
     },
-    description:
-        "The live real-time operating system for modern high-volume restaurants",
+    description: "Live real-time operations for modern high-volume restaurants",
     manifest: "/manifest.webmanifest",
     appleWebApp: {
         capable: true,
         statusBarStyle: "default",
-        title: "Fanaye",
+        title: "Restaurant OS",
     },
     formatDetection: {
         telephone: false,
@@ -79,7 +67,7 @@ export default async function RootLayout({
     return (
         <html
             lang={locale}
-            className={`${inter.variable} ${notoSansEthiopic.variable}`}
+            className={locale === "am" ? "font-ethiopic" : "font-sans"}
             suppressHydrationWarning
         >
             <head>
@@ -94,10 +82,7 @@ export default async function RootLayout({
                     href="/icons/apple-touch-icon.png"
                 />
             </head>
-            <body
-                className={`${inter.className} ${locale === "am" ? notoSansEthiopic.className : ""}`}
-                suppressHydrationWarning
-            >
+            <body className="min-h-svh antialiased" suppressHydrationWarning>
                 <NextIntlClientProvider>
                     <Providers>
                         {children}

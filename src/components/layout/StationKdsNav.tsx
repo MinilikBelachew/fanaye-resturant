@@ -67,7 +67,12 @@ function StationKdsNavInner({
     };
 
     return (
-        <nav className={cn("-mx-1 flex gap-2 overflow-x-auto px-1 pb-1", className)}>
+        <nav
+            className={cn(
+                "-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 sm:gap-2",
+                className,
+            )}
+        >
             {TABS.map(tab => {
                 const href = stationQueueHref(home, {
                     status: tab.key,
@@ -81,16 +86,16 @@ function StationKdsNavInner({
                         key={tab.key}
                         href={href}
                         className={cn(
-                            "flex shrink-0 items-center gap-2 rounded-[16px] border px-3 py-2 text-[13px] font-medium",
+                            "flex shrink-0 items-center gap-1.5 rounded-[12px] border px-2.5 py-1.5 text-[12px] font-medium sm:gap-2 sm:rounded-[16px] sm:px-3 sm:py-2 sm:text-[13px]",
                             active
                                 ? "border-transparent bg-accent text-accent-foreground"
                                 : "border-hairline bg-card text-slate-gray",
                         )}
                     >
-                        <Icon className="size-4" />
-                        {tab.label}
+                        <Icon className="size-3.5 sm:size-4" />
+                        <span className="whitespace-nowrap">{tab.label}</span>
                         {tabCount[tab.key] ? (
-                            <span className="rounded-full bg-black/10 px-1.5 py-0.5 text-[11px] font-medium dark:bg-white/10">
+                            <span className="rounded-full bg-black/10 px-1.5 py-0.5 text-[10px] font-medium sm:text-[11px] dark:bg-white/10">
                                 {tabCount[tab.key]}
                             </span>
                         ) : null}

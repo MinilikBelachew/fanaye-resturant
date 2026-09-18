@@ -22,7 +22,7 @@ export const CashDropReceiptModal: React.FC<CashDropReceiptModalProps> = ({
     open,
     onOpenChange,
     drop,
-    restaurantName = "Fanaye Restaurant & Lounge",
+    restaurantName = "Restaurant & Lounge",
     branchName = "Bole Medhanialem Branch",
     cashierName = "Cashier Custody",
 }) => {
@@ -189,8 +189,7 @@ export const CashDropReceiptModal: React.FC<CashDropReceiptModalProps> = ({
                                 : drop.status}
                         </Badge>
                         <p className="text-[10px] text-gray-400 mt-2">
-                            Electronically verified through Fanaye POS Custody
-                            Ledger
+                            Electronically verified through POS Custody Ledger
                         </p>
                     </div>
                 </div>

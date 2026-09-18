@@ -42,7 +42,7 @@ export function parseQueueFilter(value: string | null): QueueFilter {
 }
 
 export function parseQueueView(value: string | null): QueueView {
-    return value === "table" ? "table" : "cards";
+    return value === "cards" ? "cards" : "table";
 }
 
 export function matchesQueueFilter(
@@ -94,8 +94,9 @@ export function stationQueueHref(
     }
     const query = options.q?.trim();
     if (query) params.set("q", query);
-    if (options.view && options.view !== "cards") {
-        params.set("view", options.view);
+    // Table is the default view — only put cards in the URL.
+    if (options.view === "cards") {
+        params.set("view", "cards");
     }
     const qs = params.toString();
     return qs ? `${home}?${qs}` : home;

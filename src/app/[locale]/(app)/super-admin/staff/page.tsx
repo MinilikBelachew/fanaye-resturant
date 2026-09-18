@@ -99,21 +99,26 @@ export default function StaffDirectoryPage() {
     const [selectedStatus, setSelectedStatus] = useState("");
 
     // Queries & Mutations
-    const { data: tenantsData } = useGetSuperAdminTenantsQuery();
+    const { data: tenantsData } = useGetSuperAdminTenantsQuery(undefined, {
+        pollingInterval: 30_000,
+    });
     const {
         data: staffData,
         isLoading,
         isFetching,
         error,
         refetch,
-    } = useGetSuperAdminStaffQuery({
-        page,
-        limit: 15,
-        search: search || undefined,
-        tenantId: selectedTenantId || undefined,
-        role: selectedRole || undefined,
-        status: selectedStatus || undefined,
-    });
+    } = useGetSuperAdminStaffQuery(
+        {
+            page,
+            limit: 15,
+            search: search || undefined,
+            tenantId: selectedTenantId || undefined,
+            role: selectedRole || undefined,
+            status: selectedStatus || undefined,
+        },
+        { pollingInterval: 20_000, refetchOnFocus: true },
+    );
 
     const [createStaff, { isLoading: creatingStaff }] =
         useCreateSuperAdminStaffMutation();
@@ -754,7 +759,7 @@ export default function StaffDirectoryPage() {
                                     onChange={e =>
                                         setNewStaffEmail(e.target.value)
                                     }
-                                    placeholder="optional@fanaye.et"
+                                    placeholder="optional@example.com"
                                     className="h-10 rounded-[10px]"
                                 />
                             </div>

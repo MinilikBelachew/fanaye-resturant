@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
     return {
-        name: "Fanaye Restaurant OS",
-        short_name: "Fanaye",
+        name: "Restaurant OS",
+        short_name: "Restaurant OS",
         description:
             "Live restaurant operations — floor, kitchen, cashier, and menu management.",
         start_url: "/en",

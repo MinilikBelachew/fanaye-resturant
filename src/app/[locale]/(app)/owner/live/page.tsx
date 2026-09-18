@@ -6,6 +6,7 @@ export default function OwnerLivePage() {
     return (
         <DashboardFrame>
             <PageHeader
+                compact
                 eyebrow="Business"
                 title="Live operations"
                 description="Same table timeline the waiter and stations are writing."

@@ -2,7 +2,6 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type { Staff } from "@/domains/identity/domain/staff";
 import type { AuthContext } from "@/domains/identity/domain/authContext";
 import type { CurrentShiftResponse } from "@/domains/identity/domain/shift";
-import { DEMO_STAFF } from "@/domains/identity/infrastructure/demoStaff";
 import { authApi } from "@/context/services/authApi";
 import { shiftsApi } from "@/context/services/shiftsApi";
 import { API_BASE_URL } from "@/context/env";
@@ -27,7 +26,7 @@ const initialState: IdentityState = {
     accessToken: null,
     tokenExpires: null,
     session: null,
-    staffMembers: DEMO_STAFF,
+    staffMembers: [],
     hydrated: false,
     isAddEditOpen: false,
     editingStaff: null,
@@ -69,13 +68,9 @@ export const identitySlice = createSlice({
             state.hydrated = true;
         },
         hydrateStaff: (state, action: PayloadAction<Staff[] | null>) => {
-            if (
-                action.payload &&
-                Array.isArray(action.payload) &&
-                action.payload.length > 0
-            ) {
-                state.staffMembers = action.payload;
-            }
+            state.staffMembers = Array.isArray(action.payload)
+                ? action.payload
+                : [];
         },
         addStaff: (state, action: PayloadAction<Staff>) => {
             state.staffMembers.push(action.payload);

@@ -35,7 +35,7 @@ type DateFilter = "all" | "today" | "yesterday" | "7days";
 export default function ManagerAuditPage() {
     const [selectedCategory, setSelectedCategory] =
         useState<CategoryFilter>("all");
-    const [dateFilter, setDateFilter] = useState<DateFilter>("today");
+    const [dateFilter, setDateFilter] = useState<DateFilter>("7days");
     const [searchQuery, setSearchQuery] = useState("");
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(25);
@@ -261,9 +261,10 @@ export default function ManagerAuditPage() {
         <DashboardFrame>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <PageHeader
+                    compact
                     eyebrow="Security & Operations"
                     title="Audit Trail"
-                    description="Live append-only activity log across floor operations, payments, kitchen fulfillments, and staff movements."
+                    description="Tenant-scoped activity log — auto-refreshes every 15s."
                 />
                 <div className="flex items-center gap-2">
                     <Button

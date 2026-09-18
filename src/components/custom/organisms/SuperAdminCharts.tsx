@@ -38,7 +38,8 @@ export function NetworkGmvGrowthChart({
                             Network GMV & platform growth
                         </h3>
                         <p className="mt-0.5 text-[13px] text-slate-gray">
-                            Multi-tenant gross merchandise volume vs digital volume · ETB millions
+                            Monthly network GMV from settled bills · ETB
+                            millions
                         </p>
                     </div>
                 </div>
@@ -52,7 +53,12 @@ export function NetworkGmvGrowthChart({
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart
                                 data={data}
-                                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                                margin={{
+                                    top: 10,
+                                    right: 10,
+                                    left: -20,
+                                    bottom: 0,
+                                }}
                             >
                                 <defs>
                                     <linearGradient
@@ -176,8 +182,10 @@ export function PlatformHealthRadarChart({
 }) {
     const avgScore =
         data.length > 0
-            ? (data.reduce((sum, d) => sum + d.score, 0) / data.length).toFixed(1)
-            : "96.6";
+            ? (data.reduce((sum, d) => sum + d.score, 0) / data.length).toFixed(
+                  1,
+              )
+            : "0";
 
     return (
         <div className="flex h-full flex-col justify-between rounded-[16px] border border-hairline bg-card p-6 shadow-subtle">
@@ -185,13 +193,17 @@ export function PlatformHealthRadarChart({
                 <div className="flex items-start justify-between">
                     <div>
                         <h3 className="text-[17px] font-semibold text-foreground">
-                            Operational health matrix
+                            Ops health matrix
                         </h3>
                         <p className="mt-0.5 text-[13px] text-slate-gray">
-                            6-dimension reliability & SLA index
+                            Scores from live daily close, stations, cash, and
+                            floor data
                         </p>
                     </div>
-                    <Badge variant="outline" className="gap-1 border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
+                    <Badge
+                        variant="outline"
+                        className="gap-1 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                    >
                         <Activity className="size-3" />
                         <span>{avgScore}% Health</span>
                     </Badge>
@@ -210,7 +222,10 @@ export function PlatformHealthRadarChart({
                                 outerRadius="75%"
                                 data={data}
                             >
-                                <PolarGrid stroke="#e5e7eb" strokeDasharray="2 2" />
+                                <PolarGrid
+                                    stroke="#e5e7eb"
+                                    strokeDasharray="2 2"
+                                />
                                 <PolarAngleAxis
                                     dataKey="dimension"
                                     tick={{ fill: "#777c86", fontSize: 11 }}
@@ -235,8 +250,10 @@ export function PlatformHealthRadarChart({
             </div>
 
             <div className="mt-3 flex items-center justify-between border-t border-hairline pt-3 text-[12px] text-slate-gray">
-                <span>Benchmark: 100% Target</span>
-                <span className="font-semibold text-foreground">SLA Target Met</span>
+                <span>Derived from live ops signals</span>
+                <span className="font-semibold text-foreground">
+                    Target 100
+                </span>
             </div>
         </div>
     );
@@ -358,10 +375,13 @@ export function PlatformAuditStream({
                                     </div>
                                 </div>
                                 <span className="shrink-0 text-[11px] font-mono text-muted-foreground">
-                                    {new Date(ev.occurredAt).toLocaleTimeString([], {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                    })}
+                                    {new Date(ev.occurredAt).toLocaleTimeString(
+                                        [],
+                                        {
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                        },
+                                    )}
                                 </span>
                             </div>
                         ))

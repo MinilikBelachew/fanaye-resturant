@@ -34,7 +34,6 @@ export default function WaiterTablesBoard({
     hideIntro?: boolean;
 }) {
     const tWaiter = useTranslations("waiter");
-    const tCommon = useTranslations("common");
     const staff = useAppSelector(selectCurrentStaff);
     const clockedIn = Boolean(
         useAppSelector(state => state.identity.session?.shiftSessionId),
@@ -114,7 +113,9 @@ export default function WaiterTablesBoard({
                             <p className="mt-0.5 text-[14px] text-slate-gray">
                                 Real-time table status at{" "}
                                 <strong className="font-semibold text-foreground">
-                                    {staff?.name ? "this branch" : "Fanaye"}
+                                    {staff?.name
+                                        ? "this branch"
+                                        : "your restaurant"}
                                 </strong>
                                 .
                             </p>

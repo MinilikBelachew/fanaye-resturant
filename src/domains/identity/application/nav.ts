@@ -9,7 +9,6 @@ import {
     ClipboardCheck,
     Clock3,
     CreditCard,
-    Flag,
     Flame,
     Globe,
     Inbox,
@@ -128,11 +127,6 @@ export function navForRole(role: Role): NavSection[] {
                             label: "Staff Directory",
                             icon: Users,
                         },
-                        {
-                            href: "/super-admin/flags",
-                            label: "Feature Flags",
-                            icon: Flag,
-                        },
                     ],
                 },
                 {
@@ -162,11 +156,6 @@ export function navForRole(role: Role): NavSection[] {
                             icon: Activity,
                         },
                         {
-                            href: "/owner/reports",
-                            label: "Reports",
-                            icon: ScrollText,
-                        },
-                        {
                             href: "/owner/daily-close",
                             label: "Daily Close",
                             icon: ClipboardCheck,
@@ -180,6 +169,16 @@ export function navForRole(role: Role): NavSection[] {
                             href: "/owner/website",
                             label: "Website",
                             icon: Globe,
+                        },
+                        {
+                            href: "/owner/branches",
+                            label: "Branches",
+                            icon: Building2,
+                        },
+                        {
+                            href: "/owner/settings",
+                            label: "Settings",
+                            icon: Store,
                         },
                     ],
                 },

@@ -42,7 +42,7 @@ export const stationsApi = api.injectEndpoints({
                     sortOrder: body.sortOrder ?? 0,
                 },
             }),
-            invalidatesTags: ["Station", "Menu"],
+            invalidatesTags: ["Station", "Menu", "Order"],
         }),
         updateStation: builder.mutation<
             PreparationStation,
@@ -73,7 +73,7 @@ export const stationsApi = api.injectEndpoints({
                         : {}),
                 },
             }),
-            invalidatesTags: ["Station", "Menu"],
+            invalidatesTags: ["Station", "Menu", "Order"],
         }),
         deleteStation: builder.mutation<
             { success: boolean; message: string },
@@ -83,7 +83,7 @@ export const stationsApi = api.injectEndpoints({
                 url: `/stations/${id}`,
                 method: "DELETE",
             }),
-            invalidatesTags: ["Station", "Menu"],
+            invalidatesTags: ["Station", "Menu", "Order"],
         }),
         stationQueue: builder.query<StationQueueResponse, string>({
             query: stationId => ({

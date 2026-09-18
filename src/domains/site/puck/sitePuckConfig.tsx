@@ -140,8 +140,28 @@ export const SiteRenderContext = createContext<SiteRenderContextValue>({
     menuItems: [],
 });
 
+let latestSiteRender: SiteRenderContextValue = {
+    theme: {
+        primaryColor: "#e85d04",
+        accentColor: "#0f172a",
+        backgroundColor: "#fffaf5",
+        textColor: "#0f172a",
+    },
+    tenantName: "Restaurant",
+    menuItems: [],
+};
+
+/** Keep a sync snapshot for Puck `render` callbacks (not React components). */
+export function bindSiteRender(value: SiteRenderContextValue) {
+    latestSiteRender = value;
+}
+
 export function useSiteRender() {
     return useContext(SiteRenderContext);
+}
+
+function getSiteRender() {
+    return latestSiteRender;
 }
 
 function formatEtb(amount: number, currency = "ETB") {
@@ -258,11 +278,70 @@ function parsePipeRows(raw: string, parts = 2) {
     });
 }
 
-function groupMenuItems(
-    items: PublicMenuItem[],
-    categoryFilter: string,
-) {
-    const filter = String(categoryFilter || "all").trim().toLowerCase();
+function cleanQuote(raw: string) {
+    return String(raw || "")
+        .replace(/^[\s"'“”‘’]+/, "")
+        .replace(/[\s"'“”‘’]+$/, "")
+        .trim();
+}
+
+function hexLuminance(hex: string): number {
+    const raw = hex.replace("#", "").trim();
+    const full =
+        raw.length === 3
+            ? raw
+                  .split("")
+                  .map(c => c + c)
+                  .join("")
+            : raw;
+    if (full.length !== 6) return 0.5;
+    const r = Number.parseInt(full.slice(0, 2), 16) / 255;
+    const g = Number.parseInt(full.slice(2, 4), 16) / 255;
+    const b = Number.parseInt(full.slice(4, 6), 16) / 255;
+    const lin = (c: number) =>
+        c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+
+function isLightColor(hex?: string | null) {
+    if (!hex) return false;
+    try {
+        return hexLuminance(hex) > 0.62;
+    } catch {
+        return false;
+    }
+}
+
+/** CTA surfaces that stay readable on both light and dark restaurant themes. */
+function pickCtaSurface(theme: {
+    primaryColor?: string;
+    accentColor?: string;
+}) {
+    const primary = theme.primaryColor || "#e85d04";
+    const accent = theme.accentColor || "#0f172a";
+    let bg = primary;
+    if (isLightColor(primary)) {
+        bg = isLightColor(accent) ? "#0f172a" : accent;
+    }
+    const text = isLightColor(bg) ? "#0f172a" : "#ffffff";
+    const buttonBg = text === "#ffffff" ? "#ffffff" : "#0f172a";
+    return { bg, text, buttonBg, buttonText: bg };
+}
+
+function softPanelBorder(theme: {
+    backgroundColor?: string;
+    textColor?: string;
+}) {
+    const sample = theme.backgroundColor || theme.textColor || "#ffffff";
+    return isLightColor(sample)
+        ? "rgba(15, 23, 42, 0.10)"
+        : "rgba(248, 250, 252, 0.16)";
+}
+
+function groupMenuItems(items: PublicMenuItem[], categoryFilter: string) {
+    const filter = String(categoryFilter || "all")
+        .trim()
+        .toLowerCase();
     const filtered =
         filter === "all"
             ? items
@@ -312,7 +391,10 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                     type: "select",
                     label: "Nav position",
                     options: [
-                        { label: "Split (logo left, links right)", value: "split" },
+                        {
+                            label: "Split (logo left, links right)",
+                            value: "split",
+                        },
                         { label: "Left", value: "left" },
                         { label: "Center", value: "center" },
                         { label: "Right", value: "right" },
@@ -341,20 +423,13 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                 sticky: true,
             },
             render: props => {
-                const {
-                    showPhone,
-                    linksLabel,
-                    navAlign,
-                    size,
-                    sticky,
-                } = props;
-                const ctx = useSiteRender();
+                const { showPhone, linksLabel, navAlign, size, sticky } = props;
+                const ctx = getSiteRender();
                 const links = parseNavLabels(linksLabel);
                 const align = navAlign || "split";
                 const logo = (
                     <div className="flex items-center gap-3">
                         {ctx.theme.logoUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
                             <img
                                 src={resolveImage(ctx.theme.logoUrl)}
                                 alt={ctx.tenantName}
@@ -443,9 +518,15 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                     type: "select",
                     label: "Arrangement",
                     options: [
-                        { label: "Full-bleed image + overlay text", value: "overlay" },
+                        {
+                            label: "Full-bleed image + overlay text",
+                            value: "overlay",
+                        },
                         { label: "Image left, text right", value: "imageLeft" },
-                        { label: "Text left, image right", value: "imageRight" },
+                        {
+                            label: "Text left, image right",
+                            value: "imageRight",
+                        },
                         { label: "Image top, text below", value: "imageTop" },
                         { label: "Text only (no image)", value: "textOnly" },
                     ],
@@ -498,7 +579,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                 overlay: "medium",
             },
             render: props => {
-                const ctx = useSiteRender();
+                const ctx = getSiteRender();
                 const layout = props.layout || "overlay";
                 const bg = resolveImage(props.imageUrl);
                 const opacity =
@@ -583,7 +664,6 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                         <section className={sectionPadding(props.size)}>
                             <div className="mx-auto max-w-6xl space-y-6">
                                 {bg ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
                                     <img
                                         src={bg}
                                         alt=""
@@ -600,24 +680,11 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                 return (
                     <section className={sectionPadding(props.size)}>
                         <div className="mx-auto grid max-w-6xl items-center gap-8 lg:grid-cols-2">
-                            <div
-                                className={
-                                    imageFirst
-                                        ? "order-2"
-                                        : "order-1"
-                                }
-                            >
+                            <div className={imageFirst ? "order-2" : "order-1"}>
                                 {copy}
                             </div>
-                            <div
-                                className={
-                                    imageFirst
-                                        ? "order-1"
-                                        : "order-2"
-                                }
-                            >
+                            <div className={imageFirst ? "order-1" : "order-2"}>
                                 {bg ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
                                     <img
                                         src={bg}
                                         alt=""
@@ -712,7 +779,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                 imageSize,
                 size,
             }) => {
-                const ctx = useSiteRender();
+                const ctx = getSiteRender();
                 const groups = groupMenuItems(ctx.menuItems, categoryFilter);
                 const allItems = [...groups.values()].flat();
                 const gridCols =
@@ -742,7 +809,6 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                     <article className="overflow-hidden rounded-3xl border border-black/10">
                                         {showImages &&
                                         resolveImage(allItems[0].imageUrl) ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
                                             <img
                                                 src={resolveImage(
                                                     allItems[0].imageUrl,
@@ -831,7 +897,6 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                                 className="grid gap-4 sm:grid-cols-[140px_1fr]"
                                             >
                                                 {img ? (
-                                                    // eslint-disable-next-line @next/next/no-img-element
                                                     <img
                                                         src={img}
                                                         alt={item.name}
@@ -895,7 +960,6 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                                                     className="overflow-hidden rounded-2xl border border-black/10 bg-white/40"
                                                                 >
                                                                     {img ? (
-                                                                        // eslint-disable-next-line @next/next/no-img-element
                                                                         <img
                                                                             src={
                                                                                 img
@@ -953,7 +1017,6 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                                                     className="flex items-start gap-4 border-b border-black/10 pb-3"
                                                                 >
                                                                     {img ? (
-                                                                        // eslint-disable-next-line @next/next/no-img-element
                                                                         <img
                                                                             src={
                                                                                 img
@@ -1004,7 +1067,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                             {groups.size === 0 ? (
                                 <p className="mt-8 text-sm opacity-60">
                                     Menu items will appear here after you add
-                                    them in Fanaye.
+                                    them in the catalog.
                                 </p>
                             ) : null}
                         </div>
@@ -1100,15 +1163,10 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                 return (
                     <section id="about" className={sectionPadding(size)}>
                         <div className="mx-auto grid max-w-6xl items-center gap-8 lg:grid-cols-2">
-                            <div
-                                className={imageFirst ? "order-2" : "order-1"}
-                            >
+                            <div className={imageFirst ? "order-2" : "order-1"}>
                                 {copy}
                             </div>
-                            <div
-                                className={imageFirst ? "order-1" : "order-2"}
-                            >
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <div className={imageFirst ? "order-1" : "order-2"}>
                                 <img
                                     src={img}
                                     alt=""
@@ -1177,7 +1235,6 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                             </h2>
                             <div className={`mt-6 grid gap-3 ${cols}`}>
                                 {urls.map(url => (
-                                    // eslint-disable-next-line @next/next/no-img-element
                                     <img
                                         key={url}
                                         src={url}
@@ -1284,7 +1341,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                     showDots,
                     size,
                 } = props;
-                const ctx = useSiteRender();
+                const ctx = getSiteRender();
                 const urls = parseLines(imageUrls).map(resolveImage);
                 const captionList = parseLines(captions);
                 const heightClass =
@@ -1362,8 +1419,9 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                 size: "md",
             },
             render: ({ title, subtitle, items, columns, size }) => {
-                const ctx = useSiteRender();
+                const ctx = getSiteRender();
                 const rows = parsePipeRows(items, 2);
+                const border = softPanelBorder(ctx.theme);
                 const cols =
                     columns === "2"
                         ? "sm:grid-cols-2"
@@ -1388,7 +1446,15 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                 {rows.map(([heading, desc]) => (
                                     <div
                                         key={`${heading}-${desc}`}
-                                        className="rounded-2xl border border-black/10 p-5"
+                                        className="rounded-2xl p-5"
+                                        style={{
+                                            border: `1px solid ${border}`,
+                                            background: isLightColor(
+                                                ctx.theme.backgroundColor,
+                                            )
+                                                ? "rgba(15,23,42,0.03)"
+                                                : "rgba(255,255,255,0.06)",
+                                        }}
                                     >
                                         <div
                                             className="mb-3 h-1.5 w-10 rounded-full"
@@ -1433,7 +1499,9 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                 size: "md",
             },
             render: ({ title, items, size }) => {
+                const ctx = getSiteRender();
                 const rows = parsePipeRows(items, 2);
+                const border = softPanelBorder(ctx.theme);
                 return (
                     <section className={sectionPadding(size)}>
                         <div className="mx-auto max-w-6xl">
@@ -1449,10 +1517,18 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                 {rows.map(([quote, name]) => (
                                     <blockquote
                                         key={`${quote}-${name}`}
-                                        className="rounded-2xl border border-black/10 p-5"
+                                        className="rounded-2xl p-5"
+                                        style={{
+                                            border: `1px solid ${border}`,
+                                            background: isLightColor(
+                                                ctx.theme.backgroundColor,
+                                            )
+                                                ? "rgba(15,23,42,0.03)"
+                                                : "rgba(255,255,255,0.06)",
+                                        }}
                                     >
-                                        <p className="text-sm leading-relaxed opacity-80">
-                                            “{quote}”
+                                        <p className="text-sm leading-relaxed opacity-85">
+                                            “{cleanQuote(quote)}”
                                         </p>
                                         <footer className="mt-4 text-xs font-semibold uppercase tracking-[0.12em] opacity-55">
                                             {name}
@@ -1488,35 +1564,46 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                 size: "md",
             },
             render: ({ title, body, ctaLabel, ctaHref, size }) => {
-                const ctx = useSiteRender();
+                const ctx = getSiteRender();
                 const href =
                     ctaHref === "tel:" && ctx.phone
                         ? `tel:${ctx.phone}`
                         : ctaHref || "#contact";
+                const surface = pickCtaSurface(ctx.theme);
                 return (
                     <section className={sectionPadding(size)}>
                         <div
-                            className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 rounded-3xl px-8 py-10 text-white md:flex-row md:items-center"
-                            style={{ background: ctx.theme.accentColor }}
+                            className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 rounded-3xl px-8 py-10 md:flex-row md:items-center"
+                            style={{
+                                background: surface.bg,
+                                color: surface.text,
+                            }}
                         >
                             <div>
                                 <h2
                                     className="text-3xl font-semibold tracking-tight"
                                     style={{
                                         fontFamily: "var(--site-font-display)",
+                                        color: surface.text,
                                     }}
                                 >
                                     {title}
                                 </h2>
-                                <p className="mt-2 max-w-xl opacity-85">
+                                <p
+                                    className="mt-2 max-w-xl opacity-90"
+                                    style={{ color: surface.text }}
+                                >
                                     {body}
                                 </p>
                             </div>
                             {ctaLabel ? (
                                 <a
                                     href={href}
-                                    className="inline-flex rounded-full bg-white px-5 py-2.5 text-sm font-semibold"
-                                    style={{ color: ctx.theme.accentColor }}
+                                    className="inline-flex rounded-full px-5 py-2.5 text-sm font-semibold shadow-sm"
+                                    style={{
+                                        background: surface.buttonBg,
+                                        color: surface.buttonText,
+                                    }}
                                 >
                                     {ctaLabel}
                                 </a>
@@ -1609,7 +1696,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                 size: "md",
             },
             render: ({ title, showHours, showMapLink, size }) => {
-                const ctx = useSiteRender();
+                const ctx = getSiteRender();
                 const mapQuery = encodeURIComponent(
                     [ctx.address, ctx.city].filter(Boolean).join(", "),
                 );
@@ -1724,7 +1811,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
             defaultProps: {
                 ...TYPOGRAPHY_DEFAULTS,
                 layout: "brandLinks",
-                note: "Powered by Fanaye",
+                note: "Powered by Restaurant OS",
                 links: "Menu|#menu\nAbout|#about\nHours|#hours\nContact|#contact\nReservations|tel:",
                 columns: "2",
                 showSocial: true,
@@ -1744,7 +1831,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                 tiktok,
                 size,
             }) => {
-                const ctx = useSiteRender();
+                const ctx = getSiteRender();
                 const parsed = parseLinks(links).map(link => ({
                     ...link,
                     href:

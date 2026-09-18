@@ -33,7 +33,7 @@ import { mapRoleCodeToRole } from "@/domains/identity/application/mapAuthToStaff
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link, useRouter } from "@/i18n/navigation";
+import { useRouter } from "@/i18n/navigation";
 import LocaleSwitcher from "@/components/theme/LocaleSwitcher";
 import { getAvatarSolidColor } from "@/lib/avatarColors";
 import { cn } from "@/lib/utils";
@@ -342,14 +342,14 @@ export default function SignInPage() {
             {/* Top Bar with Brand & Locale Switcher */}
             <div className="absolute top-3 left-3 sm:top-4 sm:left-6 flex items-center gap-2">
                 <div className="size-7 sm:size-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-[13px] shadow-sm shadow-primary/20">
-                    F
+                    R
                 </div>
                 <div className="hidden sm:block text-left leading-tight">
                     <span className="font-bold text-[13px] tracking-tight text-foreground block">
-                        FANAYE
+                        Restaurant
                     </span>
                     <span className="text-[9px] uppercase font-semibold tracking-wider text-slate-gray">
-                        POS
+                        OS
                     </span>
                 </div>
             </div>
@@ -460,7 +460,7 @@ export default function SignInPage() {
                                                 setPairingInput(e.target.value);
                                                 if (error) setError("");
                                             }}
-                                            placeholder="e.g. Fanaye Coffee or fanaye-coffee"
+                                            placeholder="e.g. Acme Coffee or acme-coffee"
                                             className="h-9 pl-9 rounded-[10px] text-[13px]"
                                             autoFocus
                                             disabled={isVerifyingTenant}
@@ -664,17 +664,9 @@ export default function SignInPage() {
                             </div>
 
                             <div className="space-y-1">
-                                <div className="flex items-center justify-between">
-                                    <label className="text-[12px] font-medium text-foreground">
-                                        {t("password")}
-                                    </label>
-                                    <Link
-                                        href="/forgot-password"
-                                        className="text-[11px] font-medium text-primary hover:underline"
-                                    >
-                                        {t("forgotPassword")}
-                                    </Link>
-                                </div>
+                                <label className="text-[12px] font-medium text-foreground">
+                                    {t("password")}
+                                </label>
                                 <div className="relative">
                                     <Lock className="absolute left-3 top-2.5 size-3.5 text-slate-gray" />
                                     <Input
@@ -760,16 +752,6 @@ export default function SignInPage() {
                         </div>
                     )}
                 </div>
-
-                <p className="mt-4 text-center text-[12px] text-slate-gray">
-                    {t("noAccount")}{" "}
-                    <Link
-                        href="/sign-up"
-                        className="font-semibold text-primary hover:underline"
-                    >
-                        {t("signUpFree")}
-                    </Link>
-                </p>
             </div>
 
             {/* MULTI-TENANT DISAMBIGUATION MODAL */}

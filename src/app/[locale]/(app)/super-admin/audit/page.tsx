@@ -7,6 +7,7 @@ import {
     Check,
     Clock,
     Copy,
+    Download,
     Layers,
     Receipt,
     RefreshCw,
@@ -29,6 +30,8 @@ import {
 } from "@/context/services/superAdminApi";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { API_BASE_URL } from "@/context/env";
+import { useAppSelector } from "@/context/hooks";
 
 type CategoryFilter = "all" | "system" | "orders" | "payments" | "staff";
 type DateFilter = "all" | "today" | "yesterday" | "7days";
@@ -77,9 +80,13 @@ export default function PlatformAuditPage() {
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(25);
     const [copiedId, setCopiedId] = useState<string | null>(null);
+    const [exporting, setExporting] = useState(false);
+    const accessToken = useAppSelector(state => state.identity.accessToken);
 
     // Fetch tenant list for tenant filter dropdown
-    const { data: tenantsData } = useGetSuperAdminTenantsQuery();
+    const { data: tenantsData } = useGetSuperAdminTenantsQuery(undefined, {
+        pollingInterval: 30_000,
+    });
     const tenantsList = tenantsData?.data ?? [];
 
     // Compute start / end ISO timestamps based on dateFilter
@@ -138,6 +145,52 @@ export default function PlatformAuditPage() {
             description: id,
         });
         setTimeout(() => setCopiedId(null), 2000);
+    }
+
+    async function handleExport() {
+        if (!accessToken) {
+            toast.error("Sign in required to export audit log");
+            return;
+        }
+        setExporting(true);
+        try {
+            const params = new URLSearchParams();
+            if (selectedCategory !== "all") {
+                params.set("category", selectedCategory);
+            }
+            if (selectedTenantId !== "all") {
+                params.set("tenantId", selectedTenantId);
+            }
+            if (searchQuery.trim()) params.set("search", searchQuery.trim());
+            if (startDate) params.set("startDate", startDate);
+            if (endDate) params.set("endDate", endDate);
+            params.set("limit", "5000");
+            params.set("page", "1");
+
+            const res = await fetch(
+                `${API_BASE_URL}/super-admin/audit/export?${params.toString()}`,
+                {
+                    headers: { Authorization: `Bearer ${accessToken}` },
+                },
+            );
+            if (!res.ok) throw new Error(`Export failed (${res.status})`);
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `platform-audit-${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            toast.success("Audit CSV downloaded");
+        } catch (err) {
+            toast.error(
+                err instanceof Error ? err.message : "Could not export audit",
+            );
+        } finally {
+            setExporting(false);
+        }
     }
 
     const columns: DataTableColumn<PlatformAuditEvent>[] = useMemo(
@@ -322,6 +375,22 @@ export default function PlatformAuditPage() {
                         type="button"
                         variant="outline"
                         size="sm"
+                        onClick={() => void handleExport()}
+                        disabled={exporting || isLoading}
+                        className="h-9 gap-1.5 rounded-xl text-[12.5px]"
+                    >
+                        <Download
+                            className={cn(
+                                "size-3.5 text-slate-gray",
+                                exporting && "animate-pulse",
+                            )}
+                        />
+                        Export CSV
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
                         onClick={() => void refetch()}
                         disabled={isFetching}
                         className="h-9 gap-1.5 rounded-xl text-[12.5px]"
@@ -347,11 +416,7 @@ export default function PlatformAuditPage() {
                         <Activity className="size-4 text-slate-gray" />
                     </div>
                     <p className="mt-2 text-[26px] font-semibold text-foreground">
-                        {isLoading
-                            ? "…"
-                            : (summary?.totalToday ??
-                              paginationMeta?.total ??
-                              0)}
+                        {isLoading ? "…" : (summary?.totalToday ?? 0)}
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
                         Total network audit events
@@ -366,10 +431,7 @@ export default function PlatformAuditPage() {
                         <UtensilsCrossed className="size-4 text-slate-gray" />
                     </div>
                     <p className="mt-2 text-[26px] font-semibold text-foreground">
-                        {isLoading
-                            ? "…"
-                            : (summary?.operationsToday ??
-                              Math.round((paginationMeta?.total ?? 0) * 0.65))}
+                        {isLoading ? "…" : (summary?.operationsToday ?? 0)}
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
                         Orders, tables & kitchen
@@ -384,10 +446,7 @@ export default function PlatformAuditPage() {
                         <Shield className="size-4 text-slate-gray" />
                     </div>
                     <p className="mt-2 text-[26px] font-semibold text-foreground">
-                        {isLoading
-                            ? "…"
-                            : (summary?.securityToday ??
-                              Math.round((paginationMeta?.total ?? 0) * 0.2))}
+                        {isLoading ? "…" : (summary?.securityToday ?? 0)}
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
                         PIN resets, roles & logins
@@ -402,7 +461,7 @@ export default function PlatformAuditPage() {
                         <Building2 className="size-4 text-slate-gray" />
                     </div>
                     <p className="mt-2 text-[26px] font-semibold text-foreground">
-                        {tenantsList.length || 1}
+                        {tenantsList.length}
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
                         Reporting restaurants

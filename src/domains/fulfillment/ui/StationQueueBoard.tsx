@@ -15,7 +15,6 @@ import {
 } from "@/domains/fulfillment/application/queueFilter";
 import StationStatusSelect from "@/domains/fulfillment/ui/StationStatusSelect";
 import StationTicketActions from "@/domains/fulfillment/ui/StationTicketActions";
-import TicketExtras from "@/domains/fulfillment/ui/TicketExtras";
 import type { StationRole } from "@/domains/identity/domain/role";
 import {
     homePathForRole,
@@ -69,13 +68,8 @@ function formatReceived(iso: string | null) {
     };
 }
 
-function ticketModifiers(ticket: StationTicket) {
-    return ticket.modifiers.map((entry, index) => ({
-        groupId: "mod",
-        optionId: `${index}`,
-        name: entry.name,
-        priceDelta: Number(entry.priceDelta),
-    }));
+function isFreshTicket(ticket: StationTicket) {
+    return ticket.state === "QUEUED";
 }
 
 function TicketCard({
@@ -91,65 +85,76 @@ function TicketCard({
     const customized =
         ticket.modifiers.length > 0 ||
         Boolean(ticket.specialInstruction?.trim());
+    const fresh = isFreshTicket(ticket);
 
     return (
         <article
             className={cn(
-                "group relative min-h-[340px] overflow-hidden rounded-[20px] border",
-                ticket.delayed ? "border-destructive/40" : "border-hairline",
+                "group relative min-h-[200px] overflow-hidden rounded-[14px] border",
+                fresh
+                    ? "border-brand shadow-[0_0_0_1px_color-mix(in_oklab,var(--brand)_40%,transparent)]"
+                    : ticket.delayed
+                      ? "border-destructive/40"
+                      : "border-hairline",
             )}
         >
             {image ? (
                 <img
                     src={image}
                     alt={ticket.itemName}
-                    className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="absolute inset-0 size-full object-cover transition-transform duration-400 group-hover:scale-[1.03]"
                 />
             ) : (
                 <div className="absolute inset-0 bg-secondary" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/10" />
+            {fresh ? (
+                <div className="pointer-events-none absolute inset-0 bg-brand/12" />
+            ) : null}
 
-            <div className="relative flex min-h-[340px] flex-col justify-between p-4">
-                <div className="flex items-start justify-between gap-2">
-                    <p className="rounded-full bg-black/25 px-2.5 py-1 text-[12px] font-medium text-white/90 backdrop-blur-sm">
+            <div className="relative flex min-h-[200px] flex-col justify-between gap-2 p-3">
+                <div className="flex items-start justify-between gap-1.5">
+                    <p className="rounded-full bg-black/35 px-2 py-0.5 text-[11px] font-medium text-white/90 backdrop-blur-sm">
                         {tCommon("table")} {ticket.tableDisplayName}
                     </p>
-                    <StatusPill ticket={ticket} overlay />
+                    <StatusPill ticket={ticket} overlay compact />
                 </div>
 
                 <div className="text-white">
-                    <h2 className="text-[22px] leading-tight font-semibold">
-                        {ticket.quantity}× {ticket.itemName}
+                    <h2 className="line-clamp-2 text-[15px] leading-snug font-semibold">
+                        <span className="text-white/70">
+                            {ticket.quantity}×
+                        </span>{" "}
+                        {ticket.itemName}
                     </h2>
-                    {customized ? (
-                        <TicketExtras
-                            compact
-                            overlay
-                            modifiers={ticketModifiers(ticket)}
-                            instruction={ticket.specialInstruction ?? ""}
-                        />
-                    ) : (
-                        <p className="mt-3 text-[13px] text-white/60">
-                            {tStations("asListed")}
-                        </p>
-                    )}
+                    <p className="mt-1 line-clamp-1 text-[11px] text-white/55">
+                        {customized
+                            ? stationTicketExtras(ticket)
+                            : tStations("asListed")}
+                    </p>
                     {ticket.exceptionReason ? (
-                        <p className="mt-2 text-[13px] text-red-200">
+                        <p className="mt-1 line-clamp-1 text-[11px] text-red-200">
                             {ticket.exceptionReason}
                         </p>
                     ) : null}
-                    <p className="mt-2 text-[12px] text-white/55">
+                    <p
+                        className={cn(
+                            "mt-1.5 text-[10px] tracking-wide",
+                            fresh
+                                ? "font-semibold text-orange-200"
+                                : "text-white/50",
+                        )}
+                    >
                         {ticket.delayed
                             ? `${tStations("delayed")} · ${stationStateLabel(ticket.state)}`
                             : stationStateLabel(ticket.state)}{" "}
                         · ~{ticket.expectedPrepMinutes} min
                     </p>
-                    <div className="mt-4 flex flex-wrap items-center gap-2.5">
-                        <StationTicketActions ticket={ticket} overlay />
+                    <div className="mt-2.5 flex flex-wrap items-center gap-1.5 [&_button]:h-7 [&_button]:px-2.5 [&_button]:text-[11px]">
+                        <StationTicketActions ticket={ticket} compact overlay />
                         <Link
                             href={stationOrderPath(role, ticket.orderItemId)}
-                            className="inline-flex items-center rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-[13px] font-medium text-white backdrop-blur-md transition-all hover:bg-white/20"
+                            className="inline-flex h-7 items-center rounded-md border border-white/25 bg-white/10 px-2.5 text-[11px] font-medium text-white backdrop-blur-md transition-colors hover:bg-white/20"
                         >
                             {tStations("orderDetail")}
                         </Link>
@@ -163,32 +168,42 @@ function TicketCard({
 function StatusPill({
     ticket,
     overlay = false,
+    compact = false,
 }: {
     ticket: StationTicket;
     overlay?: boolean;
+    compact?: boolean;
 }) {
     const tStations = useTranslations("stations");
+    const fresh = isFreshTicket(ticket);
     return (
         <span
             className={cn(
-                "rounded-full px-3 py-1 text-[12px] font-medium",
+                "rounded-full font-semibold tracking-wide uppercase",
+                compact ? "px-2 py-0.5 text-[10px]" : "px-3 py-1 text-[12px]",
                 overlay && "backdrop-blur-md",
-                ticket.state === "READY"
+                fresh
                     ? overlay
-                        ? "bg-white/90 text-accent-foreground"
-                        : "bg-accent text-accent-foreground"
-                    : ticket.delayed || ticket.state === "CANNOT_PREPARE"
+                        ? "animate-pulse bg-brand text-white shadow-md shadow-brand/30"
+                        : "animate-pulse bg-brand text-white"
+                    : ticket.state === "READY"
                       ? overlay
-                          ? "bg-red-500/90 text-white"
-                          : "bg-destructive/10 text-destructive"
-                      : overlay
-                        ? "bg-white/20 text-white"
-                        : "bg-secondary text-slate-gray",
+                          ? "bg-white/90 text-accent-foreground"
+                          : "bg-accent text-accent-foreground"
+                      : ticket.delayed || ticket.state === "CANNOT_PREPARE"
+                        ? overlay
+                            ? "bg-red-500/90 text-white"
+                            : "bg-destructive/10 text-destructive"
+                        : overlay
+                          ? "bg-white/20 text-white"
+                          : "bg-secondary text-slate-gray",
             )}
         >
-            {ticket.delayed && ticket.state !== "READY"
-                ? tStations("delayed")
-                : stationStateLabel(ticket.state)}
+            {fresh
+                ? tStations("newOrder")
+                : ticket.delayed && ticket.state !== "READY"
+                  ? tStations("delayed")
+                  : stationStateLabel(ticket.state)}
         </span>
     );
 }
@@ -206,7 +221,7 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
     const status = parseQueueFilter(searchParams.get("status"));
     const view = parseQueueView(searchParams.get("view"));
     const query = searchParams.get("q") ?? "";
-    const { stationId, tickets, counts, isLoading, isError } =
+    const { stationId, tickets, counts, isLoading, isError, data, refetch } =
         useCurrentStationQueue();
 
     const rows: TicketRow[] = tickets
@@ -241,6 +256,17 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                 .join(" ")
                 .toLowerCase();
             return haystack.includes(query.trim().toLowerCase());
+        })
+        .sort((a, b) => {
+            const rank = (state: string) => {
+                if (state === "QUEUED") return 0;
+                if (state === "ACKNOWLEDGED") return 1;
+                return (STATUS_RANK[state] ?? 50) + 2;
+            };
+            const diff = rank(a.ticket.state) - rank(b.ticket.state);
+            if (diff !== 0) return diff;
+            // Newest new tickets first.
+            return b.receivedAt - a.receivedAt;
         });
 
     function setView(next: "cards" | "table") {
@@ -257,12 +283,22 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                 header: tStations("item"),
                 sortValue: row => row.ticket.itemName,
                 cell: row => (
-                    <Link
-                        href={stationOrderPath(role, row.ticket.orderItemId)}
-                        className="font-semibold text-foreground hover:text-brand"
-                    >
-                        {row.ticket.itemName}
-                    </Link>
+                    <div className="flex items-center gap-2">
+                        {isFreshTicket(row.ticket) ? (
+                            <span className="inline-flex shrink-0 animate-pulse rounded-full bg-brand px-2 py-0.5 text-[10px] font-bold tracking-wide text-white uppercase">
+                                {tStations("newOrder")}
+                            </span>
+                        ) : null}
+                        <Link
+                            href={stationOrderPath(
+                                role,
+                                row.ticket.orderItemId,
+                            )}
+                            className="font-semibold text-foreground hover:text-brand"
+                        >
+                            {row.ticket.itemName}
+                        </Link>
+                    </div>
                 ),
             },
             {
@@ -359,9 +395,15 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
 
     if (!stationId) {
         return (
-            <p className="text-slate-gray">
-                This account has no station assignment.
-            </p>
+            <div className="rounded-[16px] border border-dashed border-hairline bg-card p-8 text-center">
+                <p className="text-[15px] font-semibold text-foreground">
+                    No station assigned
+                </p>
+                <p className="mt-1 text-[13px] text-slate-gray">
+                    Ask a manager to assign this account to an active prep
+                    station.
+                </p>
+            </div>
         );
     }
 
@@ -371,73 +413,115 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
 
     if (isError) {
         return (
-            <p className="text-red-600">Could not load the station queue.</p>
+            <div className="rounded-[14px] border border-amber-500/30 bg-amber-500/5 p-6 text-center">
+                <p className="text-[14px] font-medium text-foreground">
+                    Station unreachable
+                </p>
+                <p className="mt-1 text-[12px] text-slate-gray">
+                    Could not load the queue. Retrying every 5 seconds.
+                </p>
+                <button
+                    type="button"
+                    onClick={() => void refetch()}
+                    className="mt-3 rounded-full border border-hairline bg-card px-3 py-1.5 text-[12px] font-normal text-foreground hover:bg-secondary"
+                >
+                    Retry now
+                </button>
+            </div>
+        );
+    }
+
+    if (data?.stationOffline) {
+        return (
+            <div className="rounded-[14px] border border-amber-500/30 bg-amber-500/5 p-6 text-center">
+                <p className="text-[14px] font-medium text-foreground">
+                    Station offline
+                </p>
+                <p className="mt-1 text-[12px] text-slate-gray">
+                    A manager turned this station off. Queue will refresh
+                    automatically when it comes back online.
+                </p>
+            </div>
         );
     }
 
     return (
-        <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                    <p className="text-[12px] tracking-[0.08em] text-steel-gray uppercase">
+        <div className="space-y-3 sm:space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+                <div className="min-w-0">
+                    <p className="text-[11px] tracking-[0.08em] text-steel-gray uppercase sm:text-[12px]">
                         {stationName ?? "Queue"}
                     </p>
-                    <h1 className="text-[22px] font-semibold">
+                    <h1 className="truncate text-[18px] font-semibold sm:text-[22px]">
                         {tStations.has(status)
                             ? tStations(status)
                             : QUEUE_FILTER_LABELS[status]}
                     </h1>
                 </div>
-                <div className="flex rounded-[12px] border border-hairline bg-card p-1">
+                <div className="flex rounded-[10px] border border-hairline bg-card p-0.5 sm:rounded-[12px] sm:p-1">
                     <button
                         type="button"
                         className={cn(
-                            "flex items-center gap-1.5 rounded-[10px] px-3 py-1.5 text-[13px] font-medium",
+                            "flex items-center gap-1 rounded-[8px] px-2.5 py-1.5 text-[12px] font-medium sm:gap-1.5 sm:rounded-[10px] sm:px-3 sm:text-[13px]",
                             view === "cards"
                                 ? "bg-secondary text-foreground"
                                 : "text-slate-gray hover:bg-secondary/70",
                         )}
                         onClick={() => setView("cards")}
                     >
-                        <LayoutGrid className="size-4" />
+                        <LayoutGrid className="size-3.5 sm:size-4" />
                         {tStations("cards")}
                     </button>
                     <button
                         type="button"
                         className={cn(
-                            "flex items-center gap-1.5 rounded-[10px] px-3 py-1.5 text-[13px] font-medium",
+                            "flex items-center gap-1 rounded-[8px] px-2.5 py-1.5 text-[12px] font-medium sm:gap-1.5 sm:rounded-[10px] sm:px-3 sm:text-[13px]",
                             view === "table"
                                 ? "bg-secondary text-foreground"
                                 : "text-slate-gray hover:bg-secondary/70",
                         )}
                         onClick={() => setView("table")}
                     >
-                        <Table2 className="size-4" />
+                        <Table2 className="size-3.5 sm:size-4" />
                         {tStations("table")}
                     </button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-[16px] border border-hairline bg-card p-4">
-                    <p className="text-[12px] text-slate-gray">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div
+                    className={cn(
+                        "rounded-[12px] border bg-card p-2.5 sm:rounded-[16px] sm:p-4",
+                        counts.new > 0
+                            ? "border-brand/50 bg-brand/5"
+                            : "border-hairline",
+                    )}
+                >
+                    <p className="truncate text-[11px] text-slate-gray sm:text-[12px]">
                         {tStations("new")}
                     </p>
-                    <p className="text-[24px] font-semibold">{counts.new}</p>
+                    <p
+                        className={cn(
+                            "text-[18px] font-semibold sm:text-[24px]",
+                            counts.new > 0 && "text-brand",
+                        )}
+                    >
+                        {counts.new}
+                    </p>
                 </div>
-                <div className="rounded-[16px] border border-hairline bg-card p-4">
-                    <p className="text-[12px] text-slate-gray">
+                <div className="rounded-[12px] border border-hairline bg-card p-2.5 sm:rounded-[16px] sm:p-4">
+                    <p className="truncate text-[11px] text-slate-gray sm:text-[12px]">
                         {tStations("preparing")}
                     </p>
-                    <p className="text-[24px] font-semibold">
+                    <p className="text-[18px] font-semibold sm:text-[24px]">
                         {counts.preparing}
                     </p>
                 </div>
-                <div className="rounded-[16px] border border-hairline bg-card p-4">
-                    <p className="text-[12px] text-slate-gray">
+                <div className="rounded-[12px] border border-hairline bg-card p-2.5 sm:rounded-[16px] sm:p-4">
+                    <p className="truncate text-[11px] text-slate-gray sm:text-[12px]">
                         {tStations("ready")}
                     </p>
-                    <p className="text-[24px] font-semibold text-brand">
+                    <p className="text-[18px] font-semibold text-brand sm:text-[24px]">
                         {counts.ready}
                     </p>
                 </div>
@@ -459,13 +543,18 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                             stationStateLabel(row.ticket.state),
                         ].join(" ")
                     }
+                    rowClassName={row =>
+                        isFreshTicket(row.ticket)
+                            ? "border-l-4 border-l-brand bg-brand/5 hover:bg-brand/10"
+                            : undefined
+                    }
                 />
             ) : rows.length === 0 ? (
                 <div className="rounded-[16px] border border-hairline bg-card p-10 text-center text-slate-gray">
                     {emptyLabel}
                 </div>
             ) : (
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                     {rows.map(row => (
                         <TicketCard
                             key={row.ticket.orderItemId}

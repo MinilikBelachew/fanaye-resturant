@@ -39,7 +39,6 @@ const LABEL_KEYS: Record<string, string> = {
     "Live Operations": "liveOps",
     Tenants: "tenants",
     "Staff Directory": "staffDirectory",
-    "Feature Flags": "featureFlags",
     "Platform Audit": "audit",
     Audit: "audit",
     Branches: "branches",

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { Check, Loader2, Trash2, X } from "lucide-react";
+import { Loader2, Trash2, X } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/context/hooks";
 import { closeStationSheet } from "@/context/slices/stationSlice";
 import {
@@ -27,25 +27,6 @@ import {
 } from "@/lib/validators/station";
 import { cn } from "@/lib/utils";
 
-const PRESET_COLORS = [
-    { label: "Flame Orange", hex: "#e85d04" },
-    { label: "Amber Gold", hex: "#d97706" },
-    { label: "Forest Green", hex: "#046645" },
-    { label: "Vivid Violet", hex: "#6736eb" },
-    { label: "Sky Blue", hex: "#0284c7" },
-    { label: "Berry Rose", hex: "#db2777" },
-    { label: "Deep Cobalt", hex: "#024bb1" },
-];
-
-const PRESET_CATEGORIES = [
-    "Hot Food",
-    "Beverages",
-    "Pastry",
-    "Cold Bar",
-    "Grill & BBQ",
-    "Prep & Packaging",
-];
-
 export default function AddEditStationSheet() {
     const dispatch = useAppDispatch();
     const isOpen = useAppSelector(state => state.station.isSheetOpen);
@@ -68,9 +49,6 @@ export default function AddEditStationSheet() {
         defaultValues: stationFormDefaults,
     });
 
-    const color = form.watch("color");
-    const category = form.watch("category");
-
     useEffect(() => {
         if (!isOpen) return;
         setConfirmDelete(false);
@@ -78,9 +56,6 @@ export default function AddEditStationSheet() {
             form.reset({
                 name: editingStation.name || "",
                 code: editingStation.code || "",
-                description: editingStation.description || "",
-                category: editingStation.category || "Hot Food",
-                color: editingStation.color || "#e85d04",
                 avgPrepMin:
                     editingStation.avgPrepMin ??
                     editingStation.defaultDelayThresholdMinutes ??
@@ -107,9 +82,6 @@ export default function AddEditStationSheet() {
                     id: editingStation.id,
                     name: values.name,
                     code: values.code || undefined,
-                    description: values.description || "",
-                    category: values.category,
-                    color: values.color,
                     avgPrepMin: values.avgPrepMin,
                     enabled: values.enabled,
                 }).unwrap();
@@ -118,9 +90,6 @@ export default function AddEditStationSheet() {
                 await createStation({
                     name: values.name,
                     code: values.code || undefined,
-                    description: values.description || "",
-                    category: values.category || "Hot Food",
-                    color: values.color,
                     avgPrepMin: values.avgPrepMin,
                     status: values.enabled ? "ACTIVE" : "DISABLED",
                 }).unwrap();
@@ -162,22 +131,13 @@ export default function AddEditStationSheet() {
 
             <div className="relative flex h-full w-full max-w-lg flex-col border-l border-hairline bg-card shadow-2xl animate-in slide-in-from-right duration-200">
                 <div className="flex shrink-0 items-center justify-between border-b border-hairline bg-surface-ivory px-6 py-4">
-                    <div className="flex items-center gap-2.5">
-                        <span
-                            className="size-3.5 rounded-full"
-                            style={{ backgroundColor: color }}
-                        />
-                        <div>
-                            <h2 className="text-[17px] font-semibold text-foreground">
-                                {editingStation
-                                    ? "Edit Station"
-                                    : "Add New Station"}
-                            </h2>
-                            <p className="text-[12px] text-slate-gray">
-                                Configure order routing, preparation time &
-                                queue parameters.
-                            </p>
-                        </div>
+                    <div>
+                        <h2 className="text-[17px] font-semibold text-foreground">
+                            {editingStation ? "Edit Station" : "Add Station"}
+                        </h2>
+                        <p className="text-[12px] text-slate-gray">
+                            Name, prep target, and online / offline control.
+                        </p>
                     </div>
                     <button
                         type="button"
@@ -209,7 +169,7 @@ export default function AddEditStationSheet() {
                                     <FormControl>
                                         <input
                                             type="text"
-                                            placeholder="e.g. Grill & BBQ, Mocktail Bar, Bakery Lab"
+                                            placeholder="e.g. Kitchen, Barista, Grill"
                                             className="w-full rounded-xl border border-hairline bg-background px-3.5 py-2.5 text-[14px] text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary"
                                             {...field}
                                         />
@@ -221,89 +181,15 @@ export default function AddEditStationSheet() {
 
                         <FormField
                             control={form.control}
-                            name="category"
+                            name="code"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>
-                                        Category / Station Type
-                                    </FormLabel>
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {PRESET_CATEGORIES.map(cat => (
-                                            <button
-                                                key={cat}
-                                                type="button"
-                                                onClick={() =>
-                                                    field.onChange(cat)
-                                                }
-                                                className={cn(
-                                                    "rounded-full px-3 py-1 text-[12px] font-medium transition-all",
-                                                    category === cat
-                                                        ? "bg-foreground text-background"
-                                                        : "border border-hairline bg-secondary/60 text-slate-gray hover:text-foreground",
-                                                )}
-                                            >
-                                                {cat}
-                                            </button>
-                                        ))}
-                                    </div>
+                                    <FormLabel>Code (optional)</FormLabel>
                                     <FormControl>
                                         <input
                                             type="text"
-                                            placeholder="Or type custom category..."
-                                            className="mt-1 w-full rounded-xl border border-hairline bg-background px-3.5 py-2 text-[13px] text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary"
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <Controller
-                            control={form.control}
-                            name="color"
-                            render={({ field }) => (
-                                <div className="space-y-2">
-                                    <label className="text-[13px] font-medium text-foreground">
-                                        Station Tag Color
-                                    </label>
-                                    <div className="flex items-center gap-2.5">
-                                        {PRESET_COLORS.map(c => (
-                                            <button
-                                                key={c.hex}
-                                                type="button"
-                                                onClick={() =>
-                                                    field.onChange(c.hex)
-                                                }
-                                                title={c.label}
-                                                className="relative flex size-7 items-center justify-center rounded-full transition-transform hover:scale-110 active:scale-95"
-                                                style={{
-                                                    backgroundColor: c.hex,
-                                                }}
-                                            >
-                                                {field.value === c.hex ? (
-                                                    <Check className="size-3.5 text-white stroke-[3]" />
-                                                ) : null}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="description"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>
-                                        Description & Routing Guidelines
-                                    </FormLabel>
-                                    <FormControl>
-                                        <textarea
-                                            rows={3}
-                                            placeholder="Describe what dishes are routed here and special preparation notes..."
-                                            className="w-full resize-none rounded-xl border border-hairline bg-background p-3 text-[13px] text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary"
+                                            placeholder="e.g. kitchen"
+                                            className="w-full rounded-xl border border-hairline bg-background px-3.5 py-2.5 text-[14px] text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary"
                                             {...field}
                                         />
                                     </FormControl>
@@ -318,7 +204,7 @@ export default function AddEditStationSheet() {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>
-                                        Target Preparation Time (minutes)
+                                        Target prep time (minutes)
                                     </FormLabel>
                                     <FormControl>
                                         <input
@@ -347,14 +233,13 @@ export default function AddEditStationSheet() {
                             name="enabled"
                             render={({ field }) => (
                                 <div className="flex items-center justify-between rounded-xl border border-hairline bg-surface-ivory p-4">
-                                    <div>
+                                    <div className="pr-3">
                                         <p className="text-[14px] font-medium text-foreground">
-                                            Station Active & Receiving Orders
+                                            Station online
                                         </p>
                                         <p className="text-[12px] text-slate-gray">
-                                            When active, kitchen staff and
-                                            waiters can route ordered items to
-                                            this queue.
+                                            Off hides linked dishes from waiter
+                                            & QR menus and blocks new tickets.
                                         </p>
                                     </div>
                                     <button

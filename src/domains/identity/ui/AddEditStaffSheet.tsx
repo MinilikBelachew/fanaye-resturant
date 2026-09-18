@@ -627,7 +627,7 @@ export default function AddEditStaffSheet() {
                                         <FormControl>
                                             <Input
                                                 type="email"
-                                                placeholder="optional@fanaye.com"
+                                                placeholder="optional@example.com"
                                                 className="h-10 rounded-[10px]"
                                                 {...field}
                                             />

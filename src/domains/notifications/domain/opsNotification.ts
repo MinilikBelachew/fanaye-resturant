@@ -4,6 +4,7 @@ export type OpsNotificationType =
     | "item.ready"
     | "ticket.queued"
     | "ticket.updated"
+    | "station.status.changed"
     | "bill.request.created"
     | "bill.ready"
     | "cash_drop.pending"

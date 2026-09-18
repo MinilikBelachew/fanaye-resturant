@@ -22,7 +22,7 @@ export const QrCodeSvg: React.FC<QrCodeSvgProps> = ({
 }) => {
     const { pathData, viewBoxSize } = useMemo(() => {
         try {
-            const qr = QRCode.create(value || "https://fanaye.et", {
+            const qr = QRCode.create(value || "https://example.com", {
                 errorCorrectionLevel: "M",
             });
             const moduleCount = qr.modules.size;
