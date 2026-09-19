@@ -84,6 +84,7 @@ function toLegacyStaff(member: AdminStaffMember): Staff {
         phone: member.phone ?? undefined,
         email: member.email ?? undefined,
         active: member.active,
+        stationId: member.stationId ?? undefined,
         assignedTableIds: member.shiftCoverages.flatMap(coverage =>
             coverage.tables.map(table => table.tableId),
         ),
@@ -141,7 +142,7 @@ export default function ManagerStaffPage() {
             if (searchQuery.trim()) {
                 const q = searchQuery.toLowerCase();
                 const hay =
-                    `${member.name} ${member.roleLabel} ${member.phone ?? ""}`.toLowerCase();
+                    `${member.name} ${member.roleLabel} ${member.stationName ?? ""} ${member.phone ?? ""} ${member.email ?? ""}`.toLowerCase();
                 if (!hay.includes(q)) return false;
             }
             return true;
@@ -436,6 +437,26 @@ export default function ManagerStaffPage() {
                                                                     ? "••••"
                                                                     : "None"}
                                                             </span>
+                                                            {member.hasPin ? (
+                                                                <button
+                                                                    type="button"
+                                                                    className="ml-0.5 text-slate-gray hover:text-foreground"
+                                                                    title="Reset PIN"
+                                                                    onClick={() => {
+                                                                        setPinTarget(
+                                                                            member,
+                                                                        );
+                                                                        setPinValue(
+                                                                            "",
+                                                                        );
+                                                                        setShowPinValue(
+                                                                            false,
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    <Eye className="size-3.5" />
+                                                                </button>
+                                                            ) : null}
                                                         </div>
                                                         <div className="flex items-center gap-1.5">
                                                             <Lock className="size-3 text-slate-gray" />

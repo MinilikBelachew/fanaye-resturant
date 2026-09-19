@@ -241,6 +241,11 @@ export function navForRole(role: Role): NavSection[] {
                             icon: Users,
                         },
                         {
+                            href: "/manager/waiters",
+                            label: "Waiters",
+                            icon: UserRound,
+                        },
+                        {
                             href: "/manager/website",
                             label: "Website",
                             icon: Globe,

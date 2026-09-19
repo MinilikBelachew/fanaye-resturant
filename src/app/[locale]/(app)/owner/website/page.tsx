@@ -55,22 +55,37 @@ interface ThemePreset {
     subtitle: string;
     theme: Partial<SiteTheme>;
     previewColors: string[];
+    /** Mini mock surface for the picker card */
+    mock: {
+        hero: string;
+        panel: string;
+        ink: string;
+        muted: string;
+        badge: string;
+    };
 }
 
 const INTERNATIONAL_MOOD_THEMES: ThemePreset[] = [
     {
         id: "golden-cloche",
-        name: "Golden Cloche Luxury",
-        subtitle: "Warm amber, dark zinc & golden radiance",
-        previewColors: ["#d97706", "#18181b", "#fde68a"],
+        name: "Golden Cloche",
+        subtitle: "Champagne gold on charcoal — fine dining polish",
+        previewColors: ["#b45309", "#0c0a09", "#f5f0e6"],
+        mock: {
+            hero: "linear-gradient(135deg, #1c1917 0%, #44403c 55%, #a16207 120%)",
+            panel: "#faf7f2",
+            ink: "#1c1917",
+            muted: "#78716c",
+            badge: "#b45309",
+        },
         theme: {
-            primaryColor: "#d97706",
-            accentColor: "#18181b",
-            backgroundColor: "#fffbf0",
-            textColor: "#18181b",
+            primaryColor: "#b45309",
+            accentColor: "#1c1917",
+            backgroundColor: "#faf7f2",
+            textColor: "#1c1917",
             backgroundType: "gradient",
             backgroundGradient:
-                "linear-gradient(135deg, #fffbeb 0%, #fef3c7 45%, #fde68a 100%)",
+                "linear-gradient(160deg, #faf7f2 0%, #f5f0e6 48%, #efe6d6 100%)",
             fontDisplay: "Fraunces, serif",
             fontBody: "DM Sans, sans-serif",
             borderRadius: "xl",
@@ -78,33 +93,47 @@ const INTERNATIONAL_MOOD_THEMES: ThemePreset[] = [
     },
     {
         id: "warm-habesha",
-        name: "Warm Habesha Bistro",
-        subtitle: "Rich terracotta spice & clay earth tones",
-        previewColors: ["#c2410c", "#451a03", "#fdf8f4"],
+        name: "Habesha Ember",
+        subtitle: "Spice red, deep espresso, and parchment light",
+        previewColors: ["#9a3412", "#1c0a05", "#f7efe8"],
+        mock: {
+            hero: "linear-gradient(145deg, #1c0a05 0%, #7c2d12 70%, #ea580c 130%)",
+            panel: "#f7efe8",
+            ink: "#1c0a05",
+            muted: "#9a6b4f",
+            badge: "#c2410c",
+        },
         theme: {
             primaryColor: "#c2410c",
-            accentColor: "#451a03",
-            backgroundColor: "#fdf8f4",
-            textColor: "#291508",
+            accentColor: "#1c0a05",
+            backgroundColor: "#f7efe8",
+            textColor: "#1c0a05",
             backgroundType: "solid",
-            fontDisplay: "Georgia, serif",
+            fontDisplay: "Fraunces, serif",
             fontBody: "DM Sans, sans-serif",
             borderRadius: "md",
         },
     },
     {
         id: "emerald-garden",
-        name: "Emerald Botanical Lounge",
-        subtitle: "Fresh mint, deep forest & botanical luxury",
-        previewColors: ["#059669", "#064e3b", "#dcfce7"],
+        name: "Botanical Quiet",
+        subtitle: "Forest green, soft sage, gallery-white space",
+        previewColors: ["#047857", "#022c22", "#ecfdf5"],
+        mock: {
+            hero: "linear-gradient(150deg, #022c22 0%, #065f46 60%, #34d399 125%)",
+            panel: "#f4fbf7",
+            ink: "#022c22",
+            muted: "#5b8a76",
+            badge: "#059669",
+        },
         theme: {
             primaryColor: "#059669",
-            accentColor: "#064e3b",
-            backgroundColor: "#f0fdf4",
-            textColor: "#06281e",
+            accentColor: "#022c22",
+            backgroundColor: "#f4fbf7",
+            textColor: "#022c22",
             backgroundType: "gradient",
             backgroundGradient:
-                "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #bbf7d0 100%)",
+                "linear-gradient(160deg, #f4fbf7 0%, #ecfdf5 50%, #d1fae5 100%)",
             fontDisplay: "Playfair Display, serif",
             fontBody: "Plus Jakarta Sans, sans-serif",
             borderRadius: "xl",
@@ -112,53 +141,74 @@ const INTERNATIONAL_MOOD_THEMES: ThemePreset[] = [
     },
     {
         id: "midnight-obsidian",
-        name: "Midnight Obsidian",
-        subtitle: "Sleek dark mode with vibrant amber highlights",
-        previewColors: ["#f59e0b", "#0f172a", "#1e293b"],
+        name: "Midnight Service",
+        subtitle: "Ink black room with molten gold accents",
+        previewColors: ["#fbbf24", "#020617", "#1e293b"],
+        mock: {
+            hero: "linear-gradient(160deg, #020617 0%, #0f172a 50%, #334155 100%)",
+            panel: "#0f172a",
+            ink: "#f8fafc",
+            muted: "#94a3b8",
+            badge: "#f59e0b",
+        },
         theme: {
             primaryColor: "#f59e0b",
             accentColor: "#f8fafc",
-            backgroundColor: "#0f172a",
+            backgroundColor: "#020617",
             textColor: "#f8fafc",
             backgroundType: "gradient",
             backgroundGradient:
-                "linear-gradient(180deg, #0b1120 0%, #1e293b 100%)",
-            fontDisplay: "Inter, sans-serif",
-            fontBody: "Inter, sans-serif",
+                "linear-gradient(180deg, #020617 0%, #0f172a 55%, #1e293b 100%)",
+            fontDisplay: "Instrument Sans, sans-serif",
+            fontBody: "DM Sans, sans-serif",
             borderRadius: "md",
         },
     },
     {
-        id: "sunset-terracotta",
-        name: "Sunset Terracotta",
-        subtitle: "Warm ochre, sunset ember & soft sand",
-        previewColors: ["#e85d04", "#7c2d12", "#ffedd5"],
+        id: "coastal-slate",
+        name: "Coastal Slate",
+        subtitle: "Sea mist, stone blue, and crisp linen white",
+        previewColors: ["#0e7490", "#0f172a", "#f0f9ff"],
+        mock: {
+            hero: "linear-gradient(145deg, #0c4a6e 0%, #155e75 55%, #67e8f9 130%)",
+            panel: "#f8fafc",
+            ink: "#0f172a",
+            muted: "#64748b",
+            badge: "#0e7490",
+        },
         theme: {
-            primaryColor: "#e85d04",
-            accentColor: "#7c2d12",
-            backgroundColor: "#fff7ed",
-            textColor: "#1c1917",
+            primaryColor: "#0e7490",
+            accentColor: "#0f172a",
+            backgroundColor: "#f8fafc",
+            textColor: "#0f172a",
             backgroundType: "gradient",
             backgroundGradient:
-                "linear-gradient(135deg, #fff7ed 0%, #ffedd5 50%, #fed7aa 100%)",
-            fontDisplay: "Playfair Display, serif",
+                "linear-gradient(160deg, #f8fafc 0%, #f0f9ff 55%, #e0f2fe 100%)",
+            fontDisplay: "Fraunces, serif",
             fontBody: "DM Sans, sans-serif",
             borderRadius: "xl",
         },
     },
     {
         id: "minimalist-pearl",
-        name: "Minimalist Pearl",
-        subtitle: "Monochrome high-contrast gallery style",
-        previewColors: ["#000000", "#71717a", "#ffffff"],
+        name: "Gallery Mono",
+        subtitle: "Strict black & white — editorial menu energy",
+        previewColors: ["#09090b", "#a1a1aa", "#ffffff"],
+        mock: {
+            hero: "linear-gradient(180deg, #09090b 0%, #27272a 100%)",
+            panel: "#ffffff",
+            ink: "#09090b",
+            muted: "#71717a",
+            badge: "#09090b",
+        },
         theme: {
-            primaryColor: "#000000",
+            primaryColor: "#09090b",
             accentColor: "#27272a",
             backgroundColor: "#ffffff",
             textColor: "#09090b",
             backgroundType: "solid",
-            fontDisplay: "Inter, sans-serif",
-            fontBody: "system-ui, sans-serif",
+            fontDisplay: "Instrument Sans, sans-serif",
+            fontBody: "DM Sans, sans-serif",
             borderRadius: "none",
         },
     },
@@ -633,17 +683,16 @@ export default function WebsiteEditorPage() {
                         {activeTab === "mood" ? (
                             <div className="space-y-3">
                                 <div>
-                                    <h4 className="text-xs font-bold text-slate-900">
-                                        International Restaurant Aesthetics
-                                        (1-Click Presets)
+                                    <h4 className="text-[12px] font-semibold tracking-tight text-slate-900">
+                                        Site mood presets
                                     </h4>
-                                    <p className="text-[11px] text-slate-500">
-                                        Instantly align colors, gradients, font
-                                        styles, and border radius in one tap.
+                                    <p className="mt-0.5 text-[11px] text-slate-500">
+                                        One tap applies palette, type, and
+                                        surface radius.
                                     </p>
                                 </div>
 
-                                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
                                     {INTERNATIONAL_MOOD_THEMES.map(preset => (
                                         <button
                                             key={preset.id}
@@ -651,10 +700,92 @@ export default function WebsiteEditorPage() {
                                             onClick={() =>
                                                 applyMoodTheme(preset)
                                             }
-                                            className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-3.5 text-left transition-all hover:border-brand hover:shadow-xs"
+                                            className="group overflow-hidden rounded-[12px] border border-slate-200/90 bg-white text-left shadow-[0_1px_0_rgba(15,23,42,0.04)] transition-all duration-150 hover:border-slate-300 hover:shadow-sm"
                                         >
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-1.5">
+                                            <div
+                                                className="relative h-[52px] overflow-hidden px-2 pt-1.5"
+                                                style={{
+                                                    background:
+                                                        preset.mock.hero,
+                                                }}
+                                            >
+                                                <div className="absolute inset-x-2 top-1.5 flex items-center justify-between">
+                                                    <span className="text-[7px] font-semibold tracking-[0.12em] text-white/75 uppercase">
+                                                        Fanaye
+                                                    </span>
+                                                    <span
+                                                        className="rounded-full px-1.5 py-px text-[7px] font-semibold text-white"
+                                                        style={{
+                                                            background:
+                                                                preset.mock
+                                                                    .badge,
+                                                        }}
+                                                    >
+                                                        Menu
+                                                    </span>
+                                                </div>
+                                                <div className="absolute inset-x-2 bottom-0 translate-y-1 rounded-t-[8px] border border-black/5 bg-white/95 p-1.5 shadow-sm">
+                                                    <div
+                                                        className="h-1 w-10 rounded-full"
+                                                        style={{
+                                                            background:
+                                                                preset.mock.ink,
+                                                            opacity: 0.9,
+                                                        }}
+                                                    />
+                                                    <div className="mt-1 flex gap-0.5">
+                                                        <div
+                                                            className="h-1 w-6 rounded-full"
+                                                            style={{
+                                                                background:
+                                                                    preset.mock
+                                                                        .muted,
+                                                                opacity: 0.45,
+                                                            }}
+                                                        />
+                                                        <div
+                                                            className="h-1 w-3.5 rounded-full"
+                                                            style={{
+                                                                background:
+                                                                    preset.mock
+                                                                        .badge,
+                                                                opacity: 0.7,
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div
+                                                className="space-y-1.5 p-2"
+                                                style={{
+                                                    background:
+                                                        preset.mock.panel,
+                                                }}
+                                            >
+                                                <div className="flex items-start justify-between gap-1">
+                                                    <div className="min-w-0">
+                                                        <h5
+                                                            className="truncate text-[11px] font-semibold tracking-tight"
+                                                            style={{
+                                                                color: preset
+                                                                    .mock.ink,
+                                                            }}
+                                                        >
+                                                            {preset.name}
+                                                        </h5>
+                                                        <p
+                                                            className="mt-0.5 line-clamp-2 text-[9px] leading-snug"
+                                                            style={{
+                                                                color: preset
+                                                                    .mock.muted,
+                                                            }}
+                                                        >
+                                                            {preset.subtitle}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-1">
                                                     {preset.previewColors.map(
                                                         (color, idx) => (
                                                             <span
@@ -663,23 +794,11 @@ export default function WebsiteEditorPage() {
                                                                     backgroundColor:
                                                                         color,
                                                                 }}
-                                                                className="size-4 rounded-full border border-black/10 shadow-2xs"
+                                                                className="size-2.5 rounded-full border border-black/10"
                                                             />
                                                         ),
                                                     )}
                                                 </div>
-                                                <span className="text-[10px] font-bold uppercase tracking-wider text-brand opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    Apply ✦
-                                                </span>
-                                            </div>
-
-                                            <div className="mt-3">
-                                                <h5 className="text-xs font-bold text-slate-900">
-                                                    {preset.name}
-                                                </h5>
-                                                <p className="mt-0.5 text-[10px] text-slate-500">
-                                                    {preset.subtitle}
-                                                </p>
                                             </div>
                                         </button>
                                     ))}

@@ -84,12 +84,6 @@ export default function AddEditStaffSheet() {
                     "Takes table orders, manages table guests, handles bill requests",
             },
             {
-                id: "manager",
-                label: "Floor Manager",
-                description:
-                    "Live floor oversight, table assignment, financial reports, audit",
-            },
-            {
                 id: "cashier",
                 label: "Cashier",
                 description:
@@ -226,22 +220,17 @@ export default function AddEditStaffSheet() {
         if (editingStaff) {
             let selectedRole = editingStaff.role || "waiter";
             if (activeStations.length > 0) {
-                const match = activeStations.find(
-                    st =>
-                        st.id === editingStaff.stationId ||
-                        st.code?.toLowerCase() ===
-                            editingStaff.role?.toLowerCase() ||
-                        st.name.toLowerCase() ===
-                            editingStaff.role?.toLowerCase() ||
-                        (editingStaff.role === "kitchen" &&
-                            st.name.toLowerCase().includes("kitchen")) ||
-                        (editingStaff.role === "barista" &&
-                            st.name.toLowerCase().includes("barista")) ||
-                        (editingStaff.role === "cakes" &&
-                            st.name.toLowerCase().includes("cake")) ||
-                        (editingStaff.role === "soft_drinks" &&
-                            st.name.toLowerCase().includes("soft")),
-                );
+                const match =
+                    activeStations.find(
+                        st => st.id === editingStaff.stationId,
+                    ) ??
+                    activeStations.find(
+                        st =>
+                            st.code?.toLowerCase() ===
+                                editingStaff.role?.toLowerCase() ||
+                            st.name.toLowerCase() ===
+                                editingStaff.role?.toLowerCase(),
+                    );
                 if (match) {
                     selectedRole = `station:${match.id}`;
                 }
@@ -249,10 +238,10 @@ export default function AddEditStaffSheet() {
 
             form.reset({
                 name: editingStaff.name || "",
-                role: selectedRole,
+                role: selectedRole === "manager" ? "owner" : selectedRole,
                 phone: editingStaff.phone || "",
                 email: editingStaff.email || "",
-                pin: editingStaff.pinHint || "1234",
+                pin: "",
                 active: editingStaff.active !== false,
                 shiftStatus: editingStaff.shiftStatus || "on_duty",
                 workingDays: editingStaff.workingDays || [
@@ -380,6 +369,15 @@ export default function AddEditStaffSheet() {
 
         setSaving(true);
         try {
+            if (!isEditMode && !values.pin.trim()) {
+                form.setError("pin", {
+                    type: "manual",
+                    message: "PIN must be exactly 4 digits.",
+                });
+                setSaving(false);
+                return;
+            }
+
             if (isEditMode && editingMembershipId) {
                 await updateStaffApi({
                     membershipId: editingMembershipId,
@@ -387,8 +385,10 @@ export default function AddEditStaffSheet() {
                         name: values.name.trim(),
                         role: apiRole,
                         phone: values.phone?.trim() || undefined,
-                        email: values.email?.trim() || undefined,
-                        pin: values.pin.trim() || undefined,
+                        email: values.email.trim(),
+                        ...(values.pin.trim()
+                            ? { pin: values.pin.trim() }
+                            : {}),
                         active: values.active,
                         stationCode,
                         preparationStationId,
@@ -409,8 +409,8 @@ export default function AddEditStaffSheet() {
                     name: values.name.trim(),
                     role: apiRole,
                     phone: values.phone?.trim() || undefined,
-                    email: values.email?.trim() || undefined,
-                    pin: values.pin.trim() || "1234",
+                    email: values.email.trim(),
+                    pin: values.pin.trim(),
                     active: values.active,
                     stationCode,
                     preparationStationId,
@@ -560,9 +560,11 @@ export default function AddEditStaffSheet() {
                                         <FormItem>
                                             <FormLabel>
                                                 Quick Access PIN{" "}
-                                                <span className="text-primary">
-                                                    *
-                                                </span>
+                                                {!isEditMode ? (
+                                                    <span className="text-primary">
+                                                        *
+                                                    </span>
+                                                ) : null}
                                             </FormLabel>
                                             <div className="relative">
                                                 <Lock className="pointer-events-none absolute top-2.5 left-3 size-4 text-slate-gray" />
@@ -577,7 +579,11 @@ export default function AddEditStaffSheet() {
                                                         pattern="[0-9]*"
                                                         maxLength={4}
                                                         autoComplete="new-password"
-                                                        placeholder="4-digit numeric PIN"
+                                                        placeholder={
+                                                            isEditMode
+                                                                ? "Leave blank to keep current"
+                                                                : "4-digit numeric PIN"
+                                                        }
                                                         className="h-10 rounded-[10px] pl-9 pr-10 font-mono tracking-wider"
                                                         {...field}
                                                         onChange={e => {
@@ -612,6 +618,12 @@ export default function AddEditStaffSheet() {
                                                     )}
                                                 </button>
                                             </div>
+                                            {isEditMode ? (
+                                                <p className="text-[12px] text-slate-gray">
+                                                    Only fill this if you want
+                                                    to reset their PIN.
+                                                </p>
+                                            ) : null}
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -623,11 +635,16 @@ export default function AddEditStaffSheet() {
                                 name="email"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Email</FormLabel>
+                                        <FormLabel>
+                                            Email{" "}
+                                            <span className="text-primary">
+                                                *
+                                            </span>
+                                        </FormLabel>
                                         <FormControl>
                                             <Input
                                                 type="email"
-                                                placeholder="optional@example.com"
+                                                placeholder="name@restaurant.com"
                                                 className="h-10 rounded-[10px]"
                                                 {...field}
                                             />

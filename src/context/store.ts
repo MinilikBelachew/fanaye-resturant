@@ -16,6 +16,7 @@ import "./services/reconciliationApi";
 import "./services/dailyCloseApi";
 import "./services/menuApi";
 import "./services/staffApi";
+import "./services/waiterPerformanceApi";
 import "./services/siteApi";
 import "./services/superAdminApi";
 import "./services/auditApi";

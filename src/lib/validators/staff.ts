@@ -7,15 +7,18 @@ export const staffFormSchema = z
         preparationStationId: z.string().optional().or(z.literal("")),
         stationCode: z.string().optional().or(z.literal("")),
         phone: z.string().trim().optional(),
-        email: z.union([
-            z.literal(""),
-            z.string().trim().email("Enter a valid email."),
-        ]),
+        email: z
+            .string()
+            .trim()
+            .min(1, "Email is required.")
+            .email("Enter a valid email."),
+        /** Empty on edit = keep current PIN. Create must supply 4 digits. */
         pin: z
             .string()
             .trim()
-            .length(4, "PIN must be exactly 4 digits.")
-            .regex(/^\d{4}$/, "PIN must be a 4-digit number."),
+            .refine(value => value === "" || /^\d{4}$/.test(value), {
+                message: "PIN must be exactly 4 digits.",
+            }),
         active: z.boolean(),
         shiftStatus: z.enum(["on_duty", "on_break", "off_duty"]),
         workingDays: z
@@ -48,7 +51,7 @@ export const staffFormDefaults: StaffFormValues = {
     stationCode: "",
     phone: "",
     email: "",
-    pin: "1234",
+    pin: "",
     active: true,
     shiftStatus: "on_duty",
     workingDays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],

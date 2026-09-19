@@ -603,96 +603,94 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                                 return (
                                                     <div
                                                         key={item.orderItemId}
-                                                        className="flex flex-col justify-between gap-3 p-3 sm:flex-row sm:items-center"
+                                                        className="space-y-2.5 p-3"
                                                     >
-                                                        <div className="min-w-0 flex-1">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="flex size-5 items-center justify-center rounded bg-brand/10 text-[11px] font-semibold text-brand">
-                                                                    {
-                                                                        item.quantity
-                                                                    }
-                                                                    ×
-                                                                </span>
-                                                                <span className="text-[14px] font-medium text-foreground">
-                                                                    {
-                                                                        item.itemName
-                                                                    }
-                                                                </span>
-                                                            </div>
-
-                                                            <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[12px]">
-                                                                {/* Station Tag */}
-                                                                <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 font-medium text-slate-gray">
-                                                                    {
-                                                                        item.stationName
-                                                                    }
-                                                                </span>
-
-                                                                {/* State Tag */}
-                                                                <span
-                                                                    className={cn(
-                                                                        "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-semibold",
-                                                                        stateInfo.badgeClass,
-                                                                    )}
-                                                                >
-                                                                    {
-                                                                        stateInfo.icon
-                                                                    }
-                                                                    <span>
+                                                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="flex size-5 items-center justify-center rounded bg-brand/10 text-[11px] font-semibold text-brand">
                                                                         {
-                                                                            stateInfo.label
+                                                                            item.quantity
+                                                                        }
+                                                                        ×
+                                                                    </span>
+                                                                    <span className="text-[14px] font-medium text-foreground">
+                                                                        {
+                                                                            item.itemName
                                                                         }
                                                                     </span>
+                                                                </div>
+
+                                                                <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[12px]">
+                                                                    <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 font-medium text-slate-gray">
+                                                                        {
+                                                                            item.stationName
+                                                                        }
+                                                                    </span>
+
+                                                                    <span
+                                                                        className={cn(
+                                                                            "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-semibold",
+                                                                            stateInfo.badgeClass,
+                                                                        )}
+                                                                    >
+                                                                        {
+                                                                            stateInfo.icon
+                                                                        }
+                                                                        <span>
+                                                                            {
+                                                                                stateInfo.label
+                                                                            }
+                                                                        </span>
+                                                                    </span>
+
+                                                                    {extras ? (
+                                                                        <span className="rounded-md bg-amber-500/10 px-2 py-0.5 font-medium text-amber-700 dark:text-amber-300">
+                                                                            🏷️{" "}
+                                                                            {
+                                                                                extras
+                                                                            }
+                                                                        </span>
+                                                                    ) : null}
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="flex shrink-0 items-center justify-between gap-3 border-t border-hairline/40 pt-2 sm:border-t-0 sm:pt-0">
+                                                                <span className="text-[14px] font-semibold text-foreground">
+                                                                    {formatEtb(
+                                                                        lineTotal(
+                                                                            item.unitPrice,
+                                                                            item.quantity,
+                                                                            item.modifiers,
+                                                                        ),
+                                                                    )}
                                                                 </span>
 
-                                                                {/* Extras / Notes */}
-                                                                {extras ? (
-                                                                    <span className="rounded-md bg-amber-500/10 px-2 py-0.5 font-medium text-amber-700 dark:text-amber-300">
-                                                                        🏷️{" "}
-                                                                        {extras}
-                                                                    </span>
-                                                                ) : null}
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Price & Actions */}
-                                                        <div className="flex items-center justify-between gap-3 border-t border-hairline/40 pt-2 sm:border-t-0 sm:pt-0">
-                                                            <span className="text-[14px] font-semibold text-foreground">
-                                                                {formatEtb(
-                                                                    lineTotal(
-                                                                        item.unitPrice,
-                                                                        item.quantity,
-                                                                        item.modifiers,
-                                                                    ),
-                                                                )}
-                                                            </span>
-
-                                                            <div className="flex items-center gap-2">
-                                                                {item.state ===
-                                                                    "CONFIRMED" &&
-                                                                table.mine ? (
-                                                                    <Button
-                                                                        size="sm"
-                                                                        onClick={() =>
-                                                                            onSendToKitchen(
-                                                                                order.orderId,
-                                                                            )
-                                                                        }
-                                                                        disabled={
-                                                                            isSendingToKitchen
-                                                                        }
-                                                                        className="h-7 gap-1 rounded-full bg-amber-600 hover:bg-amber-700 px-2.5 text-[11px] font-bold text-white shadow-xs"
-                                                                    >
-                                                                        <ChefHat className="size-3" />
-                                                                        <span>
-                                                                            {tWaiter(
-                                                                                "sendToKitchen",
-                                                                            )}
-                                                                        </span>
-                                                                    </Button>
-                                                                ) : null}
-                                                                {table.tableSessionId ? (
-                                                                    <>
+                                                                <div className="flex items-center gap-2">
+                                                                    {item.state ===
+                                                                        "CONFIRMED" &&
+                                                                    table.mine ? (
+                                                                        <Button
+                                                                            size="sm"
+                                                                            onClick={() =>
+                                                                                onSendToKitchen(
+                                                                                    order.orderId,
+                                                                                )
+                                                                            }
+                                                                            disabled={
+                                                                                isSendingToKitchen
+                                                                            }
+                                                                            className="h-7 gap-1 rounded-full bg-amber-600 hover:bg-amber-700 px-2.5 text-[11px] font-bold text-white shadow-xs"
+                                                                        >
+                                                                            <ChefHat className="size-3" />
+                                                                            <span>
+                                                                                {tWaiter(
+                                                                                    "sendToKitchen",
+                                                                                )}
+                                                                            </span>
+                                                                        </Button>
+                                                                    ) : null}
+                                                                    {table.tableSessionId ? (
                                                                         <WaiterMarkServedButton
                                                                             item={
                                                                                 item
@@ -701,18 +699,19 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                                                                 table.tableSessionId
                                                                             }
                                                                         />
-                                                                        <WaiterOrderItemActions
-                                                                            item={
-                                                                                item
-                                                                            }
-                                                                            tableSessionId={
-                                                                                table.tableSessionId
-                                                                            }
-                                                                        />
-                                                                    </>
-                                                                ) : null}
+                                                                    ) : null}
+                                                                </div>
                                                             </div>
                                                         </div>
+
+                                                        {table.tableSessionId ? (
+                                                            <WaiterOrderItemActions
+                                                                item={item}
+                                                                tableSessionId={
+                                                                    table.tableSessionId
+                                                                }
+                                                            />
+                                                        ) : null}
                                                     </div>
                                                 );
                                             })}
