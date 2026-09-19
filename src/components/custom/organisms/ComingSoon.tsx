@@ -1,4 +1,7 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 
 export default function ComingSoon({
     title,
@@ -7,6 +10,8 @@ export default function ComingSoon({
     title: string;
     body: string;
 }) {
+    const t = useTranslations("common");
+
     return (
         <section className="max-w-2xl">
             <h1 className="text-[32px] font-semibold tracking-tight">
@@ -16,7 +21,7 @@ export default function ComingSoon({
                 {body}
             </p>
             <Button className="mt-6" disabled>
-                Coming in a later demo slice
+                {t("comingSoonAction")}
             </Button>
         </section>
     );

@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckCircle2, Clock3, LayoutGrid, UserRound } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useAppSelector } from "@/context/hooks";
 import {
     selectCurrentStaff,
@@ -10,6 +11,7 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 
 export default function WaiterBottomNav() {
+    const t = useTranslations("appNav");
     const staff = useAppSelector(selectCurrentStaff);
     const pathname = usePathname();
     const unread = useAppSelector(state =>
@@ -17,10 +19,22 @@ export default function WaiterBottomNav() {
     );
 
     const items = [
-        { href: "/waiter/tables", label: "Tables", icon: LayoutGrid },
-        { href: "/waiter/ready", label: "Ready", icon: CheckCircle2 },
-        { href: "/waiter/shift", label: "Shift", icon: Clock3 },
-        { href: "/waiter/profile", label: "Profile", icon: UserRound },
+        {
+            href: "/waiter/tables",
+            labelKey: "tables" as const,
+            icon: LayoutGrid,
+        },
+        {
+            href: "/waiter/ready",
+            labelKey: "ready" as const,
+            icon: CheckCircle2,
+        },
+        { href: "/waiter/shift", labelKey: "shift" as const, icon: Clock3 },
+        {
+            href: "/waiter/profile",
+            labelKey: "profile" as const,
+            icon: UserRound,
+        },
     ];
 
     return (
@@ -39,7 +53,7 @@ export default function WaiterBottomNav() {
                                 )}
                             >
                                 <Icon className="size-5" />
-                                {item.label}
+                                {t(item.labelKey)}
                                 {item.href === "/waiter/ready" && unread > 0 ? (
                                     <span className="absolute top-2 right-6 flex size-4 items-center justify-center rounded-full bg-brand text-[10px] text-white">
                                         {unread}

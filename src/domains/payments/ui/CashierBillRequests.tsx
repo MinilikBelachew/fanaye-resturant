@@ -71,8 +71,8 @@ export default function CashierBillRequests() {
 
             const item = {
                 bill,
-                tableDisplayName: request.tableDisplayName || "Table",
-                waiterName: request.waiter?.displayName || "Waiter",
+                tableDisplayName: request.tableDisplayName || tCommon("table"),
+                waiterName: request.waiter?.displayName || tCommon("waiter"),
                 generatedTime: new Date().toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit",
@@ -86,8 +86,8 @@ export default function CashierBillRequests() {
 
             setActiveReceipt({
                 bill,
-                tableDisplayName: request.tableDisplayName || "Table",
-                waiterName: request.waiter?.displayName || "Waiter",
+                tableDisplayName: request.tableDisplayName || tCommon("table"),
+                waiterName: request.waiter?.displayName || tCommon("waiter"),
             });
 
             toast.success(
@@ -114,13 +114,13 @@ export default function CashierBillRequests() {
             },
             {
                 id: "waiter",
-                header: "Waiter",
+                header: tCommon("waiter"),
                 cell: row => row.waiter.displayName,
                 sortValue: row => row.waiter.displayName,
             },
             {
                 id: "amount",
-                header: "Estimate",
+                header: tCommon("estimate"),
                 cell: row => (
                     <span className="tabular-nums">
                         {formatEtb(Number(row.estimatedAmount))}
@@ -132,13 +132,13 @@ export default function CashierBillRequests() {
             },
             {
                 id: "wait",
-                header: "Waiting",
+                header: tCommon("waiting"),
                 cell: row => `${Math.floor(row.requestAgeSeconds / 60)} min`,
                 sortValue: row => row.requestAgeSeconds,
             },
             {
                 id: "warnings",
-                header: "Notes",
+                header: tCommon("notes"),
                 cell: row =>
                     row.warnings.length
                         ? row.warnings
@@ -184,10 +184,10 @@ export default function CashierBillRequests() {
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <p className="text-[13px] font-medium tracking-tight">
-                        Pending requests
+                        {tCashier("pendingRequests")}
                     </p>
                     <p className="text-[12px] text-slate-gray">
-                        {requests.length} waiting
+                        {tCashier("waitingCount", { count: requests.length })}
                     </p>
                 </div>
                 <div className="inline-flex rounded-full border border-hairline p-0.5">
@@ -202,7 +202,7 @@ export default function CashierBillRequests() {
                         )}
                     >
                         <Table2 className="size-3.5" />
-                        Table
+                        {tCommon("table")}
                     </button>
                     <button
                         type="button"
@@ -215,7 +215,7 @@ export default function CashierBillRequests() {
                         )}
                     >
                         <LayoutGrid className="size-3.5" />
-                        Cards
+                        {tCommon("cards")}
                     </button>
                 </div>
             </div>
@@ -254,7 +254,7 @@ export default function CashierBillRequests() {
                                 {formatEtb(Number(request.estimatedAmount))}
                             </p>
                             <p className="mt-1 text-[12px] text-slate-gray">
-                                Waiting{" "}
+                                {tCommon("waiting")}{" "}
                                 {Math.floor(request.requestAgeSeconds / 60)} min
                                 {request.warnings.length > 0
                                     ? ` · ${request.warnings

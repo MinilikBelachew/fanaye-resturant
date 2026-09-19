@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import AccountMenu from "@/components/layout/AccountMenu";
 import { ThemeToggleButton } from "@/components/theme/ThemeSwitcher";
 import AppTopBar from "@/components/layout/AppTopBar";
@@ -10,18 +11,53 @@ import StationTopBarTools from "@/components/layout/StationTopBarTools";
 import OpsNotificationsBell from "@/domains/notifications/ui/OpsNotificationsBell";
 import { navForRole } from "@/domains/identity/application/nav";
 import { homePathForRole } from "@/domains/identity/application/homePath";
-import {
-    isStationRole,
-    ROLE_LABELS,
-    type Role,
-} from "@/domains/identity/domain/role";
+import { isStationRole, type Role } from "@/domains/identity/domain/role";
 import RoleSwitcher from "@/domains/identity/ui/RoleSwitcher";
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { LocaleSwitcher } from "@/components/theme/LocaleSwitcher";
 
+const NAV_LABEL_KEYS: Record<string, string> = {
+    Dashboard: "dashboard",
+    "Live Ops": "liveOps",
+    "Live Operations": "liveOps",
+    Tenants: "tenants",
+    "Staff Directory": "staffDirectory",
+    "Platform Audit": "audit",
+    Audit: "audit",
+    Branches: "branches",
+    Reports: "reports",
+    "Daily Close": "dailyClose",
+    Settings: "settings",
+    Website: "website",
+    Menu: "menu",
+    "Menu Items": "menuItems",
+    "QR Menu Builder": "qrMenu",
+    "Print Menu Builder": "printMenu",
+    Stations: "stations",
+    Tables: "tables",
+    Staff: "staff",
+    Waiters: "waiters",
+    Approvals: "approvals",
+    Payments: "payments",
+    "Bill requests": "billRequests",
+    "Cash drops": "cashDrops",
+    "Closed Bills": "closedBills",
+    Reconciliation: "reconciliation",
+    Cash: "cash",
+    Ready: "ready",
+    Shift: "shift",
+    Profile: "profile",
+    "All tickets": "allTickets",
+    New: "new",
+    "In progress": "preparing",
+    Exceptions: "exceptions",
+    Notifications: "notifications",
+};
+
 function CompactNav({ role }: { role: Role }) {
     const pathname = usePathname();
+    const tNav = useTranslations("appNav");
     const home = homePathForRole(role);
     const items = navForRole(role).flatMap(section => section.items);
 
@@ -32,6 +68,8 @@ function CompactNav({ role }: { role: Role }) {
                 const active =
                     pathname === pathOnly ||
                     (pathOnly !== home && pathname.startsWith(`${pathOnly}/`));
+                const key = NAV_LABEL_KEYS[item.label];
+                const label = key && tNav.has(key) ? tNav(key) : item.label;
                 return (
                     <Link
                         key={item.href}
@@ -44,7 +82,7 @@ function CompactNav({ role }: { role: Role }) {
                         )}
                     >
                         <item.icon className="size-4" />
-                        {item.label}
+                        {label}
                     </Link>
                 );
             })}
@@ -60,9 +98,11 @@ export default function ResponsiveDeskShell({
     children: ReactNode;
 }) {
     const pathname = usePathname();
+    const tRoles = useTranslations("roleLabels");
     const station = isStationRole(role);
     const home = homePathForRole(role);
     const stationQueueHome = station && pathname === home;
+    const roleLabel = tRoles.has(role) ? tRoles(role) : role;
 
     return (
         <div className="flex h-svh overflow-hidden bg-white dark:bg-background">
@@ -73,7 +113,7 @@ export default function ResponsiveDeskShell({
                         <div className="flex h-10 items-center gap-2">
                             <div className="min-w-0">
                                 <h1 className="truncate text-[15px] font-medium tracking-tight">
-                                    {ROLE_LABELS[role]}
+                                    {roleLabel}
                                 </h1>
                             </div>
                             <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1">

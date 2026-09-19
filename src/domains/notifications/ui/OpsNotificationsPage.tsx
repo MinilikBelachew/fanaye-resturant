@@ -8,6 +8,7 @@ import {
     ChevronRight,
     Inbox,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { useAppDispatch, useAppSelector } from "@/context/hooks";
 import {
@@ -36,19 +37,24 @@ function severityDot(severity: OpsNotification["severity"]) {
     return "bg-emerald-500";
 }
 
-function timeAgo(iso: string) {
-    const diff = Date.now() - Date.parse(iso);
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return "just now";
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    return `${Math.floor(hours / 24)}d ago`;
+function useTimeAgo() {
+    const t = useTranslations("notifications");
+    return (iso: string) => {
+        const diff = Date.now() - Date.parse(iso);
+        const mins = Math.floor(diff / 60000);
+        if (mins < 1) return t("justNow");
+        if (mins < 60) return t("minutesAgo", { count: mins });
+        const hours = Math.floor(mins / 60);
+        if (hours < 24) return t("hoursAgo", { count: hours });
+        return t("daysAgo", { count: Math.floor(hours / 24) });
+    };
 }
 
 export default function OpsNotificationsPage() {
     const dispatch = useAppDispatch();
     const staff = useAppSelector(selectCurrentStaff);
+    const t = useTranslations("notifications");
+    const timeAgo = useTimeAgo();
     const [page, setPage] = useState(1);
     const [unreadOnly, setUnreadOnly] = useState(false);
     const [markRead] = useMarkNotificationReadMutation();
@@ -91,11 +97,7 @@ export default function OpsNotificationsPage() {
     }
 
     if (!staff) {
-        return (
-            <p className="text-sm text-slate-gray">
-                Sign in to view notifications.
-            </p>
-        );
+        return <p className="text-sm text-slate-gray">{t("signInRequired")}</p>;
     }
 
     return (
@@ -103,12 +105,12 @@ export default function OpsNotificationsPage() {
             <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h1 className="text-[24px] font-semibold tracking-tight">
-                        Notifications
+                        {t("title")}
                     </h1>
                     <p className="mt-1 text-[14px] text-slate-gray">
                         {unreadCount > 0
-                            ? `${unreadCount} unread alert${unreadCount === 1 ? "" : "s"}`
-                            : "You're caught up."}
+                            ? t("unreadCount", { count: unreadCount })
+                            : t("caughtUp")}
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -126,7 +128,7 @@ export default function OpsNotificationsPage() {
                                 setPage(1);
                             }}
                         >
-                            All
+                            {t("all")}
                         </button>
                         <button
                             type="button"
@@ -141,7 +143,7 @@ export default function OpsNotificationsPage() {
                                 setPage(1);
                             }}
                         >
-                            Unread
+                            {t("unread")}
                         </button>
                     </div>
                     {unreadCount > 0 ? (
@@ -154,7 +156,7 @@ export default function OpsNotificationsPage() {
                             onClick={() => void onMarkAll()}
                         >
                             <CheckCheck className="size-3.5" />
-                            Mark all read
+                            {t("markAllRead")}
                         </Button>
                     ) : null}
                 </div>
@@ -162,13 +164,13 @@ export default function OpsNotificationsPage() {
 
             {isLoading ? (
                 <div className="rounded-2xl border border-hairline bg-white px-4 py-12 text-center text-sm text-slate-gray dark:bg-card">
-                    Loading notifications…
+                    {t("loading")}
                 </div>
             ) : null}
 
             {isError ? (
                 <div className="rounded-2xl border border-hairline bg-white px-4 py-12 text-center text-sm text-red-600 dark:bg-card">
-                    Could not load notifications.
+                    {t("loadError")}
                 </div>
             ) : null}
 
@@ -178,11 +180,9 @@ export default function OpsNotificationsPage() {
                         <Inbox className="size-5" />
                     </span>
                     <div>
-                        <p className="text-sm font-medium">No alerts yet</p>
+                        <p className="text-sm font-medium">{t("emptyTitle")}</p>
                         <p className="mt-1 text-[13px] text-slate-gray">
-                            {unreadOnly
-                                ? "No unread notifications on this page."
-                                : "Live floor events will show up here."}
+                            {unreadOnly ? t("emptyUnread") : t("emptyAll")}
                         </p>
                     </div>
                 </div>
@@ -270,11 +270,13 @@ export default function OpsNotificationsPage() {
             {pagination && pagination.totalPages > 1 ? (
                 <div className="mt-4 flex items-center justify-between gap-3 text-[13px] text-slate-gray">
                     <span>
-                        Page <strong>{pagination.page}</strong> of{" "}
-                        <strong>{pagination.totalPages}</strong>
+                        {t("pageOf", {
+                            page: pagination.page,
+                            total: pagination.totalPages,
+                        })}
                         <span className="hidden sm:inline">
                             {" "}
-                            · {pagination.total} total
+                            {t("totalItems", { total: pagination.total })}
                         </span>
                     </span>
                     <div className="flex items-center gap-1.5">
@@ -287,7 +289,7 @@ export default function OpsNotificationsPage() {
                             onClick={() => setPage(p => Math.max(1, p - 1))}
                         >
                             <ChevronLeft className="size-3.5" />
-                            Prev
+                            {t("prev")}
                         </Button>
                         <Button
                             type="button"
@@ -303,7 +305,7 @@ export default function OpsNotificationsPage() {
                                 )
                             }
                         >
-                            Next
+                            {t("next")}
                             <ChevronRight className="size-3.5" />
                         </Button>
                     </div>
@@ -312,7 +314,7 @@ export default function OpsNotificationsPage() {
 
             <p className="mt-6 flex items-center gap-1.5 text-[12px] text-slate-gray">
                 <Bell className="size-3.5" />
-                New alerts also appear on the bell while you work.
+                {t("bellHint")}
             </p>
         </div>
     );

@@ -3,12 +3,7 @@
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import {
-    ArrowRight,
-    ShieldCheck,
-    Sparkles,
-    Zap,
-} from "lucide-react";
+import { ArrowRight, ShieldCheck, Sparkles, Zap } from "lucide-react";
 
 export default function LandingFooter() {
     const t = useTranslations("footer");
@@ -38,7 +33,7 @@ export default function LandingFooter() {
                                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-xs sm:text-sm font-bold text-orange-600 hover:bg-white/90 transition"
                             >
                                 <Zap className="size-3.5 fill-current" />
-                                <span>{t("launchDemo")}</span>
+                                <span>{t("getStarted")}</span>
                                 <ArrowRight className="size-3.5" />
                             </Link>
                         </div>
@@ -81,11 +76,46 @@ export default function LandingFooter() {
                             {t("colStations")}
                         </h4>
                         <ul className="space-y-1.5 text-xs text-muted-foreground">
-                            <li><a href="#stations" className="hover:text-foreground transition">Kitchen KDS</a></li>
-                            <li><a href="#stations" className="hover:text-foreground transition">Barista Bar</a></li>
-                            <li><a href="#stations" className="hover:text-foreground transition">Bakery & Cakes</a></li>
-                            <li><a href="#stations" className="hover:text-foreground transition">Soft Drinks</a></li>
-                            <li><a href="#stations" className="hover:text-foreground transition">Waiter POS</a></li>
+                            <li>
+                                <a
+                                    href="#stations"
+                                    className="hover:text-foreground transition"
+                                >
+                                    Kitchen KDS
+                                </a>
+                            </li>
+                            <li>
+                                <a
+                                    href="#stations"
+                                    className="hover:text-foreground transition"
+                                >
+                                    Barista Bar
+                                </a>
+                            </li>
+                            <li>
+                                <a
+                                    href="#stations"
+                                    className="hover:text-foreground transition"
+                                >
+                                    Bakery & Cakes
+                                </a>
+                            </li>
+                            <li>
+                                <a
+                                    href="#stations"
+                                    className="hover:text-foreground transition"
+                                >
+                                    Soft Drinks
+                                </a>
+                            </li>
+                            <li>
+                                <a
+                                    href="#stations"
+                                    className="hover:text-foreground transition"
+                                >
+                                    Waiter POS
+                                </a>
+                            </li>
                         </ul>
                     </div>
 
@@ -95,11 +125,46 @@ export default function LandingFooter() {
                             {t("colCapabilities")}
                         </h4>
                         <ul className="space-y-1.5 text-xs text-muted-foreground">
-                            <li><a href="#tinaverify" className="hover:text-foreground transition">TinaVerify™ AI</a></li>
-                            <li><a href="#how-it-works" className="hover:text-foreground transition">4-Stage Lifecycle</a></li>
-                            <li><a href="#comparison" className="hover:text-foreground transition">Legacy POS vs Fanaye</a></li>
-                            <li><a href="#features" className="hover:text-foreground transition">Cash Drops</a></li>
-                            <li><a href="#features" className="hover:text-foreground transition">Daily Close</a></li>
+                            <li>
+                                <a
+                                    href="#tinaverify"
+                                    className="hover:text-foreground transition"
+                                >
+                                    TinaVerify™ AI
+                                </a>
+                            </li>
+                            <li>
+                                <a
+                                    href="#how-it-works"
+                                    className="hover:text-foreground transition"
+                                >
+                                    4-Stage Lifecycle
+                                </a>
+                            </li>
+                            <li>
+                                <a
+                                    href="#comparison"
+                                    className="hover:text-foreground transition"
+                                >
+                                    Legacy POS vs Fanaye
+                                </a>
+                            </li>
+                            <li>
+                                <a
+                                    href="#features"
+                                    className="hover:text-foreground transition"
+                                >
+                                    Cash Drops
+                                </a>
+                            </li>
+                            <li>
+                                <a
+                                    href="#features"
+                                    className="hover:text-foreground transition"
+                                >
+                                    Daily Close
+                                </a>
+                            </li>
                         </ul>
                     </div>
 
@@ -109,20 +174,53 @@ export default function LandingFooter() {
                             {t("colRoles")}
                         </h4>
                         <ul className="space-y-1.5 text-xs text-muted-foreground">
-                            <li><Link href="/sign-in" className="hover:text-foreground transition">Waiter</Link></li>
-                            <li><Link href="/sign-in" className="hover:text-foreground transition">Chef & Barista</Link></li>
-                            <li><Link href="/sign-in" className="hover:text-foreground transition">Cashier Desk</Link></li>
-                            <li><Link href="/sign-in" className="hover:text-foreground transition">Manager</Link></li>
-                            <li><Link href="/sign-in" className="hover:text-foreground transition">Owner Admin</Link></li>
+                            <li>
+                                <Link
+                                    href="/sign-in"
+                                    className="hover:text-foreground transition"
+                                >
+                                    Waiter
+                                </Link>
+                            </li>
+                            <li>
+                                <Link
+                                    href="/sign-in"
+                                    className="hover:text-foreground transition"
+                                >
+                                    Chef & Barista
+                                </Link>
+                            </li>
+                            <li>
+                                <Link
+                                    href="/sign-in"
+                                    className="hover:text-foreground transition"
+                                >
+                                    Cashier Desk
+                                </Link>
+                            </li>
+                            <li>
+                                <Link
+                                    href="/sign-in"
+                                    className="hover:text-foreground transition"
+                                >
+                                    Manager
+                                </Link>
+                            </li>
+                            <li>
+                                <Link
+                                    href="/sign-in"
+                                    className="hover:text-foreground transition"
+                                >
+                                    Owner Admin
+                                </Link>
+                            </li>
                         </ul>
                     </div>
                 </div>
 
                 {/* Bottom Bar */}
                 <div className="mt-8 pt-6 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-muted-foreground">
-                    <p>
-                        {t("copyright")}
-                    </p>
+                    <p>{t("copyright")}</p>
                     <div className="flex items-center gap-3">
                         <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
                             <ShieldCheck className="size-3" /> {t("encryption")}

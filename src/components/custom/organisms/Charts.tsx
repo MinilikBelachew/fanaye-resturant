@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
     Area,
     AreaChart,
@@ -31,35 +32,69 @@ import type {
     WeeklyCashMovementPoint,
 } from "@/context/services/managerDashboardApi";
 
-// 1. Gross Sales vs Net Revenue vs Collections Multi-Wave Area Chart
+const DAY_KEYS: Record<string, string> = {
+    Sun: "daySun",
+    Mon: "dayMon",
+    Tue: "dayTue",
+    Wed: "dayWed",
+    Thu: "dayThu",
+    Fri: "dayFri",
+    Sat: "daySat",
+};
+
+function localizeDayLabel(
+    t: ReturnType<typeof useTranslations>,
+    value: string,
+) {
+    const key = DAY_KEYS[value];
+    return key && t.has(key) ? t(key) : value;
+}
+
+function withLocalizedDays<T extends { period?: string; day?: string }>(
+    t: ReturnType<typeof useTranslations>,
+    rows: T[],
+    field: "period" | "day",
+): T[] {
+    return rows.map(row => {
+        const raw = row[field];
+        if (!raw) return row;
+        return { ...row, [field]: localizeDayLabel(t, raw) };
+    });
+}
+
 export function RevenueVsCollectionsChart({
     data = [],
 }: {
     data?: RevenueVsCollectionsPoint[];
 }) {
+    const t = useTranslations("dashboardCharts");
+    const tCommon = useTranslations("common");
+    const currency = tCommon("currency");
+    const chartData = withLocalizedDays(t, data, "period");
+
     return (
         <div className="flex h-full flex-col justify-between rounded-[16px] border border-hairline bg-card p-6">
             <div>
                 <div className="flex items-start justify-between">
                     <div>
                         <h3 className="text-[15px] font-semibold text-foreground">
-                            Gross sales vs net revenue vs collections
+                            {t("revenueTitle")}
                         </h3>
                         <p className="mt-0.5 text-[12px] text-slate-gray">
-                            Trailing operational history · ETB
+                            {t("revenueSubtitle", { currency })}
                         </p>
                     </div>
                 </div>
 
                 <div className="mt-6 h-[250px] w-full">
-                    {data.length === 0 ? (
+                    {chartData.length === 0 ? (
                         <div className="flex h-full items-center justify-center text-[13px] text-slate-gray">
-                            No sales history recorded yet for this branch
+                            {t("revenueEmpty")}
                         </div>
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart
-                                data={data}
+                                data={chartData}
                                 margin={{
                                     top: 10,
                                     right: 10,
@@ -132,7 +167,7 @@ export function RevenueVsCollectionsChart({
                                 />
                                 <Area
                                     dataKey="grossSales"
-                                    name="Gross Sales"
+                                    name={t("grossSales")}
                                     type="monotone"
                                     stroke="#e85d04"
                                     strokeWidth={2.5}
@@ -140,7 +175,7 @@ export function RevenueVsCollectionsChart({
                                 />
                                 <Area
                                     dataKey="collections"
-                                    name="Collections"
+                                    name={t("collections")}
                                     type="monotone"
                                     stroke="#0068f9"
                                     strokeWidth={2.2}
@@ -148,7 +183,7 @@ export function RevenueVsCollectionsChart({
                                 />
                                 <Area
                                     dataKey="netRevenue"
-                                    name="Net Revenue"
+                                    name={t("netRevenue")}
                                     type="monotone"
                                     stroke="#c2410c"
                                     strokeWidth={1.8}
@@ -163,42 +198,42 @@ export function RevenueVsCollectionsChart({
             <div className="mt-4 flex items-center justify-center gap-6 text-[12px] font-medium text-slate-gray">
                 <div className="flex items-center gap-1.5">
                     <span className="size-2.5 rounded-full bg-[#e85d04]" />
-                    <span>Gross Sales</span>
+                    <span>{t("grossSales")}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <span className="size-2.5 rounded-full bg-[#0068f9]" />
-                    <span>Collections</span>
+                    <span>{t("collections")}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <span className="size-2.5 rounded-full bg-[#c2410c]" />
-                    <span>Net Revenue</span>
+                    <span>{t("netRevenue")}</span>
                 </div>
             </div>
         </div>
     );
 }
 
-// 2. Payment Channels Breakdown
 export function PaymentChannelsBreakdown({
     channels = [],
 }: {
     channels?: PaymentChannelBreakdownItem[];
 }) {
+    const t = useTranslations("dashboardCharts");
     const totalShare = channels.reduce((sum, c) => sum + c.sharePercentage, 0);
 
     return (
         <div className="flex h-full flex-col justify-between rounded-[16px] border border-hairline bg-card p-6">
             <div>
                 <h3 className="text-[15px] font-semibold text-foreground">
-                    Payment channels
+                    {t("paymentChannelsTitle")}
                 </h3>
                 <p className="mt-0.5 text-[12px] text-slate-gray">
-                    Share of collections today
+                    {t("paymentChannelsSubtitle")}
                 </p>
 
                 {channels.length === 0 || totalShare === 0 ? (
                     <div className="mt-12 flex items-center justify-center text-[13px] text-slate-gray">
-                        No payments collected today yet
+                        {t("paymentsEmpty")}
                     </div>
                 ) : (
                     <>
@@ -224,7 +259,7 @@ export function PaymentChannelsBreakdown({
                                 >
                                     <div className="flex items-center gap-2.5">
                                         <span
-                                            className="size-2.5 rounded-full shrink-0"
+                                            className="size-2.5 shrink-0 rounded-full"
                                             style={{
                                                 backgroundColor: ch.color,
                                             }}
@@ -234,10 +269,10 @@ export function PaymentChannelsBreakdown({
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                        <span className="text-slate-gray font-mono text-[12px]">
+                                        <span className="font-mono text-[12px] text-slate-gray">
                                             {ch.amountFormatted}
                                         </span>
-                                        <span className="font-semibold text-foreground w-10 text-right">
+                                        <span className="w-10 text-right font-semibold text-foreground">
                                             {ch.sharePercentage}%
                                         </span>
                                     </div>
@@ -251,7 +286,6 @@ export function PaymentChannelsBreakdown({
     );
 }
 
-// 3. Prep Duration / Ticket Aging Buckets
 export function PrepDurationBucketsChart({
     buckets = [],
     avgSpeed,
@@ -259,22 +293,23 @@ export function PrepDurationBucketsChart({
     buckets?: PrepDurationBucket[];
     avgSpeed?: string;
 }) {
+    const t = useTranslations("dashboardCharts");
     const totalTickets = buckets.reduce((sum, b) => sum + b.tickets, 0);
 
     return (
         <div className="flex h-full flex-col justify-between rounded-[16px] border border-hairline bg-card p-6">
             <div>
                 <h3 className="text-[15px] font-semibold text-foreground">
-                    Prep duration distribution
+                    {t("prepTitle")}
                 </h3>
                 <p className="mt-0.5 text-[12px] text-slate-gray">
-                    Ticket completion by time bracket
+                    {t("prepSubtitle")}
                 </p>
 
                 <div className="mt-6 h-[200px] w-full">
                     {totalTickets === 0 ? (
                         <div className="flex h-full items-center justify-center text-[13px] text-slate-gray">
-                            No tickets processed yet today
+                            {t("prepEmpty")}
                         </div>
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
@@ -314,7 +349,7 @@ export function PrepDurationBucketsChart({
                                 />
                                 <Bar
                                     dataKey="tickets"
-                                    name="Tickets"
+                                    name={t("tickets")}
                                     fill="#e85d04"
                                     radius={[6, 6, 0, 0]}
                                 >
@@ -342,7 +377,7 @@ export function PrepDurationBucketsChart({
             </div>
 
             <div className="mt-3 border-t border-hairline pt-3 text-[12px] text-slate-gray">
-                Average fulfillment speed:{" "}
+                {t("avgSpeed")}{" "}
                 <span className="font-semibold text-foreground">
                     {avgSpeed ?? "0.0 min"}
                 </span>
@@ -351,31 +386,35 @@ export function PrepDurationBucketsChart({
     );
 }
 
-// 4. Weekly Cash Movement Chart
 export function WeeklyCashMovementChart({
     movement = [],
 }: {
     movement?: WeeklyCashMovementPoint[];
 }) {
+    const t = useTranslations("dashboardCharts");
+    const tCommon = useTranslations("common");
+    const currency = tCommon("currency");
+    const chartData = withLocalizedDays(t, movement, "day");
+
     return (
         <div className="flex h-full flex-col justify-between rounded-[16px] border border-hairline bg-card p-6">
             <div>
                 <h3 className="text-[15px] font-semibold text-foreground">
-                    Weekly cash movement
+                    {t("cashMovementTitle")}
                 </h3>
                 <p className="mt-0.5 text-[12px] text-slate-gray">
-                    Digital inflows vs cash drops · ETB thousands
+                    {t("cashMovementSubtitle", { currency })}
                 </p>
 
                 <div className="mt-6 h-[200px] w-full">
-                    {movement.length === 0 ? (
+                    {chartData.length === 0 ? (
                         <div className="flex h-full items-center justify-center text-[13px] text-slate-gray">
-                            No cash movement records yet
+                            {t("cashMovementEmpty")}
                         </div>
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart
-                                data={movement}
+                                data={chartData}
                                 margin={{
                                     top: 10,
                                     right: 10,
@@ -430,7 +469,7 @@ export function WeeklyCashMovementChart({
                                 />
                                 <Area
                                     dataKey="digitalInflow"
-                                    name="Digital Transfer"
+                                    name={t("digitalTransfer")}
                                     type="monotone"
                                     stroke="#e85d04"
                                     strokeWidth={2.2}
@@ -438,7 +477,7 @@ export function WeeklyCashMovementChart({
                                 />
                                 <Area
                                     dataKey="cashDrop"
-                                    name="Cash Drops"
+                                    name={t("cashDrops")}
                                     type="monotone"
                                     stroke="#fb923c"
                                     strokeDasharray="4 4"
@@ -454,37 +493,38 @@ export function WeeklyCashMovementChart({
             <div className="mt-3 flex items-center justify-center gap-6 text-[12px] font-medium text-slate-gray">
                 <div className="flex items-center gap-1.5">
                     <span className="size-2.5 rounded-full bg-[#e85d04]" />
-                    <span>Digital (TinaVerify)</span>
+                    <span>{t("digitalTina")}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <span className="size-2.5 rounded-full border border-dashed border-[#fb923c] bg-[#fb923c]" />
-                    <span>Cash drops</span>
+                    <span>{t("cashDropsLegend")}</span>
                 </div>
             </div>
         </div>
     );
 }
 
-// 5. Top Selling Dishes Leaderboard
 export function TopDishesLeaderboard({
     dishes = [],
 }: {
     dishes?: TopSellingDish[];
 }) {
+    const t = useTranslations("dashboardCharts");
+
     return (
         <div className="flex h-full flex-col justify-between rounded-[16px] border border-hairline bg-card p-6">
             <div>
                 <h3 className="text-[15px] font-semibold text-foreground">
-                    Top revenue items
+                    {t("topDishesTitle")}
                 </h3>
                 <p className="mt-0.5 text-[12px] text-slate-gray">
-                    Highest grossing menu items today
+                    {t("topDishesSubtitle")}
                 </p>
 
                 <div className="mt-5 space-y-4">
                     {dishes.length === 0 ? (
                         <div className="py-8 text-center text-[13px] text-slate-gray">
-                            No menu items ordered yet today
+                            {t("topDishesEmpty")}
                         </div>
                     ) : (
                         dishes.map(dish => (
@@ -517,24 +557,26 @@ export function TopDishesLeaderboard({
     );
 }
 
-// 6. Hourly billed vs collected today
 export function HourlySalesChart({ data = [] }: { data?: HourlySalesPoint[] }) {
+    const t = useTranslations("dashboardCharts");
+    const tCommon = useTranslations("common");
+    const currency = tCommon("currency");
     const hasData = data.some(d => d.billed > 0 || d.collected > 0);
 
     return (
         <div className="flex h-full flex-col justify-between rounded-[16px] border border-hairline bg-card p-6">
             <div>
                 <h3 className="text-[15px] font-semibold text-foreground">
-                    Hourly sales today
+                    {t("hourlyTitle")}
                 </h3>
                 <p className="mt-0.5 text-[12px] text-slate-gray">
-                    Billed vs collected by hour · ETB
+                    {t("hourlySubtitle", { currency })}
                 </p>
 
                 <div className="mt-6 h-[220px] w-full">
                     {!hasData ? (
                         <div className="flex h-full items-center justify-center text-[13px] text-slate-gray">
-                            No hourly activity recorded yet today
+                            {t("hourlyEmpty")}
                         </div>
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
@@ -578,13 +620,13 @@ export function HourlySalesChart({ data = [] }: { data?: HourlySalesPoint[] }) {
                                 />
                                 <Bar
                                     dataKey="billed"
-                                    name="Billed"
+                                    name={t("billed")}
                                     fill="#fdba74"
                                     radius={[4, 4, 0, 0]}
                                 />
                                 <Bar
                                     dataKey="collected"
-                                    name="Collected"
+                                    name={t("collected")}
                                     fill="#e85d04"
                                     radius={[4, 4, 0, 0]}
                                 />
@@ -596,37 +638,38 @@ export function HourlySalesChart({ data = [] }: { data?: HourlySalesPoint[] }) {
             <div className="mt-3 flex items-center justify-center gap-6 text-[12px] font-medium text-slate-gray">
                 <div className="flex items-center gap-1.5">
                     <span className="size-2.5 rounded-full bg-[#fdba74]" />
-                    <span>Billed</span>
+                    <span>{t("billed")}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <span className="size-2.5 rounded-full bg-[#e85d04]" />
-                    <span>Collected</span>
+                    <span>{t("collected")}</span>
                 </div>
             </div>
         </div>
     );
 }
 
-// 7. Station throughput stacked bars
 export function StationThroughputChart({
     data = [],
 }: {
     data?: StationThroughputPoint[];
 }) {
+    const t = useTranslations("dashboardCharts");
+
     return (
         <div className="flex h-full flex-col justify-between rounded-[16px] border border-hairline bg-card p-6">
             <div>
                 <h3 className="text-[15px] font-semibold text-foreground">
-                    Station throughput
+                    {t("throughputTitle")}
                 </h3>
                 <p className="mt-0.5 text-[12px] text-slate-gray">
-                    Ticket states by prep station today
+                    {t("throughputSubtitle")}
                 </p>
 
                 <div className="mt-6 h-[220px] w-full">
                     {data.length === 0 ? (
                         <div className="flex h-full items-center justify-center text-[13px] text-slate-gray">
-                            No station tickets yet today
+                            {t("throughputEmpty")}
                         </div>
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
@@ -667,25 +710,25 @@ export function StationThroughputChart({
                                 />
                                 <Bar
                                     dataKey="queued"
-                                    name="Queued"
+                                    name={t("queued")}
                                     stackId="a"
                                     fill="#fdba74"
                                 />
                                 <Bar
                                     dataKey="inPrep"
-                                    name="In prep"
+                                    name={t("inPrep")}
                                     stackId="a"
                                     fill="#f97316"
                                 />
                                 <Bar
                                     dataKey="ready"
-                                    name="Ready"
+                                    name={t("ready")}
                                     stackId="a"
                                     fill="#e85d04"
                                 />
                                 <Bar
                                     dataKey="served"
-                                    name="Served"
+                                    name={t("served")}
                                     stackId="a"
                                     fill="#046645"
                                     radius={[4, 4, 0, 0]}
@@ -699,29 +742,30 @@ export function StationThroughputChart({
     );
 }
 
-// 8. Orders & covers trailing week
 export function OrderVolumeChart({ data = [] }: { data?: OrderVolumePoint[] }) {
+    const t = useTranslations("dashboardCharts");
     const hasData = data.some(d => d.orders > 0 || d.covers > 0);
+    const chartData = withLocalizedDays(t, data, "period");
 
     return (
         <div className="flex h-full flex-col justify-between rounded-[16px] border border-hairline bg-card p-6">
             <div>
                 <h3 className="text-[15px] font-semibold text-foreground">
-                    Orders & covers
+                    {t("ordersTitle")}
                 </h3>
                 <p className="mt-0.5 text-[12px] text-slate-gray">
-                    Trailing 7-day volume
+                    {t("ordersSubtitle")}
                 </p>
 
                 <div className="mt-6 h-[220px] w-full">
                     {!hasData ? (
                         <div className="flex h-full items-center justify-center text-[13px] text-slate-gray">
-                            No orders recorded in the last 7 days
+                            {t("ordersEmpty")}
                         </div>
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart
-                                data={data}
+                                data={chartData}
                                 margin={{
                                     top: 10,
                                     right: 10,
@@ -777,7 +821,7 @@ export function OrderVolumeChart({ data = [] }: { data?: OrderVolumePoint[] }) {
                                 />
                                 <Area
                                     dataKey="orders"
-                                    name="Orders"
+                                    name={t("orders")}
                                     type="monotone"
                                     stroke="#e85d04"
                                     strokeWidth={2.2}
@@ -785,7 +829,7 @@ export function OrderVolumeChart({ data = [] }: { data?: OrderVolumePoint[] }) {
                                 />
                                 <Area
                                     dataKey="covers"
-                                    name="Covers"
+                                    name={t("covers")}
                                     type="monotone"
                                     stroke="#046645"
                                     strokeWidth={2}
@@ -799,11 +843,11 @@ export function OrderVolumeChart({ data = [] }: { data?: OrderVolumePoint[] }) {
             <div className="mt-3 flex items-center justify-center gap-6 text-[12px] font-medium text-slate-gray">
                 <div className="flex items-center gap-1.5">
                     <span className="size-2.5 rounded-full bg-[#e85d04]" />
-                    <span>Orders</span>
+                    <span>{t("orders")}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <span className="size-2.5 rounded-full bg-[#046645]" />
-                    <span>Covers</span>
+                    <span>{t("covers")}</span>
                 </div>
             </div>
         </div>
@@ -815,21 +859,22 @@ export function PaymentMixPieChart({
 }: {
     channels?: PaymentChannelBreakdownItem[];
 }) {
+    const t = useTranslations("dashboardCharts");
     const data = channels.filter(ch => ch.amountValue > 0);
     return (
         <div className="flex h-full flex-col rounded-[16px] border border-hairline bg-card p-5">
             <div>
                 <h3 className="text-[14px] font-medium tracking-tight text-foreground">
-                    Payment mix
+                    {t("paymentMixTitle")}
                 </h3>
                 <p className="mt-0.5 text-[12px] text-slate-gray">
-                    Share of logged collections
+                    {t("paymentMixSubtitle")}
                 </p>
             </div>
             <div className="mt-4 min-h-[220px] flex-1">
                 {data.length === 0 ? (
                     <div className="flex h-[220px] items-center justify-center text-[13px] text-slate-gray">
-                        No payments logged yet
+                        {t("paymentMixEmpty")}
                     </div>
                 ) : (
                     <ResponsiveContainer width="100%" height={220}>
@@ -882,21 +927,22 @@ export function CashierMoneyRadarChart({
 }: {
     data?: Array<{ metric: string; value: number }>;
 }) {
+    const t = useTranslations("dashboardCharts");
     const hasSignal = data.some(row => row.value > 0);
     return (
         <div className="flex h-full flex-col rounded-[16px] border border-hairline bg-card p-5">
             <div>
                 <h3 className="text-[14px] font-medium tracking-tight text-foreground">
-                    Desk balance
+                    {t("deskBalanceTitle")}
                 </h3>
                 <p className="mt-0.5 text-[12px] text-slate-gray">
-                    Relative cash vs digital vs queues
+                    {t("deskBalanceSubtitle")}
                 </p>
             </div>
             <div className="mt-2 min-h-[240px] flex-1">
                 {!hasSignal ? (
                     <div className="flex h-[240px] items-center justify-center text-[13px] text-slate-gray">
-                        Waiting for cashier activity
+                        {t("deskBalanceEmpty")}
                     </div>
                 ) : (
                     <ResponsiveContainer width="100%" height={240}>
@@ -918,7 +964,7 @@ export function CashierMoneyRadarChart({
                                 axisLine={false}
                             />
                             <Radar
-                                name="Mix"
+                                name={t("mix")}
                                 dataKey="value"
                                 stroke="#e85d04"
                                 fill="#e85d04"
@@ -933,15 +979,14 @@ export function CashierMoneyRadarChart({
     );
 }
 
-// Legacy wrappers
 export function WeeklySalesChart() {
     return <RevenueVsCollectionsChart />;
 }
 
-export function PaymentMixChart() {
-    return <PaymentChannelsBreakdown />;
+export function FulfillmentLatencyChart() {
+    return <PrepDurationBucketsChart />;
 }
 
-export function PlatformGrowthChart() {
-    return <RevenueVsCollectionsChart />;
+export function PaymentChannelsChart() {
+    return <PaymentChannelsBreakdown />;
 }

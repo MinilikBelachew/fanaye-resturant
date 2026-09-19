@@ -142,7 +142,7 @@ export default function LandingHero() {
                                 href="/sign-in"
                                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary hover:bg-primary-deep text-white px-7 py-3.5 text-sm font-bold shadow-lg shadow-primary/25 transition-all duration-300 hover:shadow-xl hover:shadow-primary/35 hover:-translate-y-0.5 active:scale-[0.98]"
                             >
-                                <span>{t("launchDemo")}</span>
+                                <span>{t("getStarted")}</span>
                                 <ArrowUpRight className="size-4 stroke-[2.5]" />
                             </Link>
 
@@ -153,7 +153,7 @@ export default function LandingHero() {
                                 <span className="flex size-6 items-center justify-center rounded-full bg-primary/10 text-primary">
                                     <Play className="size-2.5 fill-current ml-0.5" />
                                 </span>
-                                <span>{t("watchDemo")}</span>
+                                <span>{t("watchWalkthrough")}</span>
                             </a>
                         </div>
 

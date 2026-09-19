@@ -60,7 +60,7 @@ export default function LandingNavbar() {
                             href="/sign-in"
                             className="inline-flex items-center justify-center gap-1.5 rounded-full bg-foreground hover:bg-primary text-background hover:text-white px-5 sm:px-6 py-2.5 text-xs sm:text-[13px] font-semibold transition-all duration-300 shadow-sm active:scale-[0.98] whitespace-nowrap"
                         >
-                            <span>{t("launchDemo") || "Launch Demo"}</span>
+                            <span>{t("getStarted")}</span>
                             <ArrowUpRight className="size-3.5 stroke-[2.5]" />
                         </Link>
 
@@ -103,7 +103,7 @@ export default function LandingNavbar() {
                                 onClick={() => setMobileMenuOpen(false)}
                                 className="flex w-full items-center justify-center gap-1.5 rounded-full bg-foreground text-background py-2.5 text-xs font-semibold"
                             >
-                                <span>{t("openPos") || "Launch Demo"}</span>
+                                <span>{t("getStarted")}</span>
                                 <ArrowUpRight className="size-3.5" />
                             </Link>
                         </div>

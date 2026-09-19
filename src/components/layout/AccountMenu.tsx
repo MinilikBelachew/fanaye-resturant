@@ -85,7 +85,7 @@ export default function AccountMenu({
                 }
                 aria-expanded={open}
                 aria-haspopup="menu"
-                aria-label={compact ? "Account" : undefined}
+                aria-label={compact ? tTopBar("account") : undefined}
             >
                 {compact ? (
                     <CircleUserRound className="size-4" />
@@ -130,7 +130,7 @@ export default function AccountMenu({
                         </p>
                         <div
                             role="radiogroup"
-                            aria-label="Theme"
+                            aria-label={tTopBar("theme")}
                             className="grid grid-cols-3 gap-1 rounded-[12px] bg-secondary p-1"
                         >
                             {THEMES.map(option => {
@@ -169,7 +169,9 @@ export default function AccountMenu({
                             className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-60"
                         >
                             <LogOut className="size-4 shrink-0" />
-                            {signingOut ? "Signing out…" : "Log out"}
+                            {signingOut
+                                ? tTopBar("signingOut")
+                                : tTopBar("logOut")}
                         </button>
                     </div>
                 </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { formatEtb } from "@/lib/money";
 import type {
@@ -111,25 +112,30 @@ export function PaymentChannelsTable({
 }: {
     channels?: PaymentChannelBreakdownItem[];
 }) {
+    const t = useTranslations("dashboardCharts");
+
     return (
         <Panel
-            title="Payment mix"
-            subtitle="Channel share for this business date"
+            title={t("paymentMixTitle")}
+            subtitle={t("paymentMixTableSubtitle")}
         >
             <table className="w-full min-w-[360px] text-left text-[13px]">
                 <thead className="bg-secondary/40 text-[11px] uppercase tracking-wide text-slate-gray">
                     <tr>
-                        <th className="px-5 py-2.5 font-medium">Channel</th>
-                        <th className="px-3 py-2.5 font-medium">Share</th>
-                        <th className="px-5 py-2.5 font-medium">Amount</th>
+                        <th className="px-5 py-2.5 font-medium">
+                            {t("channel")}
+                        </th>
+                        <th className="px-3 py-2.5 font-medium">
+                            {t("share")}
+                        </th>
+                        <th className="px-5 py-2.5 font-medium">
+                            {t("amount")}
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
                     {channels.length === 0 ? (
-                        <EmptyRow
-                            colSpan={3}
-                            label="No payments collected today yet."
-                        />
+                        <EmptyRow colSpan={3} label={t("paymentsEmpty")} />
                     ) : (
                         channels.map(row => (
                             <tr

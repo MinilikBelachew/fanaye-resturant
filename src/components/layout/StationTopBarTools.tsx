@@ -2,10 +2,14 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { Bell, Search } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useAppSelector } from "@/context/hooks";
 import { stationQueueHref } from "@/domains/fulfillment/application/queueFilter";
 import { useCurrentStationQueue } from "@/domains/fulfillment/application/useCurrentStationQueue";
-import { homePathForRole, stationOrderPath } from "@/domains/identity/application/homePath";
+import {
+    homePathForRole,
+    stationOrderPath,
+} from "@/domains/identity/application/homePath";
 import { isStationRole } from "@/domains/identity/domain/role";
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { Input } from "@/components/ui/input";
@@ -46,18 +50,18 @@ function StationTopBarToolsInner({
     const pathname = usePathname();
     const router = useRouter();
     const searchParams = useSearchParams();
+    const tStations = useTranslations("stations");
+    const tCommon = useTranslations("common");
     const [open, setOpen] = useState(false);
     const panelRef = useRef<HTMLDivElement>(null);
 
-    const station =
-        staff && isStationRole(staff.role) ? staff.role : null;
+    const station = staff && isStationRole(staff.role) ? staff.role : null;
     const home = station ? homePathForRole(station) : "";
     const isQueueHome = Boolean(station && pathname === home);
 
     const { tickets, counts } = useCurrentStationQueue();
     const incoming = tickets.filter(
-        ticket =>
-            ticket.state === "QUEUED" || ticket.state === "ACKNOWLEDGED",
+        ticket => ticket.state === "QUEUED" || ticket.state === "ACKNOWLEDGED",
     );
     const urlQuery = searchParams.get("q") ?? "";
     const [query, setQuery] = useState(urlQuery);
@@ -100,9 +104,9 @@ function StationTopBarToolsInner({
                     <Input
                         value={query}
                         onChange={event => setQuery(event.target.value)}
-                        placeholder="Search tickets, tables, extras"
+                        placeholder={tStations("searchPlaceholder")}
                         className="h-8 rounded-md border-hairline bg-transparent pl-9"
-                        aria-label="Search tickets"
+                        aria-label={tStations("searchAria")}
                     />
                 </label>
             ) : null}
@@ -111,7 +115,7 @@ function StationTopBarToolsInner({
                     <button
                         type="button"
                         className="relative flex size-8 items-center justify-center rounded-md text-slate-gray hover:bg-secondary hover:text-foreground"
-                        aria-label="New orders"
+                        aria-label={tStations("newOrders")}
                         onClick={() => setOpen(current => !current)}
                     >
                         <Bell className="size-4" />
@@ -125,27 +129,26 @@ function StationTopBarToolsInner({
                         <div className="absolute top-[calc(100%+8px)] right-0 z-50 w-[min(90vw,320px)] overflow-hidden rounded-[16px] border border-hairline bg-card shadow-subtle">
                             <div className="flex items-center justify-between border-b border-hairline px-3 py-2">
                                 <p className="text-[13px] font-semibold">
-                                    New orders
+                                    {tStations("newOrders")}
                                 </p>
                                 <Link
                                     href={stationQueueHref(home, {
                                         status: "new",
                                         q: urlQuery,
                                         view:
-                                            searchParams.get("view") ===
-                                            "table"
+                                            searchParams.get("view") === "table"
                                                 ? "table"
                                                 : "cards",
                                     })}
                                     className="text-[12px] font-medium text-brand"
                                     onClick={() => setOpen(false)}
                                 >
-                                    View all
+                                    {tStations("viewAll")}
                                 </Link>
                             </div>
                             {incoming.length === 0 ? (
                                 <p className="px-3 py-6 text-center text-[13px] text-slate-gray">
-                                    No new tickets right now.
+                                    {tStations("noNewTickets")}
                                 </p>
                             ) : (
                                 <ul className="max-h-72 overflow-y-auto">
@@ -157,16 +160,14 @@ function StationTopBarToolsInner({
                                                     ticket.orderItemId,
                                                 )}
                                                 className="block px-3 py-2.5 hover:bg-secondary"
-                                                onClick={() =>
-                                                    setOpen(false)
-                                                }
+                                                onClick={() => setOpen(false)}
                                             >
                                                 <p className="text-[14px] font-medium">
                                                     {ticket.quantity}×{" "}
                                                     {ticket.itemName}
                                                 </p>
                                                 <p className="text-[12px] text-slate-gray">
-                                                    Table{" "}
+                                                    {tCommon("table")}{" "}
                                                     {ticket.tableDisplayName}
                                                 </p>
                                             </Link>

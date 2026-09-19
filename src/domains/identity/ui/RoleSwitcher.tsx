@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useAppSelector } from "@/context/hooks";
 import { ROLE_LABELS } from "@/domains/identity/domain/role";
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
@@ -14,20 +15,27 @@ export default function RoleSwitcher({
         state => state.identity.session?.branchName,
     );
     const roleCode = useAppSelector(state => state.identity.session?.roleCode);
+    const tRoles = useTranslations("roleLabels");
+    const tTopBar = useTranslations("topbar");
 
     if (!current) return null;
 
-    const initials = current.name
-        .split(" ")
-        .map(n => n[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase() || "FA";
+    const roleLabel = tRoles.has(current.role)
+        ? tRoles(current.role)
+        : ROLE_LABELS[current.role];
+
+    const initials =
+        current.name
+            .split(" ")
+            .map(n => n[0])
+            .join("")
+            .slice(0, 2)
+            .toUpperCase() || "FA";
 
     if (compact) {
         return (
             <div
-                title={`${current.name} · ${ROLE_LABELS[current.role]}`}
+                title={`${current.name} · ${roleLabel}`}
                 className="relative flex size-10 items-center justify-center rounded-xl bg-gradient-to-tr from-orange-600 via-amber-600 to-orange-500 text-[12px] font-bold text-white shadow-xs"
             >
                 <span>{initials}</span>
@@ -48,7 +56,7 @@ export default function RoleSwitcher({
                         {current.name}
                     </span>
                     <span className="shrink-0 rounded-full border border-orange-500/20 bg-orange-500/10 px-1.5 py-0.2 text-[9px] font-semibold uppercase tracking-wider text-orange-600 dark:text-orange-400">
-                        {ROLE_LABELS[current.role]}
+                        {roleLabel}
                     </span>
                 </div>
                 <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
@@ -57,8 +65,8 @@ export default function RoleSwitcher({
                         {branchName
                             ? branchName
                             : roleCode === "PLATFORM_SUPER_ADMIN"
-                              ? "Platform Network"
-                              : "Active"}
+                              ? tTopBar("platformNetwork")
+                              : tTopBar("active")}
                     </span>
                 </div>
             </div>

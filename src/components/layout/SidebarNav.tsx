@@ -17,6 +17,7 @@ import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const TITLE_KEYS: Record<string, string> = {
+    Alerts: "alerts",
     Overview: "overview",
     Platform: "platform",
     Trust: "trust",
@@ -43,7 +44,7 @@ const LABEL_KEYS: Record<string, string> = {
     Audit: "audit",
     Branches: "branches",
     Reports: "reports",
-    "Daily Close": "reconciliation",
+    "Daily Close": "dailyClose",
     Settings: "settings",
     Website: "website",
     Menu: "menu",
@@ -53,6 +54,7 @@ const LABEL_KEYS: Record<string, string> = {
     Stations: "stations",
     Tables: "tables",
     Staff: "staff",
+    Waiters: "waiters",
     Approvals: "approvals",
     Payments: "payments",
     "Bill requests": "billRequests",
@@ -68,6 +70,7 @@ const LABEL_KEYS: Record<string, string> = {
     "In progress": "preparing",
     Exceptions: "exceptions",
     Notifications: "notifications",
+    Alerts: "alerts",
 };
 
 export default function SidebarNav(props: {

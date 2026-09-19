@@ -86,7 +86,7 @@ export default function CashierPaymentsLog() {
                 waiterName: payment.waiterName,
             });
         } catch {
-            toast.error("Could not load receipt details.");
+            toast.error(tCashier("receiptLoadError"));
         } finally {
             setLoadingBillId(null);
         }
@@ -102,13 +102,13 @@ export default function CashierPaymentsLog() {
             },
             {
                 id: "waiter",
-                header: "Waiter",
+                header: tCommon("waiter"),
                 cell: row => row.waiterName,
                 sortValue: row => row.waiterName,
             },
             {
                 id: "amount",
-                header: "Amount",
+                header: tCommon("amount"),
                 cell: row => (
                     <span className="tabular-nums">
                         {formatEtb(Number(row.amount))}
@@ -120,19 +120,19 @@ export default function CashierPaymentsLog() {
             },
             {
                 id: "method",
-                header: "Method",
+                header: tCommon("method"),
                 cell: row => methodLabel(row.method, row.transferChannel),
                 sortValue: row => methodLabel(row.method, row.transferChannel),
             },
             {
                 id: "bill",
-                header: "Bill",
+                header: tCommon("bill"),
                 cell: row => row.billNumber,
                 sortValue: row => row.billNumber,
             },
             {
                 id: "status",
-                header: "Table",
+                header: tCommon("table"),
                 cell: row =>
                     row.tableClosed
                         ? tCashier("tableClosed")
@@ -183,7 +183,9 @@ export default function CashierPaymentsLog() {
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-hairline bg-card px-4 py-3">
                 <div>
                     <p className="text-[11px] tracking-wide text-slate-gray">
-                        Shift collections · {payments.length}
+                        {tCashier("shiftCollections", {
+                            count: payments.length,
+                        })}
                     </p>
                     <p className="mt-0.5 text-[18px] font-medium tabular-nums tracking-tight">
                         {formatEtb(totalCollected)}
@@ -202,7 +204,7 @@ export default function CashierPaymentsLog() {
                             )}
                         >
                             <Table2 className="size-3.5" />
-                            Table
+                            {tCommon("table")}
                         </button>
                         <button
                             type="button"
@@ -215,7 +217,7 @@ export default function CashierPaymentsLog() {
                             )}
                         >
                             <LayoutGrid className="size-3.5" />
-                            Cards
+                            {tCommon("cards")}
                         </button>
                     </div>
                     <Button
@@ -229,7 +231,7 @@ export default function CashierPaymentsLog() {
                         ) : (
                             <FileDown className="size-3.5" />
                         )}
-                        Export PDF
+                        {tCommon("exportPdf")}
                     </Button>
                 </div>
             </div>

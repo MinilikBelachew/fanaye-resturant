@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Clock3, RefreshCw, UserRound, Wallet, LayoutGrid } from "lucide-react";
+import { useTranslations } from "next-intl";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
 import { Badge } from "@/components/ui/badge";
@@ -13,31 +14,18 @@ import {
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
-const PERIODS: Array<{ id: WaiterPeriod; label: string }> = [
-    { id: "day", label: "Daily" },
-    { id: "week", label: "Weekly" },
-    { id: "month", label: "Monthly" },
-];
-
-function formatClock(value?: string | null) {
-    if (!value) return "—";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "—";
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
-
-function formatHours(value: number) {
-    if (!value) return "0h";
-    const hours = Math.floor(value);
-    const minutes = Math.round((value - hours) * 60);
-    if (minutes <= 0) return `${hours}h`;
-    return `${hours}h ${minutes}m`;
-}
-
 export default function ManagerWaitersPage() {
+    const t = useTranslations("managerWaiters");
+    const tCommon = useTranslations("common");
     const [period, setPeriod] = useState<WaiterPeriod>("day");
     const { data, isLoading, isFetching, isError, refetch } =
         useWaiterPerformanceQuery({ period }, { pollingInterval: 15000 });
+
+    const periods: Array<{ id: WaiterPeriod; label: string }> = [
+        { id: "day", label: t("periodDay") },
+        { id: "week", label: t("periodWeek") },
+        { id: "month", label: t("periodMonth") },
+    ];
 
     const rows = data?.data ?? [];
     const summary = data?.summary;
@@ -61,13 +49,16 @@ export default function ManagerWaitersPage() {
                     title="Waiters"
                     description={
                         data
-                            ? `${data.from} → ${data.to} · shift coverage, hours, and money`
-                            : "Shift coverage, hours worked, and money by waiter"
+                            ? t("rangeDesc", {
+                                  from: data.from,
+                                  to: data.to,
+                              })
+                            : t("defaultDesc")
                     }
                 />
                 <div className="flex flex-wrap items-center gap-2">
                     <div className="flex rounded-[12px] border border-hairline bg-card p-1">
-                        {PERIODS.map(entry => (
+                        {periods.map(entry => (
                             <button
                                 key={entry.id}
                                 type="button"
@@ -95,47 +86,51 @@ export default function ManagerWaitersPage() {
                                 isFetching && "animate-spin",
                             )}
                         />
-                        Refresh
+                        {tCommon("refresh")}
                     </Button>
                 </div>
             </div>
 
             {isLoading ? (
-                <p className="mt-6 text-slate-gray">Loading waiter board…</p>
+                <p className="mt-6 text-slate-gray">{t("loading")}</p>
             ) : isError ? (
-                <p className="mt-6 text-slate-gray">
-                    Could not load waiter performance.
-                </p>
+                <p className="mt-6 text-slate-gray">{t("error")}</p>
             ) : (
                 <div className="mt-6 space-y-5">
                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                         <SummaryCard
-                            label="Waiters"
+                            label={t("cardWaiters")}
                             value={String(summary?.waiterCount ?? 0)}
-                            hint={`${summary?.clockedInCount ?? 0} clocked in`}
+                            hint={t("clockedInHint", {
+                                count: summary?.clockedInCount ?? 0,
+                            })}
                             icon={UserRound}
                         />
                         <SummaryCard
-                            label="Hours worked"
+                            label={t("cardHours")}
                             value={formatHours(summary?.totalHoursWorked ?? 0)}
-                            hint="Across selected period"
+                            hint={t("hoursHint")}
                             icon={Clock3}
                         />
                         <SummaryCard
-                            label="Net sales"
+                            label={t("cardSales")}
                             value={formatEtb(
                                 Number(summary?.totalNetSales ?? 0),
                             )}
-                            hint="Attributed order items"
+                            hint={t("salesHint")}
                             icon={Wallet}
                             accent
                         />
                         <SummaryCard
-                            label="Undropped cash"
+                            label={t("cardUndropped")}
                             value={formatEtb(
                                 Number(summary?.totalUndroppedCash ?? 0),
                             )}
-                            hint={`Collected ${formatEtb(Number(summary?.totalCashCollected ?? 0))}`}
+                            hint={t("collectedHint", {
+                                amount: formatEtb(
+                                    Number(summary?.totalCashCollected ?? 0),
+                                ),
+                            })}
                             icon={LayoutGrid}
                         />
                     </div>
@@ -145,13 +140,27 @@ export default function ManagerWaitersPage() {
                             <table className="w-full min-w-[920px] text-left text-[13px]">
                                 <thead className="border-b border-hairline bg-secondary/40 text-[11px] font-semibold tracking-[0.06em] text-slate-gray uppercase">
                                     <tr>
-                                        <th className="px-5 py-3">Waiter</th>
-                                        <th className="px-5 py-3">Shifts</th>
-                                        <th className="px-5 py-3">Status</th>
-                                        <th className="px-5 py-3">Hours</th>
-                                        <th className="px-5 py-3">Sales</th>
-                                        <th className="px-5 py-3">Cash</th>
-                                        <th className="px-5 py-3">Undropped</th>
+                                        <th className="px-5 py-3">
+                                            {t("colWaiter")}
+                                        </th>
+                                        <th className="px-5 py-3">
+                                            {t("colShifts")}
+                                        </th>
+                                        <th className="px-5 py-3">
+                                            {t("colStatus")}
+                                        </th>
+                                        <th className="px-5 py-3">
+                                            {t("colHours")}
+                                        </th>
+                                        <th className="px-5 py-3">
+                                            {t("colSales")}
+                                        </th>
+                                        <th className="px-5 py-3">
+                                            {t("colCash")}
+                                        </th>
+                                        <th className="px-5 py-3">
+                                            {t("colUndropped")}
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-hairline">
@@ -161,8 +170,7 @@ export default function ManagerWaitersPage() {
                                                 colSpan={7}
                                                 className="px-5 py-12 text-center text-slate-gray"
                                             >
-                                                No waiters found for this
-                                                branch.
+                                                {t("empty")}
                                             </td>
                                         </tr>
                                     ) : (
@@ -184,7 +192,13 @@ export default function ManagerWaitersPage() {
                                                             </p>
                                                             <p className="text-[12px] text-slate-gray">
                                                                 {row.phone ||
-                                                                    `${row.ordersCreatedCount} orders · ${row.tablesServedCount} tables`}
+                                                                    t(
+                                                                        "ordersTables",
+                                                                        {
+                                                                            orders: row.ordersCreatedCount,
+                                                                            tables: row.tablesServedCount,
+                                                                        },
+                                                                    )}
                                                             </p>
                                                         </div>
                                                     </div>
@@ -193,7 +207,7 @@ export default function ManagerWaitersPage() {
                                                     {row.assignedShifts
                                                         .length === 0 ? (
                                                         <span className="text-slate-gray">
-                                                            No coverage
+                                                            {t("noCoverage")}
                                                         </span>
                                                     ) : (
                                                         <div className="space-y-1.5">
@@ -210,18 +224,14 @@ export default function ManagerWaitersPage() {
                                                                             }
                                                                         </p>
                                                                         <p className="text-[12px] text-slate-gray">
-                                                                            {
-                                                                                shift.startLocalTime
-                                                                            }
-                                                                            –
-                                                                            {
-                                                                                shift.endLocalTime
-                                                                            }{" "}
-                                                                            ·{" "}
-                                                                            {
-                                                                                shift.tableCount
-                                                                            }{" "}
-                                                                            tables
+                                                                            {t(
+                                                                                "shiftTables",
+                                                                                {
+                                                                                    start: shift.startLocalTime,
+                                                                                    end: shift.endLocalTime,
+                                                                                    count: shift.tableCount,
+                                                                                },
+                                                                            )}
                                                                         </p>
                                                                     </div>
                                                                 ),
@@ -238,15 +248,16 @@ export default function ManagerWaitersPage() {
                                                         }
                                                     >
                                                         {row.clockedIn
-                                                            ? "Clocked in"
-                                                            : "Off clock"}
+                                                            ? t("clockedIn")
+                                                            : t("offClock")}
                                                     </Badge>
                                                     {row.clockedIn ? (
                                                         <p className="mt-1.5 text-[12px] text-slate-gray">
-                                                            Since{" "}
-                                                            {formatClock(
-                                                                row.clockInAt,
-                                                            )}
+                                                            {t("since", {
+                                                                time: formatClock(
+                                                                    row.clockInAt,
+                                                                ),
+                                                            })}
                                                         </p>
                                                     ) : null}
                                                 </td>
@@ -257,11 +268,9 @@ export default function ManagerWaitersPage() {
                                                         )}
                                                     </p>
                                                     <p className="text-[12px] text-slate-gray">
-                                                        {row.sessionsCount}{" "}
-                                                        session
-                                                        {row.sessionsCount === 1
-                                                            ? ""
-                                                            : "s"}
+                                                        {t("sessions", {
+                                                            count: row.sessionsCount,
+                                                        })}
                                                     </p>
                                                 </td>
                                                 <td className="px-5 py-4 font-semibold text-brand">
@@ -280,12 +289,13 @@ export default function ManagerWaitersPage() {
                                                         )}
                                                     </p>
                                                     <p className="text-[12px] text-slate-gray">
-                                                        Dropped{" "}
-                                                        {formatEtb(
-                                                            Number(
-                                                                row.cashDropped,
+                                                        {t("dropped", {
+                                                            amount: formatEtb(
+                                                                Number(
+                                                                    row.cashDropped,
+                                                                ),
                                                             ),
-                                                        )}
+                                                        })}
                                                     </p>
                                                 </td>
                                                 <td className="px-5 py-4">
@@ -317,6 +327,21 @@ export default function ManagerWaitersPage() {
             )}
         </DashboardFrame>
     );
+}
+
+function formatClock(value?: string | null) {
+    if (!value) return "—";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "—";
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function formatHours(value: number) {
+    if (!value) return "0h";
+    const hours = Math.floor(value);
+    const minutes = Math.round((value - hours) * 60);
+    if (minutes <= 0) return `${hours}h`;
+    return `${hours}h ${minutes}m`;
 }
 
 function SummaryCard({

@@ -1,6 +1,7 @@
 "use client";
 
 import { LogOut } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useAppDispatch, useAppSelector } from "@/context/hooks";
 import { useWaiterTablesQuery } from "@/context/services/floorApi";
 import { performSignOut } from "@/domains/identity/application/signOut";
@@ -20,6 +21,7 @@ export default function WaiterNavPanel({
     const staff = useAppSelector(selectCurrentStaff);
     const router = useRouter();
     const dispatch = useAppDispatch();
+    const tTopBar = useTranslations("topbar");
     const { data: floor } = useWaiterTablesQuery("my", {
         skip: !staff,
         pollingInterval: 5000,
@@ -51,8 +53,8 @@ export default function WaiterNavPanel({
                 <div className="mt-auto flex justify-center border-t border-border/60 pt-3">
                     <button
                         type="button"
-                        title="Log out"
-                        aria-label="Log out"
+                        title={tTopBar("logOut")}
+                        aria-label={tTopBar("logOut")}
                         className="flex size-10 items-center justify-center rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border hover:border-destructive/20 transition-colors"
                         onClick={logOut}
                     >
@@ -80,7 +82,7 @@ export default function WaiterNavPanel({
                     onClick={logOut}
                 >
                     <LogOut className="size-4 shrink-0" />
-                    <span>Log out</span>
+                    <span>{tTopBar("logOut")}</span>
                 </button>
             </div>
         </div>

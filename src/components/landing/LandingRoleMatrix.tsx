@@ -83,7 +83,14 @@ export default function LandingRoleMatrix() {
                                         : "border-border/60 bg-card/60 text-muted-foreground hover:bg-secondary hover:text-foreground",
                                 )}
                             >
-                                <RoleIcon className={cn("size-3.5", isSelected ? "text-orange-500" : "text-muted-foreground")} />
+                                <RoleIcon
+                                    className={cn(
+                                        "size-3.5",
+                                        isSelected
+                                            ? "text-orange-500"
+                                            : "text-muted-foreground",
+                                    )}
+                                />
                                 <span>{role.title}</span>
                             </button>
                         );
@@ -120,7 +127,10 @@ export default function LandingRoleMatrix() {
                             {/* Features Checklist */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                                 {current.features.map((feat, idx) => (
-                                    <div key={idx} className="flex items-start gap-2 text-xs text-muted-foreground">
+                                    <div
+                                        key={idx}
+                                        className="flex items-start gap-2 text-xs text-muted-foreground"
+                                    >
                                         <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0 mt-0.5" />
                                         <span>{feat}</span>
                                     </div>
@@ -132,7 +142,12 @@ export default function LandingRoleMatrix() {
                                     href="/sign-in"
                                     className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition"
                                 >
-                                    <span>{t("demoPrefix")} {current.title} {t("demoSuffix")}</span>
+                                    <span>
+                                        {t("ctaPrefix")} {current.title}
+                                        {t("ctaSuffix")
+                                            ? ` ${t("ctaSuffix")}`
+                                            : ""}
+                                    </span>
                                     <ArrowRight className="size-3.5" />
                                 </Link>
                             </div>
@@ -162,11 +177,15 @@ export default function LandingRoleMatrix() {
                             <div className="rounded-xl border border-border bg-secondary/40 p-3 space-y-1 text-xs">
                                 <div className="flex items-center justify-between text-muted-foreground">
                                     <span>{t("permissionsLabel")}</span>
-                                    <span className="font-semibold text-foreground">{t("permissionsValue")}</span>
+                                    <span className="font-semibold text-foreground">
+                                        {t("permissionsValue")}
+                                    </span>
                                 </div>
                                 <div className="flex items-center justify-between text-muted-foreground">
                                     <span>{t("auditLabel")}</span>
-                                    <span className="font-semibold text-emerald-600">{t("auditValue")}</span>
+                                    <span className="font-semibold text-emerald-600">
+                                        {t("auditValue")}
+                                    </span>
                                 </div>
                             </div>
                         </div>

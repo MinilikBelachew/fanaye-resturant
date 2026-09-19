@@ -29,7 +29,7 @@ const LABEL_KEYS: Record<string, string> = {
     Audit: "audit",
     Branches: "branches",
     Reports: "reports",
-    "Daily Close": "reconciliation",
+    "Daily Close": "dailyClose",
     Settings: "settings",
     Website: "website",
     Menu: "menu",
@@ -39,6 +39,7 @@ const LABEL_KEYS: Record<string, string> = {
     Stations: "stations",
     Tables: "tables",
     Staff: "staff",
+    Waiters: "waiters",
     Approvals: "approvals",
     Payments: "payments",
     "Bill requests": "billRequests",
@@ -54,7 +55,7 @@ const LABEL_KEYS: Record<string, string> = {
     "In progress": "preparing",
     Exceptions: "exceptions",
     Notifications: "notifications",
-    Alerts: "notifications",
+    Alerts: "alerts",
 };
 
 const headerClass =
