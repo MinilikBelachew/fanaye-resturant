@@ -311,6 +311,16 @@ export function navForRole(role: Role): NavSection[] {
                     ],
                 },
                 {
+                    title: "Shift",
+                    items: [
+                        {
+                            href: "/cashier/shift",
+                            label: "Shift",
+                            icon: Clock3,
+                        },
+                    ],
+                },
+                {
                     title: "Close",
                     items: [
                         {
@@ -322,6 +332,11 @@ export function navForRole(role: Role): NavSection[] {
                             href: "/cashier/reconciliation",
                             label: "Reconciliation",
                             icon: CreditCard,
+                        },
+                        {
+                            href: "/cashier/daily-close",
+                            label: "Daily Close",
+                            icon: ClipboardCheck,
                         },
                     ],
                 },

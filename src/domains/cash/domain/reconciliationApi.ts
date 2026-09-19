@@ -10,6 +10,9 @@ export type ReconciliationPreview = {
     existingStatus?: string | null;
     existingCountedCash?: string | null;
     existingVariance?: string | null;
+    existingExpectedCash?: string | null;
+    sessionStatus?: string | null;
+    needsResubmit?: boolean;
 };
 
 export type Reconciliation = {

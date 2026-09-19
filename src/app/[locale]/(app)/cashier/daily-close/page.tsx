@@ -2,15 +2,15 @@ import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
 import DailyClosePanel from "@/domains/reporting/ui/DailyClosePanel";
 
-export default function ManagerDailyClosePage() {
+export default function CashierDailyClosePage() {
     return (
         <DashboardFrame>
             <PageHeader
-                eyebrow="Control"
+                eyebrow="Close"
                 title="Operational Daily Close"
-                description="Not a fiscal Z-report. Review waiter lines, then lock the day."
+                description="Prepare today’s draft and refresh the snapshot. Managers approve and lock."
             />
-            <DailyClosePanel mode="manager" />
+            <DailyClosePanel mode="cashier" />
         </DashboardFrame>
     );
 }

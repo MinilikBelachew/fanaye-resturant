@@ -24,16 +24,26 @@ function statusBadge(status: string) {
     return "outline" as const;
 }
 
-export default function DailyClosePanel() {
+type DailyClosePanelProps = {
+    /** Cashiers prepare/refresh; managers approve & lock. */
+    mode?: "manager" | "cashier";
+};
+
+export default function DailyClosePanel({
+    mode = "manager",
+}: DailyClosePanelProps) {
+    const isCashier = mode === "cashier";
     const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
     const { data, isLoading, isError } = useDailyClosePreviewQuery(
         { businessDate: today },
         { pollingInterval: 10000 },
     );
     const { data: pendingRecons } = usePendingReconciliationsQuery(undefined, {
+        skip: isCashier,
         pollingInterval: 10000,
     });
-    const [createClose, { isLoading: creating }] = useCreateDailyCloseMutation();
+    const [createClose, { isLoading: creating }] =
+        useCreateDailyCloseMutation();
     const [refreshClose, { isLoading: refreshing }] =
         useRefreshDailyCloseMutation();
     const [approveClose, { isLoading: approving }] =
@@ -51,6 +61,7 @@ export default function DailyClosePanel() {
     const ready = preview?.readiness.ready ?? false;
     const blockers = preview?.readiness.blockers ?? [];
     const waiters = preview?.waiters ?? [];
+    const stations = preview?.stations ?? [];
     const recons = pendingRecons?.data ?? [];
 
     async function onCreate() {
@@ -165,7 +176,9 @@ export default function DailyClosePanel() {
             <article className="rounded-[16px] border border-hairline bg-card p-6">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <h2 className="font-semibold">{preview.businessDate}</h2>
+                        <h2 className="font-semibold">
+                            {preview.businessDate}
+                        </h2>
                         <p className="text-[13px] text-slate-gray">
                             Cashier variance{" "}
                             {formatEtb(Number(summary.cashierVariance))} ·
@@ -213,26 +226,40 @@ export default function DailyClosePanel() {
                             >
                                 {refreshing ? "Refreshing…" : "Refresh"}
                             </Button>
-                            <Button
-                                variant="outline"
-                                disabled={
-                                    approving ||
-                                    status === "LOCKED" ||
-                                    status === "APPROVED"
-                                }
-                                onClick={onApprove}
-                            >
-                                {approving ? "Approving…" : "Approve"}
-                            </Button>
-                            <Button
-                                disabled={locking || status === "LOCKED" || !ready}
-                                onClick={onLock}
-                            >
-                                {locking ? "Locking…" : "Lock day"}
-                            </Button>
+                            {!isCashier ? (
+                                <>
+                                    <Button
+                                        variant="outline"
+                                        disabled={
+                                            approving ||
+                                            status === "LOCKED" ||
+                                            status === "APPROVED"
+                                        }
+                                        onClick={onApprove}
+                                    >
+                                        {approving ? "Approving…" : "Approve"}
+                                    </Button>
+                                    <Button
+                                        disabled={
+                                            locking ||
+                                            status === "LOCKED" ||
+                                            !ready
+                                        }
+                                        onClick={onLock}
+                                    >
+                                        {locking ? "Locking…" : "Lock day"}
+                                    </Button>
+                                </>
+                            ) : null}
                         </>
                     )}
                 </div>
+                {isCashier ? (
+                    <p className="mt-3 text-[13px] text-slate-gray">
+                        You can prepare and refresh. A manager approves and
+                        locks the day.
+                    </p>
+                ) : null}
             </article>
 
             {waiters.length > 0 ? (
@@ -266,11 +293,31 @@ export default function DailyClosePanel() {
                 </article>
             ) : null}
 
-            {recons.length > 0 ? (
+            {stations.length > 0 ? (
                 <article className="rounded-[16px] border border-hairline bg-card p-6">
-                    <h2 className="font-semibold">
-                        Reconciliations to review
-                    </h2>
+                    <h2 className="font-semibold">Station lines</h2>
+                    <ul className="mt-4 space-y-3 text-[14px]">
+                        {stations.map(station => (
+                            <li key={station.stationId}>
+                                <div className="flex justify-between gap-3">
+                                    <span>{station.stationName}</span>
+                                    <span>
+                                        {station.itemsHandledCount} items
+                                    </span>
+                                </div>
+                                <p className="text-slate-gray">
+                                    Delayed {station.delayedItemCount} · cannot
+                                    prepare {station.cannotPrepareCount}
+                                </p>
+                            </li>
+                        ))}
+                    </ul>
+                </article>
+            ) : null}
+
+            {!isCashier && recons.length > 0 ? (
+                <article className="rounded-[16px] border border-hairline bg-card p-6">
+                    <h2 className="font-semibold">Reconciliations to review</h2>
                     <ul className="mt-4 space-y-3">
                         {recons.map(recon => (
                             <li
@@ -309,7 +356,8 @@ export default function DailyClosePanel() {
                                             void flagRecon({
                                                 reconciliationId:
                                                     recon.reconciliationId,
-                                                reviewComment: "Needs follow-up",
+                                                reviewComment:
+                                                    "Needs follow-up",
                                             });
                                         }}
                                     >
@@ -322,12 +370,8 @@ export default function DailyClosePanel() {
                 </article>
             ) : null}
 
-            {error ? (
-                <p className="text-[13px] text-red-600">{error}</p>
-            ) : null}
-            {ok ? (
-                <p className="text-[13px] text-[#046645]">{ok}</p>
-            ) : null}
+            {error ? <p className="text-[13px] text-red-600">{error}</p> : null}
+            {ok ? <p className="text-[13px] text-[#046645]">{ok}</p> : null}
         </div>
     );
 }

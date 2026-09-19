@@ -11,7 +11,7 @@ export default function OwnerDailyClosePage() {
                 title="Daily close"
                 description="Waiter collections plus cashier custody. Locked after manager approval."
             />
-            <DailyClosePanel />
+            <DailyClosePanel mode="manager" />
         </DashboardFrame>
     );
 }
