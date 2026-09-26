@@ -33,7 +33,7 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
     waiterName,
     restaurantName = "Restaurant & Lounge",
     branchName = "Bole Medhanialem Branch",
-    cashierName = "Cashier",
+    cashierName,
     showSendToWaiter = true,
     showPrintActions = true,
 }) => {
@@ -53,8 +53,9 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
     const net = subtotal - vat;
     const total = Number(bill.total || 0);
 
-    const displayTable = tableDisplayName || "Dining Table";
-    const displayWaiter = waiterName || "Floor Server";
+    const displayTable = tableDisplayName || tCashier("diningTableFallback");
+    const displayWaiter = waiterName || tCashier("floorServerFallback");
+    const displayCashier = cashierName || tReceipt("cashier");
     const generatedTime = bill.generatedAt
         ? new Date(bill.generatedAt).toLocaleString([], {
               year: "numeric",
@@ -90,13 +91,16 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
             await sendBillToWaiter(bill.billId).unwrap();
             setSentSuccess(true);
             toast.success(
-                "Bill Sent to Waiter!",
-                `Notification dispatched to ${displayWaiter} to deliver to Table ${displayTable}.`,
+                tCashier("billSentTitle"),
+                tCashier("billSentBody", {
+                    waiter: displayWaiter,
+                    table: displayTable,
+                }),
             );
         } catch {
             toast.error(
-                "Could not notify waiter",
-                "Please confirm server assignment or deliver the printed receipt directly.",
+                tCashier("billNotifyErrorTitle"),
+                tCashier("billNotifyErrorBody"),
             );
         }
     }
@@ -284,7 +288,7 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
                                 <span className="text-slate-500">
                                     {tReceipt("cashier")}:
                                 </span>
-                                <span>{cashierName}</span>
+                                <span>{displayCashier}</span>
                             </div>
                         </div>
 

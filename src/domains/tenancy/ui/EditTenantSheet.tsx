@@ -1,14 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Controller, useForm } from "react-hook-form";
-import {
-    Building2,
-    Loader2,
-    MapPin,
-    UserCheck,
-    X,
-} from "lucide-react";
+import { Building2, Loader2, MapPin, UserCheck, X } from "lucide-react";
 import {
     type TenantDetail,
     useUpdateSuperAdminTenantMutation,
@@ -36,22 +31,6 @@ interface EditTenantSheetProps {
     onClose: () => void;
     onSuccess?: () => void;
 }
-
-const PLANS = [
-    { code: "STARTER" as const, name: "Starter" },
-    { code: "PRO" as const, name: "Pro Tier" },
-    { code: "GROWTH" as const, name: "Growth" },
-    { code: "ENTERPRISE" as const, name: "Enterprise" },
-];
-
-const CONCEPTS = [
-    "Casual Dining",
-    "Fine Dining",
-    "Cafe & Roastery",
-    "Fast Casual",
-    "Bar & Grill",
-    "Hotel Restaurant",
-];
 
 function planCodeFromLabel(plan: string): EditTenantValues["planCode"] {
     const normalized = plan.trim().toUpperCase();
@@ -87,8 +66,54 @@ export default function EditTenantSheet({
     onClose,
     onSuccess,
 }: EditTenantSheetProps) {
+    const t = useTranslations("tenancy");
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [updateTenant, { isLoading }] = useUpdateSuperAdminTenantMutation();
+
+    const PLANS = useMemo(
+        () =>
+            [
+                { code: "STARTER" as const, name: t("plans.starter.name") },
+                { code: "PRO" as const, name: t("plans.pro.name") },
+                { code: "GROWTH" as const, name: t("plans.growth.name") },
+                {
+                    code: "ENTERPRISE" as const,
+                    name: t("plans.enterprise.name"),
+                },
+            ] as const,
+        [t],
+    );
+
+    const CONCEPT_OPTIONS = useMemo(
+        () =>
+            [
+                {
+                    value: "Casual Dining",
+                    label: t("concepts.casualDining"),
+                },
+                {
+                    value: "Fine Dining",
+                    label: t("concepts.fineDining"),
+                },
+                {
+                    value: "Cafe & Roastery",
+                    label: t("concepts.cafeRoastery"),
+                },
+                {
+                    value: "Fast Casual",
+                    label: t("concepts.fastCasual"),
+                },
+                {
+                    value: "Bar & Grill",
+                    label: t("concepts.barGrill"),
+                },
+                {
+                    value: "Hotel Restaurant",
+                    label: t("concepts.hotelRestaurant"),
+                },
+            ] as const,
+        [t],
+    );
 
     const form = useForm<EditTenantValues>({
         defaultValues: valuesFromTenant(tenant),
@@ -108,7 +133,7 @@ export default function EditTenantSheet({
         const parsed = editTenantSchema.safeParse(data);
         if (!parsed.success) {
             const message =
-                parsed.error.issues[0]?.message || "Check the form fields.";
+                parsed.error.issues[0]?.message || t("checkFormFields");
             setErrorMsg(message);
             toast.error(message);
             for (const issue of parsed.error.issues) {
@@ -138,17 +163,23 @@ export default function EditTenantSheet({
                     phone: payload.managerPhone.trim(),
                     email:
                         payload.managerEmail?.trim() ||
-                        `hello@${payload.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "") || "restaurant"}.et`,
+                        `hello@${
+                            payload.name
+                                .trim()
+                                .toLowerCase()
+                                .replace(/[^a-z0-9]+/g, "") || "restaurant"
+                        }.et`,
                     managerName: payload.managerName.trim(),
                     managerEmail: payload.managerEmail?.trim() || undefined,
                     managerPhone: payload.managerPhone.trim(),
-                    managerPassword: payload.managerPassword?.trim() || undefined,
+                    managerPassword:
+                        payload.managerPassword?.trim() || undefined,
                     branchName: payload.branchName.trim(),
                     branchCode: payload.branchCode?.trim() || undefined,
                 },
             }).unwrap();
 
-            toast.success("Tenant updated", payload.name.trim());
+            toast.success(t("tenantUpdated"), payload.name.trim());
             onSuccess?.();
             onClose();
         } catch (err: unknown) {
@@ -157,7 +188,7 @@ export default function EditTenantSheet({
             };
             const message = Array.isArray(errObj?.data?.message)
                 ? errObj.data.message.join(", ")
-                : errObj?.data?.message || "Failed to update tenant.";
+                : errObj?.data?.message || t("failedToUpdateTenant");
             setErrorMsg(message);
             toast.error(message);
         }
@@ -167,7 +198,7 @@ export default function EditTenantSheet({
         <div className="fixed inset-0 z-50 flex justify-end">
             <button
                 type="button"
-                aria-label="Close"
+                aria-label={t("close")}
                 className="absolute inset-0 bg-foreground/40 backdrop-blur-[2px]"
                 onClick={onClose}
             />
@@ -175,13 +206,13 @@ export default function EditTenantSheet({
                 <div className="flex items-start justify-between gap-4 border-b border-hairline px-6 py-5">
                     <div>
                         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand">
-                            Edit tenant
+                            {t("edit.eyebrow")}
                         </p>
                         <h2 className="mt-1 text-[22px] font-bold tracking-tight text-foreground">
                             {tenant.name}
                         </h2>
                         <p className="mt-1 text-[13px] text-slate-gray">
-                            Update restaurant profile, branch, and manager login.
+                            {t("edit.subtitle")}
                         </p>
                     </div>
                     <button
@@ -202,7 +233,9 @@ export default function EditTenantSheet({
                             <section className="space-y-4">
                                 <div className="flex items-center gap-2 text-foreground">
                                     <Building2 className="size-4 text-brand" />
-                                    <h3 className="text-[15px] font-semibold">Company</h3>
+                                    <h3 className="text-[15px] font-semibold">
+                                        {t("edit.sectionCompany")}
+                                    </h3>
                                 </div>
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <FormField
@@ -210,7 +243,9 @@ export default function EditTenantSheet({
                                         name="name"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Brand name</FormLabel>
+                                                <FormLabel>
+                                                    {t("edit.brandName")}
+                                                </FormLabel>
                                                 <FormControl>
                                                     <Input {...field} />
                                                 </FormControl>
@@ -223,7 +258,9 @@ export default function EditTenantSheet({
                                         name="legalName"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Legal name</FormLabel>
+                                                <FormLabel>
+                                                    {t("edit.legalName")}
+                                                </FormLabel>
                                                 <FormControl>
                                                     <Input {...field} />
                                                 </FormControl>
@@ -236,21 +273,42 @@ export default function EditTenantSheet({
                                         name="concept"
                                         render={({ field }) => (
                                             <FormItem className="sm:col-span-2">
-                                                <FormLabel>Concept</FormLabel>
+                                                <FormLabel>
+                                                    {t("edit.concept")}
+                                                </FormLabel>
                                                 <FormControl>
                                                     <select
                                                         {...field}
                                                         className="flex h-10 w-full rounded-xl border border-input bg-background px-3 text-[13px]"
                                                     >
-                                                        {CONCEPTS.map(c => (
-                                                            <option key={c} value={c}>
-                                                                {c}
-                                                            </option>
-                                                        ))}
-                                                        {!CONCEPTS.includes(field.value) &&
+                                                        {CONCEPT_OPTIONS.map(
+                                                            c => (
+                                                                <option
+                                                                    key={
+                                                                        c.value
+                                                                    }
+                                                                    value={
+                                                                        c.value
+                                                                    }
+                                                                >
+                                                                    {c.label}
+                                                                </option>
+                                                            ),
+                                                        )}
+                                                        {!CONCEPT_OPTIONS.some(
+                                                            c =>
+                                                                c.value ===
+                                                                field.value,
+                                                        ) &&
                                                             field.value && (
-                                                                <option value={field.value}>
-                                                                    {field.value}
+                                                                <option
+                                                                    value={
+                                                                        field.value
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        field.value
+                                                                    }
                                                                 </option>
                                                             )}
                                                     </select>
@@ -265,7 +323,7 @@ export default function EditTenantSheet({
                                         render={({ field }) => (
                                             <div className="sm:col-span-2">
                                                 <p className="mb-2 text-[13px] font-medium">
-                                                    Subscription plan
+                                                    {t("edit.subscriptionPlan")}
                                                 </p>
                                                 <div className="grid gap-2 sm:grid-cols-4">
                                                     {PLANS.map(plan => (
@@ -273,11 +331,14 @@ export default function EditTenantSheet({
                                                             key={plan.code}
                                                             type="button"
                                                             onClick={() =>
-                                                                field.onChange(plan.code)
+                                                                field.onChange(
+                                                                    plan.code,
+                                                                )
                                                             }
                                                             className={cn(
                                                                 "rounded-xl border px-3 py-2.5 text-left text-[13px] transition-colors",
-                                                                field.value === plan.code
+                                                                field.value ===
+                                                                    plan.code
                                                                     ? "border-brand bg-brand/5 text-foreground"
                                                                     : "border-hairline text-slate-gray hover:bg-surface-ivory",
                                                             )}
@@ -296,7 +357,7 @@ export default function EditTenantSheet({
                                 <div className="flex items-center gap-2 text-foreground">
                                     <MapPin className="size-4 text-brand" />
                                     <h3 className="text-[15px] font-semibold">
-                                        Location & branch
+                                        {t("edit.sectionLocationBranch")}
                                     </h3>
                                 </div>
                                 <div className="grid gap-4 sm:grid-cols-2">
@@ -305,7 +366,9 @@ export default function EditTenantSheet({
                                         name="branchName"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Branch name</FormLabel>
+                                                <FormLabel>
+                                                    {t("edit.branchName")}
+                                                </FormLabel>
                                                 <FormControl>
                                                     <Input {...field} />
                                                 </FormControl>
@@ -318,7 +381,9 @@ export default function EditTenantSheet({
                                         name="branchCode"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Branch code</FormLabel>
+                                                <FormLabel>
+                                                    {t("edit.branchCode")}
+                                                </FormLabel>
                                                 <FormControl>
                                                     <Input {...field} />
                                                 </FormControl>
@@ -331,7 +396,9 @@ export default function EditTenantSheet({
                                         name="city"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>City</FormLabel>
+                                                <FormLabel>
+                                                    {t("edit.city")}
+                                                </FormLabel>
                                                 <FormControl>
                                                     <Input {...field} />
                                                 </FormControl>
@@ -344,7 +411,9 @@ export default function EditTenantSheet({
                                         name="area"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Area</FormLabel>
+                                                <FormLabel>
+                                                    {t("edit.area")}
+                                                </FormLabel>
                                                 <FormControl>
                                                     <Input {...field} />
                                                 </FormControl>
@@ -357,7 +426,9 @@ export default function EditTenantSheet({
                                         name="address"
                                         render={({ field }) => (
                                             <FormItem className="sm:col-span-2">
-                                                <FormLabel>Address</FormLabel>
+                                                <FormLabel>
+                                                    {t("edit.address")}
+                                                </FormLabel>
                                                 <FormControl>
                                                     <Input {...field} />
                                                 </FormControl>
@@ -370,7 +441,9 @@ export default function EditTenantSheet({
                                         name="hours"
                                         render={({ field }) => (
                                             <FormItem className="sm:col-span-2">
-                                                <FormLabel>Operating hours</FormLabel>
+                                                <FormLabel>
+                                                    {t("edit.operatingHours")}
+                                                </FormLabel>
                                                 <FormControl>
                                                     <Input {...field} />
                                                 </FormControl>
@@ -385,7 +458,7 @@ export default function EditTenantSheet({
                                 <div className="flex items-center gap-2 text-foreground">
                                     <UserCheck className="size-4 text-brand" />
                                     <h3 className="text-[15px] font-semibold">
-                                        House manager
+                                        {t("edit.sectionHouseManager")}
                                     </h3>
                                 </div>
                                 <div className="grid gap-4 sm:grid-cols-2">
@@ -394,7 +467,9 @@ export default function EditTenantSheet({
                                         name="managerName"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Manager name</FormLabel>
+                                                <FormLabel>
+                                                    {t("edit.managerName")}
+                                                </FormLabel>
                                                 <FormControl>
                                                     <Input {...field} />
                                                 </FormControl>
@@ -407,14 +482,17 @@ export default function EditTenantSheet({
                                         name="managerPhone"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Phone</FormLabel>
+                                                <FormLabel>
+                                                    {t("edit.phone")}
+                                                </FormLabel>
                                                 <FormControl>
                                                     <Input
                                                         {...field}
                                                         onChange={e =>
                                                             field.onChange(
                                                                 maskEthiopianPhone(
-                                                                    e.target.value,
+                                                                    e.target
+                                                                        .value,
                                                                 ),
                                                             )
                                                         }
@@ -429,9 +507,14 @@ export default function EditTenantSheet({
                                         name="managerEmail"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Login email</FormLabel>
+                                                <FormLabel>
+                                                    {t("edit.loginEmail")}
+                                                </FormLabel>
                                                 <FormControl>
-                                                    <Input type="email" {...field} />
+                                                    <Input
+                                                        type="email"
+                                                        {...field}
+                                                    />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -443,20 +526,23 @@ export default function EditTenantSheet({
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>
-                                                    Manager password
+                                                    {t("edit.managerPassword")}
                                                 </FormLabel>
                                                 <FormControl>
                                                     <Input
                                                         type="password"
-                                                        placeholder="Leave blank to keep current"
+                                                        placeholder={t(
+                                                            "edit.managerPasswordPlaceholder",
+                                                        )}
                                                         autoComplete="new-password"
                                                         {...field}
                                                     />
                                                 </FormControl>
                                                 <FormMessage />
                                                 <p className="text-[11px] text-slate-gray">
-                                                    Only fill this to reset the manager login
-                                                    password.
+                                                    {t(
+                                                        "edit.managerPasswordHint",
+                                                    )}
                                                 </p>
                                             </FormItem>
                                         )}
@@ -477,7 +563,7 @@ export default function EditTenantSheet({
                                 onClick={onClose}
                                 className="rounded-xl border border-hairline px-4 py-2.5 text-[13px] font-medium text-foreground hover:bg-surface-ivory"
                             >
-                                Cancel
+                                {t("cancel")}
                             </button>
                             <button
                                 type="submit"
@@ -487,7 +573,7 @@ export default function EditTenantSheet({
                                 {isLoading && (
                                     <Loader2 className="size-4 animate-spin" />
                                 )}
-                                Save changes
+                                {t("edit.saveChanges")}
                             </button>
                         </div>
                     </form>

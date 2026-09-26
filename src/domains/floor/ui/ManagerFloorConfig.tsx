@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { MapPin, Plus, Save, Trash2, UserRound, Utensils } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
     useAdminFloorLayoutQuery,
     useCreateDiningTableMutation,
@@ -36,6 +37,8 @@ import {
 import { cn } from "@/lib/utils";
 
 export default function ManagerFloorConfig() {
+    const t = useTranslations("managerTables");
+    const tCommon = useTranslations("common");
     const { data, isLoading, isError } = useAdminFloorLayoutQuery();
     const [createPlace, { isLoading: creatingPlace }] =
         useCreateTableLocationMutation();
@@ -109,12 +112,9 @@ export default function ManagerFloorConfig() {
         try {
             await createPlace({ name: values.name }).unwrap();
             placeForm.reset({ name: "" });
-            toast.success("Place created", values.name);
+            toast.success(t("toastPlaceCreated"), values.name);
         } catch (err) {
-            toast.fromUnknown(
-                err,
-                "Could not create place. Name may already exist.",
-            );
+            toast.fromUnknown(err, t("toastPlaceCreateError"));
         }
     }
 
@@ -133,9 +133,9 @@ export default function ManagerFloorConfig() {
                 locationId: values.locationId,
                 assignedWaiterMembershipId: "",
             });
-            toast.success("Table created", values.displayName);
+            toast.success(t("toastTableCreated"), values.displayName);
         } catch (err) {
-            toast.fromUnknown(err, "Could not create table.");
+            toast.fromUnknown(err, t("toastTableCreateError"));
         }
     }
 
@@ -162,9 +162,9 @@ export default function ManagerFloorConfig() {
                 },
             }).unwrap();
             setEditingTable(null);
-            toast.success("Table updated", values.displayName);
+            toast.success(t("toastTableUpdated"), values.displayName);
         } catch (err) {
-            toast.fromUnknown(err, "Could not update table.");
+            toast.fromUnknown(err, t("toastTableUpdateError"));
         }
     }
 
@@ -175,14 +175,14 @@ export default function ManagerFloorConfig() {
         }
         try {
             const res = await deleteTable(table.id).unwrap();
-            toast.success("Table deleted", res.message || table.displayName);
+            toast.success(
+                t("toastTableDeleted"),
+                res.message || table.displayName,
+            );
             setConfirmTableId(null);
             if (editingTable?.id === table.id) setEditingTable(null);
         } catch (err) {
-            toast.fromUnknown(
-                err,
-                "Could not delete table. Close any open session first.",
-            );
+            toast.fromUnknown(err, t("toastTableDeleteError"));
             setConfirmTableId(null);
         }
     }
@@ -194,13 +194,10 @@ export default function ManagerFloorConfig() {
         }
         try {
             const res = await deletePlace(locationId).unwrap();
-            toast.success("Place deleted", res.message || name);
+            toast.success(t("toastPlaceDeleted"), res.message || name);
             setConfirmPlaceId(null);
         } catch (err) {
-            toast.fromUnknown(
-                err,
-                "Could not delete place. Close open sessions first.",
-            );
+            toast.fromUnknown(err, t("toastPlaceDeleteError"));
             setConfirmPlaceId(null);
         }
     }
@@ -208,15 +205,14 @@ export default function ManagerFloorConfig() {
     if (isLoading) {
         return (
             <div className="rounded-[16px] border border-hairline bg-card px-4 py-10 text-center text-[13px] text-slate-gray">
-                Loading places & tables…
+                {t("loadingLayout")}
             </div>
         );
     }
     if (isError) {
         return (
             <p className="rounded-[16px] border border-destructive/30 bg-destructive/10 p-4 text-[13px] text-destructive">
-                Could not load floor layout. Sign in as manager and check the
-                API.
+                {t("loadLayoutError")}
             </p>
         );
     }
@@ -233,7 +229,7 @@ export default function ManagerFloorConfig() {
             <div className="grid gap-2.5 sm:grid-cols-3">
                 <div className="rounded-[16px] border border-hairline bg-card px-4 py-3">
                     <p className="text-[11px] uppercase tracking-wide text-slate-gray">
-                        Places
+                        {t("places")}
                     </p>
                     <p className="mt-1 text-[22px] font-semibold">
                         {totals.places}
@@ -241,7 +237,7 @@ export default function ManagerFloorConfig() {
                 </div>
                 <div className="rounded-[16px] border border-hairline bg-card px-4 py-3">
                     <p className="text-[11px] uppercase tracking-wide text-slate-gray">
-                        Tables
+                        {t("tables")}
                     </p>
                     <p className="mt-1 text-[22px] font-semibold text-brand">
                         {totals.tables}
@@ -249,7 +245,7 @@ export default function ManagerFloorConfig() {
                 </div>
                 <div className="rounded-[16px] border border-hairline bg-card px-4 py-3">
                     <p className="text-[11px] uppercase tracking-wide text-slate-gray">
-                        Unassigned
+                        {t("unassigned")}
                     </p>
                     <p
                         className={cn(
@@ -276,10 +272,10 @@ export default function ManagerFloorConfig() {
                             <MapPin className="size-4 text-brand" />
                             <div>
                                 <h3 className="text-[15px] font-semibold">
-                                    Create place
+                                    {t("createPlace")}
                                 </h3>
                                 <p className="text-[12px] text-slate-gray">
-                                    Floor / area for grouping tables
+                                    {t("createPlaceDesc")}
                                 </p>
                             </div>
                         </div>
@@ -290,7 +286,7 @@ export default function ManagerFloorConfig() {
                                 <FormItem>
                                     <FormControl>
                                         <Input
-                                            placeholder="e.g. Terrace, VIP Lounge"
+                                            placeholder={t("placePlaceholder")}
                                             className="h-10"
                                             {...field}
                                         />
@@ -305,7 +301,7 @@ export default function ManagerFloorConfig() {
                             className="w-full sm:w-auto"
                         >
                             <Plus className="size-4" />
-                            Add place
+                            {t("addPlace")}
                         </Button>
                     </form>
                 </Form>
@@ -321,11 +317,10 @@ export default function ManagerFloorConfig() {
                             <Utensils className="size-4 text-brand" />
                             <div>
                                 <h3 className="text-[15px] font-semibold">
-                                    Create table
+                                    {t("createTable")}
                                 </h3>
                                 <p className="text-[12px] text-slate-gray">
-                                    Add to a place and optionally assign a
-                                    waiter
+                                    {t("createTableDesc")}
                                 </p>
                             </div>
                         </div>
@@ -337,7 +332,9 @@ export default function ManagerFloorConfig() {
                                     <FormItem>
                                         <FormControl>
                                             <Input
-                                                placeholder="Table name"
+                                                placeholder={t(
+                                                    "tableNamePlaceholder",
+                                                )}
                                                 className="h-10"
                                                 {...field}
                                             />
@@ -353,7 +350,9 @@ export default function ManagerFloorConfig() {
                                     <FormItem>
                                         <FormControl>
                                             <Input
-                                                placeholder="Number (optional)"
+                                                placeholder={t(
+                                                    "numberOptional",
+                                                )}
                                                 className="h-10"
                                                 {...field}
                                             />
@@ -381,7 +380,7 @@ export default function ManagerFloorConfig() {
                                             >
                                                 {locations.length === 0 ? (
                                                     <option value="">
-                                                        Create a place first
+                                                        {t("createPlaceFirst")}
                                                     </option>
                                                 ) : null}
                                                 {locations.map(location => (
@@ -414,7 +413,7 @@ export default function ManagerFloorConfig() {
                                                 className="h-10 w-full rounded-[10px] border border-input bg-card px-3 text-[13px]"
                                             >
                                                 <option value="">
-                                                    Assign waiter later
+                                                    {t("assignWaiterLater")}
                                                 </option>
                                                 {waiters.map(waiter => (
                                                     <option
@@ -437,7 +436,7 @@ export default function ManagerFloorConfig() {
                             className="w-full sm:w-auto"
                         >
                             <Plus className="size-4" />
-                            Add table
+                            {t("addTable")}
                         </Button>
                     </form>
                 </Form>
@@ -447,10 +446,10 @@ export default function ManagerFloorConfig() {
                 <div className="rounded-[16px] border border-dashed border-hairline bg-card px-4 py-12 text-center">
                     <MapPin className="mx-auto size-8 text-slate-gray" />
                     <p className="mt-3 text-[15px] font-semibold">
-                        No places yet
+                        {t("noPlacesYet")}
                     </p>
                     <p className="mt-1 text-[13px] text-slate-gray">
-                        Create a floor or area first, then add tables under it.
+                        {t("noPlacesDesc")}
                     </p>
                 </div>
             ) : (
@@ -471,15 +470,19 @@ export default function ManagerFloorConfig() {
                                                 {location.name}
                                             </h3>
                                             <Badge variant="secondary">
-                                                {location.tables.length} table
                                                 {location.tables.length === 1
-                                                    ? ""
-                                                    : "s"}
+                                                    ? t("tableOne", {
+                                                          count: location.tables
+                                                              .length,
+                                                      })
+                                                    : t("tableMany", {
+                                                          count: location.tables
+                                                              .length,
+                                                      })}
                                             </Badge>
                                         </div>
                                         <p className="text-[12px] text-slate-gray">
-                                            Deleting this place removes all
-                                            tables in it
+                                            {t("deletePlaceHint")}
                                         </p>
                                     </div>
                                 </div>
@@ -509,14 +512,14 @@ export default function ManagerFloorConfig() {
                                 >
                                     <Trash2 className="size-3.5" />
                                     {confirmPlaceId === location.id
-                                        ? "Confirm delete place"
-                                        : "Delete place"}
+                                        ? t("confirmDeletePlace")
+                                        : t("deletePlace")}
                                 </Button>
                             </div>
 
                             {location.tables.length === 0 ? (
                                 <p className="px-4 py-8 text-center text-[13px] text-slate-gray">
-                                    No tables in this place yet.
+                                    {t("noTablesInPlace")}
                                 </p>
                             ) : (
                                 <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -554,8 +557,8 @@ export default function ManagerFloorConfig() {
                                                             }
                                                         >
                                                             {assigned
-                                                                ? "Assigned"
-                                                                : "Open"}
+                                                                ? t("assigned")
+                                                                : t("open")}
                                                         </Badge>
                                                     </div>
                                                     <p className="mt-2 flex items-center gap-1.5 text-[12px] text-slate-gray">
@@ -568,8 +571,9 @@ export default function ManagerFloorConfig() {
                                                             </span>
                                                         ) : (
                                                             <span className="text-amber-700 dark:text-amber-400">
-                                                                No waiter
-                                                                assigned
+                                                                {t(
+                                                                    "noWaiterAssigned",
+                                                                )}
                                                             </span>
                                                         )}
                                                     </p>
@@ -584,7 +588,7 @@ export default function ManagerFloorConfig() {
                                                             openEdit(table)
                                                         }
                                                     >
-                                                        Edit
+                                                        {tCommon("edit")}
                                                     </Button>
                                                     <Button
                                                         type="button"
@@ -619,8 +623,8 @@ export default function ManagerFloorConfig() {
                                                         <Trash2 className="size-3.5" />
                                                         {confirmTableId ===
                                                         table.id
-                                                            ? "Confirm"
-                                                            : "Delete"}
+                                                            ? tCommon("confirm")
+                                                            : tCommon("delete")}
                                                     </Button>
                                                 </div>
                                             </article>
@@ -649,10 +653,10 @@ export default function ManagerFloorConfig() {
                         >
                             <div className="border-b border-hairline px-5 py-4">
                                 <h2 className="text-[17px] font-semibold">
-                                    Edit table
+                                    {t("editTable")}
                                 </h2>
                                 <p className="text-[12px] text-slate-gray">
-                                    Change place, rename, or reassign waiter.
+                                    {t("editTableDesc")}
                                 </p>
                             </div>
                             <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
@@ -661,7 +665,9 @@ export default function ManagerFloorConfig() {
                                     name="displayName"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Table name</FormLabel>
+                                            <FormLabel>
+                                                {t("tableName")}
+                                            </FormLabel>
                                             <FormControl>
                                                 <Input
                                                     className="h-10"
@@ -677,7 +683,7 @@ export default function ManagerFloorConfig() {
                                     name="locationId"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Place</FormLabel>
+                                            <FormLabel>{t("place")}</FormLabel>
                                             <FormControl>
                                                 <select
                                                     value={field.value}
@@ -708,7 +714,7 @@ export default function ManagerFloorConfig() {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>
-                                                Assigned waiter
+                                                {t("assignedWaiter")}
                                             </FormLabel>
                                             <FormControl>
                                                 <select
@@ -721,7 +727,7 @@ export default function ManagerFloorConfig() {
                                                     className="h-10 w-full rounded-[10px] border border-input bg-card px-3 text-[13px]"
                                                 >
                                                     <option value="">
-                                                        Unassigned
+                                                        {t("unassigned")}
                                                     </option>
                                                     {waiters.map(waiter => (
                                                         <option
@@ -746,7 +752,7 @@ export default function ManagerFloorConfig() {
                                         className="flex-1"
                                         onClick={() => setEditingTable(null)}
                                     >
-                                        Cancel
+                                        {tCommon("cancel")}
                                     </Button>
                                     <Button
                                         type="submit"
@@ -754,7 +760,7 @@ export default function ManagerFloorConfig() {
                                         disabled={saving}
                                     >
                                         <Save className="size-4" />
-                                        Save
+                                        {tCommon("save")}
                                     </Button>
                                 </div>
                                 <Button
@@ -771,8 +777,8 @@ export default function ManagerFloorConfig() {
                                 >
                                     <Trash2 className="size-4" />
                                     {confirmTableId === editingTable.id
-                                        ? "Confirm delete table"
-                                        : "Delete table"}
+                                        ? t("confirmDeleteTable")
+                                        : t("deleteTable")}
                                 </Button>
                             </div>
                         </form>

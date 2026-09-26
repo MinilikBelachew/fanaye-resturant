@@ -21,6 +21,7 @@ import {
     X,
 } from "lucide-react";
 import { toast } from "@/lib/toast";
+import { useTranslations } from "next-intl";
 
 interface TableQrCardModalProps {
     open: boolean;
@@ -33,6 +34,14 @@ interface TableQrCardModalProps {
 
 type CardLayout = "tent" | "compact" | "large";
 type ColorTheme = "amber" | "monochrome" | "dark";
+const HEADLINE_KEYS = {
+    scan: "headlineScan",
+    orderPay: "headlineOrderPay",
+    browse: "headlineBrowse",
+    contactless: "headlineContactless",
+} as const;
+
+type HeadlineId = keyof typeof HEADLINE_KEYS;
 
 export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
     open,
@@ -42,14 +51,14 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
     restaurantName = "Your Restaurant",
     slug,
 }) => {
+    const t = useTranslations("qrMenuStudio");
     const [selectedLocation, setSelectedLocation] = useState<string>("all");
     const [layout, setLayout] = useState<CardLayout>("tent");
     const [theme, setTheme] = useState<ColorTheme>("amber");
     const [showWifi, setShowWifi] = useState<boolean>(true);
     const [showCutGuides, setShowCutGuides] = useState<boolean>(true);
-    const [instructionHeadline, setInstructionHeadline] = useState<string>(
-        "Scan with your Camera to Order",
-    );
+    const [instructionHeadline, setInstructionHeadline] =
+        useState<HeadlineId>("scan");
     const [activePrintingTableId, setActivePrintingTableId] = useState<
         string | null
     >(null);
@@ -202,14 +211,14 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                         <button
                             onClick={() => downloadSvg(table)}
                             className="flex size-7 items-center justify-center rounded-full bg-slate-100/90 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
-                            title="Download SVG Vector"
+                            title={t("downloadSvgTitle")}
                         >
                             <Download className="size-3.5" />
                         </button>
                         <button
                             onClick={() => handlePrintSingle(table.id)}
                             className="flex size-7 items-center justify-center rounded-full bg-slate-100/90 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
-                            title="Export PDF For This Card"
+                            title={t("exportPdfCardTitle")}
                         >
                             <FileDown className="size-3.5 text-amber-600" />
                         </button>
@@ -244,7 +253,7 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                                 : "text-slate-500"
                         }`}
                     >
-                        {table.locationName || "Dining Floor"}
+                        {table.locationName || t("diningFloor")}
                     </p>
                 </div>
 
@@ -271,7 +280,7 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                             theme === "dark" ? "text-white" : "text-slate-900"
                         }`}
                     >
-                        {instructionHeadline}
+                        {t(HEADLINE_KEYS[instructionHeadline])}
                     </p>
                     <p
                         className={`mt-0.5 text-[10px] sm:text-[11px] ${
@@ -280,7 +289,7 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                                 : "text-slate-500"
                         }`}
                     >
-                        Instant Kitchen Dispatch · Contactless Service
+                        {t("instantDispatch")}
                     </p>
 
                     {/* Clean readable URL for diners and verification */}
@@ -299,11 +308,11 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                         >
                             <span className="flex items-center gap-1 font-bold">
                                 <Wifi className="size-3 text-amber-500" />
-                                WiFi: {config.wifiSsid}
+                                {t("wifiPrefix")} {config.wifiSsid}
                             </span>
                             {config.wifiPassword ? (
                                 <span className="font-mono text-slate-600 dark:text-slate-300">
-                                    Pass:{" "}
+                                    {t("passPrefix")}{" "}
                                     <strong
                                         className={
                                             theme === "dark"
@@ -322,7 +331,7 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                 {/* Print-only cut marks indicator if enabled */}
                 {showCutGuides ? (
                     <div className="hidden print:block absolute -bottom-3 left-1/2 -translate-x-1/2 text-[8px] text-slate-400 tracking-wider">
-                        ✂ CUT HERE
+                        ✂ {t("cutHere")}
                     </div>
                 ) : null}
             </div>
@@ -381,12 +390,12 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                             </div>
                             <div>
                                 <h3 className="text-base font-bold text-slate-900">
-                                    Table QR Stand Cards & PDF Export
+                                    {t("modalTitle")}
                                 </h3>
                                 <p className="text-xs text-slate-500">
-                                    Ready-to-print acrylic stand cards and
-                                    high-res vector PDFs (
-                                    {filteredTables.length} tables).
+                                    {t("modalSubtitle", {
+                                        count: filteredTables.length,
+                                    })}
                                 </p>
                             </div>
                         </div>
@@ -404,18 +413,18 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                                     <FileDown className="size-4" />
                                 )}
                                 {isExportingPdf
-                                    ? "Generating PDF…"
-                                    : "Export to PDF"}
+                                    ? t("generatingPdf")
+                                    : t("exportPdf")}
                             </Button>
 
                             <Button
                                 onClick={downloadAllSvgs}
                                 variant="outline"
                                 className="gap-1.5 border-slate-300 text-xs text-slate-700 hover:bg-slate-50"
-                                title="Download all table QR SVGs"
+                                title={t("downloadSvgs")}
                             >
                                 <Download className="size-3.5 text-amber-600" />
-                                Download SVGs
+                                {t("downloadSvgs")}
                             </Button>
 
                             <button
@@ -433,19 +442,15 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                         <div className="flex flex-wrap items-center gap-1.5">
                             <span className="text-slate-500 text-[11px] font-semibold mr-1 flex items-center gap-1">
                                 <Layers className="size-3 text-slate-400" />{" "}
-                                Card Size:
+                                {t("cardSize")}
                             </span>
-                            {[
-                                { id: "tent", label: "Tent Stand (2/page)" },
-                                {
-                                    id: "compact",
-                                    label: "Compact Badge (4/page)",
-                                },
-                                {
-                                    id: "large",
-                                    label: "Plaque Display (1/page)",
-                                },
-                            ].map(opt => (
+                            {(
+                                [
+                                    { id: "tent", labelKey: "sizeTent" },
+                                    { id: "compact", labelKey: "sizeCompact" },
+                                    { id: "large", labelKey: "sizePlaque" },
+                                ] as const
+                            ).map(opt => (
                                 <button
                                     key={opt.id}
                                     onClick={() =>
@@ -457,7 +462,7 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                                             : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
                                     }`}
                                 >
-                                    {opt.label}
+                                    {t(opt.labelKey)}
                                 </button>
                             ))}
                         </div>
@@ -466,16 +471,18 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                         <div className="flex flex-wrap items-center gap-1.5">
                             <span className="text-slate-500 text-[11px] font-semibold mr-1 flex items-center gap-1">
                                 <Palette className="size-3 text-slate-400" />{" "}
-                                Color Theme:
+                                {t("colorTheme")}
                             </span>
-                            {[
-                                { id: "amber", label: "Warm Amber" },
-                                {
-                                    id: "monochrome",
-                                    label: "Black & White (Ink-Saver)",
-                                },
-                                { id: "dark", label: "Dark Slate Plaque" },
-                            ].map(opt => (
+                            {(
+                                [
+                                    { id: "amber", labelKey: "themeAmber" },
+                                    {
+                                        id: "monochrome",
+                                        labelKey: "themeMono",
+                                    },
+                                    { id: "dark", labelKey: "themeDark" },
+                                ] as const
+                            ).map(opt => (
                                 <button
                                     key={opt.id}
                                     onClick={() =>
@@ -487,7 +494,7 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                                             : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
                                     }`}
                                 >
-                                    {opt.label}
+                                    {t(opt.labelKey)}
                                 </button>
                             ))}
                         </div>
@@ -504,7 +511,7 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                                 }`}
                             >
                                 <Wifi className="size-3" />
-                                {showWifi ? "Wi-Fi: On" : "Wi-Fi: Off"}
+                                {showWifi ? t("wifiOn") : t("wifiOff")}
                             </button>
 
                             <button
@@ -515,12 +522,12 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                                         ? "border-slate-400 bg-slate-100 text-slate-800"
                                         : "border-slate-200 bg-white text-slate-400"
                                 }`}
-                                title="Print dotted crop guides for scissors or trimmer"
+                                title={t("cutLinesOn")}
                             >
                                 <Scissors className="size-3" />
                                 {showCutGuides
-                                    ? "Cut Lines: On"
-                                    : "Cut Lines: Off"}
+                                    ? t("cutLinesOn")
+                                    : t("cutLinesOff")}
                             </button>
                         </div>
                     </div>
@@ -529,7 +536,7 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/50 pt-2.5 text-xs">
                         <div className="flex flex-wrap items-center gap-1.5">
                             <span className="text-slate-400 text-[11px] font-medium mr-1">
-                                Floor:
+                                {t("floor")}
                             </span>
                             <button
                                 onClick={() => setSelectedLocation("all")}
@@ -539,7 +546,7 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                                         : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
                                 }`}
                             >
-                                All Floors ({tables.length})
+                                {t("allFloors", { count: tables.length })}
                             </button>
                             {locations.map(loc => (
                                 <button
@@ -560,7 +567,7 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                         <div className="flex flex-wrap items-center gap-3">
                             <div className="flex items-center gap-1.5">
                                 <span className="text-[11px] text-slate-500 font-medium">
-                                    QR Link Host:
+                                    {t("qrLinkHost")}
                                 </span>
                                 <input
                                     type="text"
@@ -576,27 +583,26 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
 
                             <div className="flex items-center gap-1.5">
                                 <span className="text-[11px] text-slate-500 font-medium">
-                                    Headline:
+                                    {t("headline")}
                                 </span>
                                 <select
                                     value={instructionHeadline}
                                     onChange={e =>
-                                        setInstructionHeadline(e.target.value)
+                                        setInstructionHeadline(
+                                            e.target.value as HeadlineId,
+                                        )
                                     }
                                     className="rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-700 focus:outline-none focus:ring-1 focus:ring-amber-500"
                                 >
-                                    <option value="Scan with your Camera to Order">
-                                        Scan with your Camera to Order
-                                    </option>
-                                    <option value="Order & Pay Directly from Table">
-                                        Order & Pay Directly from Table
-                                    </option>
-                                    <option value="Browse Food Menu & Specials">
-                                        Browse Food Menu & Specials
-                                    </option>
-                                    <option value="Contactless Guest Self-Service">
-                                        Contactless Guest Self-Service
-                                    </option>
+                                    {(
+                                        Object.keys(
+                                            HEADLINE_KEYS,
+                                        ) as HeadlineId[]
+                                    ).map(id => (
+                                        <option key={id} value={id}>
+                                            {t(HEADLINE_KEYS[id])}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
                         </div>
@@ -606,17 +612,14 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                 {/* Informative Tip banner for PDF export */}
                 <div className="no-print bg-amber-500/10 px-6 py-2 border-b border-amber-500/20 text-[11px] text-amber-900 flex flex-wrap items-center justify-between gap-2">
                     <span>
-                        ⚡ <strong>Instant PDF Export:</strong> Click{" "}
-                        <em>&ldquo;Export to PDF&rdquo;</em> to download a
-                        high-resolution vector PDF directly to your device via
-                        jsPDF without opening the print dialog.
+                        ⚡ <strong>{t("pdfTipLabel")}</strong> {t("pdfTipBody")}
                     </span>
                     {activePrintingTableId ? (
                         <button
                             onClick={() => setActivePrintingTableId(null)}
                             className="text-amber-800 underline font-bold"
                         >
-                            Reset to all tables
+                            {t("resetAllTables")}
                         </button>
                     ) : null}
                 </div>

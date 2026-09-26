@@ -42,12 +42,64 @@ const DAY_KEYS: Record<string, string> = {
     Sat: "daySat",
 };
 
+const CHANNEL_LABEL_KEYS: Record<string, string> = {
+    cash: "channelCash",
+    telebirr: "channelTelebirr",
+    bank: "channelTransfer",
+    transfer: "channelTransfer",
+    cbe: "channelCbe",
+    other: "channelOther",
+    card: "channelOther",
+};
+
 function localizeDayLabel(
     t: ReturnType<typeof useTranslations>,
     value: string,
 ) {
-    const key = DAY_KEYS[value];
-    return key && t.has(key) ? t(key) : value;
+    const exact = DAY_KEYS[value];
+    if (exact && t.has(exact)) return t(exact);
+
+    // Composite labels like "20 Sun" / "Sun 20"
+    return value
+        .split(/\s+/)
+        .map(part => {
+            const key = DAY_KEYS[part];
+            return key && t.has(key) ? t(key) : part;
+        })
+        .join(" ");
+}
+
+function localizeChannelName(
+    t: ReturnType<typeof useTranslations>,
+    channel: { id: string; name: string },
+) {
+    const id = channel.id.toLowerCase();
+    const byId = CHANNEL_LABEL_KEYS[id];
+    if (byId && t.has(byId)) return t(byId);
+
+    const name = channel.name.toLowerCase();
+    if (
+        (name.includes("bank") || name.includes("transfer")) &&
+        t.has("channelTransfer")
+    ) {
+        return t("channelTransfer");
+    }
+    if (name.includes("telebirr") && t.has("channelTelebirr")) {
+        return t("channelTelebirr");
+    }
+    if (name.includes("cbe") && t.has("channelCbe")) {
+        return t("channelCbe");
+    }
+    if (name === "cash" && t.has("channelCash")) {
+        return t("channelCash");
+    }
+    if (
+        (name.includes("card") || name.includes("partner")) &&
+        t.has("channelOther")
+    ) {
+        return t("channelOther");
+    }
+    return channel.name;
 }
 
 function withLocalizedDays<T extends { period?: string; day?: string }>(
@@ -246,7 +298,7 @@ export function PaymentChannelsBreakdown({
                                         backgroundColor: ch.color,
                                     }}
                                     className="h-full transition-all first:rounded-l-[6px] last:rounded-r-[6px]"
-                                    title={`${ch.name}: ${ch.sharePercentage}% (${ch.amountFormatted})`}
+                                    title={`${localizeChannelName(t, ch)}: ${ch.sharePercentage}% (${ch.amountFormatted})`}
                                 />
                             ))}
                         </div>
@@ -265,7 +317,7 @@ export function PaymentChannelsBreakdown({
                                             }}
                                         />
                                         <span className="font-medium text-foreground">
-                                            {ch.name}
+                                            {localizeChannelName(t, ch)}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-3">
@@ -860,7 +912,12 @@ export function PaymentMixPieChart({
     channels?: PaymentChannelBreakdownItem[];
 }) {
     const t = useTranslations("dashboardCharts");
-    const data = channels.filter(ch => ch.amountValue > 0);
+    const data = channels
+        .filter(ch => ch.amountValue > 0)
+        .map(ch => ({
+            ...ch,
+            name: localizeChannelName(t, ch),
+        }));
     return (
         <div className="flex h-full flex-col rounded-[16px] border border-hairline bg-card p-5">
             <div>
@@ -928,7 +985,23 @@ export function CashierMoneyRadarChart({
     data?: Array<{ metric: string; value: number }>;
 }) {
     const t = useTranslations("dashboardCharts");
+    const tCashier = useTranslations("cashier");
     const hasSignal = data.some(row => row.value > 0);
+    const localized = data.map(row => {
+        const metricMap: Record<string, string> = {
+            Cash: t.has("channelCash") ? t("channelCash") : tCashier("cash"),
+            Telebirr: t.has("channelTelebirr")
+                ? t("channelTelebirr")
+                : tCashier("telebirr"),
+            Bank: tCashier("metricBank"),
+            "Bill queue": tCashier("metricBillQueue"),
+            "Cash drops": tCashier("metricCashDrops"),
+        };
+        return {
+            ...row,
+            metric: metricMap[row.metric] ?? row.metric,
+        };
+    });
     return (
         <div className="flex h-full flex-col rounded-[16px] border border-hairline bg-card p-5">
             <div>
@@ -947,7 +1020,7 @@ export function CashierMoneyRadarChart({
                 ) : (
                     <ResponsiveContainer width="100%" height={240}>
                         <RadarChart
-                            data={data}
+                            data={localized}
                             cx="50%"
                             cy="50%"
                             outerRadius="70%"

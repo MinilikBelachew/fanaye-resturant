@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Building2, MapPin, Radio, RefreshCw } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import KpiCard from "@/components/custom/organisms/KpiCard";
@@ -18,13 +19,12 @@ import { cn } from "@/lib/utils";
 
 const POLL_MS = 12000;
 
-const PERIODS: { id: BranchRevenuePeriod; label: string }[] = [
-    { id: "month", label: "Last month" },
-    { id: "quarter", label: "Quarter" },
-    { id: "year", label: "Year" },
-];
+const PERIOD_IDS: BranchRevenuePeriod[] = ["month", "quarter", "year"];
 
 export default function BranchesPage() {
+    const t = useTranslations("owner");
+    const tManager = useTranslations("manager");
+    const tCommon = useTranslations("common");
     const session = useAppSelector(state => state.identity.session);
     const [period, setPeriod] = useState<BranchRevenuePeriod>("month");
     const { data, isLoading, isFetching, isError } = useGetBranchRevenueQuery(
@@ -35,9 +35,15 @@ export default function BranchesPage() {
     const revenue = data?.data;
 
     const branchName =
-        revenue?.branchName || session?.branchName || "Current branch";
+        revenue?.branchName || session?.branchName || t("currentBranch");
     const restaurantName = site?.data?.tenantName || branchName;
     const hasBranch = Boolean(revenue?.branchName || session?.branchId);
+
+    const periodLabel = (id: BranchRevenuePeriod) => {
+        if (id === "month") return t("periodMonth");
+        if (id === "quarter") return t("periodQuarter");
+        return t("periodYear");
+    };
 
     return (
         <DashboardFrame>
@@ -50,8 +56,8 @@ export default function BranchesPage() {
                         revenue
                             ? `${restaurantName} · ${revenue.periodLabel}`
                             : restaurantName
-                              ? `Revenue for ${restaurantName}`
-                              : "Branch revenue by period."
+                              ? t("revenueFor", { name: restaurantName })
+                              : t("branchRevenueByPeriod")
                     }
                 />
                 <div
@@ -66,7 +72,7 @@ export default function BranchesPage() {
                             isError ? "text-red-500" : "text-emerald-500",
                         )}
                     />
-                    {isError ? "Offline" : "Live"}
+                    {isError ? tCommon("offline") : tCommon("live")}
                     {isFetching ? (
                         <RefreshCw className="size-3 animate-spin" />
                     ) : null}
@@ -74,13 +80,13 @@ export default function BranchesPage() {
             </div>
 
             <div className="flex max-w-full gap-1.5 overflow-x-auto pb-0.5">
-                {PERIODS.map(item => {
-                    const active = period === item.id;
+                {PERIOD_IDS.map(id => {
+                    const active = period === id;
                     return (
                         <button
-                            key={item.id}
+                            key={id}
                             type="button"
-                            onClick={() => setPeriod(item.id)}
+                            onClick={() => setPeriod(id)}
                             className={cn(
                                 "shrink-0 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors",
                                 active
@@ -88,7 +94,7 @@ export default function BranchesPage() {
                                     : "border-hairline bg-card text-slate-gray hover:bg-muted/50",
                             )}
                         >
-                            {item.label}
+                            {periodLabel(id)}
                         </button>
                     );
                 })}
@@ -96,7 +102,7 @@ export default function BranchesPage() {
 
             {isError ? (
                 <p className="rounded-[16px] border border-destructive/30 bg-destructive/10 p-4 text-[13px] text-destructive">
-                    Could not load branch revenue.
+                    {t("loadBranchError")}
                 </p>
             ) : null}
 
@@ -104,7 +110,7 @@ export default function BranchesPage() {
 
             {!isLoading && !hasBranch ? (
                 <div className="rounded-[16px] border border-dashed border-hairline bg-card p-6 text-[13px] text-slate-gray">
-                    No branch is linked to this owner session yet.
+                    {t("noBranchLinked")}
                 </div>
             ) : null}
 
@@ -126,13 +132,13 @@ export default function BranchesPage() {
                                     </p>
                                 </div>
                             </div>
-                            <Badge variant="success">Live</Badge>
+                            <Badge variant="success">{tCommon("live")}</Badge>
                         </div>
                     </article>
 
                     <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
                         <KpiCard
-                            label="Revenue"
+                            label={t("revenue")}
                             value={revenue.revenueFormatted}
                             trend={{
                                 value: revenue.revenueTrend,
@@ -153,12 +159,12 @@ export default function BranchesPage() {
                             tone="brand"
                         />
                         <KpiCard
-                            label="Collected"
+                            label={t("collected")}
                             value={revenue.collectionsFormatted}
                             trend={{
                                 value: revenue.billedFormatted,
                                 direction: "neutral",
-                                label: "billed in period",
+                                label: t("billedInPeriod"),
                             }}
                             sparkline={{
                                 badge: revenue.ordersFormatted,
@@ -168,9 +174,9 @@ export default function BranchesPage() {
                             tone="emerald"
                         />
                         <KpiCard
-                            label="Orders"
+                            label={t("orders")}
                             value={revenue.ordersFormatted}
-                            hint="bills in selected period"
+                            hint={t("billsInPeriod")}
                             sparkline={{
                                 badge: revenue.coversFormatted,
                                 color: "#f97316",
@@ -179,12 +185,12 @@ export default function BranchesPage() {
                             tone="amber"
                         />
                         <KpiCard
-                            label="Avg check"
+                            label={tManager("avgCheck")}
                             value={revenue.avgCheckFormatted}
                             trend={{
                                 value: revenue.coversFormatted,
                                 direction: "neutral",
-                                label: "covers",
+                                label: t("covers"),
                             }}
                             sparkline={{
                                 badge: revenue.coversFormatted,

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check, Loader2, Pencil, Rocket, Sparkles } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -9,14 +10,49 @@ import {
     type WebsiteTemplateId,
 } from "@/domains/site/templates/restaurantTemplates";
 
+const TEMPLATE_I18N_KEYS: Record<
+    WebsiteTemplateId,
+    { name: string; tagline: string; vibe: string }
+> = {
+    "harbor-bistro": {
+        name: "harborBistro_name",
+        tagline: "harborBistro_tagline",
+        vibe: "harborBistro_vibe",
+    },
+    "ember-kitchen": {
+        name: "emberKitchen_name",
+        tagline: "emberKitchen_tagline",
+        vibe: "emberKitchen_vibe",
+    },
+    "garden-table": {
+        name: "gardenTable_name",
+        tagline: "gardenTable_tagline",
+        vibe: "gardenTable_vibe",
+    },
+    "coffee-house": {
+        name: "coffeeHouse_name",
+        tagline: "coffeeHouse_tagline",
+        vibe: "coffeeHouse_vibe",
+    },
+    "urban-plate": {
+        name: "urbanPlate_name",
+        tagline: "urbanPlate_tagline",
+        vibe: "urbanPlate_vibe",
+    },
+};
+
 function TemplateMock({
     templateId,
     accent,
     previewImage,
+    menuLabel,
+    reserveLabel,
 }: {
     templateId: WebsiteTemplateId;
     accent: string;
     previewImage: string;
+    menuLabel: string;
+    reserveLabel: string;
 }) {
     const isDark = templateId === "ember-kitchen";
     const isMono = templateId === "urban-plate";
@@ -68,7 +104,7 @@ function TemplateMock({
                             className="rounded-full px-2 py-0.5 text-[8px] font-semibold text-white"
                             style={{ background: accent }}
                         >
-                            Menu
+                            {menuLabel}
                         </span>
                     </div>
                 </div>
@@ -103,10 +139,10 @@ function TemplateMock({
                                 className="h-5 rounded-full px-2 text-[8px] font-semibold leading-5 text-white"
                                 style={{ background: accent }}
                             >
-                                Reserve
+                                {reserveLabel}
                             </span>
                             <span className="h-5 rounded-full border border-white/40 px-2 text-[8px] font-semibold leading-5 text-white/90">
-                                Menu
+                                {menuLabel}
                             </span>
                         </div>
                     </div>
@@ -129,24 +165,25 @@ export default function WebsiteTemplatePicker({
     onScratch: () => void;
     onCancel?: () => void;
 }) {
+    const t = useTranslations("websiteStudio");
     const [selected, setSelected] = useState<WebsiteTemplateId>(
         WEBSITE_TEMPLATES[0].id,
     );
-    const active = WEBSITE_TEMPLATES.find(t => t.id === selected)!;
+    const active = WEBSITE_TEMPLATES.find(tpl => tpl.id === selected)!;
+    const activeKeys = TEMPLATE_I18N_KEYS[active.id];
 
     return (
         <div className="mx-auto w-full max-w-6xl space-y-8 pb-10">
             <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div className="space-y-1.5">
                     <p className="text-[11px] font-semibold tracking-[0.16em] text-slate-500 uppercase">
-                        Layout templates
+                        {t("layoutTemplates")}
                     </p>
                     <h1 className="text-[28px] font-semibold tracking-tight text-slate-900 sm:text-[32px]">
                         {tenantName}
                     </h1>
                     <p className="max-w-xl text-[14px] leading-relaxed text-slate-500">
-                        Pick a modern restaurant layout. Your name and live menu
-                        wire in automatically — then publish or fine-tune.
+                        {t("pickLayoutDesc")}
                     </p>
                 </div>
                 {onCancel ? (
@@ -156,7 +193,7 @@ export default function WebsiteTemplatePicker({
                         disabled={busy}
                         className="self-start text-[13px] font-medium text-slate-500 underline-offset-4 hover:text-slate-900 hover:underline disabled:opacity-50"
                     >
-                        Back to editor
+                        {t("backToEditor")}
                     </button>
                 ) : null}
             </header>
@@ -164,6 +201,7 @@ export default function WebsiteTemplatePicker({
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {WEBSITE_TEMPLATES.map(template => {
                     const isOn = selected === template.id;
+                    const keys = TEMPLATE_I18N_KEYS[template.id];
                     return (
                         <button
                             key={template.id}
@@ -181,6 +219,8 @@ export default function WebsiteTemplatePicker({
                                     templateId={template.id}
                                     accent={template.accent}
                                     previewImage={template.previewImage}
+                                    menuLabel={t("mockMenu")}
+                                    reserveLabel={t("mockReserve")}
                                 />
                                 {isOn ? (
                                     <span className="absolute top-3.5 right-3.5 z-10 flex size-7 items-center justify-center rounded-full bg-slate-900 text-white shadow-md">
@@ -193,10 +233,10 @@ export default function WebsiteTemplatePicker({
                                 <div className="flex items-start justify-between gap-2">
                                     <div>
                                         <p className="text-[15px] font-semibold tracking-tight text-slate-900">
-                                            {template.name}
+                                            {t(keys.name)}
                                         </p>
                                         <p className="mt-0.5 text-[12px] text-slate-500">
-                                            {template.tagline}
+                                            {t(keys.tagline)}
                                         </p>
                                     </div>
                                     <span
@@ -205,7 +245,7 @@ export default function WebsiteTemplatePicker({
                                     />
                                 </div>
                                 <p className="line-clamp-2 text-[11px] leading-relaxed text-slate-400">
-                                    {template.vibe}
+                                    {t(keys.vibe)}
                                 </p>
                             </div>
                         </button>
@@ -222,10 +262,10 @@ export default function WebsiteTemplatePicker({
                         <Sparkles className="size-4 text-slate-600" />
                     </span>
                     <span className="text-[14px] font-semibold text-slate-900">
-                        Start from scratch
+                        {t("startFromScratch")}
                     </span>
                     <span className="max-w-[180px] px-4 text-[12px] leading-relaxed text-slate-500">
-                        Blank header, hero, and footer — build your own
+                        {t("startFromScratchDesc")}
                     </span>
                 </button>
             </div>
@@ -241,10 +281,10 @@ export default function WebsiteTemplatePicker({
                         />
                         <div className="min-w-0">
                             <p className="truncate text-[15px] font-semibold text-slate-900">
-                                {active.name}
+                                {t(activeKeys.name)}
                             </p>
                             <p className="truncate text-[12px] text-slate-500">
-                                {active.vibe}
+                                {t(activeKeys.vibe)}
                             </p>
                         </div>
                     </div>
@@ -261,7 +301,7 @@ export default function WebsiteTemplatePicker({
                             ) : (
                                 <Rocket className="size-3.5" />
                             )}
-                            Publish
+                            {t("publish")}
                         </Button>
                         <Button
                             type="button"
@@ -274,7 +314,7 @@ export default function WebsiteTemplatePicker({
                             ) : (
                                 <Pencil className="size-3.5" />
                             )}
-                            Customize
+                            {t("customize")}
                         </Button>
                     </div>
                 </div>

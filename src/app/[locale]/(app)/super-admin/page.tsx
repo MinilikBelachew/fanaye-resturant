@@ -1,6 +1,7 @@
 "use client";
 
 import { RefreshCw, Store, ExternalLink } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,8 @@ import { useGetSuperAdminDashboardQuery } from "@/context/services/superAdminApi
 const POLL_MS = 15_000;
 
 export default function SuperAdminPage() {
+    const t = useTranslations("superAdmin");
+    const tTenancy = useTranslations("tenancy");
     const { data, isLoading, isFetching, error, refetch } =
         useGetSuperAdminDashboardQuery(undefined, {
             pollingInterval: POLL_MS,
@@ -44,35 +47,37 @@ export default function SuperAdminPage() {
                     <RefreshCw
                         className={`size-3.5 ${isFetching ? "animate-spin" : ""}`}
                     />
-                    <span>Refresh</span>
+                    <span>{t("refresh")}</span>
                 </Button>
             </div>
 
             {error ? (
                 <div className="rounded-[16px] border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive">
-                    Unable to load platform telemetry. Check super-admin access.
+                    {t("dashboard.errorLoadTelemetry")}
                 </div>
             ) : null}
 
             <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
                 <KpiCard
-                    label="Live tenants"
+                    label={t("dashboard.kpiLiveTenants")}
                     value={
                         isLoading
                             ? "..."
                             : String(dash?.kpis.liveTenantsCount ?? 0)
                     }
-                    hint={`${dash?.kpis.provisionedTenantsCount ?? 0} provisioned`}
+                    hint={t("dashboard.kpiProvisionedHint", {
+                        count: dash?.kpis.provisionedTenantsCount ?? 0,
+                    })}
                     tone="brand"
                 />
                 <KpiCard
-                    label="Network GMV today"
+                    label={t("dashboard.kpiNetworkGmvToday")}
                     value={
                         isLoading
                             ? "..."
                             : (dash?.kpis.networkGmvTodayFormatted ?? "ETB 0")
                     }
-                    hint={dash?.kpis.networkGmvTrendLabel ?? "today"}
+                    hint={dash?.kpis.networkGmvTrendLabel ?? t("today")}
                     trend={
                         dash?.kpis.networkGmvTrend
                             ? {
@@ -88,7 +93,7 @@ export default function SuperAdminPage() {
                     tone="emerald"
                 />
                 <KpiCard
-                    label="Active branches"
+                    label={t("dashboard.kpiActiveBranches")}
                     value={
                         isLoading
                             ? "..."
@@ -96,18 +101,18 @@ export default function SuperAdminPage() {
                     }
                     hint={
                         dash?.kpis.branchesLocationSummary ??
-                        "Active branch network"
+                        t("dashboard.kpiActiveBranchNetworkFallback")
                     }
                     tone="amber"
                 />
                 <KpiCard
-                    label="Digital settlement mix"
+                    label={t("dashboard.kpiDigitalSettlementMix")}
                     value={
                         isLoading
                             ? "..."
                             : (dash?.kpis.digitalSettlementPercentage ?? "0%")
                     }
-                    hint="Transfer payments today"
+                    hint={t("dashboard.kpiTransferPaymentsToday")}
                     tone="brand"
                 />
             </div>
@@ -115,71 +120,79 @@ export default function SuperAdminPage() {
             <section className="overflow-hidden rounded-[16px] border border-hairline bg-card shadow-subtle">
                 <div className="border-b border-hairline px-5 py-3.5 sm:px-6">
                     <h2 className="text-[16px] font-semibold text-foreground">
-                        Ops health
+                        {t("dashboard.opsHealthTitle")}
                     </h2>
                     <p className="text-[12px] text-slate-gray">
-                        Daily close, stations, cash, and floor signals across
-                        the network
+                        {t("dashboard.opsHealthSubtitle")}
                     </p>
                 </div>
                 <div className="grid gap-2.5 p-4 sm:grid-cols-2 lg:grid-cols-4 sm:p-5">
                     <OpsMetric
-                        label="Daily close compliance"
+                        label={t("dashboard.opsDailyCloseCompliance")}
                         value={
                             isLoading
                                 ? "…"
                                 : `${ops?.dailyCloseCompliancePct ?? 0}%`
                         }
-                        hint={`${ops?.branchesClosedToday ?? 0}/${ops?.activeBranches ?? 0} branches locked`}
+                        hint={t("dashboard.opsBranchesLockedHint", {
+                            closed: ops?.branchesClosedToday ?? 0,
+                            total: ops?.activeBranches ?? 0,
+                        })}
                     />
                     <OpsMetric
-                        label="Stations online"
+                        label={t("dashboard.opsStationsOnline")}
                         value={
                             isLoading
                                 ? "…"
                                 : `${ops?.stationAvailabilityPct ?? 0}%`
                         }
-                        hint={`${ops?.offlineStations ?? 0} offline · ${ops?.totalStations ?? 0} total`}
+                        hint={t("dashboard.opsStationsHint", {
+                            offline: ops?.offlineStations ?? 0,
+                            total: ops?.totalStations ?? 0,
+                        })}
                     />
                     <OpsMetric
-                        label="Cash health"
+                        label={t("dashboard.opsCashHealth")}
                         value={isLoading ? "…" : `${ops?.cashHealthPct ?? 0}%`}
-                        hint={`${ops?.cashVarianceBranches ?? 0} variance · ETB ${ops?.cashVarianceAbsTotal ?? 0}`}
+                        hint={t("dashboard.opsCashVarianceHint", {
+                            branches: ops?.cashVarianceBranches ?? 0,
+                            amount: ops?.cashVarianceAbsTotal ?? 0,
+                        })}
                     />
                     <OpsMetric
-                        label="Pending cash drops"
+                        label={t("dashboard.opsPendingCashDrops")}
                         value={
                             isLoading ? "…" : String(ops?.pendingCashDrops ?? 0)
                         }
-                        hint="Initiated / undeclared drops"
+                        hint={t("dashboard.opsPendingCashDropsHint")}
                     />
                     <OpsMetric
-                        label="Open sessions"
+                        label={t("dashboard.opsOpenSessions")}
                         value={isLoading ? "…" : String(ops?.openSessions ?? 0)}
-                        hint="Tables open today"
+                        hint={t("dashboard.opsOpenSessionsHint")}
                     />
                     <OpsMetric
-                        label="Unpaid bills"
+                        label={t("dashboard.opsUnpaidBills")}
                         value={isLoading ? "…" : String(ops?.unpaidBills ?? 0)}
-                        hint="Network-wide unpaid"
+                        hint={t("dashboard.opsUnpaidBillsHint")}
                     />
                     <OpsMetric
-                        label="Open exceptions"
+                        label={t("dashboard.opsOpenExceptions")}
                         value={
                             isLoading
                                 ? "…"
                                 : String(ops?.openProductionExceptions ?? 0)
                         }
-                        hint="Production cannot-prepare"
+                        hint={t("dashboard.opsOpenExceptionsHint")}
                     />
                     <OpsMetric
-                        label="Digital mix"
+                        label={t("dashboard.opsDigitalMix")}
                         value={
                             isLoading
                                 ? "…"
                                 : `${ops?.digitalSettlementPct ?? 0}%`
                         }
-                        hint="Transfer share of payments"
+                        hint={t("dashboard.opsDigitalMixHint")}
                     />
                 </div>
             </section>
@@ -206,10 +219,10 @@ export default function SuperAdminPage() {
                 <div className="flex items-center justify-between border-b border-hairline px-6 py-4">
                     <div>
                         <h2 className="text-[16px] font-semibold text-foreground">
-                            Tenant fleet
+                            {t("dashboard.tenantFleetTitle")}
                         </h2>
                         <p className="text-[12px] text-slate-gray">
-                            Live tenants from the database
+                            {t("dashboard.tenantFleetSubtitle")}
                         </p>
                     </div>
                     <Badge
@@ -217,38 +230,42 @@ export default function SuperAdminPage() {
                         className="gap-1 border-orange-500/30 text-orange-600"
                     >
                         <Store className="size-3" />
-                        <span>{dash?.tenants.length ?? 0} restaurants</span>
+                        <span>
+                            {t("dashboard.tenantFleetBadge", {
+                                count: dash?.tenants.length ?? 0,
+                            })}
+                        </span>
                     </Badge>
                 </div>
                 <div className="overflow-x-auto">
                     {(dash?.tenants.length ?? 0) === 0 && !isLoading ? (
                         <p className="px-6 py-10 text-center text-[13px] text-slate-gray">
-                            No tenants provisioned yet.
+                            {t("dashboard.tenantFleetEmpty")}
                         </p>
                     ) : (
                         <table className="w-full text-left text-[14px]">
                             <thead className="bg-secondary/40 text-[12px] tracking-[0.06em] text-slate-gray uppercase">
                                 <tr>
                                     <th className="px-6 py-3 font-medium">
-                                        Restaurant
+                                        {t("dashboard.tableRestaurant")}
                                     </th>
                                     <th className="px-6 py-3 font-medium">
-                                        Plan
+                                        {t("dashboard.tablePlan")}
                                     </th>
                                     <th className="px-6 py-3 font-medium">
-                                        City & Branches
+                                        {t("dashboard.tableCityBranches")}
                                     </th>
                                     <th className="px-6 py-3 font-medium">
-                                        Today GMV
+                                        {t("dashboard.tableTodayGmv")}
                                     </th>
                                     <th className="px-6 py-3 font-medium">
-                                        Active Tables
+                                        {t("dashboard.tableActiveTables")}
                                     </th>
                                     <th className="px-6 py-3 font-medium">
-                                        Status
+                                        {t("dashboard.tableStatus")}
                                     </th>
                                     <th className="px-6 py-3 text-right font-medium">
-                                        Action
+                                        {t("dashboard.tableAction")}
                                     </th>
                                 </tr>
                             </thead>
@@ -275,17 +292,18 @@ export default function SuperAdminPage() {
                                         <td className="px-6 py-3.5 text-[13px] text-slate-gray">
                                             {tenant.city}
                                             <span className="block text-[11px] text-muted-foreground">
-                                                {tenant.branchCount}{" "}
-                                                {tenant.branchCount === 1
-                                                    ? "branch"
-                                                    : "branches"}
+                                                {t("dashboard.branchCount", {
+                                                    count: tenant.branchCount,
+                                                })}
                                             </span>
                                         </td>
                                         <td className="px-6 py-3.5 font-mono text-[13px] font-semibold text-foreground">
                                             {tenant.gmvTodayFormatted}
                                         </td>
                                         <td className="px-6 py-3.5 font-mono text-[13px]">
-                                            {tenant.activeTablesCount} tables
+                                            {t("dashboard.activeTablesCount", {
+                                                count: tenant.activeTablesCount,
+                                            })}
                                         </td>
                                         <td className="px-6 py-3.5">
                                             <Badge
@@ -295,7 +313,9 @@ export default function SuperAdminPage() {
                                                         : "secondary"
                                                 }
                                             >
-                                                {tenant.status}
+                                                {tenant.status === "ACTIVE"
+                                                    ? tTenancy("active")
+                                                    : tTenancy("suspended")}
                                             </Badge>
                                         </td>
                                         <td className="px-6 py-3.5 text-right">
@@ -303,7 +323,7 @@ export default function SuperAdminPage() {
                                                 href={`/super-admin/tenants/${tenant.id}`}
                                                 className="inline-flex items-center gap-1 text-[12px] font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400"
                                             >
-                                                <span>Manage</span>
+                                                <span>{t("manage")}</span>
                                                 <ExternalLink className="size-3" />
                                             </Link>
                                         </td>

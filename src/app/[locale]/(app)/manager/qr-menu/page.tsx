@@ -78,6 +78,7 @@ export default function ManagerQrMenuPage() {
     const tManager = useTranslations("manager");
     const tCommon = useTranslations("common");
     const tNav = useTranslations("appNav");
+    const t = useTranslations("qrMenuStudio");
     const { data: configData, isLoading: configLoading } =
         useGetAdminQrMenuConfigQuery();
     const { data: tablesData } = useGetAdminTablesQrQuery();
@@ -178,7 +179,7 @@ export default function ManagerQrMenuPage() {
                 <PageHeader
                     eyebrow={tNav("floor")}
                     title={tNav("qrMenu")}
-                    description="Design the customer ordering screen displayed when diners scan table QR codes."
+                    description={tManager("qrMenuDescription")}
                 />
                 <div className="flex flex-wrap items-center gap-2.5">
                     <Button
@@ -196,7 +197,7 @@ export default function ManagerQrMenuPage() {
                             className="gap-2 border-slate-300 text-slate-700"
                         >
                             <ExternalLink className="size-4 text-slate-500" />
-                            Preview Live
+                            {tManager("previewLive")}
                         </Button>
                     </Link>
 
@@ -223,18 +224,17 @@ export default function ManagerQrMenuPage() {
                     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
                         <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
                             <Zap className="size-4 text-amber-600" />
-                            Ordering Rules & Kitchen Dispatch
+                            {t("orderingRulesTitle")}
                         </div>
 
                         <div className="mt-4 space-y-4">
                             <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-4 border border-slate-100">
                                 <div>
                                     <h4 className="text-xs font-semibold text-slate-900">
-                                        Allow Guest Self-Ordering
+                                        {t("allowGuestOrders")}
                                     </h4>
                                     <p className="text-[11px] text-slate-500">
-                                        If disabled, the QR code acts as a
-                                        view-only digital menu without ordering.
+                                        {t("allowGuestOrdersDesc")}
                                     </p>
                                 </div>
                                 <ToggleSwitch
@@ -251,12 +251,12 @@ export default function ManagerQrMenuPage() {
                             <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-4 border border-slate-100">
                                 <div>
                                     <h4 className="text-xs font-semibold text-slate-900">
-                                        Auto-Send to Kitchen Displays (KDS)
+                                        {t("autoSendKds")}
                                     </h4>
                                     <p className="text-[11px] text-slate-500">
                                         {form.autoSendToKitchen
-                                            ? "Orders route directly to Kitchen & Barista screens immediately."
-                                            : "Orders require 1-tap confirmation from the waiter before dispatch."}
+                                            ? t("autoSendKdsOn")
+                                            : t("autoSendKdsOff")}
                                     </p>
                                 </div>
                                 <ToggleSwitch
@@ -276,13 +276,13 @@ export default function ManagerQrMenuPage() {
                     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
                         <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
                             <Sparkles className="size-4 text-amber-600" />
-                            Header Branding & Greeting
+                            {t("headerBrandingTitle")}
                         </div>
 
                         <div className="space-y-3">
                             <div>
                                 <Label className="text-xs font-medium text-slate-700">
-                                    Welcome Title
+                                    {t("welcomeTitle")}
                                 </Label>
                                 <Input
                                     value={form.welcomeMessage || ""}
@@ -292,14 +292,14 @@ export default function ManagerQrMenuPage() {
                                             welcomeMessage: e.target.value,
                                         }))
                                     }
-                                    placeholder="e.g. Welcome to our Rooftop & Lounge"
+                                    placeholder={t("welcomeTitlePlaceholder")}
                                     className="mt-1 text-xs"
                                 />
                             </div>
 
                             <div>
                                 <Label className="text-xs font-medium text-slate-700">
-                                    Subtitle / Ambiance Note
+                                    {t("subtitleLabel")}
                                 </Label>
                                 <Input
                                     value={form.subtitle || ""}
@@ -309,7 +309,7 @@ export default function ManagerQrMenuPage() {
                                             subtitle: e.target.value,
                                         }))
                                     }
-                                    placeholder="e.g. Traditional Ethiopian coffee, sizzler tibs & cocktails"
+                                    placeholder={t("subtitlePlaceholder")}
                                     className="mt-1 text-xs"
                                 />
                             </div>
@@ -317,7 +317,7 @@ export default function ManagerQrMenuPage() {
                             <div>
                                 <div className="flex items-center justify-between">
                                     <Label className="text-xs font-medium text-slate-700">
-                                        Cover Photo Banner
+                                        {t("coverPhotoBanner")}
                                     </Label>
                                     {form.coverImageUrl ? (
                                         <button
@@ -331,7 +331,7 @@ export default function ManagerQrMenuPage() {
                                             className="text-[11px] font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1"
                                         >
                                             <X className="size-3" />
-                                            Remove
+                                            {t("remove")}
                                         </button>
                                     ) : null}
                                 </div>
@@ -355,7 +355,7 @@ export default function ManagerQrMenuPage() {
                                                 className="text-xs h-7 gap-1 bg-white/90 text-slate-900 hover:bg-white"
                                             >
                                                 <Upload className="size-3" />
-                                                Replace File
+                                                {t("replaceFile")}
                                             </Button>
                                         </div>
                                     </div>
@@ -371,7 +371,7 @@ export default function ManagerQrMenuPage() {
                                                 coverImageUrl: e.target.value,
                                             }))
                                         }
-                                        placeholder="Paste banner image URL (https://...)"
+                                        placeholder={t("bannerUrlPlaceholder")}
                                         className="text-xs flex-1"
                                     />
 
@@ -398,43 +398,43 @@ export default function ManagerQrMenuPage() {
                                             <Upload className="size-3.5 text-amber-600" />
                                         )}
                                         {isUploadingBanner
-                                            ? "Uploading…"
-                                            : "Select File"}
+                                            ? t("uploading")
+                                            : t("selectFile")}
                                     </Button>
                                 </div>
 
                                 <p className="mt-1 text-[10px] text-slate-400">
-                                    Tip: Upload a dining room photo from your
-                                    computer or paste any high-resolution image
-                                    URL.
+                                    {t("bannerTip")}
                                 </p>
 
                                 {/* Quick Presets */}
                                 <div className="mt-2.5">
                                     <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                                        Quick Presets:
+                                        {t("quickPresets")}
                                     </span>
                                     <div className="mt-1 flex flex-wrap gap-1.5">
-                                        {[
-                                            {
-                                                label: "Modern Dining",
-                                                url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&auto=format&fit=crop&q=80",
-                                            },
-                                            {
-                                                label: "Rooftop Lounge",
-                                                url: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&auto=format&fit=crop&q=80",
-                                            },
-                                            {
-                                                label: "Ethiopian Traditional",
-                                                url: "https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&auto=format&fit=crop&q=80",
-                                            },
-                                            {
-                                                label: "Cocktail Bar",
-                                                url: "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=1200&auto=format&fit=crop&q=80",
-                                            },
-                                        ].map(preset => (
+                                        {(
+                                            [
+                                                {
+                                                    key: "presetModern",
+                                                    url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&auto=format&fit=crop&q=80",
+                                                },
+                                                {
+                                                    key: "presetRooftop",
+                                                    url: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&auto=format&fit=crop&q=80",
+                                                },
+                                                {
+                                                    key: "presetEthiopian",
+                                                    url: "https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&auto=format&fit=crop&q=80",
+                                                },
+                                                {
+                                                    key: "presetCocktail",
+                                                    url: "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=1200&auto=format&fit=crop&q=80",
+                                                },
+                                            ] as const
+                                        ).map(preset => (
                                             <button
-                                                key={preset.label}
+                                                key={preset.key}
                                                 type="button"
                                                 onClick={() =>
                                                     setForm(prev => ({
@@ -450,7 +450,7 @@ export default function ManagerQrMenuPage() {
                                                         : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
                                                 }`}
                                             >
-                                                {preset.label}
+                                                {t(preset.key)}
                                             </button>
                                         ))}
                                     </div>
@@ -463,17 +463,16 @@ export default function ManagerQrMenuPage() {
                     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
                         <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
                             <Wifi className="size-4 text-amber-600" />
-                            Guest Wi-Fi Credentials
+                            {t("wifiCredentialsTitle")}
                         </div>
                         <p className="text-xs text-slate-500">
-                            Customers appreciate quick access to restaurant
-                            Wi-Fi right when they sit down.
+                            {t("wifiCredentialsDesc")}
                         </p>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <Label className="text-xs font-medium text-slate-700">
-                                    Wi-Fi Name (SSID)
+                                    {t("wifiName")}
                                 </Label>
                                 <Input
                                     value={form.wifiSsid || ""}
@@ -490,7 +489,7 @@ export default function ManagerQrMenuPage() {
 
                             <div>
                                 <Label className="text-xs font-medium text-slate-700">
-                                    Wi-Fi Password
+                                    {t("wifiPassword")}
                                 </Label>
                                 <Input
                                     value={form.wifiPassword || ""}
@@ -512,15 +511,16 @@ export default function ManagerQrMenuPage() {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
                                 <Sparkles className="size-4 text-amber-600" />
-                                Chef&apos;s Highlights & Featured Items
+                                {t("chefsHighlightsTitle")}
                             </div>
                             <span className="text-xs font-medium text-amber-600">
-                                {(form.featuredItemIds || []).length} selected
+                                {t("selectedCount", {
+                                    count: (form.featuredItemIds || []).length,
+                                })}
                             </span>
                         </div>
                         <p className="text-xs text-slate-500">
-                            Select dishes to pin at the very top of the guest
-                            menu in a highlighted spotlight carousel.
+                            {t("chefsHighlightsDesc")}
                         </p>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[300px] overflow-y-auto pr-1">
@@ -586,7 +586,7 @@ export default function ManagerQrMenuPage() {
                 <div className="lg:col-span-5 lg:sticky lg:top-6 flex flex-col items-center">
                     <div className="flex items-center gap-2 mb-3 text-xs font-semibold text-slate-500">
                         <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                        Live Customer Screen Preview
+                        {t("livePreview")}
                     </div>
 
                     <LivePhoneSimulator
@@ -597,7 +597,7 @@ export default function ManagerQrMenuPage() {
                             "Table 4 · Rooftop Terrace"
                         }
                         restaurantName={
-                            form.welcomeMessage || "Your Restaurant"
+                            form.welcomeMessage || t("restaurantFallback")
                         }
                     />
                 </div>
@@ -609,7 +609,7 @@ export default function ManagerQrMenuPage() {
                 onOpenChange={setPrintModalOpen}
                 tables={tables}
                 config={form}
-                restaurantName={form.welcomeMessage || "Your Restaurant"}
+                restaurantName={form.welcomeMessage || t("restaurantFallback")}
                 slug={slug}
             />
         </DashboardFrame>

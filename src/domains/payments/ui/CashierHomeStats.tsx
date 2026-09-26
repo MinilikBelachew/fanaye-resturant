@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { Radio, RefreshCw } from "lucide-react";
+import { useTranslations } from "next-intl";
 import KpiCard from "@/components/custom/organisms/KpiCard";
 import {
     CashierMoneyRadarChart,
@@ -32,6 +33,7 @@ import {
 const POLL = 8000;
 
 export default function CashierHomeStats() {
+    const t = useTranslations("cashier");
     const {
         data: paymentsRes,
         isLoading: paymentsLoading,
@@ -105,8 +107,7 @@ export default function CashierHomeStats() {
         <div className="space-y-4">
             <div className="flex items-center justify-between gap-3">
                 <p className="text-[12px] text-slate-gray">
-                    Live collections from waiter payments, bill queue, and cash
-                    drops
+                    {t("liveCollectionsHint")}
                 </p>
                 <div
                     className={cn(
@@ -120,7 +121,7 @@ export default function CashierHomeStats() {
                             isError ? "text-red-500" : "text-emerald-500",
                         )}
                     />
-                    {isError ? "Offline" : "Live"}
+                    {isError ? t("offline") : t("live")}
                     {isFetching ? (
                         <RefreshCw className="size-3 animate-spin" />
                     ) : null}
@@ -129,15 +130,15 @@ export default function CashierHomeStats() {
 
             {isError ? (
                 <p className="rounded-[14px] border border-destructive/30 bg-destructive/10 p-3 text-[12px] text-destructive">
-                    Could not load cashier money telemetry.
+                    {t("telemetryError")}
                 </p>
             ) : null}
 
             <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
                 <KpiCard
-                    label="Logged today"
+                    label={t("loggedToday")}
                     value={formatEtb(totals.total)}
-                    hint={`${totals.count} payment${totals.count === 1 ? "" : "s"}`}
+                    hint={t("paymentCount", { count: totals.count })}
                     tone="brand"
                     sparkline={{
                         badge: String(totals.count),
@@ -145,9 +146,9 @@ export default function CashierHomeStats() {
                     }}
                 />
                 <KpiCard
-                    label="Cash"
+                    label={t("cash")}
                     value={formatEtb(totals.cash)}
-                    hint="Collected at table"
+                    hint={t("collectedAtTable")}
                     tone="amber"
                     sparkline={{
                         badge: "cash",
@@ -156,9 +157,9 @@ export default function CashierHomeStats() {
                     }}
                 />
                 <KpiCard
-                    label="Digital"
+                    label={t("digital")}
                     value={formatEtb(totals.telebirr + totals.bank)}
-                    hint="Telebirr and bank"
+                    hint={t("telebirrAndBank")}
                     tone="emerald"
                     sparkline={{
                         badge: formatEtb(totals.telebirr).replace("ETB ", ""),
@@ -167,9 +168,12 @@ export default function CashierHomeStats() {
                     }}
                 />
                 <KpiCard
-                    label="Needs desk"
+                    label={t("needsDesk")}
                     value={String(bills.length + pendingDrops.length)}
-                    hint={`${bills.length} bills · ${pendingDrops.length} cash drops`}
+                    hint={t("needsDeskHint", {
+                        bills: bills.length,
+                        drops: pendingDrops.length,
+                    })}
                     tone="brand"
                     sparkline={{
                         badge: formatEtb(
@@ -182,27 +186,29 @@ export default function CashierHomeStats() {
 
             <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
                 <KpiCard
-                    label="Bill queue value"
+                    label={t("billQueueValue")}
                     value={formatEtb(pendingBillsAmount)}
-                    hint={`${bills.length} waiting to generate`}
+                    hint={t("waitingToGenerateCount", { count: bills.length })}
                     sparkline={null}
                 />
                 <KpiCard
-                    label="Pending cash drops"
+                    label={t("pendingCashDrops")}
                     value={formatEtb(pendingDropsAmount)}
-                    hint={`${pendingDrops.length} awaiting receive`}
+                    hint={t("awaitingReceive", {
+                        count: pendingDrops.length,
+                    })}
                     sparkline={null}
                 />
                 <KpiCard
-                    label="Telebirr"
+                    label={t("telebirr")}
                     value={formatEtb(totals.telebirr)}
-                    hint="Verified digital"
+                    hint={t("verifiedDigital")}
                     sparkline={null}
                 />
                 <KpiCard
-                    label="Bank transfer"
+                    label={t("bankTransfer")}
                     value={formatEtb(totals.bank)}
-                    hint="Verified transfer"
+                    hint={t("verifiedTransfer")}
                     sparkline={null}
                 />
             </div>

@@ -37,8 +37,10 @@ import MenuScanSheet from "@/domains/catalog/ui/MenuScanSheet";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { MenuCatalogSkeleton } from "@/components/custom/molecules/Skeletons";
+import { useTranslations } from "next-intl";
 
 export default function ManagerMenuPage() {
+    const t = useTranslations("manager");
     const { data: metaData } = useAdminMenuMetaQuery();
     const { data, isLoading, isError } = useAdminMenuItemsQuery(undefined, {
         pollingInterval: 15000,
@@ -63,13 +65,13 @@ export default function ManagerMenuPage() {
 
     const stationFilters = useMemo(
         () => [
-            { id: "all", label: "All Items" },
+            { id: "all", label: t("allItems") },
             ...stations.map(station => ({
                 id: station.id,
                 label: station.name,
             })),
         ],
-        [stations],
+        [stations, t],
     );
 
     const filteredItems = useMemo(() => {
@@ -122,7 +124,7 @@ export default function ManagerMenuPage() {
         () => [
             {
                 id: "dish",
-                header: "Dish & Description",
+                header: t("colDishDescription"),
                 sortValue: row => row.name,
                 cell: row => (
                     <div className="flex items-center gap-3">
@@ -156,13 +158,13 @@ export default function ManagerMenuPage() {
             },
             {
                 id: "station",
-                header: "Station",
+                header: t("colStation"),
                 sortValue: row => row.category,
                 cell: row => <Badge variant="outline">{row.category}</Badge>,
             },
             {
                 id: "price",
-                header: "Price",
+                header: t("colPrice"),
                 sortValue: row => row.price,
                 cell: row => (
                     <span className="font-medium">{formatEtb(row.price)}</span>
@@ -170,7 +172,7 @@ export default function ManagerMenuPage() {
             },
             {
                 id: "prep",
-                header: "Prep",
+                header: t("colPrep"),
                 sortValue: row => row.expectedPreparationMinutes,
                 cell: row => (
                     <span className="text-slate-gray">
@@ -180,7 +182,7 @@ export default function ManagerMenuPage() {
             },
             {
                 id: "status",
-                header: "Floor",
+                header: t("colFloor"),
                 sortValue: row => (row.available ? 1 : 0),
                 cell: row => (
                     <button
@@ -190,7 +192,7 @@ export default function ManagerMenuPage() {
                         }}
                     >
                         <Badge variant={row.available ? "success" : "warning"}>
-                            {row.available ? "Active" : "86 / Sold out"}
+                            {row.available ? t("active") : t("soldOut")}
                         </Badge>
                     </button>
                 ),
@@ -219,7 +221,7 @@ export default function ManagerMenuPage() {
             },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [],
+        [t],
     );
 
     return (
@@ -236,7 +238,7 @@ export default function ManagerMenuPage() {
                                 className="gap-2 border-amber-500/40 text-amber-800 bg-amber-50/50 hover:bg-amber-100/50"
                             >
                                 <QrCode className="size-4 text-amber-600" />
-                                QR Menu Builder
+                                {t("qrBuilder")}
                             </Button>
                         </Link>
                         <Button
@@ -245,18 +247,18 @@ export default function ManagerMenuPage() {
                             onClick={() => setScanSheetOpen(true)}
                         >
                             <ScanLine className="size-4 text-brand" />
-                            Scan menu photo
+                            {t("scanMenuPhoto")}
                         </Button>
                         <Button
                             variant="outline"
                             onClick={() => setModifierSheetOpen(true)}
                         >
                             <Plus className="size-4" />
-                            Add modifier group
+                            {t("addModifierGroup")}
                         </Button>
                         <Button onClick={handleOpenAdd}>
                             <Plus className="size-4" />
-                            Add menu item
+                            {t("addMenuItem")}
                         </Button>
                     </div>
                 }
@@ -268,7 +270,7 @@ export default function ManagerMenuPage() {
                     <Input
                         value={searchQuery}
                         onChange={event => setSearchQuery(event.target.value)}
-                        placeholder="Search dishes & drinks…"
+                        placeholder={t("searchDishes")}
                         className="pl-9"
                     />
                 </div>
@@ -290,16 +292,16 @@ export default function ManagerMenuPage() {
                     ))}
                 </div>
                 <div className="ml-auto flex items-center gap-2 text-[13px] text-slate-gray">
-                    <span>{activeCount} active</span>
+                    <span>{t("activeCount", { count: activeCount })}</span>
                     <span>·</span>
-                    <span>{soldOutCount} sold out</span>
+                    <span>{t("soldOutCount", { count: soldOutCount })}</span>
                     <button
                         type="button"
                         onClick={() =>
                             setViewMode(viewMode === "grid" ? "table" : "grid")
                         }
                         className="ml-2 rounded-full border border-hairline p-2"
-                        aria-label="Toggle view"
+                        aria-label={t("toggleView")}
                     >
                         {viewMode === "grid" ? (
                             <TableIcon className="size-4" />
@@ -312,10 +314,7 @@ export default function ManagerMenuPage() {
 
             {isLoading ? <MenuCatalogSkeleton /> : null}
             {isError ? (
-                <p className="text-red-600">
-                    Could not load menu from the server. Sign in as manager and
-                    confirm the API is running.
-                </p>
+                <p className="text-red-600">{t("loadMenuError")}</p>
             ) : null}
 
             {!isLoading && !isError && viewMode === "table" ? (
@@ -361,8 +360,8 @@ export default function ManagerMenuPage() {
                                             }}
                                         >
                                             {item.available
-                                                ? "Active"
-                                                : "86 / Sold out"}
+                                                ? t("active")
+                                                : t("soldOut")}
                                         </Badge>
                                         <span className="text-[12px] text-white/70">
                                             {item.category}
@@ -411,7 +410,7 @@ export default function ManagerMenuPage() {
                                             className="flex items-center gap-1 text-[12px] font-medium text-white/80 hover:text-white"
                                         >
                                             <Eye className="size-3.5" />
-                                            Details
+                                            {t("details")}
                                         </button>
                                         <button
                                             type="button"
@@ -422,7 +421,7 @@ export default function ManagerMenuPage() {
                                             className="flex items-center gap-1 text-[12px] font-medium text-white hover:underline"
                                         >
                                             <Edit3 className="size-3.5" />
-                                            Edit
+                                            {t("edit")}
                                         </button>
                                     </div>
                                 </div>
@@ -434,12 +433,14 @@ export default function ManagerMenuPage() {
                         <div className="col-span-full flex flex-col items-center justify-center rounded-[16px] border border-dashed border-hairline bg-surface-ivory py-16 text-center">
                             <CookingPot className="size-10 text-slate-gray/60" />
                             <h3 className="mt-3 text-[16px] font-semibold text-foreground">
-                                No menu items found
+                                {t("noMenuItemsFound")}
                             </h3>
                             <p className="mt-1 text-[13px] text-slate-gray">
                                 {searchQuery
-                                    ? `No dishes match "${searchQuery}".`
-                                    : "No items listed for this station."}
+                                    ? t("noDishesMatch", {
+                                          query: searchQuery,
+                                      })
+                                    : t("noItemsForStation")}
                             </p>
                             <Button
                                 variant="outline"
@@ -447,7 +448,7 @@ export default function ManagerMenuPage() {
                                 className="mt-4 rounded-full"
                             >
                                 <Plus className="mr-1.5 size-4" />
-                                Add new dish
+                                {t("addNewDish")}
                             </Button>
                         </div>
                     ) : null}

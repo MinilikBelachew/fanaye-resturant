@@ -17,6 +17,7 @@ import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { Link } from "@/i18n/navigation";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 function MetricCard({
     label,
@@ -61,28 +62,8 @@ function formatClock(value?: string | null) {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-function shiftErrorMessage(error: unknown) {
-    if (error && typeof error === "object" && "data" in error) {
-        const data = (
-            error as {
-                data?: { errors?: { shift?: string }; openTables?: number };
-            }
-        ).data;
-        if (data?.errors?.shift === "openTables") {
-            const count = data.openTables ?? 0;
-            return `Close ${count} open table${count === 1 ? "" : "s"} before clocking out.`;
-        }
-        if (data?.errors?.shift === "alreadyClosed") {
-            return "This shift is already closed.";
-        }
-        if (data?.errors && "version" in data.errors) {
-            return "Shift changed on another device. Refresh and try again.";
-        }
-    }
-    return "Could not update your shift. Try again.";
-}
-
 export default function WaiterShiftPage() {
+    const t = useTranslations("waiter");
     const staff = useAppSelector(selectCurrentStaff);
     const hasSession = useAppSelector(state => Boolean(state.identity.session));
     const { data: shift, isFetching } = useCurrentShiftQuery(undefined, {
@@ -119,6 +100,30 @@ export default function WaiterShiftPage() {
     const session = shift?.shiftSession ?? null;
     const upcoming = shift?.upcomingAssignment ?? null;
     const busy = clockingIn || clockingOut || isFetching;
+    const staffName = staff?.name ?? t("server");
+
+    function shiftErrorMessage(error: unknown) {
+        if (error && typeof error === "object" && "data" in error) {
+            const data = (
+                error as {
+                    data?: { errors?: { shift?: string }; openTables?: number };
+                }
+            ).data;
+            if (data?.errors?.shift === "openTables") {
+                const count = data.openTables ?? 0;
+                return count === 1
+                    ? t("closeOpenTableBeforeOut", { count })
+                    : t("closeOpenTablesBeforeOut", { count });
+            }
+            if (data?.errors?.shift === "alreadyClosed") {
+                return t("shiftAlreadyClosed");
+            }
+            if (data?.errors && "version" in data.errors) {
+                return t("shiftChangedRefresh");
+            }
+        }
+        return t("couldNotUpdateShift");
+    }
 
     async function handleClockIn() {
         setActionError("");
@@ -151,8 +156,8 @@ export default function WaiterShiftPage() {
                 title={clockedIn ? "On the floor" : "Off the clock"}
                 description={
                     clockedIn
-                        ? `${staff?.name ?? "Waiter"} is clocked in. Monitor tables, collections, and clock out when the floor is clear.`
-                        : `${staff?.name ?? "Waiter"} is not clocked in. Clock in before taking a table.`
+                        ? t("clockedInDesc", { name: staffName })
+                        : t("notClockedInDesc", { name: staffName })
                 }
             />
 
@@ -183,11 +188,11 @@ export default function WaiterShiftPage() {
                                     {staff?.name}
                                 </p>
                                 <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
-                                    Waiter
+                                    {t("server")}
                                 </span>
                             </div>
                             <p className="text-[13px] text-slate-gray">
-                                {staff?.phone || "Floor staff"}
+                                {staff?.phone || t("floorStaff")}
                             </p>
                         </div>
                     </div>
@@ -202,10 +207,12 @@ export default function WaiterShiftPage() {
                         }
                     >
                         {!clockedIn
-                            ? "Clocked out"
+                            ? t("clockedOut")
                             : tablesOpen
-                              ? `${summary.openTables} tables active`
-                              : "Ready to clock out"}
+                              ? t("tablesActive", {
+                                    count: summary.openTables,
+                                })
+                              : t("readyToClockOut")}
                     </Badge>
                 </div>
 
@@ -214,7 +221,7 @@ export default function WaiterShiftPage() {
                         <p className="font-semibold text-foreground">
                             {session?.definitionName ||
                                 upcoming?.definitionName ||
-                                "Shift"}
+                                t("navShift")}
                         </p>
                         <p className="text-[12px] text-slate-gray">
                             {formatClock(
@@ -230,7 +237,7 @@ export default function WaiterShiftPage() {
                     </div>
                     <div>
                         <p className="font-semibold text-foreground">
-                            Clock in
+                            {t("clockIn")}
                         </p>
                         <p className="text-[12px] text-slate-gray">
                             {formatClock(session?.clockInAt)}
@@ -238,7 +245,7 @@ export default function WaiterShiftPage() {
                     </div>
                     <div>
                         <p className="font-semibold text-foreground">
-                            Clock out
+                            {t("clockOut")}
                         </p>
                         <p className="text-[12px] text-slate-gray">
                             {formatClock(session?.clockOutAt)}
@@ -259,7 +266,7 @@ export default function WaiterShiftPage() {
                             onClick={handleClockOut}
                         >
                             <LogOut className="size-4" />
-                            {clockingOut ? "Clocking out..." : "Clock out"}
+                            {clockingOut ? t("clockingOut") : t("clockOut")}
                         </Button>
                     ) : (
                         <Button
@@ -268,7 +275,7 @@ export default function WaiterShiftPage() {
                             onClick={handleClockIn}
                         >
                             <LogIn className="size-4" />
-                            {clockingIn ? "Clocking in..." : "Clock in"}
+                            {clockingIn ? t("clockingIn") : t("clockIn")}
                         </Button>
                     )}
                 </div>
@@ -276,28 +283,28 @@ export default function WaiterShiftPage() {
 
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <MetricCard
-                    label="Open tables"
+                    label={t("openTables")}
                     value={String(summary.openTables)}
-                    hint="Your active covers"
+                    hint={t("yourActiveCovers")}
                     icon={LayoutGrid}
                 />
                 <MetricCard
-                    label="Sales"
+                    label={t("sales")}
                     value={formatEtb(summary.sales)}
-                    hint="Open tickets, not closed"
+                    hint={t("openTicketsHint")}
                     icon={Wallet}
                     accent
                 />
                 <MetricCard
-                    label="Ready"
+                    label={t("readyShort")}
                     value={String(summary.readyCount)}
-                    hint="Waiting to serve"
+                    hint={t("waitingToServe")}
                     icon={Bell}
                 />
                 <MetricCard
-                    label="Cooking"
+                    label={t("stillCooking")}
                     value={String(summary.cookingCount)}
-                    hint="Still at a station"
+                    hint={t("stillAtStation")}
                     icon={Flame}
                 />
             </div>
@@ -308,13 +315,13 @@ export default function WaiterShiftPage() {
                     className="rounded-[20px] border border-hairline bg-card p-5 shadow-subtle transition-colors hover:bg-secondary/50"
                 >
                     <p className="text-[13px] font-medium text-slate-gray">
-                        Floor
+                        {t("floorLink")}
                     </p>
                     <p className="mt-1 text-[16px] font-semibold">
-                        Open tables
+                        {t("openTables")}
                     </p>
                     <p className="mt-1 text-[13px] text-slate-gray">
-                        Seat, order, and request the bill from your floor map.
+                        {t("floorLinkDesc")}
                     </p>
                 </Link>
                 <Link
@@ -322,15 +329,21 @@ export default function WaiterShiftPage() {
                     className="rounded-[20px] border border-hairline bg-card p-5 shadow-subtle transition-colors hover:bg-secondary/50"
                 >
                     <p className="text-[13px] font-medium text-slate-gray">
-                        Service
+                        {t("serviceLink")}
                     </p>
                     <p className="mt-1 text-[16px] font-semibold">
-                        Ready tickets
+                        {t("readyTickets")}
                     </p>
                     <p className="mt-1 text-[13px] text-slate-gray">
                         {summary.readyCount > 0
-                            ? `${summary.readyCount} dish${summary.readyCount === 1 ? "" : "es"} ready to run.`
-                            : "Nothing waiting to be served."}
+                            ? summary.readyCount === 1
+                                ? t("dishReadyToRun", {
+                                      count: summary.readyCount,
+                                  })
+                                : t("dishesReadyToRun", {
+                                      count: summary.readyCount,
+                                  })
+                            : t("nothingWaiting")}
                     </p>
                 </Link>
             </div>
@@ -340,17 +353,19 @@ export default function WaiterShiftPage() {
                     <Wallet className="size-4" />
                 </span>
                 <div className="min-w-0 flex-1">
-                    <p className="text-[15px] font-semibold">Cash on you</p>
+                    <p className="text-[15px] font-semibold">
+                        {t("cashOnYou")}
+                    </p>
                     <p className="mt-1 text-[14px] text-slate-gray">
-                        {formatEtb(cashOnHand)} still undropped this shift. It
-                        stays with you until you drop it to the cashier. You
-                        cannot clock out while a table is still open.
+                        {t("cashOnYouHint", {
+                            amount: formatEtb(cashOnHand),
+                        })}
                     </p>
                     <Link
                         href="/waiter/cash"
                         className="mt-3 inline-flex text-[14px] font-medium text-brand"
                     >
-                        Drop cash →
+                        {t("dropCashLink")}
                     </Link>
                 </div>
             </div>

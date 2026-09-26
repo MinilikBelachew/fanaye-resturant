@@ -22,10 +22,11 @@ export default function StationTicketDetail({
     const stationId = useAppSelector(
         state => state.identity.session?.stationId,
     );
-    const { data: ticket, isLoading, isError } = useStationOrderItemQuery(
-        itemId,
-        { skip: !itemId },
-    );
+    const {
+        data: ticket,
+        isLoading,
+        isError,
+    } = useStationOrderItemQuery(itemId, { skip: !itemId });
     const home = homePathForRole(role);
 
     if (isLoading) {
@@ -59,7 +60,7 @@ export default function StationTicketDetail({
         extras.length > 0 || Boolean(ticket.specialInstruction?.trim());
 
     return (
-        <div className="mx-auto max-w-2xl">
+        <div className="mx-auto w-full max-w-6xl">
             <Link href={home} className="text-[14px] text-brand">
                 ← Queue
             </Link>
@@ -78,7 +79,8 @@ export default function StationTicketDetail({
                         "rounded-full px-3 py-1 text-[12px] font-medium",
                         ticket.state === "READY"
                             ? "bg-accent text-accent-foreground"
-                            : ticket.delayed || ticket.state === "CANNOT_PREPARE"
+                            : ticket.delayed ||
+                                ticket.state === "CANNOT_PREPARE"
                               ? "bg-destructive/10 text-destructive"
                               : "bg-secondary text-slate-gray",
                     )}

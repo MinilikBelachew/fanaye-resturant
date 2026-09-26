@@ -12,6 +12,7 @@ import {
     Trash2,
     UtensilsCrossed,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
@@ -31,6 +32,8 @@ import { useState } from "react";
 const POLL_MS = 5000;
 
 export default function ManagerStationsPage() {
+    const t = useTranslations("managerStations");
+    const tCommon = useTranslations("common");
     const dispatch = useAppDispatch();
     const {
         data: stations = [],
@@ -65,16 +68,15 @@ export default function ManagerStationsPage() {
                 enabled: !currentEnabled,
             }).unwrap();
             toast.success(
-                !currentEnabled ? "Station online" : "Station offline",
                 !currentEnabled
-                    ? `${name} items are back on waiter & QR menus.`
-                    : `${name} items are hidden from waiter & QR menus.`,
+                    ? t("toastOnlineTitle")
+                    : t("toastOfflineTitle"),
+                !currentEnabled
+                    ? t("toastOnlineBody", { name })
+                    : t("toastOfflineBody", { name }),
             );
         } catch {
-            toast.error(
-                "Failed to update status",
-                "Could not toggle station status.",
-            );
+            toast.error(t("toastToggleErrorTitle"), t("toastToggleErrorBody"));
         }
     };
 
@@ -85,13 +87,10 @@ export default function ManagerStationsPage() {
         }
         try {
             const res = await deleteStation(id).unwrap();
-            toast.success("Station deleted", res.message || name);
+            toast.success(t("toastDeletedTitle"), res.message || name);
             setConfirmDeleteId(null);
         } catch {
-            toast.error(
-                "Delete failed",
-                "Could not delete this station. Try turning it offline instead.",
-            );
+            toast.error(t("toastDeleteErrorTitle"), t("toastDeleteErrorBody"));
             setConfirmDeleteId(null);
         }
     };
@@ -118,7 +117,7 @@ export default function ManagerStationsPage() {
                                 isError ? "text-red-500" : "text-emerald-500",
                             )}
                         />
-                        {isError ? "Offline" : "Live"}
+                        {isError ? t("offline") : t("live")}
                         {isFetching ? (
                             <RefreshCw className="size-3 animate-spin" />
                         ) : null}
@@ -130,7 +129,7 @@ export default function ManagerStationsPage() {
                         className="h-8 gap-1.5 rounded-full text-[12px] font-normal"
                     >
                         <Plus className="size-3.5" />
-                        Add station
+                        {t("addStation")}
                     </Button>
                 </div>
             </div>
@@ -139,7 +138,7 @@ export default function ManagerStationsPage() {
                 <div className="grid gap-2 sm:grid-cols-3">
                     <div className="rounded-[14px] border border-hairline bg-card px-3.5 py-2.5">
                         <p className="text-[10px] uppercase tracking-[0.08em] text-slate-gray">
-                            Online
+                            {t("online")}
                         </p>
                         <p className="mt-0.5 text-[18px] font-medium tabular-nums text-emerald-700 dark:text-emerald-400">
                             {enabledCount}
@@ -147,7 +146,7 @@ export default function ManagerStationsPage() {
                     </div>
                     <div className="rounded-[14px] border border-hairline bg-card px-3.5 py-2.5">
                         <p className="text-[10px] uppercase tracking-[0.08em] text-slate-gray">
-                            Offline
+                            {t("offline")}
                         </p>
                         <p className="mt-0.5 text-[18px] font-medium tabular-nums text-slate-gray">
                             {offlineCount}
@@ -155,7 +154,7 @@ export default function ManagerStationsPage() {
                     </div>
                     <div className="rounded-[14px] border border-hairline bg-card px-3.5 py-2.5">
                         <p className="text-[10px] uppercase tracking-[0.08em] text-slate-gray">
-                            Open tickets
+                            {t("openTickets")}
                         </p>
                         <p className="mt-0.5 text-[18px] font-medium tabular-nums text-brand">
                             {openTickets}
@@ -168,20 +167,20 @@ export default function ManagerStationsPage() {
                 <div className="flex flex-col items-center justify-center rounded-[14px] border border-hairline bg-card py-14">
                     <Loader2 className="size-6 animate-spin text-primary" />
                     <p className="mt-2 text-[12px] text-slate-gray">
-                        Loading stations…
+                        {t("loading")}
                     </p>
                 </div>
             ) : isError ? (
                 <div className="flex flex-col items-center justify-center rounded-[14px] border border-destructive/20 bg-destructive/5 py-10 text-center">
                     <p className="text-[13px] text-destructive">
-                        Failed to load stations.
+                        {t("loadError")}
                     </p>
                     <button
                         type="button"
                         onClick={() => void refetch()}
                         className="mt-3 rounded-full bg-destructive px-3 py-1.5 text-[12px] font-normal text-destructive-foreground"
                     >
-                        Try again
+                        {t("tryAgain")}
                     </button>
                 </div>
             ) : stations.length === 0 ? (
@@ -190,11 +189,10 @@ export default function ManagerStationsPage() {
                         <UtensilsCrossed className="size-5" />
                     </div>
                     <h3 className="mt-3 text-[14px] font-medium text-foreground">
-                        No preparation stations yet
+                        {t("emptyTitle")}
                     </h3>
                     <p className="mt-1 max-w-sm text-[12px] text-slate-gray">
-                        Create Kitchen, Barista, or Grill stations to route
-                        tickets.
+                        {t("emptyDesc")}
                     </p>
                     <Button
                         type="button"
@@ -203,7 +201,7 @@ export default function ManagerStationsPage() {
                         className="mt-4 h-8 gap-1.5 rounded-full text-[12px] font-normal"
                     >
                         <Plus className="size-3.5" />
-                        Create first station
+                        {t("createFirst")}
                     </Button>
                 </div>
             ) : (
@@ -243,8 +241,8 @@ export default function ManagerStationsPage() {
                                                 className="rounded-full px-2 py-0 text-[10px] font-normal"
                                             >
                                                 {isEnabled
-                                                    ? "Online"
-                                                    : "Offline"}
+                                                    ? t("online")
+                                                    : t("offline")}
                                             </Badge>
                                         </div>
                                         {station.code ? (
@@ -254,8 +252,8 @@ export default function ManagerStationsPage() {
                                         ) : null}
                                         <p className="mt-1.5 text-[12px] text-slate-gray">
                                             {isEnabled
-                                                ? "Accepting tickets · dishes on menus"
-                                                : "Hidden from menus · new tickets blocked"}
+                                                ? t("acceptingTickets")
+                                                : t("hiddenFromMenus")}
                                         </p>
                                     </div>
 
@@ -281,7 +279,7 @@ export default function ManagerStationsPage() {
                                         ) : (
                                             <PowerOff className="size-3.5" />
                                         )}
-                                        {isEnabled ? "On" : "Off"}
+                                        {isEnabled ? t("on") : t("off")}
                                     </button>
                                 </div>
 
@@ -296,16 +294,26 @@ export default function ManagerStationsPage() {
                                                         : "bg-zinc-300",
                                                 )}
                                             />
-                                            {ticketCount} ticket
-                                            {ticketCount === 1 ? "" : "s"}
+                                            {ticketCount === 1
+                                                ? t("ticketOne", {
+                                                      count: ticketCount,
+                                                  })
+                                                : t("ticketMany", {
+                                                      count: ticketCount,
+                                                  })}
                                         </span>
                                         <span>
-                                            {menuItemCount} item
-                                            {menuItemCount === 1 ? "" : "s"}
+                                            {menuItemCount === 1
+                                                ? t("itemOne", {
+                                                      count: menuItemCount,
+                                                  })
+                                                : t("itemMany", {
+                                                      count: menuItemCount,
+                                                  })}
                                         </span>
                                         <span className="inline-flex items-center gap-1">
                                             <Clock className="size-3" />
-                                            {avgMin} min
+                                            {t("min", { count: avgMin })}
                                         </span>
                                     </div>
 
@@ -342,8 +350,8 @@ export default function ManagerStationsPage() {
                                         >
                                             <Trash2 className="size-3" />
                                             {confirmDeleteId === station.id
-                                                ? "Confirm"
-                                                : "Delete"}
+                                                ? t("confirmDelete")
+                                                : tCommon("delete")}
                                         </button>
                                         <button
                                             type="button"
@@ -355,7 +363,7 @@ export default function ManagerStationsPage() {
                                             className="inline-flex items-center gap-1 rounded-full border border-hairline px-2.5 py-1 text-[11px] font-normal text-foreground hover:bg-secondary"
                                         >
                                             <Edit3 className="size-3 text-slate-gray" />
-                                            Edit
+                                            {tCommon("edit")}
                                         </button>
                                     </div>
                                 </div>

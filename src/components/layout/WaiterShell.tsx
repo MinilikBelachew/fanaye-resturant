@@ -12,28 +12,30 @@ import { useSidebarUi } from "@/components/layout/SidebarUi";
 import OpsNotificationsBell from "@/domains/notifications/ui/OpsNotificationsBell";
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { usePathname } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
 export default function WaiterShell({ children }: { children: ReactNode }) {
     const [open, setOpen] = useState(false);
     const pathname = usePathname();
     const { collapsed } = useSidebarUi();
     const staff = useAppSelector(selectCurrentStaff);
+    const t = useTranslations("waiter");
 
     useEffect(() => {
         setOpen(false);
     }, [pathname]);
 
     const title = pathname.startsWith("/waiter/ready")
-        ? "Ready"
+        ? t("navReady")
         : pathname.startsWith("/waiter/notifications")
-          ? "Notifications"
+          ? t("navNotifications")
           : pathname.startsWith("/waiter/shift")
-            ? "Shift"
+            ? t("navShift")
             : pathname.startsWith("/waiter/profile")
-              ? "Profile"
+              ? t("navProfile")
               : pathname.startsWith("/waiter/tables/")
-                ? "Table"
-                : "Tables";
+                ? t("navTable")
+                : t("navTables");
 
     return (
         <div className="flex h-svh overflow-hidden bg-white dark:bg-background">
@@ -51,7 +53,7 @@ export default function WaiterShell({ children }: { children: ReactNode }) {
                 <div className="fixed inset-0 z-50 lg:hidden">
                     <button
                         type="button"
-                        aria-label="Close menu"
+                        aria-label={t("closeMenu")}
                         className="absolute inset-0 bg-black/40"
                         onClick={() => setOpen(false)}
                     />
@@ -67,7 +69,7 @@ export default function WaiterShell({ children }: { children: ReactNode }) {
                         type="button"
                         className="flex size-8 items-center justify-center rounded-md hover:bg-secondary"
                         onClick={() => setOpen(true)}
-                        aria-label="Open menu"
+                        aria-label={t("openMenu")}
                     >
                         {open ? (
                             <X className="size-4" />

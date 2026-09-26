@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 const DIRECT_CANCEL = new Set(["QUEUED", "ACKNOWLEDGED", "CONFIRMED"]);
 const PROTECTED_CANCEL = new Set(["IN_PREPARATION", "READY"]);
@@ -34,6 +35,8 @@ export default function WaiterOrderItemActions({
     tableSessionId,
     className,
 }: Props) {
+    const t = useTranslations("waiter");
+    const tCommon = useTranslations("common");
     const [mode, setMode] = useState<"idle" | "cancel" | "change">("idle");
     const [reason, setReason] = useState("");
     const [menuItemId, setMenuItemId] = useState("");
@@ -82,7 +85,7 @@ export default function WaiterOrderItemActions({
         setError("");
         setOk("");
         if (!reason.trim()) {
-            setError("Add a short reason.");
+            setError(t("addShortReason"));
             return;
         }
         try {
@@ -93,7 +96,7 @@ export default function WaiterOrderItemActions({
                     reason: reason.trim(),
                     tableSessionId,
                 }).unwrap();
-                setOk("Cancelled.");
+                setOk(t("cancelledOk"));
             } else if (PROTECTED_CANCEL.has(item.state)) {
                 await requestCancel({
                     orderItemId: item.orderItemId,
@@ -101,20 +104,18 @@ export default function WaiterOrderItemActions({
                     reason: reason.trim(),
                     tableSessionId,
                 }).unwrap();
-                setOk("Sent to manager for approval.");
+                setOk(t("sentToManager"));
             }
             resetForm();
         } catch (err) {
             if (err && typeof err === "object" && "data" in err) {
                 const code = (err as { data?: { code?: string } }).data?.code;
                 if (code === "ORDER_ITEM_NOT_CANCELLABLE") {
-                    setError(
-                        "Kitchen already started — request manager approval instead.",
-                    );
+                    setError(t("kitchenStartedNeedApproval"));
                     return;
                 }
             }
-            setError("Could not cancel. Refresh and try again.");
+            setError(t("couldNotCancel"));
         }
     }
 
@@ -122,14 +123,14 @@ export default function WaiterOrderItemActions({
         setError("");
         setOk("");
         if (!menuItemId && !note.trim()) {
-            setError("Pick a new dish and/or add a note.");
+            setError(t("pickDishOrNote"));
             return;
         }
         try {
             const result = await requestChange({
                 orderItemId: item.orderItemId,
                 expectedVersion: item.version,
-                reason: reason.trim() || "Customer asked to change",
+                reason: reason.trim() || t("customerAskedChange"),
                 requestedChange: {
                     ...(menuItemId ? { menuItemId } : {}),
                     ...(note.trim() ? { specialInstruction: note.trim() } : {}),
@@ -138,12 +139,14 @@ export default function WaiterOrderItemActions({
             }).unwrap();
             setOk(
                 result.data.applied
-                    ? `Changed to ${result.data.itemName ?? "new item"}.`
-                    : "Change sent to manager.",
+                    ? t("changedTo", {
+                          name: result.data.itemName ?? t("newItemFallback"),
+                      })
+                    : t("changeSentToManager"),
             );
             resetForm();
         } catch {
-            setError("Could not change item. Refresh and try again.");
+            setError(t("couldNotChange"));
         }
     }
 
@@ -171,7 +174,7 @@ export default function WaiterOrderItemActions({
                                     setMode("change");
                                 }}
                             >
-                                Change
+                                {t("change")}
                             </Button>
                             <Button
                                 size="sm"
@@ -183,7 +186,7 @@ export default function WaiterOrderItemActions({
                                     setMode("cancel");
                                 }}
                             >
-                                Cancel
+                                {t("cancelItem")}
                             </Button>
                         </div>
                     ) : null}
@@ -201,19 +204,19 @@ export default function WaiterOrderItemActions({
                     <div>
                         <p className="text-[13px] font-semibold text-foreground">
                             {DIRECT_CANCEL.has(item.state)
-                                ? "Cancel this item"
-                                : "Ask manager to cancel"}
+                                ? t("cancelThisItem")
+                                : t("askManagerCancel")}
                         </p>
                         <p className="mt-0.5 text-[12px] text-slate-gray">
                             {DIRECT_CANCEL.has(item.state)
-                                ? "Kitchen has not started cooking — cancel goes through now."
-                                : "Item is already cooking or ready — manager must approve."}
+                                ? t("cancelDirectHint")
+                                : t("cancelProtectedHint")}
                         </p>
                     </div>
                     <Input
                         value={reason}
                         onChange={event => setReason(event.target.value)}
-                        placeholder="Reason (customer changed mind…)"
+                        placeholder={t("reasonPlaceholder")}
                     />
                     <div className="flex flex-wrap gap-2">
                         <Button
@@ -222,13 +225,13 @@ export default function WaiterOrderItemActions({
                             onClick={onCancel}
                         >
                             {cancelling || requestingCancel
-                                ? "Saving…"
+                                ? t("saving")
                                 : DIRECT_CANCEL.has(item.state)
-                                  ? "Cancel now"
-                                  : "Ask manager"}
+                                  ? t("cancelNow")
+                                  : t("askManager")}
                         </Button>
                         <Button size="sm" variant="outline" onClick={resetForm}>
-                            Back
+                            {tCommon("back")}
                         </Button>
                     </div>
                     {error ? (
@@ -241,17 +244,17 @@ export default function WaiterOrderItemActions({
                 <div className="w-full space-y-3 rounded-[16px] border border-hairline bg-secondary/30 p-3.5">
                     <div>
                         <p className="text-[13px] font-semibold text-foreground">
-                            Change {item.itemName}
+                            {t("changeDishTitle", { name: item.itemName })}
                         </p>
                         <p className="mt-0.5 text-[12px] text-slate-gray">
                             {DIRECT_CHANGE.has(item.state)
-                                ? "Still queued — swap applies immediately for the kitchen."
-                                : "Already cooking or ready — manager must approve the swap."}
+                                ? t("stillQueuedHint")
+                                : t("alreadyCookingSwapHint")}
                         </p>
                     </div>
                     <div className="space-y-1.5">
                         <label className="text-[12px] font-medium text-slate-gray">
-                            New dish
+                            {t("newDish")}
                         </label>
                         <select
                             className="h-10 w-full rounded-[10px] border border-hairline bg-card px-3 text-[13px] outline-none focus:border-brand/40"
@@ -263,8 +266,8 @@ export default function WaiterOrderItemActions({
                         >
                             <option value="">
                                 {loadingMenu
-                                    ? "Loading menu…"
-                                    : "Keep same dish…"}
+                                    ? t("loadingMenu")
+                                    : t("keepSameDish")}
                             </option>
                             {swapChoices.map(entry => (
                                 <option key={entry.id} value={entry.id}>
@@ -276,22 +279,22 @@ export default function WaiterOrderItemActions({
                     </div>
                     <div className="space-y-1.5">
                         <label className="text-[12px] font-medium text-slate-gray">
-                            Kitchen note
+                            {t("kitchenNote")}
                         </label>
                         <Input
                             value={note}
                             onChange={event => setNote(event.target.value)}
-                            placeholder="Optional instruction for the station"
+                            placeholder={t("optionalStationNote")}
                         />
                     </div>
                     <div className="space-y-1.5">
                         <label className="text-[12px] font-medium text-slate-gray">
-                            Reason
+                            {t("reason")}
                         </label>
                         <Input
                             value={reason}
                             onChange={event => setReason(event.target.value)}
-                            placeholder="Optional — why the guest changed"
+                            placeholder={t("optionalGuestReason")}
                         />
                     </div>
                     <div className="flex flex-wrap gap-2 pt-0.5">
@@ -301,13 +304,13 @@ export default function WaiterOrderItemActions({
                             onClick={onChange}
                         >
                             {changing
-                                ? "Saving…"
+                                ? t("saving")
                                 : DIRECT_CHANGE.has(item.state)
-                                  ? "Apply change"
-                                  : "Ask manager"}
+                                  ? t("applyChange")
+                                  : t("askManager")}
                         </Button>
                         <Button size="sm" variant="outline" onClick={resetForm}>
-                            Back
+                            {tCommon("back")}
                         </Button>
                     </div>
                     {error ? (

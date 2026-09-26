@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
     useReconciliationPreviewQuery,
     useSubmitReconciliationMutation,
@@ -11,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatEtb } from "@/lib/money";
 
 export default function CashierReconciliationPanel() {
+    const t = useTranslations("cashier");
     const { data, isLoading, isError } = useReconciliationPreviewQuery(
         undefined,
         { pollingInterval: 8000 },
@@ -47,59 +49,57 @@ export default function CashierReconciliationPanel() {
             setComment("");
             setOk(
                 needsResubmit
-                    ? "Updated reconciliation submitted."
-                    : "Reconciliation submitted.",
+                    ? t("updatedReconciliationSubmitted")
+                    : t("reconciliationSubmitted"),
             );
         } catch (err) {
             if (err && typeof err === "object" && "data" in err) {
                 const code = (err as { data?: { code?: string } }).data?.code;
                 if (code === "RECONCILIATION_VARIANCE_EXPLANATION_REQUIRED") {
-                    setError("Add a short note explaining the variance.");
+                    setError(t("varianceExplanationRequired"));
                     return;
                 }
                 if (code === "RECONCILIATION_ALREADY_SUBMITTED") {
-                    setError("Already submitted for this drawer session.");
+                    setError(t("alreadySubmittedSession"));
                     return;
                 }
             }
-            setError("Could not submit reconciliation.");
+            setError(t("submitReconciliationError"));
         }
     }
 
     if (isLoading) {
-        return <p className="text-slate-gray">Loading drawer totals…</p>;
+        return <p className="text-slate-gray">{t("loadingDrawerTotals")}</p>;
     }
 
     if (isError || !preview) {
-        return (
-            <p className="text-slate-gray">
-                Clock in as cashier to reconcile your drawer.
-            </p>
-        );
+        return <p className="text-slate-gray">{t("clockInToReconcile")}</p>;
     }
 
     return (
         <div className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-3">
                 <div className="rounded-[16px] border border-hairline bg-card p-4">
-                    <p className="text-[12px] text-slate-gray">Float</p>
+                    <p className="text-[12px] text-slate-gray">{t("float")}</p>
                     <p className="text-[20px] font-semibold">
                         {formatEtb(Number(preview.openingFloat))}
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
-                        Always 0 — no set-float
+                        {t("floatAlwaysZero")}
                     </p>
                 </div>
                 <div className="rounded-[16px] border border-hairline bg-card p-4">
                     <p className="text-[12px] text-slate-gray">
-                        Drops received
+                        {t("dropsReceived")}
                     </p>
                     <p className="text-[20px] font-semibold">
                         {formatEtb(Number(preview.cashDropsReceived))}
                     </p>
                 </div>
                 <div className="rounded-[16px] border border-hairline bg-card p-4">
-                    <p className="text-[12px] text-slate-gray">Expected now</p>
+                    <p className="text-[12px] text-slate-gray">
+                        {t("expectedNow")}
+                    </p>
                     <p className="text-[20px] font-semibold text-brand">
                         {formatEtb(expected)}
                     </p>
@@ -111,32 +111,43 @@ export default function CashierReconciliationPanel() {
                     <div className="flex items-center justify-between gap-3">
                         <h2 className="font-semibold">
                             {needsResubmit
-                                ? "Previous submission outdated"
-                                : "Submitted"}
+                                ? t("previousSubmissionOutdated")
+                                : t("submitted")}
                         </h2>
                         <Badge variant={needsResubmit ? "warning" : "success"}>
                             {preview.existingStatus}
                         </Badge>
                     </div>
                     <p className="mt-2 text-[14px] text-slate-gray">
-                        Last count{" "}
-                        {formatEtb(Number(preview.existingCountedCash ?? 0))}
+                        {t("lastCountLine", {
+                            counted: formatEtb(
+                                Number(preview.existingCountedCash ?? 0),
+                            ),
+                        })}
                         {preview.existingExpectedCash
-                            ? ` against expected ${formatEtb(Number(preview.existingExpectedCash))}`
+                            ? ` ${t("againstExpected", {
+                                  expected: formatEtb(
+                                      Number(preview.existingExpectedCash),
+                                  ),
+                              })}`
                             : ""}
                         {preview.existingVariance
-                            ? ` · variance ${formatEtb(Number(preview.existingVariance))}`
+                            ? ` · ${t("varianceLine", {
+                                  amount: formatEtb(
+                                      Number(preview.existingVariance),
+                                  ),
+                              })}`
                             : ""}
                     </p>
                     {needsResubmit ? (
                         <p className="mt-3 text-[14px] text-[#c2410c]">
-                            More cash landed in the drawer after that count
-                            (expected is now {formatEtb(expected)}). Count again
-                            before clocking out.
+                            {t("moreCashLanded", {
+                                expected: formatEtb(expected),
+                            })}
                         </p>
                     ) : (
                         <p className="mt-3 text-[14px] text-[#046645]">
-                            Drawer matches. You can clock out from Shift.
+                            {t("drawerMatches")}
                         </p>
                     )}
                 </article>
@@ -146,16 +157,15 @@ export default function CashierReconciliationPanel() {
                 <article className="rounded-[16px] border border-hairline bg-card p-5 space-y-3">
                     <h2 className="font-semibold">
                         {needsResubmit
-                            ? "Count drawer again"
-                            : "Count drawer cash"}
+                            ? t("countDrawerAgain")
+                            : t("countDrawerCash")}
                     </h2>
                     <p className="text-[14px] text-slate-gray">
-                        Expected is float (always 0) + received drops. Enter
-                        what you physically count.
+                        {t("countDrawerHint")}
                     </p>
                     <div>
                         <label className="text-[13px] text-slate-gray">
-                            Counted amount
+                            {t("countedAmount")}
                         </label>
                         <Input
                             className="mt-1 max-w-[220px]"
@@ -168,7 +178,9 @@ export default function CashierReconciliationPanel() {
                     {Math.abs(variance) > 0.001 ? (
                         <div>
                             <p className="text-[13px] text-slate-gray">
-                                Variance {formatEtb(variance)} — note required
+                                {t("varianceNoteRequired", {
+                                    amount: formatEtb(variance),
+                                })}
                             </p>
                             <Input
                                 className="mt-1"
@@ -176,16 +188,16 @@ export default function CashierReconciliationPanel() {
                                 onChange={event =>
                                     setComment(event.target.value)
                                 }
-                                placeholder="Why is the count different?"
+                                placeholder={t("variancePlaceholder")}
                             />
                         </div>
                     ) : null}
                     <Button disabled={submitting} onClick={onSubmit}>
                         {submitting
-                            ? "Submitting…"
+                            ? t("submitting")
                             : needsResubmit
-                              ? "Update reconciliation"
-                              : "Submit reconciliation"}
+                              ? t("updateReconciliation")
+                              : t("submitReconciliation")}
                     </Button>
                 </article>
             ) : null}

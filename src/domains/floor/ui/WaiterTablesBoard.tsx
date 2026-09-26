@@ -79,7 +79,7 @@ export default function WaiterTablesBoard({
         setError("");
         if (!occupied) {
             if (!clockedIn) {
-                const message = "Clock in before taking a table.";
+                const message = tWaiter("clockInBeforeTable");
                 setError(message);
                 toast.error(message);
                 return;
@@ -87,9 +87,9 @@ export default function WaiterTablesBoard({
             setBusyId(tableId);
             try {
                 await startSession({ tableId }).unwrap();
-                toast.success("Table opened");
+                toast.success(tWaiter("tableOpened"));
             } catch (err) {
-                const message = floorActionError(err);
+                const message = floorActionError(err, tWaiter);
                 setError(message);
                 toast.error(message);
                 setBusyId(null);
@@ -111,13 +111,11 @@ export default function WaiterTablesBoard({
                                 {tWaiter("floorOverview")}
                             </h1>
                             <p className="mt-0.5 text-[14px] text-slate-gray">
-                                Real-time table status at{" "}
-                                <strong className="font-semibold text-foreground">
-                                    {staff?.name
-                                        ? "this branch"
-                                        : "your restaurant"}
-                                </strong>
-                                .
+                                {tWaiter("realtimeStatusAt", {
+                                    place: staff?.name
+                                        ? tWaiter("thisBranch")
+                                        : tWaiter("yourRestaurant"),
+                                })}
                             </p>
                         </div>
                         {staff?.name ? (
@@ -138,7 +136,9 @@ export default function WaiterTablesBoard({
                             icon={<Armchair className="size-5 text-brand" />}
                             label={tWaiter("myTables")}
                             value={String(mine.length)}
-                            hint={`${tables.length} total on floor`}
+                            hint={tWaiter("totalOnFloor", {
+                                count: tables.length,
+                            })}
                             tone="brand"
                         />
                         <MetricTile
@@ -148,7 +148,9 @@ export default function WaiterTablesBoard({
                             label={tWaiter("readyToServe")}
                             value={String(readyCount)}
                             hint={
-                                readyCount > 0 ? "Items waiting!" : "All served"
+                                readyCount > 0
+                                    ? tWaiter("itemsWaiting")
+                                    : tWaiter("allServed")
                             }
                             tone={readyCount > 0 ? "ready" : "default"}
                             highlight={readyCount > 0}
@@ -157,7 +159,7 @@ export default function WaiterTablesBoard({
                             icon={<ChefHat className="size-5 text-amber-500" />}
                             label={tWaiter("stillCooking")}
                             value={String(cookingCount)}
-                            hint="In kitchen stations"
+                            hint={tWaiter("inKitchenStations")}
                             tone="amber"
                         />
                         <MetricTile
@@ -166,7 +168,7 @@ export default function WaiterTablesBoard({
                             }
                             label={tWaiter("shiftSales")}
                             value={formatEtb(0)}
-                            hint="Current shift"
+                            hint={tWaiter("currentShift")}
                             tone="default"
                         />
                     </div>
@@ -244,18 +246,16 @@ export default function WaiterTablesBoard({
             ) : isError ? (
                 <div className="rounded-[16px] border border-destructive/30 bg-destructive/10 p-6 text-center text-destructive">
                     <p className="font-semibold">
-                        Could not load restaurant tables.
+                        {tWaiter("couldNotLoadTables")}
                     </p>
                 </div>
             ) : visibleTables.length === 0 ? (
                 <div className="flex h-48 flex-col items-center justify-center gap-2 text-center text-slate-gray">
                     <Sparkles className="size-8 opacity-40 text-brand" />
                     <p className="text-[15px] font-semibold text-foreground">
-                        No tables in this view
+                        {tWaiter("noTablesInView")}
                     </p>
-                    <p className="text-[13px]">
-                        Switch filter tabs to see other tables on the floor.
-                    </p>
+                    <p className="text-[13px]">{tWaiter("switchFilterTabs")}</p>
                 </div>
             ) : (
                 <FloorLocationSections
@@ -278,16 +278,20 @@ export default function WaiterTablesBoard({
                                     tone: "other" as const,
                                 };
                         const footerLeft = free
-                            ? "Available"
+                            ? tWaiter("available")
                             : table.readyItemCount > 0
-                              ? `${table.readyItemCount} ready`
+                              ? tWaiter("readyCountFmt", {
+                                    count: table.readyItemCount,
+                                })
                               : table.sessionStatus === "BILL_REQUESTED"
-                                ? "Bill requested"
+                                ? tWaiter("billRequested")
                                 : table.cookingItemCount > 0
-                                  ? `${table.cookingItemCount} cooking`
+                                  ? tWaiter("cookingCountFmt", {
+                                        count: table.cookingItemCount,
+                                    })
                                   : table.mine
-                                    ? "In service"
-                                    : "Taken";
+                                    ? tWaiter("inService")
+                                    : tWaiter("taken");
 
                         return (
                             <FloorTableCard
@@ -299,12 +303,12 @@ export default function WaiterTablesBoard({
                                 footerLeft={footerLeft}
                                 footerAction={
                                     busyId === table.tableId
-                                        ? "Opening…"
+                                        ? tWaiter("opening")
                                         : free
-                                          ? "Take table →"
+                                          ? tWaiter("takeTable")
                                           : table.mine
-                                            ? "Manage →"
-                                            : "View →"
+                                            ? tWaiter("manageTable")
+                                            : tWaiter("viewTable")
                                 }
                                 onClick={() => {
                                     void openTable(table.tableId, !free);
@@ -423,7 +427,7 @@ function FilterButton({
     );
 }
 
-function floorActionError(error: unknown) {
+function floorActionError(error: unknown, tWaiter: (key: string) => string) {
     if (error && typeof error === "object" && "data" in error) {
         const data = (
             error as {
@@ -434,20 +438,20 @@ function floorActionError(error: unknown) {
             }
         ).data;
         if (data?.code === "TABLE_NOT_ASSIGNED") {
-            return "This table is assigned to another waiter.";
+            return tWaiter("tableAssignedOther");
         }
         if (
             data?.code === "TABLE_NOT_AVAILABLE" ||
             data?.errors?.table === "TABLE_NOT_AVAILABLE"
         ) {
-            return "That table is already taken.";
+            return tWaiter("tableAlreadyTaken");
         }
         if (data?.errors?.table === "TABLE_NOT_ASSIGNED") {
-            return "This table is assigned to another waiter.";
+            return tWaiter("tableAssignedOther");
         }
         if (data?.code === "SHIFT_REQUIRED" || data?.errors?.shift) {
-            return "Clock in before taking a table.";
+            return tWaiter("clockInBeforeTable");
         }
     }
-    return "Could not open that table.";
+    return tWaiter("couldNotOpenTable");
 }

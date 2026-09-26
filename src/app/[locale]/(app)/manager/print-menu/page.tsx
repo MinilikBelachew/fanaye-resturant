@@ -113,6 +113,8 @@ interface PrintMenuSettings {
 export default function ManagerPrintMenuPage() {
     const tCommon = useTranslations("common");
     const tNav = useTranslations("appNav");
+    const tManager = useTranslations("manager");
+    const t = useTranslations("printMenuStudio");
     const { data: configData, isLoading: configLoading } =
         useGetAdminQrMenuConfigQuery();
     const { data: tablesData } = useGetAdminTablesQrQuery();
@@ -419,7 +421,7 @@ export default function ManagerPrintMenuPage() {
                 <PageHeader
                     eyebrow={tNav("floor")}
                     title={tNav("printMenu")}
-                    description="Design and print traditional paper or laminated dining menus with optional table-specific QR codes."
+                    description={tManager("printMenuDescription")}
                 />
 
                 <div className="flex flex-wrap items-center gap-2.5">
@@ -436,6 +438,16 @@ export default function ManagerPrintMenuPage() {
                         {isExportingPdf
                             ? tCommon("loading")
                             : tCommon("exportPdf")}
+                    </Button>
+
+                    <Button
+                        onClick={handlePrint}
+                        disabled={isExportingPdf}
+                        variant="outline"
+                        className="gap-2 border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold text-xs"
+                    >
+                        <Printer className="size-4" />
+                        {tCommon("print")}
                     </Button>
 
                     <Button
@@ -458,13 +470,13 @@ export default function ManagerPrintMenuPage() {
                     <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
                         <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
                             <Sparkles className="size-4 text-amber-600" />
-                            Header & Restaurant Branding
+                            {t("headerBrandingTitle")}
                         </div>
 
                         <div className="space-y-3 text-xs">
                             <div>
                                 <Label className="text-xs font-semibold text-slate-700">
-                                    Menu Title
+                                    {t("menuTitle")}
                                 </Label>
                                 <Input
                                     value={settings.title ?? ""}
@@ -474,14 +486,14 @@ export default function ManagerPrintMenuPage() {
                                             title: e.target.value,
                                         }))
                                     }
-                                    placeholder="Restaurant & Lounge"
+                                    placeholder={t("menuTitlePlaceholder")}
                                     className="mt-1 text-xs"
                                 />
                             </div>
 
                             <div>
                                 <Label className="text-xs font-semibold text-slate-700">
-                                    Subtitle / Tagline
+                                    {t("subtitleTagline")}
                                 </Label>
                                 <Input
                                     value={settings.subtitle ?? ""}
@@ -491,7 +503,7 @@ export default function ManagerPrintMenuPage() {
                                             subtitle: e.target.value,
                                         }))
                                     }
-                                    placeholder="Traditional Ethiopian Dining & Coffee Bar"
+                                    placeholder={t("subtitlePlaceholder")}
                                     className="mt-1 text-xs"
                                 />
                             </div>
@@ -500,11 +512,10 @@ export default function ManagerPrintMenuPage() {
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <h5 className="font-semibold text-slate-900">
-                                            Include Restaurant Logo
+                                            {t("includeLogo")}
                                         </h5>
                                         <p className="text-[11px] text-slate-500">
-                                            Displays official brand logo or
-                                            emblem at top center.
+                                            {t("includeLogoDesc")}
                                         </p>
                                     </div>
                                     <ToggleSwitch
@@ -521,7 +532,7 @@ export default function ManagerPrintMenuPage() {
                                 {settings.showLogo ? (
                                     <div className="space-y-2.5 pt-2 border-t border-slate-200/60">
                                         <Label className="text-[11px] font-semibold text-slate-700">
-                                            Logo Source:
+                                            {t("logoSource")}
                                         </Label>
                                         <div className="grid grid-cols-3 gap-1.5">
                                             <button
@@ -540,12 +551,12 @@ export default function ManagerPrintMenuPage() {
                                                 }`}
                                             >
                                                 <span className="block text-[11px]">
-                                                    Official Logo
+                                                    {t("officialLogo")}
                                                 </span>
                                                 <span className="block text-[9px] text-slate-400 font-normal truncate">
                                                     {tenantLogoUrl
-                                                        ? "Tenant Brand"
-                                                        : "From Branding"}
+                                                        ? t("tenantBrand")
+                                                        : t("fromBranding")}
                                                 </span>
                                             </button>
 
@@ -566,10 +577,10 @@ export default function ManagerPrintMenuPage() {
                                                 }`}
                                             >
                                                 <span className="block text-[11px]">
-                                                    Golden Cloche
+                                                    {t("goldenCloche")}
                                                 </span>
                                                 <span className="block text-[9px] text-slate-400 font-normal">
-                                                    Luxury Emblem
+                                                    {t("luxuryEmblem")}
                                                 </span>
                                             </button>
 
@@ -589,10 +600,10 @@ export default function ManagerPrintMenuPage() {
                                                 }`}
                                             >
                                                 <span className="block text-[11px]">
-                                                    Custom / File
+                                                    {t("customFile")}
                                                 </span>
                                                 <span className="block text-[9px] text-slate-400 font-normal">
-                                                    Upload File
+                                                    {t("uploadFile")}
                                                 </span>
                                             </button>
                                         </div>
@@ -612,7 +623,9 @@ export default function ManagerPrintMenuPage() {
                                                                 e.target.value,
                                                         }))
                                                     }
-                                                    placeholder="Paste logo image URL (https://...)"
+                                                    placeholder={t(
+                                                        "logoUrlPlaceholder",
+                                                    )}
                                                     className="text-xs flex-1"
                                                 />
                                                 <button
@@ -625,8 +638,8 @@ export default function ManagerPrintMenuPage() {
                                                 >
                                                     <Upload className="size-3 text-amber-600" />
                                                     {isUploadingLogo
-                                                        ? "Uploading…"
-                                                        : "File"}
+                                                        ? t("uploading")
+                                                        : t("file")}
                                                 </button>
                                                 <input
                                                     type="file"
@@ -650,26 +663,31 @@ export default function ManagerPrintMenuPage() {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
                                 <Palette className="size-4 text-amber-600" />
-                                Paper Background & Styling
+                                {t("paperBackgroundTitle")}
                             </div>
 
                             {/* Background Mode Selector */}
                             <div className="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-0.5 text-xs">
-                                {[
-                                    { id: "solid", label: "Solid" },
-                                    { id: "gradient", label: "Gradient" },
-                                    { id: "texture", label: "Parchment" },
-                                ].map(m => (
+                                {(
+                                    [
+                                        { id: "solid", labelKey: "bgSolid" },
+                                        {
+                                            id: "gradient",
+                                            labelKey: "bgGradient",
+                                        },
+                                        {
+                                            id: "texture",
+                                            labelKey: "bgParchment",
+                                        },
+                                    ] as const
+                                ).map(m => (
                                     <button
                                         key={m.id}
                                         type="button"
                                         onClick={() =>
                                             setSettings(prev => ({
                                                 ...prev,
-                                                backgroundType: m.id as
-                                                    | "solid"
-                                                    | "gradient"
-                                                    | "texture",
+                                                backgroundType: m.id,
                                             }))
                                         }
                                         className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all ${
@@ -678,7 +696,7 @@ export default function ManagerPrintMenuPage() {
                                                 : "text-slate-500 hover:text-slate-900"
                                         }`}
                                     >
-                                        {m.label}
+                                        {t(m.labelKey)}
                                     </button>
                                 ))}
                             </div>
@@ -689,11 +707,11 @@ export default function ManagerPrintMenuPage() {
                             <div className="space-y-3 rounded-2xl bg-slate-50 p-3.5 border border-slate-100 text-xs">
                                 <div className="flex items-center justify-between">
                                     <span className="font-semibold text-slate-700">
-                                        Paper Tone Swatches:
+                                        {t("paperToneSwatches")}
                                     </span>
                                     <label className="flex items-center gap-1.5 cursor-pointer">
                                         <span className="text-[11px] text-slate-500 font-medium">
-                                            Custom:
+                                            {t("custom")}
                                         </span>
                                         <input
                                             type="color"
@@ -711,38 +729,40 @@ export default function ManagerPrintMenuPage() {
                                 </div>
 
                                 <div className="grid grid-cols-3 gap-2">
-                                    {[
-                                        {
-                                            id: "#ffffff",
-                                            label: "Crisp White",
-                                            sub: "Standard Paper",
-                                        },
-                                        {
-                                            id: "#fffaf5",
-                                            label: "Warm Ivory",
-                                            sub: "Linen Cream",
-                                        },
-                                        {
-                                            id: "#fdf8f4",
-                                            label: "Vintage Linen",
-                                            sub: "Warm Neutral",
-                                        },
-                                        {
-                                            id: "#fbf5eb",
-                                            label: "Parchment",
-                                            sub: "Rustic Bistro",
-                                        },
-                                        {
-                                            id: "#0f172a",
-                                            label: "Obsidian Slate",
-                                            sub: "Modern Dark",
-                                        },
-                                        {
-                                            id: "#1a1512",
-                                            label: "Espresso Noir",
-                                            sub: "Dark Luxury",
-                                        },
-                                    ].map(swatch => (
+                                    {(
+                                        [
+                                            {
+                                                id: "#ffffff",
+                                                labelKey: "crispWhite",
+                                                subKey: "standardPaper",
+                                            },
+                                            {
+                                                id: "#fffaf5",
+                                                labelKey: "warmIvory",
+                                                subKey: "linenCream",
+                                            },
+                                            {
+                                                id: "#fdf8f4",
+                                                labelKey: "vintageLinen",
+                                                subKey: "warmNeutral",
+                                            },
+                                            {
+                                                id: "#fbf5eb",
+                                                labelKey: "parchment",
+                                                subKey: "rusticBistro",
+                                            },
+                                            {
+                                                id: "#0f172a",
+                                                labelKey: "obsidianSlate",
+                                                subKey: "modernDark",
+                                            },
+                                            {
+                                                id: "#1a1512",
+                                                labelKey: "espressoNoir",
+                                                subKey: "darkLuxury",
+                                            },
+                                        ] as const
+                                    ).map(swatch => (
                                         <button
                                             key={swatch.id}
                                             type="button"
@@ -768,11 +788,11 @@ export default function ManagerPrintMenuPage() {
                                                     className="size-3.5 rounded-full border border-slate-300 shadow-2xs shrink-0"
                                                 />
                                                 <span className="text-xs font-semibold text-slate-800 truncate">
-                                                    {swatch.label}
+                                                    {t(swatch.labelKey)}
                                                 </span>
                                             </div>
                                             <span className="block text-[9px] text-slate-400 mt-0.5">
-                                                {swatch.sub}
+                                                {t(swatch.subKey)}
                                             </span>
                                         </button>
                                     ))}
@@ -784,31 +804,33 @@ export default function ManagerPrintMenuPage() {
                         {settings.backgroundType === "gradient" ? (
                             <div className="space-y-3 rounded-2xl bg-slate-50 p-3.5 border border-slate-100 text-xs">
                                 <span className="font-semibold text-slate-700 block">
-                                    Curated Menu Gradients:
+                                    {t("curatedGradients")}
                                 </span>
                                 <div className="grid grid-cols-2 gap-2">
-                                    {[
-                                        {
-                                            id: "golden-amber",
-                                            label: "Golden Amber",
-                                            val: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 45%, #fde68a 100%)",
-                                        },
-                                        {
-                                            id: "sunset-ember",
-                                            label: "Sunset Linen",
-                                            val: "linear-gradient(135deg, #fff7ed 0%, #fed7aa 50%, #fbcfe8 100%)",
-                                        },
-                                        {
-                                            id: "obsidian-night",
-                                            label: "Obsidian Slate",
-                                            val: "linear-gradient(180deg, #0b1120 0%, #1e293b 100%)",
-                                        },
-                                        {
-                                            id: "rose-quartz",
-                                            label: "Rose Velvet",
-                                            val: "linear-gradient(135deg, #fff1f2 0%, #ffe4e6 50%, #fecdd3 100%)",
-                                        },
-                                    ].map(grad => (
+                                    {(
+                                        [
+                                            {
+                                                id: "golden-amber",
+                                                labelKey: "goldenAmber",
+                                                val: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 45%, #fde68a 100%)",
+                                            },
+                                            {
+                                                id: "sunset-ember",
+                                                labelKey: "sunsetLinen",
+                                                val: "linear-gradient(135deg, #fff7ed 0%, #fed7aa 50%, #fbcfe8 100%)",
+                                            },
+                                            {
+                                                id: "obsidian-night",
+                                                labelKey: "obsidianSlate",
+                                                val: "linear-gradient(180deg, #0b1120 0%, #1e293b 100%)",
+                                            },
+                                            {
+                                                id: "rose-quartz",
+                                                labelKey: "roseVelvet",
+                                                val: "linear-gradient(135deg, #fff1f2 0%, #ffe4e6 50%, #fecdd3 100%)",
+                                            },
+                                        ] as const
+                                    ).map(grad => (
                                         <button
                                             key={grad.id}
                                             type="button"
@@ -828,7 +850,7 @@ export default function ManagerPrintMenuPage() {
                                             }`}
                                         >
                                             <span className="absolute bottom-1 left-2 rounded-md bg-black/60 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-xs">
-                                                {grad.label}
+                                                {t(grad.labelKey)}
                                             </span>
                                         </button>
                                     ))}
@@ -840,26 +862,28 @@ export default function ManagerPrintMenuPage() {
                         {settings.backgroundType === "texture" ? (
                             <div className="space-y-3 rounded-2xl bg-slate-50 p-3.5 border border-slate-100 text-xs">
                                 <span className="font-semibold text-slate-700 block">
-                                    Menu Paper Textures:
+                                    {t("menuTextures")}
                                 </span>
                                 <div className="grid grid-cols-3 gap-2">
-                                    {[
-                                        {
-                                            id: "parchment",
-                                            label: "Vintage Parchment",
-                                            url: "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?q=80&w=800&auto=format&fit=crop",
-                                        },
-                                        {
-                                            id: "linen",
-                                            label: "Textured Linen",
-                                            url: "https://images.unsplash.com/photo-1528459801416-a9e53bbf4e17?q=80&w=800&auto=format&fit=crop",
-                                        },
-                                        {
-                                            id: "slate",
-                                            label: "Charcoal Slate",
-                                            url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop",
-                                        },
-                                    ].map(tex => (
+                                    {(
+                                        [
+                                            {
+                                                id: "parchment",
+                                                labelKey: "vintageParchment",
+                                                url: "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?q=80&w=800&auto=format&fit=crop",
+                                            },
+                                            {
+                                                id: "linen",
+                                                labelKey: "texturedLinen",
+                                                url: "https://images.unsplash.com/photo-1528459801416-a9e53bbf4e17?q=80&w=800&auto=format&fit=crop",
+                                            },
+                                            {
+                                                id: "slate",
+                                                labelKey: "charcoalSlate",
+                                                url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop",
+                                            },
+                                        ] as const
+                                    ).map(tex => (
                                         <button
                                             key={tex.id}
                                             type="button"
@@ -878,11 +902,11 @@ export default function ManagerPrintMenuPage() {
                                         >
                                             <img
                                                 src={tex.url}
-                                                alt={tex.label}
+                                                alt={t(tex.labelKey)}
                                                 className="size-full object-cover"
                                             />
                                             <span className="absolute bottom-1 left-1.5 rounded-md bg-black/60 px-1 py-0.5 text-[8px] font-bold text-white">
-                                                {tex.label}
+                                                {t(tex.labelKey)}
                                             </span>
                                         </button>
                                     ))}
@@ -896,7 +920,7 @@ export default function ManagerPrintMenuPage() {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
                                 <QrCode className="size-4 text-amber-600" />
-                                Hybrid Contactless QR Code
+                                {t("hybridQrTitle")}
                             </div>
                             <ToggleSwitch
                                 checked={settings.showQrCode}
@@ -911,8 +935,8 @@ export default function ManagerPrintMenuPage() {
 
                         <p className="text-xs text-slate-500">
                             {settings.showQrCode
-                                ? "QR Code is enabled. Diners can scan to order from their phones."
-                                : "QR Code is hidden. Generates a pure traditional paper menu with no barcode."}
+                                ? t("qrEnabled")
+                                : t("qrHidden")}
                         </p>
 
                         {settings.showQrCode ? (
@@ -920,7 +944,7 @@ export default function ManagerPrintMenuPage() {
                                 {/* QR Target Mode: Universal vs Table-Specific */}
                                 <div>
                                     <Label className="text-xs font-semibold text-slate-700">
-                                        QR Target Mode
+                                        {t("qrTargetMode")}
                                     </Label>
                                     <div className="mt-1.5 grid grid-cols-2 gap-2">
                                         <button
@@ -938,10 +962,10 @@ export default function ManagerPrintMenuPage() {
                                             }`}
                                         >
                                             <span className="block text-xs">
-                                                One Universal Menu
+                                                {t("oneUniversal")}
                                             </span>
                                             <span className="block text-[10px] text-slate-400 font-normal">
-                                                One menu fits all tables
+                                                {t("oneUniversalDesc")}
                                             </span>
                                         </button>
 
@@ -961,10 +985,10 @@ export default function ManagerPrintMenuPage() {
                                             }`}
                                         >
                                             <span className="block text-xs">
-                                                Table-Specific
+                                                {t("tableSpecific")}
                                             </span>
                                             <span className="block text-[10px] text-slate-400 font-normal">
-                                                One unique menu per table
+                                                {t("tableSpecificDesc")}
                                             </span>
                                         </button>
                                     </div>
@@ -974,7 +998,7 @@ export default function ManagerPrintMenuPage() {
                                 {settings.qrMode === "table_specific" ? (
                                     <div>
                                         <Label className="text-xs font-semibold text-slate-700">
-                                            Previewing Table:
+                                            {t("previewingTable")}
                                         </Label>
                                         <select
                                             value={selectedTableId}
@@ -992,21 +1016,20 @@ export default function ManagerPrintMenuPage() {
                                                 >
                                                     {table.displayName} (
                                                     {table.locationName ||
-                                                        "Main Floor"}
+                                                        t("mainFloor")}
                                                     )
                                                 </option>
                                             ))}
                                         </select>
                                         <p className="mt-1 text-[10px] text-slate-400">
-                                            Switching tables immediately updates
-                                            the embedded table QR code.
+                                            {t("tableSwitchHint")}
                                         </p>
                                     </div>
                                 ) : null}
 
                                 <div>
                                     <Label className="text-xs font-semibold text-slate-700">
-                                        Callout Headline
+                                        {t("calloutHeadline")}
                                     </Label>
                                     <Input
                                         value={settings.qrHeadline ?? ""}
@@ -1016,14 +1039,16 @@ export default function ManagerPrintMenuPage() {
                                                 qrHeadline: e.target.value,
                                             }))
                                         }
-                                        placeholder="Prefer to order contactless from your phone?"
+                                        placeholder={t(
+                                            "calloutHeadlinePlaceholder",
+                                        )}
                                         className="mt-1 text-xs"
                                     />
                                 </div>
 
                                 <div>
                                     <Label className="text-xs font-semibold text-slate-700">
-                                        Callout Subtitle
+                                        {t("calloutSubtitle")}
                                     </Label>
                                     <Input
                                         value={settings.qrSubtext ?? ""}
@@ -1033,7 +1058,9 @@ export default function ManagerPrintMenuPage() {
                                                 qrSubtext: e.target.value,
                                             }))
                                         }
-                                        placeholder="Scan with camera to customize dishes & order directly"
+                                        placeholder={t(
+                                            "calloutSubtitlePlaceholder",
+                                        )}
                                         className="mt-1 text-xs"
                                     />
                                 </div>
@@ -1045,21 +1072,32 @@ export default function ManagerPrintMenuPage() {
                     <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
                         <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
                             <Palette className="size-4 text-amber-600" />
-                            Design & Typography
+                            {t("designTypography")}
                         </div>
 
                         <div className="space-y-3 text-xs">
                             {/* Font Theme */}
                             <div>
                                 <Label className="text-xs font-semibold text-slate-700">
-                                    Font Style
+                                    {t("fontStyle")}
                                 </Label>
                                 <div className="mt-1.5 grid grid-cols-3 gap-2">
-                                    {[
-                                        { id: "serif", label: "Classic Serif" },
-                                        { id: "sans", label: "Modern Sans" },
-                                        { id: "bistro", label: "Bold Bistro" },
-                                    ].map(opt => (
+                                    {(
+                                        [
+                                            {
+                                                id: "serif",
+                                                labelKey: "classicSerif",
+                                            },
+                                            {
+                                                id: "sans",
+                                                labelKey: "modernSans",
+                                            },
+                                            {
+                                                id: "bistro",
+                                                labelKey: "boldBistro",
+                                            },
+                                        ] as const
+                                    ).map(opt => (
                                         <button
                                             key={opt.id}
                                             type="button"
@@ -1076,7 +1114,7 @@ export default function ManagerPrintMenuPage() {
                                                     : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                                             }`}
                                         >
-                                            {opt.label}
+                                            {t(opt.labelKey)}
                                         </button>
                                     ))}
                                 </div>
@@ -1085,20 +1123,25 @@ export default function ManagerPrintMenuPage() {
                             {/* Color Theme */}
                             <div>
                                 <Label className="text-xs font-semibold text-slate-700">
-                                    Color Palette
+                                    {t("colorPalette")}
                                 </Label>
                                 <div className="mt-1.5 grid grid-cols-3 gap-2">
-                                    {[
-                                        { id: "amber", label: "Warm Amber" },
-                                        {
-                                            id: "monochrome",
-                                            label: "Pure Black & White",
-                                        },
-                                        {
-                                            id: "charcoal",
-                                            label: "Deep Charcoal",
-                                        },
-                                    ].map(opt => (
+                                    {(
+                                        [
+                                            {
+                                                id: "amber",
+                                                labelKey: "warmAmber",
+                                            },
+                                            {
+                                                id: "monochrome",
+                                                labelKey: "pureBw",
+                                            },
+                                            {
+                                                id: "charcoal",
+                                                labelKey: "deepCharcoal",
+                                            },
+                                        ] as const
+                                    ).map(opt => (
                                         <button
                                             key={opt.id}
                                             type="button"
@@ -1115,7 +1158,7 @@ export default function ManagerPrintMenuPage() {
                                                     : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                                             }`}
                                         >
-                                            {opt.label}
+                                            {t(opt.labelKey)}
                                         </button>
                                     ))}
                                 </div>
@@ -1126,10 +1169,10 @@ export default function ManagerPrintMenuPage() {
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <span className="text-slate-900 font-semibold block">
-                                            Show Food Photos
+                                            {t("showFoodPhotos")}
                                         </span>
                                         <span className="text-[10px] text-slate-400 block">
-                                            Displays dish picture thumbnail
+                                            {t("showFoodPhotosDesc")}
                                         </span>
                                     </div>
                                     <ToggleSwitch
@@ -1145,7 +1188,7 @@ export default function ManagerPrintMenuPage() {
 
                                 <div className="flex items-center justify-between">
                                     <span className="text-slate-700">
-                                        Show Dish Descriptions
+                                        {t("showDescriptions")}
                                     </span>
                                     <ToggleSwitch
                                         checked={settings.showDescriptions}
@@ -1160,7 +1203,7 @@ export default function ManagerPrintMenuPage() {
 
                                 <div className="flex items-center justify-between">
                                     <span className="text-slate-700">
-                                        Show Dietary Badges (Fasting, Spicy)
+                                        {t("showBadges")}
                                     </span>
                                     <ToggleSwitch
                                         checked={settings.showBadges}
@@ -1175,7 +1218,7 @@ export default function ManagerPrintMenuPage() {
 
                                 <div className="flex items-center justify-between">
                                     <span className="text-slate-700">
-                                        Classic Dot Leaders (Dish ..... Price)
+                                        {t("showDotLeaders")}
                                     </span>
                                     <ToggleSwitch
                                         checked={settings.showDotLeaders}
@@ -1196,8 +1239,9 @@ export default function ManagerPrintMenuPage() {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
                                 <Layers className="size-4 text-amber-600" />
-                                Categories to Include ({activeCategories.length}
-                                )
+                                {t("categoriesInclude", {
+                                    count: activeCategories.length,
+                                })}
                             </div>
                             <div className="flex items-center gap-2 text-[11px]">
                                 <button
@@ -1205,7 +1249,7 @@ export default function ManagerPrintMenuPage() {
                                     onClick={selectAllCategories}
                                     className="text-amber-600 font-semibold hover:underline"
                                 >
-                                    All
+                                    {t("all")}
                                 </button>
                                 <span className="text-slate-300">|</span>
                                 <button
@@ -1213,14 +1257,13 @@ export default function ManagerPrintMenuPage() {
                                     onClick={resetCategorySelection}
                                     className="text-slate-500 hover:underline"
                                 >
-                                    Reset
+                                    {t("reset")}
                                 </button>
                             </div>
                         </div>
 
                         <p className="text-xs text-slate-500">
-                            Choose which sections of your menu appear on this
-                            printed sheet.
+                            {t("categoriesDesc")}
                         </p>
 
                         <div className="flex flex-wrap gap-1.5 pt-1">
@@ -1258,7 +1301,7 @@ export default function ManagerPrintMenuPage() {
                     <div className="mb-3 flex items-center justify-between w-full max-w-[210mm] px-2 text-xs font-semibold text-slate-500">
                         <div className="flex items-center gap-2">
                             <span className="size-2 rounded-full bg-emerald-500" />
-                            <span>A4 Paper Sheet Preview</span>
+                            <span>{t("a4Preview")}</span>
                             {settings.showQrCode &&
                             settings.qrMode === "table_specific" &&
                             currentTable ? (
@@ -1267,7 +1310,7 @@ export default function ManagerPrintMenuPage() {
                                 </span>
                             ) : settings.showQrCode ? (
                                 <span className="rounded-md bg-slate-100 px-2 py-0.5 text-slate-700 text-[10px]">
-                                    Universal
+                                    {t("universal")}
                                 </span>
                             ) : null}
                         </div>
@@ -1279,7 +1322,7 @@ export default function ManagerPrintMenuPage() {
                                     setZoomLevel(z => Math.max(70, z - 10))
                                 }
                                 className="flex size-7 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-                                title="Zoom Out"
+                                title={t("zoomOut")}
                             >
                                 <ZoomOut className="size-3.5" />
                             </button>
@@ -1292,7 +1335,7 @@ export default function ManagerPrintMenuPage() {
                                     setZoomLevel(z => Math.min(130, z + 10))
                                 }
                                 className="flex size-7 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-                                title="Zoom In"
+                                title={t("zoomIn")}
                             >
                                 <ZoomIn className="size-3.5" />
                             </button>
@@ -1389,7 +1432,7 @@ export default function ManagerPrintMenuPage() {
                                     >
                                         <div className="flex-1 text-left">
                                             <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-600 px-2.5 py-0.5 text-[9px] font-black text-white uppercase tracking-wider">
-                                                📱 Instant Mobile Order
+                                                📱 {t("instantMobileOrder")}
                                             </div>
                                             <h4 className="mt-1 text-xs font-bold leading-tight">
                                                 {settings.qrHeadline}
@@ -1413,7 +1456,7 @@ export default function ManagerPrintMenuPage() {
                                                             : "text-amber-800"
                                                     }`}
                                                 >
-                                                    Seated at:{" "}
+                                                    {t("seatedAt")}{" "}
                                                     {currentTable.displayName}
                                                 </span>
                                             ) : null}
@@ -1426,7 +1469,7 @@ export default function ManagerPrintMenuPage() {
                                                 fgColor="#000000"
                                             />
                                             <span className="mt-1 text-[7px] font-mono text-slate-500 uppercase tracking-tighter">
-                                                Scan with Camera
+                                                {t("scanWithCamera")}
                                             </span>
                                         </div>
                                     </div>
@@ -1573,20 +1616,25 @@ export default function ManagerPrintMenuPage() {
                                                                     "FASTING" ? (
                                                                         <span className="inline-flex items-center gap-0.5 text-emerald-700">
                                                                             <Leaf className="size-2.5" />{" "}
-                                                                            ፆም
-                                                                            Fasting
+                                                                            {t(
+                                                                                "badgeFasting",
+                                                                            )}
                                                                         </span>
                                                                     ) : item.badge ===
                                                                       "VEGETARIAN" ? (
                                                                         <span className="inline-flex items-center gap-0.5 text-emerald-700">
                                                                             <Leaf className="size-2.5" />{" "}
-                                                                            Vegetarian
+                                                                            {t(
+                                                                                "badgeVegetarian",
+                                                                            )}
                                                                         </span>
                                                                     ) : item.badge ===
                                                                       "SPICY" ? (
                                                                         <span className="inline-flex items-center gap-0.5 text-rose-700">
                                                                             <Flame className="size-2.5" />{" "}
-                                                                            Spicy
+                                                                            {t(
+                                                                                "badgeSpicy",
+                                                                            )}
                                                                         </span>
                                                                     ) : (
                                                                         <span className="text-amber-700 font-bold">
@@ -1609,8 +1657,7 @@ export default function ManagerPrintMenuPage() {
 
                             {/* Bottom Footer Note */}
                             <div className="mt-8 pt-4 border-t border-slate-200 text-center text-[9px] text-slate-500 font-medium tracking-wide">
-                                Please inform your server of any food allergies
-                                · Taxes included · Thank you for dining with us!
+                                {t("footerNote")}
                             </div>
                         </div>
                     </div>

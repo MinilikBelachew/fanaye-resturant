@@ -12,8 +12,42 @@ import { Button } from "@/components/ui/button";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
 import { toast } from "@/lib/toast";
+import { useTranslations } from "next-intl";
+
+function formatChangeValue(value: unknown): string {
+    if (value == null || value === "") return "";
+    if (
+        typeof value === "string" ||
+        typeof value === "number" ||
+        typeof value === "boolean"
+    ) {
+        return String(value);
+    }
+    if (Array.isArray(value)) {
+        return value
+            .map(entry => formatChangeValue(entry))
+            .filter(Boolean)
+            .join(", ");
+    }
+    if (typeof value === "object") {
+        return JSON.stringify(value);
+    }
+    return String(value);
+}
+
+function itemStateLabel(
+    state: string,
+    t: ReturnType<typeof useTranslations<"managerApprovals">>,
+) {
+    const key = `itemStates.${state}` as const;
+    if (t.has(key)) {
+        return t(key);
+    }
+    return state.replaceAll("_", " ");
+}
 
 export default function ManagerApprovalsPage() {
+    const t = useTranslations("managerApprovals");
     const { data, isLoading, isError } = useOrderMutationApprovalsQuery(
         undefined,
         { pollingInterval: 5000 },
@@ -55,15 +89,17 @@ export default function ManagerApprovalsPage() {
                 }).unwrap();
             }
             toast.success(
-                decision === "approve" ? "Request approved" : "Request rejected",
+                decision === "approve"
+                    ? t("toastApproved")
+                    : t("toastRejected"),
                 row.itemName,
             );
         } catch (err) {
             toast.fromUnknown(
                 err,
                 decision === "approve"
-                    ? "Could not approve this request."
-                    : "Could not reject this request.",
+                    ? t("toastApproveError")
+                    : t("toastRejectError"),
             );
         }
     }
@@ -77,14 +113,12 @@ export default function ManagerApprovalsPage() {
             />
 
             {isLoading ? (
-                <p className="text-slate-gray">Loading approvals…</p>
+                <p className="text-slate-gray">{t("loading")}</p>
             ) : null}
-            {isError ? (
-                <p className="text-red-600">Could not load approvals.</p>
-            ) : null}
+            {isError ? <p className="text-red-600">{t("loadError")}</p> : null}
             {!isLoading && !isError && rows.length === 0 ? (
                 <p className="rounded-[16px] border border-hairline bg-card p-5 text-slate-gray">
-                    No pending change or cancellation requests.
+                    {t("empty")}
                 </p>
             ) : null}
 
@@ -95,9 +129,17 @@ export default function ManagerApprovalsPage() {
                               .filter(
                                   ([, value]) => value != null && value !== "",
                               )
-                              .map(([key, value]) => `${key}: ${String(value)}`)
+                              .map(
+                                  ([key, value]) =>
+                                      `${key}: ${formatChangeValue(value)}`,
+                              )
                               .join(" · ")
                         : null;
+
+                    const typeLabel =
+                        row.type === "CANCELLATION"
+                            ? t("typeCancellation")
+                            : t("typeChange");
 
                     return (
                         <article
@@ -112,13 +154,15 @@ export default function ManagerApprovalsPage() {
                                     </p>
                                     <h2 className="text-[18px] font-semibold">
                                         {row.type === "CANCELLATION"
-                                            ? "Cancel"
-                                            : "Change"}{" "}
+                                            ? t("prefixCancel")
+                                            : t("prefixChange")}{" "}
                                         {row.itemName}
                                     </h2>
                                     <p className="text-[14px] text-slate-gray">
-                                        {row.itemState.replaceAll("_", " ")} ·
-                                        requested by {row.requestedByName}
+                                        {itemStateLabel(row.itemState, t)} ·{" "}
+                                        {t("requestedBy", {
+                                            name: row.requestedByName,
+                                        })}
                                     </p>
                                     {row.reason ? (
                                         <p className="mt-1 text-[14px]">
@@ -131,19 +175,19 @@ export default function ManagerApprovalsPage() {
                                         </p>
                                     ) : null}
                                 </div>
-                                <Badge variant="warning">{row.type}</Badge>
+                                <Badge variant="warning">{typeLabel}</Badge>
                             </div>
                             <div className="mt-4 flex gap-2">
                                 <Button
                                     onClick={() => void decide(row, "approve")}
                                 >
-                                    Approve
+                                    {t("approve")}
                                 </Button>
                                 <Button
                                     variant="outline"
                                     onClick={() => void decide(row, "reject")}
                                 >
-                                    Reject
+                                    {t("reject")}
                                 </Button>
                             </div>
                         </article>

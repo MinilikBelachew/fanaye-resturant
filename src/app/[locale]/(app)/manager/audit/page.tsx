@@ -27,12 +27,39 @@ import {
     type AuditEventRow,
 } from "@/context/services/auditApi";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 type CategoryFilter = "all" | AuditCategory;
 type DateFilter = "all" | "today" | "yesterday" | "7days";
 
+const CATEGORY_TABS = [
+    { id: "all", labelKey: "categories.all" },
+    { id: "orders", labelKey: "categories.orders" },
+    { id: "fulfillment", labelKey: "categories.fulfillment" },
+    { id: "payments", labelKey: "categories.payments" },
+    { id: "system", labelKey: "categories.system" },
+] as const satisfies ReadonlyArray<{
+    id: CategoryFilter;
+    labelKey: string;
+}>;
+
+const DATE_PRESETS = [
+    { id: "today", labelKey: "datePresets.today" },
+    { id: "yesterday", labelKey: "datePresets.yesterday" },
+    { id: "7days", labelKey: "datePresets.7days" },
+    { id: "all", labelKey: "datePresets.all" },
+] as const satisfies ReadonlyArray<{
+    id: DateFilter;
+    labelKey: string;
+}>;
+
+const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
+
 export default function ManagerAuditPage() {
+    const t = useTranslations("managerAudit");
+    const tCommon = useTranslations("common");
+
     const [selectedCategory, setSelectedCategory] =
         useState<CategoryFilter>("all");
     const [dateFilter, setDateFilter] = useState<DateFilter>("7days");
@@ -91,7 +118,7 @@ export default function ManagerAuditPage() {
     function handleCopy(id: string) {
         void navigator.clipboard.writeText(id);
         setCopiedId(id);
-        toast.success("Audit UUID copied", {
+        toast.success(t("toastUuidCopied"), {
             description: id,
         });
         setTimeout(() => setCopiedId(null), 2000);
@@ -101,7 +128,7 @@ export default function ManagerAuditPage() {
         () => [
             {
                 id: "timestamp",
-                header: "Timestamp",
+                header: t("colTimestamp"),
                 sortValue: row => new Date(row.occurredAt).getTime(),
                 cell: row => (
                     <div className="flex flex-col gap-0.5">
@@ -124,7 +151,7 @@ export default function ManagerAuditPage() {
             },
             {
                 id: "action",
-                header: "Event & Action",
+                header: t("colEventAction"),
                 sortValue: row => row.actionLabel,
                 cell: row => {
                     const icon =
@@ -162,26 +189,24 @@ export default function ManagerAuditPage() {
             },
             {
                 id: "category",
-                header: "Domain",
+                header: t("colDomain"),
                 sortValue: row => row.category,
                 cell: row => {
-                    const labels: Record<string, string> = {
-                        orders: "Orders",
-                        fulfillment: "Kitchen & Bar",
-                        payments: "Payments & Tax",
-                        system: "System",
-                    };
+                    const categoryKey = `categories.${row.category}` as const;
+                    const label = t.has(categoryKey)
+                        ? t(categoryKey)
+                        : row.category;
 
                     return (
                         <span className="inline-flex items-center rounded-md border border-hairline bg-secondary/60 px-2 py-0.5 text-[11px] font-medium text-slate-gray">
-                            {labels[row.category] || row.category}
+                            {label}
                         </span>
                     );
                 },
             },
             {
                 id: "details",
-                header: "Context & Remarks",
+                header: t("colContextRemarks"),
                 cell: row => (
                     <div className="max-w-[320px]">
                         {row.details ? (
@@ -190,7 +215,7 @@ export default function ManagerAuditPage() {
                             </p>
                         ) : (
                             <span className="text-[12px] text-slate-gray italic">
-                                Standard activity
+                                {t("standardActivity")}
                             </span>
                         )}
                     </div>
@@ -198,7 +223,7 @@ export default function ManagerAuditPage() {
             },
             {
                 id: "actor",
-                header: "Staff / Actor",
+                header: t("colStaffActor"),
                 sortValue: row => row.actorName,
                 cell: row => (
                     <div className="flex items-center gap-2.5">
@@ -218,7 +243,7 @@ export default function ManagerAuditPage() {
             },
             {
                 id: "entity",
-                header: "Entity / Log ID",
+                header: t("colEntityLogId"),
                 cell: row => (
                     <div className="flex items-center gap-2">
                         <span className="font-mono text-[11px] text-slate-gray bg-secondary/80 px-2 py-0.5 rounded-md border border-hairline">
@@ -228,7 +253,7 @@ export default function ManagerAuditPage() {
                             type="button"
                             onClick={() => handleCopy(row.id)}
                             className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-slate-gray hover:text-foreground hover:bg-secondary transition-colors"
-                            title="Copy Audit UUID"
+                            title={t("copyAuditUuidTitle")}
                         >
                             {copiedId === row.id ? (
                                 <Check className="size-3 text-foreground" />
@@ -243,7 +268,7 @@ export default function ManagerAuditPage() {
                 ),
             },
         ],
-        [copiedId],
+        [copiedId, t],
     );
 
     const pagination: DataTablePagination = useMemo(
@@ -281,7 +306,7 @@ export default function ManagerAuditPage() {
                                 isFetching && "animate-spin",
                             )}
                         />
-                        Refresh
+                        {tCommon("refresh")}
                     </Button>
                 </div>
             </div>
@@ -291,7 +316,7 @@ export default function ManagerAuditPage() {
                 <div className="rounded-[16px] border border-hairline bg-card p-4 transition-all hover:border-slate-300 shadow-xs">
                     <div className="flex items-center justify-between">
                         <p className="text-[13px] font-medium text-slate-gray">
-                            Logged Today
+                            {t("kpiLoggedToday")}
                         </p>
                         <Activity className="size-4 text-slate-gray" />
                     </div>
@@ -299,14 +324,14 @@ export default function ManagerAuditPage() {
                         {isLoading ? "…" : (summary?.totalToday ?? 0)}
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
-                        Total branch events
+                        {t("kpiTotalBranchEvents")}
                     </p>
                 </div>
 
                 <div className="rounded-[16px] border border-hairline bg-card p-4 transition-all hover:border-slate-300 shadow-xs">
                     <div className="flex items-center justify-between">
                         <p className="text-[13px] font-medium text-slate-gray">
-                            Payments Logged
+                            {t("kpiPaymentsLogged")}
                         </p>
                         <QrCode className="size-4 text-slate-gray" />
                     </div>
@@ -314,14 +339,14 @@ export default function ManagerAuditPage() {
                         {isLoading ? "…" : (summary?.paymentToday ?? 0)}
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
-                        Cash drops, Telebirr & CBE
+                        {t("kpiPaymentsSub")}
                     </p>
                 </div>
 
                 <div className="rounded-[16px] border border-hairline bg-card p-4 transition-all hover:border-slate-300 shadow-xs">
                     <div className="flex items-center justify-between">
                         <p className="text-[13px] font-medium text-slate-gray">
-                            Station Completions
+                            {t("kpiStationCompletions")}
                         </p>
                         <FileText className="size-4 text-slate-gray" />
                     </div>
@@ -329,22 +354,22 @@ export default function ManagerAuditPage() {
                         {isLoading ? "…" : (summary?.fulfillmentToday ?? 0)}
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
-                        Kitchen, bar & pastry tickets
+                        {t("kpiStationSub")}
                     </p>
                 </div>
 
                 <div className="rounded-[16px] border border-hairline bg-card p-4 transition-all hover:border-slate-300 shadow-xs">
                     <div className="flex items-center justify-between">
                         <p className="text-[13px] font-medium text-slate-gray">
-                            Audit Ledger
+                            {t("kpiAuditLedger")}
                         </p>
                         <Shield className="size-4 text-slate-gray" />
                     </div>
                     <p className="mt-2 text-[26px] font-semibold text-foreground">
-                        Locked
+                        {t("kpiLocked")}
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
-                        Append-only immutable record
+                        {t("kpiAppendOnly")}
                     </p>
                 </div>
             </div>
@@ -353,15 +378,7 @@ export default function ManagerAuditPage() {
             <div className="flex flex-col gap-3 rounded-[16px] border border-hairline bg-card p-3 shadow-xs lg:flex-row lg:items-center lg:justify-between">
                 {/* Category Pills */}
                 <div className="flex flex-wrap items-center gap-1">
-                    {(
-                        [
-                            { id: "all", label: "All Activity" },
-                            { id: "orders", label: "Orders" },
-                            { id: "fulfillment", label: "Kitchen & Bar" },
-                            { id: "payments", label: "Payments & Tax" },
-                            { id: "system", label: "System & Staff" },
-                        ] as const
-                    ).map(tab => {
+                    {CATEGORY_TABS.map(tab => {
                         const isSelected = selectedCategory === tab.id;
                         return (
                             <button
@@ -378,7 +395,7 @@ export default function ManagerAuditPage() {
                                         : "text-slate-gray hover:text-foreground hover:bg-secondary",
                                 )}
                             >
-                                {tab.label}
+                                {t(tab.labelKey)}
                             </button>
                         );
                     })}
@@ -387,14 +404,7 @@ export default function ManagerAuditPage() {
                 {/* Date Presets & Page Size */}
                 <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-hairline lg:border-t-0 lg:pt-0">
                     <div className="flex items-center gap-1 bg-secondary/50 p-1 rounded-xl border border-hairline">
-                        {(
-                            [
-                                { id: "today", label: "Today" },
-                                { id: "yesterday", label: "Yesterday" },
-                                { id: "7days", label: "Last 7 Days" },
-                                { id: "all", label: "All Time" },
-                            ] as const
-                        ).map(preset => (
+                        {DATE_PRESETS.map(preset => (
                             <button
                                 key={preset.id}
                                 type="button"
@@ -409,13 +419,13 @@ export default function ManagerAuditPage() {
                                         : "text-slate-gray hover:text-foreground",
                                 )}
                             >
-                                {preset.label}
+                                {t(preset.labelKey)}
                             </button>
                         ))}
                     </div>
 
                     <select
-                        aria-label="Rows per page"
+                        aria-label={t("rowsPerPageAria")}
                         value={limit}
                         onChange={e => {
                             setLimit(Number(e.target.value));
@@ -423,17 +433,18 @@ export default function ManagerAuditPage() {
                         }}
                         className="h-8 rounded-xl border border-hairline bg-card px-2.5 text-[12px] text-foreground outline-none cursor-pointer"
                     >
-                        <option value={25}>25 / page</option>
-                        <option value={50}>50 / page</option>
-                        <option value={100}>100 / page</option>
+                        {PAGE_SIZE_OPTIONS.map(size => (
+                            <option key={size} value={size}>
+                                {t("perPage", { count: size })}
+                            </option>
+                        ))}
                     </select>
                 </div>
             </div>
 
             {isError ? (
                 <div className="rounded-[16px] border border-destructive/30 bg-destructive/10 p-4 text-[13px] text-destructive">
-                    Could not load audit events. Please ensure you are logged in
-                    with manager credentials.
+                    {t("loadError")}
                 </div>
             ) : null}
 
@@ -442,7 +453,7 @@ export default function ManagerAuditPage() {
                 columns={columns}
                 data={events}
                 rowKey={row => row.id}
-                searchPlaceholder="Search events, staff, table, amount..."
+                searchPlaceholder={t("searchPlaceholder")}
                 searchQuery={searchQuery}
                 onSearchChange={query => {
                     setSearchQuery(query);
@@ -455,12 +466,10 @@ export default function ManagerAuditPage() {
                     <div className="flex flex-col items-center justify-center py-12 text-center text-slate-gray">
                         <Activity className="size-10 text-slate-300 dark:text-slate-700 mb-2" />
                         <p className="text-[15px] font-semibold text-foreground">
-                            No audit events found
+                            {t("emptyTitle")}
                         </p>
                         <p className="mt-1 max-w-sm text-[13px] text-slate-gray">
-                            No log entries match your selected date range or
-                            search query. As staff perform operations on the
-                            floor, live events appear here instantly.
+                            {t("emptyDesc")}
                         </p>
                         {(selectedCategory !== "all" ||
                             dateFilter !== "today" ||
@@ -477,7 +486,7 @@ export default function ManagerAuditPage() {
                                 }}
                                 className="mt-4 rounded-xl text-[12.5px]"
                             >
-                                Reset All Filters
+                                {t("resetAllFilters")}
                             </Button>
                         )}
                     </div>

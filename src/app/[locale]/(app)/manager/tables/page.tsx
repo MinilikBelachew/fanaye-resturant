@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
 import ManagerTablesBoard from "@/domains/floor/ui/ManagerTablesBoard";
@@ -8,6 +9,7 @@ import ManagerFloorConfig from "@/domains/floor/ui/ManagerFloorConfig";
 import { cn } from "@/lib/utils";
 
 export default function ManagerTablesPage() {
+    const t = useTranslations("managerTables");
     const [mode, setMode] = useState<"live" | "configure">("configure");
 
     return (
@@ -29,7 +31,7 @@ export default function ManagerTablesPage() {
                             : "text-slate-gray",
                     )}
                 >
-                    Configure
+                    {t("configure")}
                 </button>
                 <button
                     type="button"
@@ -41,7 +43,7 @@ export default function ManagerTablesPage() {
                             : "text-slate-gray",
                     )}
                 >
-                    Live floor
+                    {t("liveFloor")}
                 </button>
             </div>
 

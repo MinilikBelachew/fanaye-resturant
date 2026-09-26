@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { User } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useFloorTablesQuery } from "@/context/services/floorApi";
 import type { FloorTable } from "@/domains/floor/domain/floorApi";
 import { tableNumber } from "@/domains/floor/application/groupFloor";
@@ -11,6 +12,7 @@ import { cn } from "@/lib/utils";
 import TableInspectionSheet from "./TableInspectionSheet";
 
 export default function ManagerTablesBoard() {
+    const t = useTranslations("managerTables");
     const { data, isLoading, isError } = useFloorTablesQuery();
     const tables = data?.data ?? [];
     const locations = data?.locations ?? [];
@@ -74,10 +76,10 @@ export default function ManagerTablesBoard() {
     });
 
     if (isLoading) {
-        return <p className="text-slate-gray">Loading floor…</p>;
+        return <p className="text-slate-gray">{t("loadingFloor")}</p>;
     }
     if (isError) {
-        return <p className="text-red-600">Could not load tables.</p>;
+        return <p className="text-red-600">{t("loadTablesError")}</p>;
     }
 
     return (
@@ -85,7 +87,7 @@ export default function ManagerTablesBoard() {
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <div className="rounded-[16px] border border-hairline bg-card p-4">
                     <p className="text-[13px] font-medium text-slate-gray">
-                        Occupied Tables
+                        {t("occupiedTables")}
                     </p>
                     <p className="mt-2 text-[26px] font-semibold">
                         {stats.occupiedCount}{" "}
@@ -94,12 +96,12 @@ export default function ManagerTablesBoard() {
                         </span>
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
-                        {stats.occupancyRate}% full
+                        {t("percentFull", { rate: stats.occupancyRate })}
                     </p>
                 </div>
                 <div className="rounded-[16px] border border-hairline bg-card p-4">
                     <p className="text-[13px] font-medium text-slate-gray">
-                        Available Tables
+                        {t("availableTables")}
                     </p>
                     <p className="mt-2 text-[26px] font-semibold">
                         {stats.availableCount}
@@ -108,7 +110,7 @@ export default function ManagerTablesBoard() {
                 <div className="rounded-[16px] border border-hairline bg-card p-4">
                     <div className="flex items-center justify-between">
                         <p className="text-[13px] font-medium text-slate-gray">
-                            Waiters on Floor
+                            {t("waitersOnFloor")}
                         </p>
                         <User className="size-4 text-slate-gray" />
                     </div>
@@ -118,13 +120,13 @@ export default function ManagerTablesBoard() {
                 </div>
                 <div className="rounded-[16px] border border-hairline bg-card p-4">
                     <p className="text-[13px] font-medium text-slate-gray">
-                        Guests seated
+                        {t("guestsSeated")}
                     </p>
                     <p className="mt-2 text-[26px] font-semibold text-primary">
                         {stats.totalGuests}
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
-                        Running tabs come with orders
+                        {t("runningTabsHint")}
                     </p>
                 </div>
             </div>
@@ -133,9 +135,19 @@ export default function ManagerTablesBoard() {
                 <div className="flex items-center gap-1.5 overflow-x-auto">
                     {(
                         [
-                            ["all", `All Tables (${stats.total})`],
-                            ["occupied", `Occupied (${stats.occupiedCount})`],
-                            ["available", `Available (${stats.availableCount})`],
+                            ["all", t("allTables", { count: stats.total })],
+                            [
+                                "occupied",
+                                t("occupiedFilter", {
+                                    count: stats.occupiedCount,
+                                }),
+                            ],
+                            [
+                                "available",
+                                t("availableFilter", {
+                                    count: stats.availableCount,
+                                }),
+                            ],
                         ] as const
                     ).map(([id, label]) => (
                         <button
@@ -158,7 +170,7 @@ export default function ManagerTablesBoard() {
                     onChange={e => setWaiterFilter(e.target.value)}
                     className="rounded-full border border-hairline bg-surface-ivory px-3 py-1.5 text-[12px] font-medium outline-none"
                 >
-                    <option value="all">All servers</option>
+                    <option value="all">{t("allServers")}</option>
                     {waiterOptions.map(waiter => (
                         <option key={waiter.id} value={waiter.id}>
                             {waiter.name}
@@ -173,12 +185,14 @@ export default function ManagerTablesBoard() {
                 renderTable={table => {
                     const occupied = Boolean(table.tableSessionId);
                     const footerLeft = !occupied
-                        ? "Available"
+                        ? t("available")
                         : table.readyItemCount > 0
-                          ? `${table.readyItemCount} ready`
+                          ? t("readyCount", { count: table.readyItemCount })
                           : table.cookingItemCount > 0
-                            ? `${table.cookingItemCount} cooking`
-                            : table.sessionStatus ?? "Open";
+                            ? t("cookingCount", {
+                                  count: table.cookingItemCount,
+                              })
+                            : (table.sessionStatus ?? t("open"));
 
                     return (
                         <FloorTableCard
@@ -187,8 +201,14 @@ export default function ManagerTablesBoard() {
                             location={table.locationName}
                             badge={
                                 occupied
-                                    ? { label: "Occupied", tone: "occupied" }
-                                    : { label: "Available", tone: "available" }
+                                    ? {
+                                          label: t("occupied"),
+                                          tone: "occupied",
+                                      }
+                                    : {
+                                          label: t("available"),
+                                          tone: "available",
+                                      }
                             }
                             waiter={
                                 occupied
@@ -199,12 +219,14 @@ export default function ManagerTablesBoard() {
                                 occupied
                                     ? null
                                     : table.assignedWaiterName
-                                      ? `Assigned · ${table.assignedWaiterName}`
-                                      : "No waiter assigned"
+                                      ? t("assignedWaiterNote", {
+                                            name: table.assignedWaiterName,
+                                        })
+                                      : t("noWaiterAssigned")
                             }
                             total={null}
                             footerLeft={footerLeft}
-                            footerAction="Inspect →"
+                            footerAction={t("inspect")}
                             onClick={() => setSelectedTable(table)}
                         />
                     );

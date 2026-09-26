@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { Plus, Save, Trash2, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCreateAdminModifierGroupMutation } from "@/context/services/menuApi";
 import { catalogModifiersToApi } from "@/domains/catalog/application/mapAdminMenu";
 import type { ModifierOption } from "@/domains/catalog/domain/modifiers";
@@ -35,6 +36,7 @@ export default function CreateModifierGroupSheet({
     isOpen,
     onClose,
 }: CreateModifierGroupSheetProps) {
+    const t = useTranslations("menuSheets");
     const [createGroup, { isLoading }] = useCreateAdminModifierGroupMutation();
     const [optionName, setOptionName] = useState("");
     const [optionDelta, setOptionDelta] = useState("0");
@@ -69,7 +71,7 @@ export default function CreateModifierGroupSheet({
         });
         if (!parsed.success) {
             setOptionError(
-                parsed.error.issues[0]?.message || "Invalid option.",
+                parsed.error.issues[0]?.message || t("invalidOption"),
             );
             return;
         }
@@ -107,12 +109,30 @@ export default function CreateModifierGroupSheet({
                 },
             ]);
             await createGroup(payload).unwrap();
-            toast.success("Modifier group saved", values.name);
+            toast.success(t("modifierSaved"), values.name);
             onClose();
         } catch (err) {
-            toast.fromUnknown(err, "Could not save modifier group. Try again.");
+            toast.fromUnknown(err, t("modifierSaveError"));
         }
     }
+
+    const kindOptions = [
+        {
+            value: "included" as const,
+            label: t("typeHold"),
+            hint: t("typeHoldHint"),
+        },
+        {
+            value: "extra" as const,
+            label: t("typeExtra"),
+            hint: t("typeExtraHint"),
+        },
+        {
+            value: "choice" as const,
+            label: t("typeChoice"),
+            hint: t("typeChoiceHint"),
+        },
+    ];
 
     return (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-[2px]">
@@ -120,17 +140,17 @@ export default function CreateModifierGroupSheet({
                 <div className="flex items-center justify-between border-b border-hairline px-5 py-4">
                     <div>
                         <h2 className="text-[17px] font-semibold tracking-tight">
-                            Add modifier group
+                            {t("addModifierTitle")}
                         </h2>
                         <p className="text-[12px] text-slate-gray">
-                            Reusable holds, extras, or choices for menu items.
+                            {t("addModifierSubtitle")}
                         </p>
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
                         className="rounded-full p-2 text-slate-gray hover:bg-secondary"
-                        aria-label="Close"
+                        aria-label={t("close")}
                     >
                         <X className="size-4" />
                     </button>
@@ -138,8 +158,8 @@ export default function CreateModifierGroupSheet({
 
                 <Form {...form}>
                     <form
-                        onSubmit={form.handleSubmit(values =>
-                            void onSubmit(values),
+                        onSubmit={form.handleSubmit(
+                            values => void onSubmit(values),
                         )}
                         className="flex min-h-0 flex-1 flex-col"
                     >
@@ -149,10 +169,12 @@ export default function CreateModifierGroupSheet({
                                 name="name"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Group name</FormLabel>
+                                        <FormLabel>{t("groupName")}</FormLabel>
                                         <FormControl>
                                             <Input
-                                                placeholder="Hold ingredients, Extra toppings, Milk…"
+                                                placeholder={t(
+                                                    "groupNamePlaceholder",
+                                                )}
                                                 className="h-10"
                                                 {...field}
                                             />
@@ -168,28 +190,10 @@ export default function CreateModifierGroupSheet({
                                 render={({ field }) => (
                                     <div className="space-y-1.5">
                                         <label className="text-[13px] font-medium">
-                                            Type
+                                            {t("type")}
                                         </label>
                                         <div className="grid grid-cols-3 gap-2">
-                                            {(
-                                                [
-                                                    {
-                                                        value: "included",
-                                                        label: "Hold",
-                                                        hint: "Remove included items",
-                                                    },
-                                                    {
-                                                        value: "extra",
-                                                        label: "Extra",
-                                                        hint: "Add-ons with price",
-                                                    },
-                                                    {
-                                                        value: "choice",
-                                                        label: "Choice",
-                                                        hint: "Pick one",
-                                                    },
-                                                ] as const
-                                            ).map(entry => (
+                                            {kindOptions.map(entry => (
                                                 <button
                                                     key={entry.value}
                                                     type="button"
@@ -223,7 +227,7 @@ export default function CreateModifierGroupSheet({
                                 name="options"
                                 render={() => (
                                     <FormItem>
-                                        <FormLabel>Options</FormLabel>
+                                        <FormLabel>{t("options")}</FormLabel>
                                         {options.length > 0 ? (
                                             <div className="flex flex-wrap gap-1.5">
                                                 {options.map(opt => (
@@ -268,9 +272,7 @@ export default function CreateModifierGroupSheet({
                                             </div>
                                         ) : (
                                             <p className="text-[12px] text-slate-gray">
-                                                Add options waiters can pick
-                                                (onion, extra cheese, oat
-                                                milk…).
+                                                {t("optionsHint")}
                                             </p>
                                         )}
                                         <FormMessage />
@@ -286,8 +288,8 @@ export default function CreateModifierGroupSheet({
                                     }
                                     placeholder={
                                         kind === "included"
-                                            ? "Ingredient (e.g. Onion)"
-                                            : "Option name"
+                                            ? t("ingredientPlaceholder")
+                                            : t("optionNamePlaceholder")
                                     }
                                     className="h-8 min-w-[140px] flex-1 text-[12px]"
                                 />
@@ -310,7 +312,7 @@ export default function CreateModifierGroupSheet({
                                     className="h-8"
                                 >
                                     <Plus className="size-3.5" />
-                                    Add
+                                    {t("add")}
                                 </Button>
                             </div>
                             {optionError ? (
@@ -328,8 +330,8 @@ export default function CreateModifierGroupSheet({
                             >
                                 <Save className="size-4" />
                                 {isLoading
-                                    ? "Saving…"
-                                    : "Save modifier group"}
+                                    ? t("saving")
+                                    : t("saveModifierGroup")}
                             </Button>
                         </div>
                     </form>

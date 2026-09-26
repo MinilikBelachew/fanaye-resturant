@@ -11,6 +11,24 @@ import type {
 import type { AuditEventRow } from "@/context/services/auditApi";
 import { cn } from "@/lib/utils";
 
+const DAY_KEYS: Record<string, string> = {
+    Sun: "daySun",
+    Mon: "dayMon",
+    Tue: "dayTue",
+    Wed: "dayWed",
+    Thu: "dayThu",
+    Fri: "dayFri",
+    Sat: "daySat",
+};
+
+function localizeDayLabel(
+    t: ReturnType<typeof useTranslations>,
+    value: string,
+) {
+    const key = DAY_KEYS[value];
+    return key && t.has(key) ? t(key) : value;
+}
+
 function Panel({
     title,
     subtitle,
@@ -60,26 +78,33 @@ export function SalesTrendTable({
 }: {
     data?: RevenueVsCollectionsPoint[];
 }) {
+    const t = useTranslations("dashboardCharts");
+
     return (
         <Panel
-            title="7-day sales ledger"
-            subtitle="Gross · net · collections by day"
+            title={t("salesLedgerTitle")}
+            subtitle={t("salesLedgerSubtitle")}
         >
             <table className="w-full min-w-[480px] text-left text-[13px]">
                 <thead className="bg-secondary/40 text-[11px] uppercase tracking-wide text-slate-gray">
                     <tr>
-                        <th className="px-5 py-2.5 font-medium">Day</th>
-                        <th className="px-3 py-2.5 font-medium">Gross</th>
-                        <th className="px-3 py-2.5 font-medium">Net</th>
-                        <th className="px-5 py-2.5 font-medium">Collected</th>
+                        <th className="px-5 py-2.5 font-medium">
+                            {t("colDay")}
+                        </th>
+                        <th className="px-3 py-2.5 font-medium">
+                            {t("colGross")}
+                        </th>
+                        <th className="px-3 py-2.5 font-medium">
+                            {t("colNet")}
+                        </th>
+                        <th className="px-5 py-2.5 font-medium">
+                            {t("colCollected")}
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
                     {data.length === 0 ? (
-                        <EmptyRow
-                            colSpan={4}
-                            label="No sales recorded in the last 7 days."
-                        />
+                        <EmptyRow colSpan={4} label={t("salesLedgerEmpty")} />
                     ) : (
                         data.map(row => (
                             <tr
@@ -87,7 +112,7 @@ export function SalesTrendTable({
                                 className="border-t border-hairline"
                             >
                                 <td className="px-5 py-2.5 font-medium">
-                                    {row.period}
+                                    {localizeDayLabel(t, row.period)}
                                 </td>
                                 <td className="px-3 py-2.5 tabular-nums">
                                     {formatEtb(row.grossSales)}
@@ -167,22 +192,35 @@ export function PaymentChannelsTable({
 }
 
 export function TopDishesTable({ dishes = [] }: { dishes?: TopSellingDish[] }) {
+    const t = useTranslations("dashboardCharts");
+
     return (
-        <Panel title="Top dishes" subtitle="By revenue today">
+        <Panel
+            title={t("topDishesTableTitle")}
+            subtitle={t("topDishesTableSubtitle")}
+        >
             <table className="w-full min-w-[420px] text-left text-[13px]">
                 <thead className="bg-secondary/40 text-[11px] uppercase tracking-wide text-slate-gray">
                     <tr>
-                        <th className="px-5 py-2.5 font-medium">Dish</th>
-                        <th className="px-3 py-2.5 font-medium">Orders</th>
-                        <th className="px-3 py-2.5 font-medium">Share</th>
-                        <th className="px-5 py-2.5 font-medium">Revenue</th>
+                        <th className="px-5 py-2.5 font-medium">
+                            {t("colDish")}
+                        </th>
+                        <th className="px-3 py-2.5 font-medium">
+                            {t("colOrders")}
+                        </th>
+                        <th className="px-3 py-2.5 font-medium">
+                            {t("share")}
+                        </th>
+                        <th className="px-5 py-2.5 font-medium">
+                            {t("colRevenue")}
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
                     {dishes.length === 0 ? (
                         <EmptyRow
                             colSpan={4}
-                            label="No dish sales recorded for this date."
+                            label={t("topDishesTableEmpty")}
                         />
                     ) : (
                         dishes.map((row, index) => (
@@ -219,33 +257,43 @@ export function RecentAuditTable({
 }: {
     events?: AuditEventRow[];
 }) {
+    const t = useTranslations("dashboardCharts");
+
     return (
         <Panel
-            title="Recent branch activity"
-            subtitle="Tenant-scoped audit trail"
+            title={t("recentActivityTitle")}
+            subtitle={t("recentActivitySubtitle")}
             action={
                 <Link
                     href="/manager/audit"
                     className="text-[12px] font-medium text-brand hover:underline"
                 >
-                    Open audit
+                    {t("openAudit")}
                 </Link>
             }
         >
             <table className="w-full min-w-[520px] text-left text-[13px]">
                 <thead className="bg-secondary/40 text-[11px] uppercase tracking-wide text-slate-gray">
                     <tr>
-                        <th className="px-5 py-2.5 font-medium">When</th>
-                        <th className="px-3 py-2.5 font-medium">Action</th>
-                        <th className="px-3 py-2.5 font-medium">Staff</th>
-                        <th className="px-5 py-2.5 font-medium">Domain</th>
+                        <th className="px-5 py-2.5 font-medium">
+                            {t("colWhen")}
+                        </th>
+                        <th className="px-3 py-2.5 font-medium">
+                            {t("colAction")}
+                        </th>
+                        <th className="px-3 py-2.5 font-medium">
+                            {t("colStaff")}
+                        </th>
+                        <th className="px-5 py-2.5 font-medium">
+                            {t("colDomain")}
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
                     {events.length === 0 ? (
                         <EmptyRow
                             colSpan={4}
-                            label="No recent audit events for this restaurant."
+                            label={t("recentActivityEmpty")}
                         />
                     ) : (
                         events.map(row => (
@@ -305,36 +353,42 @@ export function FloorSnapshotTable({
         tableSessionId?: string | null;
     }>;
 }) {
-    const open = tables.filter(t => Boolean(t.tableSessionId)).slice(0, 8);
+    const t = useTranslations("dashboardCharts");
+    const open = tables.filter(row => Boolean(row.tableSessionId)).slice(0, 8);
 
     return (
         <Panel
-            title="Open floor"
-            subtitle="Active table sessions right now"
+            title={t("openFloorTitle")}
+            subtitle={t("openFloorSubtitle")}
             action={
                 <Link
                     href="/manager/live"
                     className="text-[12px] font-medium text-brand hover:underline"
                 >
-                    Live ops
+                    {t("liveOpsLink")}
                 </Link>
             }
         >
             <table className="w-full min-w-[420px] text-left text-[13px]">
                 <thead className="bg-secondary/40 text-[11px] uppercase tracking-wide text-slate-gray">
                     <tr>
-                        <th className="px-5 py-2.5 font-medium">Table</th>
-                        <th className="px-3 py-2.5 font-medium">Waiter</th>
-                        <th className="px-3 py-2.5 font-medium">Cooking</th>
-                        <th className="px-5 py-2.5 font-medium">Ready</th>
+                        <th className="px-5 py-2.5 font-medium">
+                            {t("colTable")}
+                        </th>
+                        <th className="px-3 py-2.5 font-medium">
+                            {t("colWaiter")}
+                        </th>
+                        <th className="px-3 py-2.5 font-medium">
+                            {t("colCooking")}
+                        </th>
+                        <th className="px-5 py-2.5 font-medium">
+                            {t("colReady")}
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
                     {open.length === 0 ? (
-                        <EmptyRow
-                            colSpan={4}
-                            label="All tables free — no open sessions."
-                        />
+                        <EmptyRow colSpan={4} label={t("openFloorEmpty")} />
                     ) : (
                         open.map(row => (
                             <tr
@@ -345,10 +399,10 @@ export function FloorSnapshotTable({
                                     <p className="font-medium">
                                         {row.displayNumber ??
                                             row.displayName ??
-                                            "Table"}
+                                            t("colTable")}
                                     </p>
                                     <p className="text-[11px] text-slate-gray">
-                                        {row.locationName ?? "Floor"}
+                                        {row.locationName ?? t("floorLabel")}
                                     </p>
                                 </td>
                                 <td className="px-3 py-2.5">

@@ -15,6 +15,7 @@ import {
     YAxis,
 } from "recharts";
 import { ShieldCheck, Activity, Layers } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type {
     NetworkGmvTrendPoint,
     PlanDistributionItem,
@@ -29,17 +30,18 @@ export function NetworkGmvGrowthChart({
 }: {
     data?: NetworkGmvTrendPoint[];
 }) {
+    const t = useTranslations("superAdmin");
+
     return (
         <div className="flex h-full flex-col justify-between rounded-[16px] border border-hairline bg-card p-6 shadow-subtle">
             <div>
                 <div className="flex items-start justify-between">
                     <div>
                         <h3 className="text-[17px] font-semibold text-foreground">
-                            Network GMV & platform growth
+                            {t("charts.networkGmvTitle")}
                         </h3>
                         <p className="mt-0.5 text-[13px] text-slate-gray">
-                            Monthly network GMV from settled bills · ETB
-                            millions
+                            {t("charts.networkGmvSubtitle")}
                         </p>
                     </div>
                 </div>
@@ -47,7 +49,7 @@ export function NetworkGmvGrowthChart({
                 <div className="mt-6 h-[260px] w-full">
                     {data.length === 0 ? (
                         <div className="flex h-full items-center justify-center text-[13px] text-slate-gray">
-                            No network growth records available
+                            {t("charts.networkGmvEmpty")}
                         </div>
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
@@ -123,28 +125,25 @@ export function NetworkGmvGrowthChart({
                                         fontSize: "12px",
                                     }}
                                 />
-                                {/* Network GMV */}
                                 <Area
                                     dataKey="networkGmv"
-                                    name="Network GMV"
+                                    name={t("charts.seriesNetworkGmv")}
                                     type="monotone"
                                     stroke="#e85d04"
                                     strokeWidth={2.5}
                                     fill="url(#gmvGrad)"
                                 />
-                                {/* Digital Volume */}
                                 <Area
                                     dataKey="digitalVolume"
-                                    name="Digital Settlements"
+                                    name={t("charts.seriesDigitalSettlements")}
                                     type="monotone"
                                     stroke="#0068f9"
                                     strokeWidth={2.2}
                                     fill="url(#digitalGrad)"
                                 />
-                                {/* Subscription Inflow */}
                                 <Area
                                     dataKey="subscriptionInflow"
-                                    name="Platform MRR Inflow"
+                                    name={t("charts.seriesPlatformMrrInflow")}
                                     type="monotone"
                                     stroke="#10b981"
                                     strokeWidth={1.8}
@@ -159,15 +158,15 @@ export function NetworkGmvGrowthChart({
             <div className="mt-4 flex items-center justify-center gap-6 text-[12px] font-medium text-slate-gray">
                 <div className="flex items-center gap-1.5">
                     <span className="size-2.5 rounded-full bg-[#e85d04]" />
-                    <span>Network GMV</span>
+                    <span>{t("charts.seriesNetworkGmv")}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <span className="size-2.5 rounded-full bg-[#0068f9]" />
-                    <span>Digital Settlements</span>
+                    <span>{t("charts.seriesDigitalSettlements")}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <span className="size-2.5 rounded-full bg-[#10b981]" />
-                    <span>Platform MRR Inflow</span>
+                    <span>{t("charts.seriesPlatformMrrInflow")}</span>
                 </div>
             </div>
         </div>
@@ -180,6 +179,7 @@ export function PlatformHealthRadarChart({
 }: {
     data?: PlatformHealthRadarPoint[];
 }) {
+    const t = useTranslations("superAdmin");
     const avgScore =
         data.length > 0
             ? (data.reduce((sum, d) => sum + d.score, 0) / data.length).toFixed(
@@ -193,11 +193,10 @@ export function PlatformHealthRadarChart({
                 <div className="flex items-start justify-between">
                     <div>
                         <h3 className="text-[17px] font-semibold text-foreground">
-                            Ops health matrix
+                            {t("charts.healthMatrixTitle")}
                         </h3>
                         <p className="mt-0.5 text-[13px] text-slate-gray">
-                            Scores from live daily close, stations, cash, and
-                            floor data
+                            {t("charts.healthMatrixSubtitle")}
                         </p>
                     </div>
                     <Badge
@@ -205,14 +204,16 @@ export function PlatformHealthRadarChart({
                         className="gap-1 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
                     >
                         <Activity className="size-3" />
-                        <span>{avgScore}% Health</span>
+                        <span>
+                            {t("charts.healthBadge", { score: avgScore })}
+                        </span>
                     </Badge>
                 </div>
 
                 <div className="mt-4 h-[240px] w-full">
                     {data.length === 0 ? (
                         <div className="flex h-full items-center justify-center text-[13px] text-slate-gray">
-                            No health matrix records available
+                            {t("charts.healthMatrixEmpty")}
                         </div>
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
@@ -237,7 +238,7 @@ export function PlatformHealthRadarChart({
                                     axisLine={false}
                                 />
                                 <Radar
-                                    name="Health Score"
+                                    name={t("charts.healthScoreSeries")}
                                     dataKey="score"
                                     stroke="#e85d04"
                                     fill="#e85d04"
@@ -250,9 +251,9 @@ export function PlatformHealthRadarChart({
             </div>
 
             <div className="mt-3 flex items-center justify-between border-t border-hairline pt-3 text-[12px] text-slate-gray">
-                <span>Derived from live ops signals</span>
+                <span>{t("charts.healthDerivedFooter")}</span>
                 <span className="font-semibold text-foreground">
-                    Target 100
+                    {t("charts.healthTarget")}
                 </span>
             </div>
         </div>
@@ -265,22 +266,24 @@ export function PlanDistributionChart({
 }: {
     plans?: PlanDistributionItem[];
 }) {
+    const t = useTranslations("superAdmin");
+
     return (
         <div className="flex h-full flex-col justify-between rounded-[16px] border border-hairline bg-card p-6 shadow-subtle">
             <div>
                 <div className="flex items-center gap-2">
                     <Layers className="size-4 text-orange-500" />
                     <h3 className="text-[17px] font-semibold text-foreground">
-                        Subscription plan mix
+                        {t("charts.planMixTitle")}
                     </h3>
                 </div>
                 <p className="mt-0.5 text-[13px] text-slate-gray">
-                    Active SaaS tiers across tenant restaurants
+                    {t("charts.planMixSubtitle")}
                 </p>
 
                 {plans.length === 0 ? (
                     <div className="mt-8 text-center text-[13px] text-slate-gray">
-                        No active subscriptions provisioned
+                        {t("charts.planMixEmpty")}
                     </div>
                 ) : (
                     <>
@@ -293,7 +296,11 @@ export function PlanDistributionChart({
                                         backgroundColor: p.color,
                                     }}
                                     className="h-full transition-all first:rounded-l-[6px] last:rounded-r-[6px]"
-                                    title={`${p.name}: ${p.tenantCount} tenants (${p.percentage}%)`}
+                                    title={t("charts.planBarTitle", {
+                                        name: p.name,
+                                        count: p.tenantCount,
+                                        percentage: p.percentage,
+                                    })}
                                 />
                             ))}
                         </div>
@@ -315,7 +322,9 @@ export function PlanDistributionChart({
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <span className="text-slate-gray font-mono text-[12px]">
-                                            {p.tenantCount} tenants
+                                            {t("charts.planTenantCount", {
+                                                count: p.tenantCount,
+                                            })}
                                         </span>
                                         <span className="font-semibold text-foreground w-8 text-right">
                                             {p.percentage}%
@@ -337,6 +346,8 @@ export function PlatformAuditStream({
 }: {
     events?: PlatformAuditEvent[];
 }) {
+    const t = useTranslations("superAdmin");
+
     return (
         <div className="flex h-full flex-col justify-between rounded-[16px] border border-hairline bg-card p-6 shadow-subtle">
             <div>
@@ -344,21 +355,21 @@ export function PlatformAuditStream({
                     <div className="flex items-center gap-2">
                         <ShieldCheck className="size-4 text-emerald-500" />
                         <h3 className="text-[17px] font-semibold text-foreground">
-                            Platform audit stream
+                            {t("charts.auditStreamTitle")}
                         </h3>
                     </div>
                     <Badge variant="secondary" className="text-[11px]">
-                        Live Security
+                        {t("charts.auditStreamBadge")}
                     </Badge>
                 </div>
                 <p className="mt-0.5 text-[13px] text-slate-gray">
-                    Real-time administrative & tenant lifecycle events
+                    {t("charts.auditStreamSubtitle")}
                 </p>
 
                 <div className="mt-5 space-y-3.5">
                     {events.length === 0 ? (
                         <div className="py-6 text-center text-[13px] text-slate-gray">
-                            No security audit events recorded
+                            {t("charts.auditStreamEmpty")}
                         </div>
                     ) : (
                         events.map(ev => (

@@ -6,8 +6,10 @@ import type { FloorTable } from "@/domains/floor/domain/floorApi";
 import { tableNumber } from "@/domains/floor/application/groupFloor";
 import WaiterMarkServedButton from "@/domains/floor/ui/WaiterMarkServedButton";
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
 function ReadyTableBlock({ table }: { table: FloorTable }) {
+    const t = useTranslations("waiter");
     const sessionId = table.tableSessionId ?? "";
     const { data, isLoading, isError } = useTableSessionOrdersQuery(sessionId, {
         skip: !sessionId,
@@ -23,27 +25,30 @@ function ReadyTableBlock({ table }: { table: FloorTable }) {
             <div className="flex items-start justify-between gap-3">
                 <div>
                     <p className="font-medium">
-                        Table {tableNumber(table)} · {table.locationName}
+                        {t("tableNumberLabel", {
+                            number: tableNumber(table),
+                        })}{" "}
+                        · {table.locationName}
                     </p>
                     <p className="text-[14px] text-slate-gray">
-                        {table.readyItemCount} ready to run
+                        {t("readyToRun", { count: table.readyItemCount })}
                     </p>
                 </div>
                 <Link
                     href={`/waiter/tables/${table.tableId}`}
                     className="inline-flex h-8 items-center rounded-[48px] border border-hairline px-3 text-sm font-medium"
                 >
-                    Open table
+                    {t("openTable")}
                 </Link>
             </div>
             {isLoading ? (
                 <p className="mt-3 text-[13px] text-slate-gray">
-                    Loading tickets…
+                    {t("loadingTickets")}
                 </p>
             ) : null}
             {isError ? (
                 <p className="mt-3 text-[13px] text-red-600">
-                    Could not load ready tickets.
+                    {t("couldNotLoadReadyTickets")}
                 </p>
             ) : null}
             {readyItems.length > 0 ? (
@@ -74,13 +79,13 @@ function ReadyTableBlock({ table }: { table: FloorTable }) {
 }
 
 export default function WaiterNotifications() {
+    const t = useTranslations("waiter");
     const { data, isLoading, isError } = useWaiterTablesQuery("my", {
         pollingInterval: 5000,
     });
     const readyTables =
         data?.data.filter(
-            table =>
-                Boolean(table.tableSessionId) && table.readyItemCount > 0,
+            table => Boolean(table.tableSessionId) && table.readyItemCount > 0,
         ) ?? [];
     const readyCount = readyTables.reduce(
         (sum, table) => sum + table.readyItemCount,
@@ -90,27 +95,30 @@ export default function WaiterNotifications() {
     return (
         <div>
             <div className="mb-4">
-                <h1 className="text-[24px] font-semibold">Ready alerts</h1>
+                <h1 className="text-[24px] font-semibold">
+                    {t("readyAlerts")}
+                </h1>
                 <p className="text-[14px] text-slate-gray">
-                    Stations notify you when food or drinks are ready to run.
+                    {t("readyAlertsDesc")}
                 </p>
             </div>
             {isLoading ? (
-                <p className="text-slate-gray">Loading ready tickets…</p>
+                <p className="text-slate-gray">{t("loadingReadyTickets")}</p>
             ) : null}
             {isError ? (
-                <p className="text-red-600">Could not load ready alerts.</p>
+                <p className="text-red-600">{t("couldNotLoadReadyAlerts")}</p>
             ) : null}
             {!isLoading && !isError && readyTables.length === 0 ? (
                 <p className="rounded-[16px] border border-hairline bg-white p-6 text-slate-gray dark:bg-card">
-                    No ready tickets yet. When Kitchen, Barista, Cakes, or Soft
-                    Drinks marks something ready, it shows up here.
+                    {t("noReadyTickets")}
                 </p>
             ) : null}
             {readyTables.length > 0 ? (
                 <>
                     <p className="mb-3 text-[13px] font-medium text-brand">
-                        {readyCount} dish{readyCount === 1 ? "" : "es"} waiting
+                        {readyCount === 1
+                            ? t("dishWaiting", { count: readyCount })
+                            : t("dishesWaiting", { count: readyCount })}
                     </p>
                     <ul className="space-y-3">
                         {readyTables.map(table => (

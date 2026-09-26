@@ -14,6 +14,7 @@ import {
     UtensilsCrossed,
     X,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useAppDispatch } from "@/context/hooks";
 import { openAddStaff, openEditStaff } from "@/context/slices/identitySlice";
 import {
@@ -58,6 +59,12 @@ function getAvatarSolidColor(name: string): string {
 
 type FilterTab = "all" | "waiters" | "stations" | "management";
 
+type StaffTabLabelKey =
+    | "tabAllStaff"
+    | "tabWaitersTables"
+    | "tabStations"
+    | "tabManagement";
+
 function mapRoleCode(code: string): Role {
     switch (code) {
         case "OWNER_ADMIN":
@@ -92,6 +99,8 @@ function toLegacyStaff(member: AdminStaffMember): Staff {
 }
 
 export default function ManagerStaffPage() {
+    const t = useTranslations("managerStaff");
+    const tCommon = useTranslations("common");
     const dispatch = useAppDispatch();
     const { data, isLoading, isError, refetch } = useAdminStaffQuery();
     const liveStaff = data?.data ?? [];
@@ -170,7 +179,7 @@ export default function ManagerStaffPage() {
     async function handleSavePin() {
         if (!pinTarget) return;
         if (!/^\d{4,6}$/.test(pinValue.trim())) {
-            toast.error("PIN must be 4 to 6 numeric digits.");
+            toast.error(t("listPinValidationError"));
             return;
         }
 
@@ -180,14 +189,14 @@ export default function ManagerStaffPage() {
                 pin: pinValue.trim(),
             }).unwrap();
 
-            toast.success("PIN updated successfully", pinTarget.name);
+            toast.success(t("toastPinUpdated"), pinTarget.name);
             setPinTarget(null);
             setPinValue("");
             void refetch();
         } catch (err: unknown) {
             const message =
                 (err as { data?: { message?: string } })?.data?.message ||
-                "Could not update staff PIN.";
+                t("toastPinUpdateError");
             toast.error(message);
         }
     }
@@ -195,7 +204,7 @@ export default function ManagerStaffPage() {
     async function handleSavePassword() {
         if (!passwordTarget) return;
         if (passwordValue.trim().length < 6) {
-            toast.error("Password must be at least 6 characters.");
+            toast.error(t("toastPasswordTooShort"));
             return;
         }
 
@@ -205,17 +214,32 @@ export default function ManagerStaffPage() {
                 password: passwordValue.trim(),
             }).unwrap();
 
-            toast.success("Password updated", passwordTarget.name);
+            toast.success(t("toastPasswordUpdated"), passwordTarget.name);
             setPasswordTarget(null);
             setPasswordValue("");
             void refetch();
         } catch (err: unknown) {
             const message =
                 (err as { data?: { message?: string } })?.data?.message ||
-                "Could not reset password.";
+                t("toastPasswordError");
             toast.error(message);
         }
     }
+
+    const filterTabs = useMemo((): Array<
+        [FilterTab, StaffTabLabelKey, number]
+    > => {
+        return [
+            ["all", "tabAllStaff", totalStaffCount],
+            ["waiters", "tabWaitersTables", waitersCount],
+            ["stations", "tabStations", stationStaffCount],
+            [
+                "management",
+                "tabManagement",
+                totalStaffCount - waitersCount - stationStaffCount,
+            ],
+        ];
+    }, [totalStaffCount, waitersCount, stationStaffCount]);
 
     return (
         <DashboardFrame>
@@ -224,7 +248,7 @@ export default function ManagerStaffPage() {
                     compact
                     eyebrow="House"
                     title="Staff"
-                    description="Register team members, set PINs and passwords, and assign waiter tables by shift."
+                    description={t("pageDescription")}
                 />
                 <button
                     type="button"
@@ -232,7 +256,7 @@ export default function ManagerStaffPage() {
                     className="inline-flex shrink-0 items-center gap-2 self-start rounded-full bg-primary px-4 py-2.5 text-[13px] font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition-colors sm:self-auto"
                 >
                     <UserPlus className="size-4" />
-                    Register Staff
+                    {t("registerStaff")}
                 </button>
             </div>
 
@@ -240,7 +264,7 @@ export default function ManagerStaffPage() {
                 <div className="rounded-[16px] border border-hairline bg-card px-4 py-3">
                     <div className="flex flex-wrap items-center gap-2">
                         <p className="text-[12px] font-medium text-slate-gray">
-                            Shifts
+                            {t("shiftsLabel")}
                         </p>
                         {shifts.map(shift => (
                             <span
@@ -258,7 +282,7 @@ export default function ManagerStaffPage() {
             <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
                 <div className="rounded-[16px] border border-hairline bg-card px-4 py-3">
                     <p className="text-[11px] uppercase tracking-wide text-slate-gray">
-                        Total
+                        {t("kpiTotal")}
                     </p>
                     <p className="mt-1 text-[22px] font-semibold">
                         {totalStaffCount}
@@ -266,18 +290,18 @@ export default function ManagerStaffPage() {
                 </div>
                 <div className="rounded-[16px] border border-hairline bg-card px-4 py-3">
                     <p className="text-[11px] uppercase tracking-wide text-slate-gray">
-                        Waiters
+                        {t("kpiWaiters")}
                     </p>
                     <p className="mt-1 text-[22px] font-semibold text-brand">
                         {waitersCount}
                     </p>
                     <p className="mt-0.5 text-[11px] text-slate-gray">
-                        {allocatedTables} tables covered
+                        {t("tablesCovered", { count: allocatedTables })}
                     </p>
                 </div>
                 <div className="rounded-[16px] border border-hairline bg-card px-4 py-3">
                     <p className="text-[11px] uppercase tracking-wide text-slate-gray">
-                        Stations
+                        {t("kpiStations")}
                     </p>
                     <p className="mt-1 text-[22px] font-semibold">
                         {stationStaffCount}
@@ -285,7 +309,7 @@ export default function ManagerStaffPage() {
                 </div>
                 <div className="rounded-[16px] border border-hairline bg-card px-4 py-3">
                     <p className="text-[11px] uppercase tracking-wide text-slate-gray">
-                        Shifts
+                        {t("kpiShifts")}
                     </p>
                     <p className="mt-1 text-[22px] font-semibold">
                         {shifts.length}
@@ -295,20 +319,7 @@ export default function ManagerStaffPage() {
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex rounded-[14px] border border-hairline bg-surface-ivory/50 p-1">
-                    {(
-                        [
-                            ["all", "All Staff", totalStaffCount],
-                            ["waiters", "Waiters & Tables", waitersCount],
-                            ["stations", "Stations", stationStaffCount],
-                            [
-                                "management",
-                                "Management",
-                                totalStaffCount -
-                                    waitersCount -
-                                    stationStaffCount,
-                            ],
-                        ] as const
-                    ).map(([id, label, count]) => (
+                    {filterTabs.map(([id, labelKey, count]) => (
                         <button
                             key={id}
                             type="button"
@@ -320,7 +331,7 @@ export default function ManagerStaffPage() {
                                     : "text-slate-gray hover:text-foreground",
                             )}
                         >
-                            {label}{" "}
+                            {t(labelKey)}{" "}
                             <span className="text-[11px] text-slate-gray">
                                 ({count})
                             </span>
@@ -330,7 +341,7 @@ export default function ManagerStaffPage() {
                 <div className="relative w-full sm:w-72">
                     <Search className="absolute top-2.5 left-3 size-4 text-slate-gray" />
                     <Input
-                        placeholder="Search by name, role, phone..."
+                        placeholder={t("searchPlaceholder")}
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                         className="h-9.5 rounded-[12px] bg-white pl-9 text-[13px] dark:bg-card"
@@ -341,27 +352,34 @@ export default function ManagerStaffPage() {
             <div className="overflow-hidden rounded-[16px] border border-hairline bg-card">
                 {isLoading ? (
                     <p className="px-6 py-10 text-center text-[13px] text-slate-gray">
-                        Loading staff…
+                        {t("loadingStaff")}
                     </p>
                 ) : isError ? (
                     <p className="px-6 py-10 text-center text-[13px] text-destructive">
-                        Could not load staff. Sign in as manager and check the
-                        API.
+                        {t("loadStaffError")}
                     </p>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-[14px]">
                             <thead className="border-b border-hairline bg-secondary/30 text-[11px] font-medium tracking-wide text-slate-gray uppercase">
                                 <tr>
-                                    <th className="px-5 py-3">Staff</th>
-                                    <th className="px-5 py-3">Role</th>
-                                    <th className="px-5 py-3">Credentials</th>
                                     <th className="px-5 py-3">
-                                        Tables by shift
+                                        {t("colStaff")}
                                     </th>
-                                    <th className="px-5 py-3">Status</th>
+                                    <th className="px-5 py-3">
+                                        {t("colRole")}
+                                    </th>
+                                    <th className="px-5 py-3">
+                                        {t("colCredentials")}
+                                    </th>
+                                    <th className="px-5 py-3">
+                                        {t("colTablesByShift")}
+                                    </th>
+                                    <th className="px-5 py-3">
+                                        {t("colStatus")}
+                                    </th>
                                     <th className="px-5 py-3 text-right">
-                                        Actions
+                                        {t("colActions")}
                                     </th>
                                 </tr>
                             </thead>
@@ -372,7 +390,7 @@ export default function ManagerStaffPage() {
                                             colSpan={6}
                                             className="px-6 py-12 text-center text-slate-gray"
                                         >
-                                            No staff members found
+                                            {t("emptyStaff")}
                                         </td>
                                     </tr>
                                 ) : (
@@ -408,7 +426,9 @@ export default function ManagerStaffPage() {
                                                             <p className="text-[12px] text-slate-gray">
                                                                 {member.email ||
                                                                     member.phone ||
-                                                                    "No contact info"}
+                                                                    t(
+                                                                        "noContactInfo",
+                                                                    )}
                                                             </p>
                                                         </div>
                                                     </div>
@@ -430,18 +450,22 @@ export default function ManagerStaffPage() {
                                                         <div className="flex items-center gap-1.5 font-mono">
                                                             <KeyRound className="size-3 text-slate-gray" />
                                                             <span className="font-sans text-slate-gray">
-                                                                PIN:
+                                                                {t("pinLabel")}
                                                             </span>
                                                             <span className="font-bold tracking-widest text-foreground">
                                                                 {member.hasPin
                                                                     ? "••••"
-                                                                    : "None"}
+                                                                    : t(
+                                                                          "credentialNone",
+                                                                      )}
                                                             </span>
                                                             {member.hasPin ? (
                                                                 <button
                                                                     type="button"
                                                                     className="ml-0.5 text-slate-gray hover:text-foreground"
-                                                                    title="Reset PIN"
+                                                                    title={t(
+                                                                        "resetPinTooltip",
+                                                                    )}
                                                                     onClick={() => {
                                                                         setPinTarget(
                                                                             member,
@@ -461,7 +485,9 @@ export default function ManagerStaffPage() {
                                                         <div className="flex items-center gap-1.5">
                                                             <Lock className="size-3 text-slate-gray" />
                                                             <span className="text-slate-gray">
-                                                                Password:
+                                                                {t(
+                                                                    "passwordLabel",
+                                                                )}
                                                             </span>
                                                             <span
                                                                 className={cn(
@@ -472,8 +498,12 @@ export default function ManagerStaffPage() {
                                                                 )}
                                                             >
                                                                 {member.hasPassword
-                                                                    ? "Set"
-                                                                    : "Not set"}
+                                                                    ? t(
+                                                                          "passwordSet",
+                                                                      )
+                                                                    : t(
+                                                                          "passwordNotSet",
+                                                                      )}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -486,8 +516,9 @@ export default function ManagerStaffPage() {
                                                                 .length ===
                                                             0 ? (
                                                                 <span className="text-[12px] text-slate-gray italic">
-                                                                    No shift
-                                                                    coverage yet
+                                                                    {t(
+                                                                        "noShiftCoverage",
+                                                                    )}
                                                                 </span>
                                                             ) : (
                                                                 member.shiftCoverages.map(
@@ -516,9 +547,9 @@ export default function ManagerStaffPage() {
                                                                             <span className="text-slate-gray">
                                                                                 {coverage.tables
                                                                                     .map(
-                                                                                        t =>
-                                                                                            t.displayNumber ||
-                                                                                            t.displayName,
+                                                                                        tbl =>
+                                                                                            tbl.displayNumber ||
+                                                                                            tbl.displayName,
                                                                                     )
                                                                                     .join(
                                                                                         ", ",
@@ -539,7 +570,9 @@ export default function ManagerStaffPage() {
                                                                 className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors"
                                                             >
                                                                 <Plus className="size-3" />
-                                                                Assign by shift
+                                                                {t(
+                                                                    "assignByShift",
+                                                                )}
                                                             </button>
                                                         </div>
                                                     ) : (
@@ -557,8 +590,8 @@ export default function ManagerStaffPage() {
                                                         }
                                                     >
                                                         {member.active
-                                                            ? "Active"
-                                                            : "Off"}
+                                                            ? t("statusActive")
+                                                            : t("statusOff")}
                                                     </Badge>
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
@@ -583,7 +616,9 @@ export default function ManagerStaffPage() {
                                                                     member.id &&
                                                                     "bg-secondary text-foreground",
                                                             )}
-                                                            title="Staff options"
+                                                            title={t(
+                                                                "staffOptions",
+                                                            )}
                                                         >
                                                             <MoreVertical className="size-4" />
                                                         </Button>
@@ -631,8 +666,9 @@ export default function ManagerStaffPage() {
                                                                     >
                                                                         <KeyRound className="size-3.5 text-primary" />
                                                                         <span>
-                                                                            Change
-                                                                            PIN
+                                                                            {t(
+                                                                                "menuChangePin",
+                                                                            )}
                                                                         </span>
                                                                     </button>
 
@@ -657,8 +693,9 @@ export default function ManagerStaffPage() {
                                                                     >
                                                                         <Lock className="size-3.5 text-slate-gray" />
                                                                         <span>
-                                                                            Reset
-                                                                            Password
+                                                                            {t(
+                                                                                "menuResetPassword",
+                                                                            )}
                                                                         </span>
                                                                     </button>
 
@@ -678,8 +715,9 @@ export default function ManagerStaffPage() {
                                                                         >
                                                                             <UtensilsCrossed className="size-3.5 text-slate-gray" />
                                                                             <span>
-                                                                                Assign
-                                                                                Tables
+                                                                                {t(
+                                                                                    "menuAssignTables",
+                                                                                )}
                                                                             </span>
                                                                         </button>
                                                                     ) : null}
@@ -705,8 +743,9 @@ export default function ManagerStaffPage() {
                                                                     >
                                                                         <Edit3 className="size-3.5 text-slate-gray" />
                                                                         <span>
-                                                                            Edit
-                                                                            Staff
+                                                                            {t(
+                                                                                "menuEditStaff",
+                                                                            )}
                                                                         </span>
                                                                     </button>
                                                                 </div>
@@ -739,7 +778,7 @@ export default function ManagerStaffPage() {
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-[15px] text-foreground">
-                                        Change Staff PIN
+                                        {t("changeStaffPinTitle")}
                                     </h3>
                                     <p className="text-[12px] text-slate-gray">
                                         {pinTarget.name} ({pinTarget.roleLabel})
@@ -758,11 +797,10 @@ export default function ManagerStaffPage() {
                         <div className="space-y-4 text-[13px]">
                             <div className="space-y-1">
                                 <label className="font-medium text-foreground">
-                                    New Numeric PIN (4 digits)
+                                    {t("newNumericPin")}
                                 </label>
                                 <p className="text-[11.5px] text-slate-gray">
-                                    Used for quick terminal login, order
-                                    transfers, and waiter authorization.
+                                    {t("pinModalHint")}
                                 </p>
                                 <div className="relative mt-1">
                                     <Input
@@ -780,7 +818,7 @@ export default function ManagerStaffPage() {
                                                 ),
                                             )
                                         }
-                                        placeholder="Enter 4-digit PIN"
+                                        placeholder={t("pinModalPlaceholder")}
                                         className="h-10 rounded-[10px] pr-10 font-mono tracking-wider text-[15px]"
                                         autoFocus
                                     />
@@ -790,8 +828,8 @@ export default function ManagerStaffPage() {
                                         className="absolute right-3 top-2.5 z-10 flex size-5 cursor-pointer items-center justify-center text-slate-gray hover:text-foreground transition-colors"
                                         title={
                                             showPinValue
-                                                ? "Hide PIN"
-                                                : "Show PIN"
+                                                ? t("hidePin")
+                                                : t("showPin")
                                         }
                                     >
                                         {showPinValue ? (
@@ -810,7 +848,7 @@ export default function ManagerStaffPage() {
                                     onClick={() => setPinTarget(null)}
                                     className="h-9 rounded-xl text-[13px]"
                                 >
-                                    Cancel
+                                    {tCommon("cancel")}
                                 </Button>
                                 <Button
                                     type="button"
@@ -820,7 +858,9 @@ export default function ManagerStaffPage() {
                                     onClick={() => void handleSavePin()}
                                     className="h-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-[13px] font-semibold"
                                 >
-                                    {resettingPin ? "Saving..." : "Update PIN"}
+                                    {resettingPin
+                                        ? t("saving")
+                                        : t("updatePin")}
                                 </Button>
                             </div>
                         </div>
@@ -843,7 +883,7 @@ export default function ManagerStaffPage() {
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-[15px] text-foreground">
-                                        Reset Web Password
+                                        {t("resetWebPasswordTitle")}
                                     </h3>
                                     <p className="text-[12px] text-slate-gray">
                                         {passwordTarget.name} (
@@ -863,11 +903,10 @@ export default function ManagerStaffPage() {
                         <div className="space-y-4 text-[13px]">
                             <div className="space-y-1">
                                 <label className="font-medium text-foreground">
-                                    New Password (min 6 chars)
+                                    {t("newPasswordLabel")}
                                 </label>
                                 <p className="text-[11.5px] text-slate-gray">
-                                    Used to sign in via email or phone with
-                                    standard credentials.
+                                    {t("passwordModalHint")}
                                 </p>
                                 <div className="relative mt-1">
                                     <Input
@@ -880,7 +919,9 @@ export default function ManagerStaffPage() {
                                         onChange={e =>
                                             setPasswordValue(e.target.value)
                                         }
-                                        placeholder="Enter new password"
+                                        placeholder={t(
+                                            "passwordModalPlaceholder",
+                                        )}
                                         className="h-10 rounded-[10px] pr-10"
                                         autoFocus
                                     />
@@ -892,8 +933,8 @@ export default function ManagerStaffPage() {
                                         className="absolute right-3 top-2.5 z-10 flex size-5 cursor-pointer items-center justify-center text-slate-gray hover:text-foreground transition-colors"
                                         title={
                                             showPasswordValue
-                                                ? "Hide Password"
-                                                : "Show Password"
+                                                ? t("hidePassword")
+                                                : t("showPassword")
                                         }
                                     >
                                         {showPasswordValue ? (
@@ -912,7 +953,7 @@ export default function ManagerStaffPage() {
                                     onClick={() => setPasswordTarget(null)}
                                     className="h-9 rounded-xl text-[13px]"
                                 >
-                                    Cancel
+                                    {tCommon("cancel")}
                                 </Button>
                                 <Button
                                     type="button"
@@ -924,8 +965,8 @@ export default function ManagerStaffPage() {
                                     className="h-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-[13px] font-semibold"
                                 >
                                     {resettingPassword
-                                        ? "Saving..."
-                                        : "Update Password"}
+                                        ? t("saving")
+                                        : t("updatePassword")}
                                 </Button>
                             </div>
                         </div>

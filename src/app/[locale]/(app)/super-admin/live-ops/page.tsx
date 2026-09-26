@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2, Radio } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
@@ -9,6 +10,7 @@ import PageHeader from "@/components/custom/organisms/PageHeader";
 import { useGetSuperAdminLiveOpsQuery } from "@/context/services/superAdminApi";
 
 export default function LiveOpsPage() {
+    const t = useTranslations("superAdmin");
     const { data, isLoading, isFetching, error, refetch } =
         useGetSuperAdminLiveOpsQuery(undefined, {
             pollingInterval: 10_000,
@@ -33,68 +35,67 @@ export default function LiveOpsPage() {
                     <Radio
                         className={`size-3.5 text-brand ${isFetching ? "animate-pulse" : ""}`}
                     />
-                    Refresh
+                    {t("refresh")}
                 </button>
             </div>
 
             {error && (
                 <div className="rounded-[16px] border border-destructive/20 bg-destructive/10 p-4 text-[13px] text-destructive">
-                    Unable to load live ops telemetry.
+                    {t("liveOps.errorLoadTelemetry")}
                 </div>
             )}
 
             <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-5">
                 <KpiCard
-                    label="Open sessions"
+                    label={t("liveOps.kpiOpenSessions")}
                     value={isLoading ? "…" : String(summary?.openSessions ?? 0)}
-                    hint="Tables currently open"
+                    hint={t("liveOps.kpiOpenSessionsHint")}
                     tone="brand"
                 />
                 <KpiCard
-                    label="Open orders"
+                    label={t("liveOps.kpiOpenOrders")}
                     value={isLoading ? "…" : String(summary?.openOrders ?? 0)}
-                    hint="On live floors"
+                    hint={t("liveOps.kpiOpenOrdersHint")}
                     tone="amber"
                 />
                 <KpiCard
-                    label="Unpaid bills"
+                    label={t("liveOps.kpiUnpaidBills")}
                     value={isLoading ? "…" : String(summary?.unpaidBills ?? 0)}
-                    hint="Awaiting settlement"
+                    hint={t("liveOps.kpiUnpaidBillsHint")}
                     tone="emerald"
                 />
                 <KpiCard
-                    label="Active branches"
+                    label={t("liveOps.kpiActiveBranches")}
                     value={
                         isLoading ? "…" : String(summary?.activeBranches ?? 0)
                     }
-                    hint="Status ACTIVE"
+                    hint={t("liveOps.kpiActiveBranchesHint")}
                 />
                 <KpiCard
-                    label="Live tenants"
+                    label={t("liveOps.kpiLiveTenants")}
                     value={isLoading ? "…" : String(summary?.liveTenants ?? 0)}
-                    hint="With open floor activity"
+                    hint={t("liveOps.kpiLiveTenantsHint")}
                 />
             </div>
 
             <div className="overflow-hidden rounded-[16px] border border-hairline bg-card">
                 <div className="border-b border-hairline bg-surface-ivory/50 px-5 py-3.5">
                     <h2 className="text-[15px] font-semibold">
-                        Branch network
+                        {t("liveOps.branchNetworkTitle")}
                     </h2>
                     <p className="text-[12px] text-slate-gray">
-                        Real-time activity by branch
+                        {t("liveOps.branchNetworkSubtitle")}
                     </p>
                 </div>
 
                 {isLoading ? (
                     <div className="flex items-center justify-center gap-2 py-16 text-[13px] text-slate-gray">
                         <Loader2 className="size-4 animate-spin text-brand" />
-                        Loading live floors…
+                        {t("liveOps.loadingLiveFloors")}
                     </div>
                 ) : branches.length === 0 ? (
                     <p className="px-5 py-10 text-center text-[13px] text-slate-gray">
-                        No active branches yet. Provision a tenant to see live
-                        ops.
+                        {t("liveOps.emptyNoBranches")}
                     </p>
                 ) : (
                     <ul className="divide-y divide-hairline">
@@ -119,7 +120,9 @@ export default function LiveOpsPage() {
                                                         : "secondary"
                                                 }
                                             >
-                                                {hot ? "Live" : "Quiet"}
+                                                {hot
+                                                    ? t("liveOps.badgeLive")
+                                                    : t("liveOps.badgeQuiet")}
                                             </Badge>
                                             <span className="text-[11px] text-slate-gray">
                                                 {branch.branchCode}
@@ -133,25 +136,26 @@ export default function LiveOpsPage() {
                                                 {branch.tenantName}
                                             </Link>
                                             {" · "}
-                                            {branch.tableCount} tables
+                                            {t("liveOps.branchTableCount", {
+                                                count: branch.tableCount,
+                                            })}
                                         </p>
                                     </div>
                                     <div className="flex flex-wrap gap-4 text-[12px]">
                                         <span>
-                                            <strong>
-                                                {branch.openSessions}
-                                            </strong>{" "}
-                                            sessions
+                                            {t("liveOps.metricSessions", {
+                                                count: branch.openSessions,
+                                            })}
                                         </span>
                                         <span>
-                                            <strong>{branch.openOrders}</strong>{" "}
-                                            orders
+                                            {t("liveOps.metricOrders", {
+                                                count: branch.openOrders,
+                                            })}
                                         </span>
                                         <span>
-                                            <strong>
-                                                {branch.unpaidBills}
-                                            </strong>{" "}
-                                            unpaid
+                                            {t("liveOps.metricUnpaid", {
+                                                count: branch.unpaidBills,
+                                            })}
                                         </span>
                                     </div>
                                 </li>

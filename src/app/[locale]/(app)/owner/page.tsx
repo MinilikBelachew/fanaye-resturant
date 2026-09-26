@@ -1,6 +1,7 @@
 "use client";
 
 import { Radio, RefreshCw } from "lucide-react";
+import { useTranslations } from "next-intl";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import KpiCard from "@/components/custom/organisms/KpiCard";
 import PageHeader from "@/components/custom/organisms/PageHeader";
@@ -24,6 +25,8 @@ import { cn } from "@/lib/utils";
 const POLL_DASH = 10000;
 
 export default function OwnerPage() {
+    const tManager = useTranslations("manager");
+    const tCommon = useTranslations("common");
     const session = useAppSelector(state => state.identity.session);
     const { data, isLoading, isFetching, error } = useGetManagerDashboardQuery(
         undefined,
@@ -35,7 +38,7 @@ export default function OwnerPage() {
         site?.data?.tenantName ||
         session?.branchName ||
         dash?.branchName ||
-        "Your restaurant";
+        tManager("yourRestaurant");
 
     return (
         <DashboardFrame>
@@ -47,7 +50,7 @@ export default function OwnerPage() {
                     description={
                         dash
                             ? `${restaurantName} · ${dash.branchName} · ${dash.businessDate}`
-                            : "Live revenue, collections, floor, and station performance."
+                            : tManager("ownerLiveDescription")
                     }
                 />
                 <div
@@ -62,7 +65,7 @@ export default function OwnerPage() {
                             error ? "text-red-500" : "text-emerald-500",
                         )}
                     />
-                    {error ? "Offline" : "Live"}
+                    {error ? tCommon("offline") : tCommon("live")}
                     {isFetching ? (
                         <RefreshCw className="size-3 animate-spin" />
                     ) : null}
@@ -71,8 +74,7 @@ export default function OwnerPage() {
 
             {error ? (
                 <div className="rounded-[16px] border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive">
-                    Unable to load owner telemetry. Check connection and
-                    permissions.
+                    {tManager("ownerLoadError")}
                 </div>
             ) : null}
 
@@ -82,7 +84,7 @@ export default function OwnerPage() {
                 <>
                     <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
                         <KpiCard
-                            label="Collected today"
+                            label={tManager("collectedToday")}
                             value={dash?.kpis.collectionsFormatted ?? "ETB 0"}
                             trend={{
                                 value: dash?.kpis.dailyRevenueTrend ?? "0%",
@@ -92,7 +94,7 @@ export default function OwnerPage() {
                                     )
                                         ? "up"
                                         : "neutral",
-                                label: "vs billed / yesterday",
+                                label: tManager("vsBilledYesterday"),
                             }}
                             sparkline={{
                                 badge:
@@ -103,14 +105,14 @@ export default function OwnerPage() {
                             tone="brand"
                         />
                         <KpiCard
-                            label="Net billed"
+                            label={tManager("netBilled")}
                             value={dash?.kpis.billedFormatted ?? "ETB 0"}
                             trend={{
                                 value:
                                     dash?.kpis.collectionGapFormatted ??
                                     "ETB 0",
                                 direction: "neutral",
-                                label: "collection gap",
+                                label: tManager("collectionGap"),
                             }}
                             sparkline={{
                                 badge: dash?.kpis.avgCheckFormatted ?? "0",
@@ -120,13 +122,13 @@ export default function OwnerPage() {
                             tone="emerald"
                         />
                         <KpiCard
-                            label="Open tables"
+                            label={tManager("openTables")}
                             value={dash?.kpis.activeTablesFormatted ?? "0 / 0"}
                             trend={{
                                 value:
                                     dash?.kpis.floorCapacityPercentage ?? "0%",
                                 direction: "neutral",
-                                label: "floor occupancy",
+                                label: tManager("floorOccupancy"),
                             }}
                             sparkline={{
                                 badge:
@@ -137,12 +139,9 @@ export default function OwnerPage() {
                             tone="amber"
                         />
                         <KpiCard
-                            label="Needs attention"
+                            label={tManager("needsAttention")}
                             value={dash?.kpis.pendingActionsFormatted ?? "0"}
-                            hint={
-                                dash?.kpis.pendingActionsHint ??
-                                "nothing waiting"
-                            }
+                            hint={tManager("nothingWaiting")}
                             sparkline={{
                                 badge:
                                     dash?.kpis.stationBacklogFormatted ?? "0",
@@ -155,12 +154,12 @@ export default function OwnerPage() {
 
                     <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
                         <KpiCard
-                            label="Avg check"
+                            label={tManager("avgCheck")}
                             value={dash?.kpis.avgCheckFormatted ?? "ETB 0"}
                             trend={{
                                 value: dash?.kpis.ordersFormatted ?? "0",
                                 direction: "neutral",
-                                label: "orders today",
+                                label: tManager("ordersToday"),
                             }}
                             sparkline={{
                                 badge: dash?.kpis.coversFormatted ?? "0",
@@ -170,9 +169,9 @@ export default function OwnerPage() {
                             tone="brand"
                         />
                         <KpiCard
-                            label="Covers"
+                            label={tManager("covers")}
                             value={dash?.kpis.coversFormatted ?? "0"}
-                            hint="guests seated today"
+                            hint={tManager("guestsSeatedToday")}
                             sparkline={{
                                 badge: dash?.kpis.coversFormatted ?? "0",
                                 color: "#f97316",
@@ -181,14 +180,12 @@ export default function OwnerPage() {
                             tone="amber"
                         />
                         <KpiCard
-                            label="TinaVerify mix"
+                            label={tManager("tinaVerifyMix")}
                             value={dash?.kpis.tinaVerifyMixPercentage ?? "0%"}
                             trend={{
                                 value: dash?.kpis.tinaVerifyTrend ?? "0%",
                                 direction: "neutral",
-                                label:
-                                    dash?.kpis.tinaVerifyTrendLabel ??
-                                    "digital verified",
+                                label: tManager("digitalTransferShare"),
                             }}
                             sparkline={{
                                 badge:
@@ -199,14 +196,18 @@ export default function OwnerPage() {
                             tone="emerald"
                         />
                         <KpiCard
-                            label="Avg prep"
+                            label={tManager("avgPrep")}
                             value={dash?.kpis.avgPrepTimeFormatted ?? "0 min"}
                             trend={{
                                 value: dash?.kpis.avgPrepTimeTrend ?? "0%",
                                 direction: "neutral",
                                 label:
-                                    dash?.kpis.avgPrepTimeTrendLabel ??
-                                    "kitchen speed",
+                                    !dash?.kpis.avgPrepTimeFormatted ||
+                                    dash.kpis.avgPrepTimeFormatted.startsWith(
+                                        "0",
+                                    )
+                                        ? tManager("noTicketsCompleted")
+                                        : tManager("kitchenSpeed"),
                             }}
                             sparkline={{
                                 badge:
@@ -257,11 +258,12 @@ export default function OwnerPage() {
             <div className="space-y-3">
                 <div>
                     <h3 className="text-[16px] font-semibold tracking-tight sm:text-[17px]">
-                        Live floor
+                        {tManager("liveFloor")}
                     </h3>
                     <p className="text-[12px] text-slate-gray sm:text-[13px]">
-                        Tables, waiters, and billing state for{" "}
-                        {dash?.branchName ?? "this branch"}
+                        {tManager("liveFloorDesc", {
+                            branch: dash?.branchName ?? tManager("thisBranch"),
+                        })}
                     </p>
                 </div>
                 <LiveFloorBoard />

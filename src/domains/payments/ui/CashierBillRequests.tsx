@@ -91,12 +91,13 @@ export default function CashierBillRequests() {
             });
 
             toast.success(
-                "Bill generated",
-                `Table ${request.tableDisplayName || request.tableSessionId}`,
+                tCashier("billGenerated"),
+                tCashier("billGeneratedBody", {
+                    table: request.tableDisplayName || request.tableSessionId,
+                }),
             );
         } catch (err) {
-            const message =
-                "Could not generate this bill. Refresh and try again.";
+            const message = tCashier("billGenerateError");
             setError(message);
             toast.fromUnknown(err, message);
         } finally {

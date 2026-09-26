@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Download, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 
 type BeforeInstallPromptEvent = Event & {
@@ -9,9 +10,16 @@ type BeforeInstallPromptEvent = Event & {
     userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
-const DISMISS_KEY = "fanaye.pwa.installDismissed";
+const SNOOZE_KEY = "fanaye.pwa.installSnoozeUntil";
+const SESSION_SHOWN_KEY = "fanaye.pwa.installShownSession";
+const PERMANENT_KEY = "fanaye.pwa.installNever";
+/** Re-show at most every 7 days after "Not now" / dismiss */
+const SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
+/** Wait before first show so it doesn't pop on every navigation/action */
+const SHOW_DELAY_MS = 12_000;
 
 export default function PwaInstallBanner() {
+    const t = useTranslations("pwa");
     const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(
         null,
     );
@@ -20,18 +28,44 @@ export default function PwaInstallBanner() {
     useEffect(() => {
         if (typeof window === "undefined") return;
         if (window.matchMedia("(display-mode: standalone)").matches) return;
-        if (sessionStorage.getItem(DISMISS_KEY) === "1") return;
+        if (localStorage.getItem(PERMANENT_KEY) === "1") return;
+
+        const snoozeUntil = Number(localStorage.getItem(SNOOZE_KEY) || "0");
+        if (snoozeUntil && Date.now() < snoozeUntil) return;
+        if (sessionStorage.getItem(SESSION_SHOWN_KEY) === "1") return;
+
+        let showTimer: ReturnType<typeof setTimeout> | null = null;
+        let cancelled = false;
+
+        function scheduleShow(event: BeforeInstallPromptEvent) {
+            if (cancelled) return;
+            setDeferred(event);
+            showTimer = setTimeout(() => {
+                if (cancelled) return;
+                if (sessionStorage.getItem(SESSION_SHOWN_KEY) === "1") return;
+                sessionStorage.setItem(SESSION_SHOWN_KEY, "1");
+                setVisible(true);
+            }, SHOW_DELAY_MS);
+        }
 
         function onBeforeInstall(event: Event) {
             event.preventDefault();
-            setDeferred(event as BeforeInstallPromptEvent);
-            setVisible(true);
+            scheduleShow(event as BeforeInstallPromptEvent);
         }
 
         window.addEventListener("beforeinstallprompt", onBeforeInstall);
-        return () =>
+        return () => {
+            cancelled = true;
+            if (showTimer) clearTimeout(showTimer);
             window.removeEventListener("beforeinstallprompt", onBeforeInstall);
+        };
     }, []);
+
+    function snooze() {
+        localStorage.setItem(SNOOZE_KEY, String(Date.now() + SNOOZE_MS));
+        sessionStorage.setItem(SESSION_SHOWN_KEY, "1");
+        setVisible(false);
+    }
 
     if (!visible || !deferred) return null;
 
@@ -43,11 +77,10 @@ export default function PwaInstallBanner() {
                 </div>
                 <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold tracking-tight">
-                        Install app
+                        {t("installTitle")}
                     </p>
                     <p className="mt-0.5 text-[12px] text-slate-gray">
-                        Add to your home screen for faster staff access — works
-                        like an app.
+                        {t("installBody")}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
                         <Button
@@ -55,34 +88,37 @@ export default function PwaInstallBanner() {
                             className="h-8"
                             onClick={async () => {
                                 await deferred.prompt();
-                                await deferred.userChoice;
+                                const choice = await deferred.userChoice;
+                                if (choice.outcome === "accepted") {
+                                    localStorage.setItem(PERMANENT_KEY, "1");
+                                } else {
+                                    localStorage.setItem(
+                                        SNOOZE_KEY,
+                                        String(Date.now() + SNOOZE_MS),
+                                    );
+                                }
+                                sessionStorage.setItem(SESSION_SHOWN_KEY, "1");
                                 setVisible(false);
                                 setDeferred(null);
                             }}
                         >
-                            Install
+                            {t("install")}
                         </Button>
                         <Button
                             size="sm"
                             variant="outline"
                             className="h-8"
-                            onClick={() => {
-                                sessionStorage.setItem(DISMISS_KEY, "1");
-                                setVisible(false);
-                            }}
+                            onClick={snooze}
                         >
-                            Not now
+                            {t("notNow")}
                         </Button>
                     </div>
                 </div>
                 <button
                     type="button"
                     className="flex size-8 items-center justify-center rounded-md text-slate-gray hover:bg-secondary"
-                    aria-label="Dismiss"
-                    onClick={() => {
-                        sessionStorage.setItem(DISMISS_KEY, "1");
-                        setVisible(false);
-                    }}
+                    aria-label={t("dismiss")}
+                    onClick={snooze}
                 >
                     <X className="size-4" />
                 </button>

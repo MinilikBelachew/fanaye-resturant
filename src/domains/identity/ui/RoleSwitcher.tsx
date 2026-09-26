@@ -20,9 +20,10 @@ export default function RoleSwitcher({
 
     if (!current) return null;
 
-    const roleLabel = tRoles.has(current.role)
-        ? tRoles(current.role)
-        : ROLE_LABELS[current.role];
+    const roleKey = current.role.toLowerCase();
+    const roleLabel = tRoles.has(roleKey)
+        ? tRoles(roleKey)
+        : (ROLE_LABELS[roleKey] ?? ROLE_LABELS[current.role] ?? current.role);
 
     const initials =
         current.name
@@ -55,7 +56,7 @@ export default function RoleSwitcher({
                     <span className="truncate text-[13px] font-semibold text-foreground">
                         {current.name}
                     </span>
-                    <span className="shrink-0 rounded-full border border-orange-500/20 bg-orange-500/10 px-1.5 py-0.2 text-[9px] font-semibold uppercase tracking-wider text-orange-600 dark:text-orange-400">
+                    <span className="shrink-0 rounded-full border border-orange-500/20 bg-orange-500/10 px-1.5 py-0.2 text-[9px] font-semibold tracking-wider text-orange-600 dark:text-orange-400">
                         {roleLabel}
                     </span>
                 </div>

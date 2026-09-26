@@ -16,12 +16,24 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatEtb } from "@/lib/money";
+import { useTranslations } from "next-intl";
 
 function statusBadge(status: string) {
     if (status === "LOCKED") return "success" as const;
     if (status === "APPROVED" || status === "READY_FOR_REVIEW")
         return "warning" as const;
     return "outline" as const;
+}
+
+function closeStatusLabel(
+    status: string,
+    t: ReturnType<typeof useTranslations<"managerDailyClose">>,
+) {
+    if (status === "NONE") return t("statusNotDrafted");
+    if (status === "LOCKED") return t("statusLocked");
+    if (status === "APPROVED") return t("statusApproved");
+    if (status === "READY_FOR_REVIEW") return t("statusReadyForReview");
+    return status;
 }
 
 type DailyClosePanelProps = {
@@ -32,6 +44,7 @@ type DailyClosePanelProps = {
 export default function DailyClosePanel({
     mode = "manager",
 }: DailyClosePanelProps) {
+    const t = useTranslations("managerDailyClose");
     const isCashier = mode === "cashier";
     const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
     const { data, isLoading, isError } = useDailyClosePreviewQuery(
@@ -70,16 +83,16 @@ export default function DailyClosePanel({
         setOk("");
         try {
             await createClose({ businessDate: preview.businessDate }).unwrap();
-            setOk("Daily close draft created.");
+            setOk(t("okDraftCreated"));
         } catch (err) {
             if (err && typeof err === "object" && "data" in err) {
                 const code = (err as { data?: { code?: string } }).data?.code;
                 if (code === "DAILY_CLOSE_ALREADY_EXISTS") {
-                    setError("A close already exists for today — refresh it.");
+                    setError(t("errorAlreadyExists"));
                     return;
                 }
             }
-            setError("Could not create daily close.");
+            setError(t("errorCreate"));
         }
     }
 
@@ -89,9 +102,9 @@ export default function DailyClosePanel({
         setOk("");
         try {
             await refreshClose({ dailyCloseId: closeId }).unwrap();
-            setOk("Snapshot refreshed.");
+            setOk(t("okRefreshed"));
         } catch {
-            setError("Could not refresh.");
+            setError(t("errorRefresh"));
         }
     }
 
@@ -104,9 +117,9 @@ export default function DailyClosePanel({
                 dailyCloseId: closeId,
                 expectedVersion: version,
             }).unwrap();
-            setOk("Daily close approved.");
+            setOk(t("okApproved"));
         } catch {
-            setError("Could not approve. Refresh and try again.");
+            setError(t("errorApprove"));
         }
     }
 
@@ -119,31 +132,25 @@ export default function DailyClosePanel({
                 dailyCloseId: closeId,
                 expectedVersion: version,
             }).unwrap();
-            setOk("Business day locked.");
+            setOk(t("okLocked"));
         } catch (err) {
             if (err && typeof err === "object" && "data" in err) {
                 const code = (err as { data?: { code?: string } }).data?.code;
                 if (code === "DAILY_CLOSE_BLOCKED") {
-                    setError(
-                        "Still blocked — clear open tables, pending transfers, and missing reconciliations.",
-                    );
+                    setError(t("errorBlocked"));
                     return;
                 }
             }
-            setError("Could not lock. Refresh and try again.");
+            setError(t("errorLock"));
         }
     }
 
     if (isLoading) {
-        return <p className="text-slate-gray">Loading daily close…</p>;
+        return <p className="text-slate-gray">{t("loading")}</p>;
     }
 
     if (isError || !preview) {
-        return (
-            <p className="text-slate-gray">
-                Could not load daily close preview.
-            </p>
-        );
+        return <p className="text-slate-gray">{t("loadError")}</p>;
     }
 
     const summary = preview.summary;
@@ -152,20 +159,24 @@ export default function DailyClosePanel({
         <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-3">
                 <div className="rounded-[16px] border border-hairline bg-card p-4">
-                    <p className="text-[12px] text-slate-gray">Net billed</p>
+                    <p className="text-[12px] text-slate-gray">
+                        {t("netBilled")}
+                    </p>
                     <p className="text-[20px] font-semibold">
                         {formatEtb(Number(summary.netBilledSales))}
                     </p>
                 </div>
                 <div className="rounded-[16px] border border-hairline bg-card p-4">
-                    <p className="text-[12px] text-slate-gray">Cash sales</p>
+                    <p className="text-[12px] text-slate-gray">
+                        {t("cashSales")}
+                    </p>
                     <p className="text-[20px] font-semibold">
                         {formatEtb(Number(summary.cashSales))}
                     </p>
                 </div>
                 <div className="rounded-[16px] border border-hairline bg-card p-4">
                     <p className="text-[12px] text-slate-gray">
-                        Verified transfer
+                        {t("verifiedTransfer")}
                     </p>
                     <p className="text-[20px] font-semibold text-brand">
                         {formatEtb(Number(summary.verifiedTransferSales))}
@@ -180,14 +191,18 @@ export default function DailyClosePanel({
                             {preview.businessDate}
                         </h2>
                         <p className="text-[13px] text-slate-gray">
-                            Cashier variance{" "}
-                            {formatEtb(Number(summary.cashierVariance))} ·
-                            undropped{" "}
-                            {formatEtb(Number(summary.undroppedWaiterCash))}
+                            {t("cashierVarianceLine", {
+                                variance: formatEtb(
+                                    Number(summary.cashierVariance),
+                                ),
+                                undropped: formatEtb(
+                                    Number(summary.undroppedWaiterCash),
+                                ),
+                            })}
                         </p>
                     </div>
                     <Badge variant={statusBadge(status)}>
-                        {status === "NONE" ? "Not drafted" : status}
+                        {closeStatusLabel(status, t)}
                     </Badge>
                 </div>
 
@@ -208,14 +223,14 @@ export default function DailyClosePanel({
                     </ul>
                 ) : (
                     <p className="mt-4 text-[14px] text-[#046645]">
-                        Ready to lock — no blockers.
+                        {t("readyNoBlockers")}
                     </p>
                 )}
 
                 <div className="mt-4 flex flex-wrap gap-2">
                     {!closeId ? (
                         <Button disabled={creating} onClick={onCreate}>
-                            {creating ? "Creating…" : "Create draft"}
+                            {creating ? t("creating") : t("createDraft")}
                         </Button>
                     ) : (
                         <>
@@ -224,7 +239,7 @@ export default function DailyClosePanel({
                                 disabled={refreshing || status === "LOCKED"}
                                 onClick={onRefresh}
                             >
-                                {refreshing ? "Refreshing…" : "Refresh"}
+                                {refreshing ? t("refreshing") : t("refresh")}
                             </Button>
                             {!isCashier ? (
                                 <>
@@ -237,7 +252,9 @@ export default function DailyClosePanel({
                                         }
                                         onClick={onApprove}
                                     >
-                                        {approving ? "Approving…" : "Approve"}
+                                        {approving
+                                            ? t("approving")
+                                            : t("approve")}
                                     </Button>
                                     <Button
                                         disabled={
@@ -247,7 +264,7 @@ export default function DailyClosePanel({
                                         }
                                         onClick={onLock}
                                     >
-                                        {locking ? "Locking…" : "Lock day"}
+                                        {locking ? t("locking") : t("lockDay")}
                                     </Button>
                                 </>
                             ) : null}
@@ -256,22 +273,23 @@ export default function DailyClosePanel({
                 </div>
                 {isCashier ? (
                     <p className="mt-3 text-[13px] text-slate-gray">
-                        You can prepare and refresh. A manager approves and
-                        locks the day.
+                        {t("cashierHint")}
                     </p>
                 ) : null}
             </article>
 
             {waiters.length > 0 ? (
                 <article className="rounded-[16px] border border-hairline bg-card p-6">
-                    <h2 className="font-semibold">Waiter lines</h2>
+                    <h2 className="font-semibold">{t("waiterLines")}</h2>
                     <ul className="mt-4 space-y-3 text-[14px]">
                         {waiters.map(waiter => (
                             <li key={waiter.shiftSessionId}>
                                 <div className="flex justify-between gap-3">
                                     <span>
                                         {waiter.waiterName} ·{" "}
-                                        {waiter.ordersCreatedCount} orders
+                                        {t("ordersCount", {
+                                            count: waiter.ordersCreatedCount,
+                                        })}
                                     </span>
                                     <span>
                                         {formatEtb(
@@ -280,12 +298,17 @@ export default function DailyClosePanel({
                                     </span>
                                 </div>
                                 <p className="text-slate-gray">
-                                    Cash{" "}
-                                    {formatEtb(Number(waiter.cashCollected))} ·
-                                    dropped{" "}
-                                    {formatEtb(Number(waiter.cashDropped))} ·
-                                    still on them{" "}
-                                    {formatEtb(Number(waiter.undroppedCash))}
+                                    {t("waiterCashLine", {
+                                        cash: formatEtb(
+                                            Number(waiter.cashCollected),
+                                        ),
+                                        dropped: formatEtb(
+                                            Number(waiter.cashDropped),
+                                        ),
+                                        still: formatEtb(
+                                            Number(waiter.undroppedCash),
+                                        ),
+                                    })}
                                 </p>
                             </li>
                         ))}
@@ -295,19 +318,23 @@ export default function DailyClosePanel({
 
             {stations.length > 0 ? (
                 <article className="rounded-[16px] border border-hairline bg-card p-6">
-                    <h2 className="font-semibold">Station lines</h2>
+                    <h2 className="font-semibold">{t("stationLines")}</h2>
                     <ul className="mt-4 space-y-3 text-[14px]">
                         {stations.map(station => (
                             <li key={station.stationId}>
                                 <div className="flex justify-between gap-3">
                                     <span>{station.stationName}</span>
                                     <span>
-                                        {station.itemsHandledCount} items
+                                        {t("itemsCount", {
+                                            count: station.itemsHandledCount,
+                                        })}
                                     </span>
                                 </div>
                                 <p className="text-slate-gray">
-                                    Delayed {station.delayedItemCount} · cannot
-                                    prepare {station.cannotPrepareCount}
+                                    {t("stationStats", {
+                                        delayed: station.delayedItemCount,
+                                        cannot: station.cannotPrepareCount,
+                                    })}
                                 </p>
                             </li>
                         ))}
@@ -317,7 +344,9 @@ export default function DailyClosePanel({
 
             {!isCashier && recons.length > 0 ? (
                 <article className="rounded-[16px] border border-hairline bg-card p-6">
-                    <h2 className="font-semibold">Reconciliations to review</h2>
+                    <h2 className="font-semibold">
+                        {t("reconciliationsToReview")}
+                    </h2>
                     <ul className="mt-4 space-y-3">
                         {recons.map(recon => (
                             <li
@@ -326,15 +355,21 @@ export default function DailyClosePanel({
                             >
                                 <div>
                                     <p className="font-medium">
-                                        {recon.cashierName ?? "Cashier"}
+                                        {recon.cashierName ??
+                                            t("cashierFallback")}
                                     </p>
                                     <p className="text-[13px] text-slate-gray">
-                                        Expected{" "}
-                                        {formatEtb(Number(recon.expectedCash))}{" "}
-                                        · counted{" "}
-                                        {formatEtb(Number(recon.countedCash))} ·
-                                        variance{" "}
-                                        {formatEtb(Number(recon.variance))}
+                                        {t("reconAmounts", {
+                                            expected: formatEtb(
+                                                Number(recon.expectedCash),
+                                            ),
+                                            counted: formatEtb(
+                                                Number(recon.countedCash),
+                                            ),
+                                            variance: formatEtb(
+                                                Number(recon.variance),
+                                            ),
+                                        })}
                                     </p>
                                 </div>
                                 <div className="flex gap-2">
@@ -347,7 +382,7 @@ export default function DailyClosePanel({
                                             });
                                         }}
                                     >
-                                        Approve
+                                        {t("approve")}
                                     </Button>
                                     <Button
                                         size="sm"
@@ -357,11 +392,11 @@ export default function DailyClosePanel({
                                                 reconciliationId:
                                                     recon.reconciliationId,
                                                 reviewComment:
-                                                    "Needs follow-up",
+                                                    t("flagFollowUp"),
                                             });
                                         }}
                                     >
-                                        Flag
+                                        {t("flag")}
                                     </Button>
                                 </div>
                             </li>

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatEtb } from "@/lib/money";
 import { toast } from "@/lib/toast";
+import { useTranslations } from "next-intl";
 
 function dataUrlToFile(dataUrl: string, name: string): File {
     const [meta, data] = dataUrl.split(",");
@@ -31,6 +32,7 @@ export default function WaiterPaymentPanel({
     bill: Bill;
     tableSessionId: string;
 }) {
+    const t = useTranslations("waiter");
     const due = Number(bill.total) - Number(bill.amountPaid);
     const [tendered, setTendered] = useState(due.toFixed(2));
     const [cameraFor, setCameraFor] = useState<"TELEBIRR" | "BANK" | null>(
@@ -56,10 +58,9 @@ export default function WaiterPaymentPanel({
                 cashTendered: tendered,
                 expectedBillVersion: bill.version,
             }).unwrap();
-            toast.success("Cash recorded", formatEtb(due));
+            toast.success(t("cashRecorded"), formatEtb(due));
         } catch (err) {
-            const message =
-                "Could not record cash. Check tendered amount and try again.";
+            const message = t("couldNotRecordCash");
             setError(message);
             toast.fromUnknown(err, message);
         }
@@ -84,12 +85,13 @@ export default function WaiterPaymentPanel({
             }).unwrap();
             setCameraFor(null);
             toast.success(
-                channel === "TELEBIRR" ? "Telebirr recorded" : "Bank transfer recorded",
+                channel === "TELEBIRR"
+                    ? t("telebirrRecorded")
+                    : t("bankTransferRecorded"),
                 formatEtb(due),
             );
         } catch (err) {
-            const message =
-                "Could not submit the transfer receipt. Check the photo and try again.";
+            const message = t("couldNotSubmitTransfer");
             setError(message);
             toast.fromUnknown(err, message);
         }
@@ -99,10 +101,12 @@ export default function WaiterPaymentPanel({
         return (
             <div className="rounded-[16px] border border-hairline bg-accent/50 p-4">
                 <p className="text-[13px] font-medium text-accent-foreground">
-                    Paid
+                    {t("paid")}
                 </p>
                 <p className="mt-1 text-[14px] text-slate-gray">
-                    {formatEtb(Number(bill.total))} · you can close this table.
+                    {t("paidCanClose", {
+                        amount: formatEtb(Number(bill.total)),
+                    })}
                 </p>
             </div>
         );
@@ -113,7 +117,7 @@ export default function WaiterPaymentPanel({
             <div className="space-y-3 rounded-[16px] border border-hairline bg-card p-4">
                 <div>
                     <p className="text-[12px] font-medium tracking-[0.08em] text-steel-gray uppercase">
-                        Collect · {bill.billNumber}
+                        {t("collect")} · {bill.billNumber}
                     </p>
                     <p className="mt-1 text-[22px] font-semibold">
                         {formatEtb(due)}
@@ -121,7 +125,7 @@ export default function WaiterPaymentPanel({
                 </div>
                 <div className="space-y-2">
                     <label className="text-[13px] text-slate-gray">
-                        Cash tendered
+                        {t("cashTendered")}
                     </label>
                     <Input
                         value={tendered}
@@ -134,8 +138,8 @@ export default function WaiterPaymentPanel({
                         onClick={collectCash}
                     >
                         {payingCash
-                            ? "Recording…"
-                            : `Collect cash · ${formatEtb(due)}`}
+                            ? t("recording")
+                            : t("collectCash", { amount: formatEtb(due) })}
                     </Button>
                 </div>
                 <Button
@@ -144,7 +148,7 @@ export default function WaiterPaymentPanel({
                     disabled={busy}
                     onClick={() => setCameraFor("BANK")}
                 >
-                    Bank transfer · camera
+                    {t("bankTransferCamera")}
                 </Button>
                 <Button
                     variant="outline"
@@ -152,7 +156,7 @@ export default function WaiterPaymentPanel({
                     disabled={busy}
                     onClick={() => setCameraFor("TELEBIRR")}
                 >
-                    Telebirr · camera
+                    {t("telebirrCamera")}
                 </Button>
                 {error ? (
                     <p className="text-[13px] text-red-600">{error}</p>
@@ -162,8 +166,8 @@ export default function WaiterPaymentPanel({
                 <CameraCapture
                     title={
                         cameraFor === "TELEBIRR"
-                            ? "Telebirr receipt"
-                            : "Bank transfer receipt"
+                            ? t("telebirrReceipt")
+                            : t("bankTransferReceipt")
                     }
                     onCancel={() => setCameraFor(null)}
                     onCapture={dataUrl => {

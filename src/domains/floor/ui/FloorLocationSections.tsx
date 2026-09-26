@@ -1,8 +1,12 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { FloorLocation, FloorTable } from "@/domains/floor/domain/floorApi";
+import type {
+    FloorLocation,
+    FloorTable,
+} from "@/domains/floor/domain/floorApi";
 import { groupFloorTables } from "@/domains/floor/application/groupFloor";
+import { useTranslations } from "next-intl";
 
 export default function FloorLocationSections({
     tables,
@@ -13,6 +17,7 @@ export default function FloorLocationSections({
     locations: FloorLocation[];
     renderTable: (table: FloorTable) => ReactNode;
 }) {
+    const t = useTranslations("managerTables");
     const groups = groupFloorTables(tables, locations);
 
     return (
@@ -24,8 +29,11 @@ export default function FloorLocationSections({
                             {group.location.name}
                         </h2>
                         <span className="text-[12px] text-slate-gray">
-                            {group.tables.length}{" "}
-                            {group.tables.length === 1 ? "table" : "tables"}
+                            {group.tables.length === 1
+                                ? t("tableOne", { count: group.tables.length })
+                                : t("tableMany", {
+                                      count: group.tables.length,
+                                  })}
                         </span>
                     </div>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
     Activity,
     Building2,
@@ -49,17 +50,21 @@ function formatTime(iso: string) {
     }
 }
 
-function formatDateLabel(iso: string) {
+function formatDateLabel(
+    iso: string,
+    todayLabel: string,
+    yesterdayLabel: string,
+) {
     try {
         const d = new Date(iso);
         const now = new Date();
         if (d.toDateString() === now.toDateString()) {
-            return "Today";
+            return todayLabel;
         }
         const yesterday = new Date(now);
         yesterday.setDate(now.getDate() - 1);
         if (d.toDateString() === yesterday.toDateString()) {
-            return "Yesterday";
+            return yesterdayLabel;
         }
         return d.toLocaleDateString("en-GB", {
             day: "numeric",
@@ -72,6 +77,8 @@ function formatDateLabel(iso: string) {
 }
 
 export default function PlatformAuditPage() {
+    const t = useTranslations("superAdmin");
+
     const [selectedCategory, setSelectedCategory] =
         useState<CategoryFilter>("all");
     const [selectedTenantId, setSelectedTenantId] = useState<string>("all");
@@ -141,7 +148,7 @@ export default function PlatformAuditPage() {
     function handleCopy(id: string) {
         void navigator.clipboard.writeText(id);
         setCopiedId(id);
-        toast.success("Audit UUID copied", {
+        toast.success(t("audit.toastUuidCopied"), {
             description: id,
         });
         setTimeout(() => setCopiedId(null), 2000);
@@ -149,7 +156,7 @@ export default function PlatformAuditPage() {
 
     async function handleExport() {
         if (!accessToken) {
-            toast.error("Sign in required to export audit log");
+            toast.error(t("audit.toastSignInRequiredExport"));
             return;
         }
         setExporting(true);
@@ -173,7 +180,10 @@ export default function PlatformAuditPage() {
                     headers: { Authorization: `Bearer ${accessToken}` },
                 },
             );
-            if (!res.ok) throw new Error(`Export failed (${res.status})`);
+            if (!res.ok)
+                throw new Error(
+                    t("audit.exportFailedStatus", { status: res.status }),
+                );
             const blob = await res.blob();
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
@@ -183,10 +193,12 @@ export default function PlatformAuditPage() {
             a.click();
             a.remove();
             URL.revokeObjectURL(url);
-            toast.success("Audit CSV downloaded");
+            toast.success(t("audit.toastCsvDownloaded"));
         } catch (err) {
             toast.error(
-                err instanceof Error ? err.message : "Could not export audit",
+                err instanceof Error
+                    ? err.message
+                    : t("audit.toastExportFailed"),
             );
         } finally {
             setExporting(false);
@@ -197,13 +209,19 @@ export default function PlatformAuditPage() {
         () => [
             {
                 id: "timestamp",
-                header: "Timestamp",
+                header: t("audit.colTimestamp"),
                 sortValue: row => new Date(row.occurredAt).getTime(),
                 cell: row => (
                     <div className="flex flex-col gap-0.5">
                         <div className="flex items-center gap-1.5 font-medium text-foreground text-[12.5px]">
                             <Clock className="size-3.5 text-slate-gray" />
-                            <span>{formatDateLabel(row.occurredAt)}</span>
+                            <span>
+                                {formatDateLabel(
+                                    row.occurredAt,
+                                    t("audit.dateToday"),
+                                    t("audit.dateYesterday"),
+                                )}
+                            </span>
                         </div>
                         <span className="text-[11px] text-slate-gray font-mono">
                             {formatTime(row.occurredAt)}
@@ -213,7 +231,7 @@ export default function PlatformAuditPage() {
             },
             {
                 id: "tenant",
-                header: "Restaurant / Tenant",
+                header: t("audit.colRestaurantTenant"),
                 sortValue: row => row.tenantName || row.entityName,
                 cell: row => {
                     const isPlatform = !row.tenantId;
@@ -237,12 +255,12 @@ export default function PlatformAuditPage() {
                                 <span className="font-semibold text-foreground text-[13px] leading-tight truncate">
                                     {row.tenantName ||
                                         row.entityName ||
-                                        "Platform"}
+                                        t("platform")}
                                 </span>
                                 <span className="text-[11px] text-slate-gray truncate font-mono">
                                     {isPlatform
-                                        ? "System Wide"
-                                        : "Restaurant Fleet"}
+                                        ? t("audit.tenantSystemWide")
+                                        : t("audit.tenantRestaurantFleet")}
                                 </span>
                             </div>
                         </div>
@@ -251,7 +269,7 @@ export default function PlatformAuditPage() {
             },
             {
                 id: "action",
-                header: "Event & Domain",
+                header: t("audit.colEventDomain"),
                 sortValue: row => row.action,
                 cell: row => {
                     const cat = row.category || "system";
@@ -290,7 +308,7 @@ export default function PlatformAuditPage() {
             },
             {
                 id: "description",
-                header: "Context & Remarks",
+                header: t("audit.colContextRemarks"),
                 cell: row => (
                     <div className="max-w-[340px]">
                         <p className="text-[12.5px] text-foreground font-medium leading-snug">
@@ -301,7 +319,7 @@ export default function PlatformAuditPage() {
             },
             {
                 id: "actor",
-                header: "Actor / Staff",
+                header: t("audit.colActorStaff"),
                 sortValue: row => row.actorName || "",
                 cell: row => (
                     <div className="flex items-center gap-2.5">
@@ -310,7 +328,7 @@ export default function PlatformAuditPage() {
                         </div>
                         <div className="flex flex-col">
                             <span className="font-medium text-foreground text-[12.5px]">
-                                {row.actorName || "Automated"}
+                                {row.actorName || t("audit.actorAutomated")}
                             </span>
                             <span className="text-[11px] text-slate-gray">
                                 {row.actorRole || "SYSTEM"}
@@ -321,7 +339,7 @@ export default function PlatformAuditPage() {
             },
             {
                 id: "entity",
-                header: "Entity / Log ID",
+                header: t("audit.colEntityLogId"),
                 cell: row => (
                     <div className="flex items-center gap-2">
                         {row.entityType && (
@@ -333,7 +351,7 @@ export default function PlatformAuditPage() {
                             type="button"
                             onClick={() => handleCopy(row.id)}
                             className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-slate-gray hover:text-foreground hover:bg-secondary transition-colors"
-                            title="Copy Audit UUID"
+                            title={t("audit.copyAuditUuidTitle")}
                         >
                             {copiedId === row.id ? (
                                 <Check className="size-3 text-foreground" />
@@ -348,7 +366,36 @@ export default function PlatformAuditPage() {
                 ),
             },
         ],
-        [copiedId],
+        [copiedId, t],
+    );
+
+    const categoryTabs = useMemo(
+        () =>
+            [
+                { id: "all" as const, label: t("audit.categoryAllActivity") },
+                {
+                    id: "orders" as const,
+                    label: t("audit.categoryOrdersFloor"),
+                },
+                {
+                    id: "payments" as const,
+                    label: t("audit.categoryPayments"),
+                },
+                { id: "staff" as const, label: t("audit.categoryStaffAuth") },
+                { id: "system" as const, label: t("audit.categoryPlatform") },
+            ] as const,
+        [t],
+    );
+
+    const datePresets = useMemo(
+        () =>
+            [
+                { id: "today" as const, label: t("audit.dateToday") },
+                { id: "yesterday" as const, label: t("audit.dateYesterday") },
+                { id: "7days" as const, label: t("audit.dateLast7Days") },
+                { id: "all" as const, label: t("audit.dateAllTime") },
+            ] as const,
+        [t],
     );
 
     const pagination: DataTablePagination = useMemo(
@@ -385,7 +432,7 @@ export default function PlatformAuditPage() {
                                 exporting && "animate-pulse",
                             )}
                         />
-                        Export CSV
+                        {t("audit.exportCsv")}
                     </Button>
                     <Button
                         type="button"
@@ -401,7 +448,7 @@ export default function PlatformAuditPage() {
                                 isFetching && "animate-spin",
                             )}
                         />
-                        Refresh
+                        {t("refresh")}
                     </Button>
                 </div>
             </div>
@@ -411,7 +458,7 @@ export default function PlatformAuditPage() {
                 <div className="rounded-[16px] border border-hairline bg-card p-4 transition-all hover:border-slate-300 shadow-xs">
                     <div className="flex items-center justify-between">
                         <p className="text-[13px] font-medium text-slate-gray">
-                            Logged Today
+                            {t("audit.kpiLoggedToday")}
                         </p>
                         <Activity className="size-4 text-slate-gray" />
                     </div>
@@ -419,14 +466,14 @@ export default function PlatformAuditPage() {
                         {isLoading ? "…" : (summary?.totalToday ?? 0)}
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
-                        Total network audit events
+                        {t("audit.kpiLoggedTodayHint")}
                     </p>
                 </div>
 
                 <div className="rounded-[16px] border border-hairline bg-card p-4 transition-all hover:border-slate-300 shadow-xs">
                     <div className="flex items-center justify-between">
                         <p className="text-[13px] font-medium text-slate-gray">
-                            Floor Operations
+                            {t("audit.kpiFloorOperations")}
                         </p>
                         <UtensilsCrossed className="size-4 text-slate-gray" />
                     </div>
@@ -434,14 +481,14 @@ export default function PlatformAuditPage() {
                         {isLoading ? "…" : (summary?.operationsToday ?? 0)}
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
-                        Orders, tables & kitchen
+                        {t("audit.kpiFloorOperationsHint")}
                     </p>
                 </div>
 
                 <div className="rounded-[16px] border border-hairline bg-card p-4 transition-all hover:border-slate-300 shadow-xs">
                     <div className="flex items-center justify-between">
                         <p className="text-[13px] font-medium text-slate-gray">
-                            Security & Access
+                            {t("audit.kpiSecurityAccess")}
                         </p>
                         <Shield className="size-4 text-slate-gray" />
                     </div>
@@ -449,14 +496,14 @@ export default function PlatformAuditPage() {
                         {isLoading ? "…" : (summary?.securityToday ?? 0)}
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
-                        PIN resets, roles & logins
+                        {t("audit.kpiSecurityAccessHint")}
                     </p>
                 </div>
 
                 <div className="rounded-[16px] border border-hairline bg-card p-4 transition-all hover:border-slate-300 shadow-xs">
                     <div className="flex items-center justify-between">
                         <p className="text-[13px] font-medium text-slate-gray">
-                            Active Tenants
+                            {t("audit.kpiActiveTenants")}
                         </p>
                         <Building2 className="size-4 text-slate-gray" />
                     </div>
@@ -464,7 +511,7 @@ export default function PlatformAuditPage() {
                         {tenantsList.length}
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
-                        Reporting restaurants
+                        {t("audit.kpiActiveTenantsHint")}
                     </p>
                 </div>
             </div>
@@ -477,7 +524,7 @@ export default function PlatformAuditPage() {
                     <div className="flex items-center gap-1.5 bg-secondary/50 px-2 py-1 rounded-xl border border-hairline">
                         <Store className="size-3.5 text-slate-gray" />
                         <select
-                            aria-label="Filter by Restaurant"
+                            aria-label={t("audit.filterByRestaurantAria")}
                             value={selectedTenantId}
                             onChange={e => {
                                 setSelectedTenantId(e.target.value);
@@ -486,7 +533,7 @@ export default function PlatformAuditPage() {
                             className="bg-transparent text-[12px] font-medium text-foreground outline-none cursor-pointer pr-1"
                         >
                             <option value="all">
-                                All Restaurants & Platform
+                                {t("audit.filterAllRestaurantsPlatform")}
                             </option>
                             {tenantsList.map(t => (
                                 <option key={t.id} value={t.id}>
@@ -500,15 +547,7 @@ export default function PlatformAuditPage() {
 
                     {/* Category Pills */}
                     <div className="flex flex-wrap items-center gap-1">
-                        {(
-                            [
-                                { id: "all", label: "All Activity" },
-                                { id: "orders", label: "Orders & Floor" },
-                                { id: "payments", label: "Payments" },
-                                { id: "staff", label: "Staff & Auth" },
-                                { id: "system", label: "Platform" },
-                            ] as const
-                        ).map(tab => {
+                        {categoryTabs.map(tab => {
                             const isSelected = selectedCategory === tab.id;
                             return (
                                 <button
@@ -535,14 +574,7 @@ export default function PlatformAuditPage() {
                 {/* Date Presets & Page Size */}
                 <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-hairline lg:border-t-0 lg:pt-0">
                     <div className="flex items-center gap-1 bg-secondary/50 p-1 rounded-xl border border-hairline">
-                        {(
-                            [
-                                { id: "today", label: "Today" },
-                                { id: "yesterday", label: "Yesterday" },
-                                { id: "7days", label: "Last 7 Days" },
-                                { id: "all", label: "All Time" },
-                            ] as const
-                        ).map(preset => (
+                        {datePresets.map(preset => (
                             <button
                                 key={preset.id}
                                 type="button"
@@ -563,7 +595,7 @@ export default function PlatformAuditPage() {
                     </div>
 
                     <select
-                        aria-label="Rows per page"
+                        aria-label={t("audit.rowsPerPageAria")}
                         value={limit}
                         onChange={e => {
                             setLimit(Number(e.target.value));
@@ -571,17 +603,16 @@ export default function PlatformAuditPage() {
                         }}
                         className="h-8 rounded-xl border border-hairline bg-card px-2.5 text-[12px] text-foreground outline-none cursor-pointer"
                     >
-                        <option value={25}>25 / page</option>
-                        <option value={50}>50 / page</option>
-                        <option value={100}>100 / page</option>
+                        <option value={25}>{t("audit.rowsPerPage25")}</option>
+                        <option value={50}>{t("audit.rowsPerPage50")}</option>
+                        <option value={100}>{t("audit.rowsPerPage100")}</option>
                     </select>
                 </div>
             </div>
 
             {isError ? (
                 <div className="rounded-[16px] border border-destructive/30 bg-destructive/10 p-4 text-[13px] text-destructive">
-                    Could not load platform audit events. Please ensure you are
-                    logged in with Super Admin privileges.
+                    {t("audit.errorLoadEvents")}
                 </div>
             ) : null}
 
@@ -590,7 +621,7 @@ export default function PlatformAuditPage() {
                 columns={columns}
                 data={events}
                 rowKey={row => row.id}
-                searchPlaceholder="Search all platform events, tenant, actor, action..."
+                searchPlaceholder={t("audit.searchPlaceholder")}
                 searchQuery={searchQuery}
                 onSearchChange={query => {
                     setSearchQuery(query);
@@ -603,11 +634,10 @@ export default function PlatformAuditPage() {
                     <div className="flex flex-col items-center justify-center py-12 text-center text-slate-gray">
                         <Activity className="size-10 text-slate-300 dark:text-slate-700 mb-2" />
                         <p className="text-[15px] font-semibold text-foreground">
-                            No audit events found
+                            {t("audit.emptyTitle")}
                         </p>
                         <p className="mt-1 max-w-sm text-[13px] text-slate-gray">
-                            No log entries match your selected restaurant, date
-                            range, or search query.
+                            {t("audit.emptyDescription")}
                         </p>
                         {(selectedCategory !== "all" ||
                             selectedTenantId !== "all" ||
@@ -626,7 +656,7 @@ export default function PlatformAuditPage() {
                                 }}
                                 className="mt-4 rounded-xl text-[12.5px]"
                             >
-                                Reset All Filters
+                                {t("audit.resetAllFilters")}
                             </Button>
                         )}
                     </div>

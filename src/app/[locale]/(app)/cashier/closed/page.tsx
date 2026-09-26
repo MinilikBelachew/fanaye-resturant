@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Radio, RefreshCw } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
@@ -13,15 +14,9 @@ import { cn } from "@/lib/utils";
 const PAGE_SIZE = 10;
 const POLL_MS = 5000;
 
-function methodLabel(method: string, channel: string | null) {
-    const key = method.toUpperCase();
-    if (key === "CASH") return "Cash";
-    if ((channel || "").toUpperCase().includes("TELE")) return "Telebirr";
-    if (key === "TRANSFER") return "Transfer";
-    return method;
-}
-
 export default function CashierClosedPage() {
+    const t = useTranslations("cashier");
+    const tCommon = useTranslations("common");
     const [page, setPage] = useState(1);
     const { data, isLoading, isFetching, isError } = useCashierPaymentsQuery(
         undefined,
@@ -38,6 +33,15 @@ export default function CashierClosedPage() {
         const start = (page - 1) * PAGE_SIZE;
         return logged.slice(start, start + PAGE_SIZE);
     }, [logged, page]);
+
+    function methodLabel(method: string, channel: string | null) {
+        const key = method.toUpperCase();
+        if (key === "CASH") return t("cash");
+        if ((channel || "").toUpperCase().includes("TELE"))
+            return t("telebirr");
+        if (key === "TRANSFER") return t("transfer");
+        return method;
+    }
 
     return (
         <DashboardFrame>
@@ -60,7 +64,7 @@ export default function CashierClosedPage() {
                             isError ? "text-red-500" : "text-emerald-500",
                         )}
                     />
-                    {isError ? "Offline" : "Live"}
+                    {isError ? t("offline") : t("live")}
                     {isFetching ? (
                         <RefreshCw className="size-3 animate-spin" />
                     ) : null}
@@ -70,18 +74,17 @@ export default function CashierClosedPage() {
             <div className="overflow-hidden rounded-[14px] border border-hairline bg-card">
                 {isLoading ? (
                     <p className="px-4 py-6 text-[12px] text-slate-gray sm:px-5">
-                        Loading closed bills…
+                        {t("loadingClosedBills")}
                     </p>
                 ) : null}
                 {isError ? (
                     <p className="px-4 py-6 text-[12px] text-red-600 sm:px-5">
-                        Could not load closed bills.
+                        {t("closedBillsError")}
                     </p>
                 ) : null}
                 {!isLoading && !isError && logged.length === 0 ? (
                     <p className="px-4 py-6 text-[12px] text-slate-gray sm:px-5">
-                        No closed bills yet. They appear when a waiter collects
-                        the total.
+                        {t("noClosedBills")}
                     </p>
                 ) : null}
                 {!isLoading && !isError && logged.length > 0 ? (
@@ -91,16 +94,16 @@ export default function CashierClosedPage() {
                                 <thead className="border-b border-hairline text-[10px] tracking-[0.08em] text-slate-gray uppercase">
                                     <tr>
                                         <th className="px-4 py-2.5 font-medium sm:px-5">
-                                            Table
+                                            {tCommon("table")}
                                         </th>
                                         <th className="px-4 py-2.5 font-medium sm:px-5">
-                                            Waiter
+                                            {tCommon("waiter")}
                                         </th>
                                         <th className="px-4 py-2.5 font-medium sm:px-5">
-                                            Total
+                                            {tCommon("total")}
                                         </th>
                                         <th className="px-4 py-2.5 font-medium sm:px-5">
-                                            Method
+                                            {tCommon("method")}
                                         </th>
                                     </tr>
                                 </thead>
@@ -136,8 +139,11 @@ export default function CashierClosedPage() {
                         </div>
                         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-hairline px-4 py-2.5 text-[11px] text-slate-gray sm:px-5">
                             <span>
-                                Page {page} of {totalPages} · {logged.length}{" "}
-                                total
+                                {t("pageOfTotal", {
+                                    page,
+                                    totalPages,
+                                    count: logged.length,
+                                })}
                             </span>
                             <div className="flex items-center gap-1.5">
                                 <Button
@@ -149,7 +155,7 @@ export default function CashierClosedPage() {
                                     className="h-7 gap-1 rounded-full px-2.5 text-[11px] font-normal"
                                 >
                                     <ChevronLeft className="size-3.5" />
-                                    Prev
+                                    {tCommon("prev")}
                                 </Button>
                                 <Button
                                     type="button"
@@ -159,7 +165,7 @@ export default function CashierClosedPage() {
                                     onClick={() => setPage(p => p + 1)}
                                     className="h-7 gap-1 rounded-full px-2.5 text-[11px] font-normal"
                                 >
-                                    Next
+                                    {tCommon("next")}
                                     <ChevronRight className="size-3.5" />
                                 </Button>
                             </div>

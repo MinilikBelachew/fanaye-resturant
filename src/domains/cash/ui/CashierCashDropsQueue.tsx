@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
     useCashierCashDropsQuery,
     useReceiveCashDropMutation,
@@ -28,6 +29,8 @@ function DropCard({
     drop: CashDrop;
     onViewReceipt: (drop: CashDrop) => void;
 }) {
+    const t = useTranslations("cashier");
+    const tCommon = useTranslations("common");
     const [counted, setCounted] = useState(drop.declaredAmount);
     const [error, setError] = useState("");
     const [receive, { isLoading: receiving }] = useReceiveCashDropMutation();
@@ -43,7 +46,7 @@ function DropCard({
                 expectedVersion: drop.version,
             }).unwrap();
         } catch {
-            setError("Could not receive this drop. Refresh and try again.");
+            setError(t("receiveDropError"));
         }
     }
 
@@ -56,7 +59,7 @@ function DropCard({
                 resolution,
             }).unwrap();
         } catch {
-            setError("Could not resolve the dispute.");
+            setError(t("resolveDisputeError"));
         }
     }
 
@@ -64,7 +67,7 @@ function DropCard({
         <article className="rounded-[16px] border border-border/80 bg-card p-5 shadow-xs">
             <div className="flex items-center justify-between">
                 <span className="text-[13px] font-medium text-foreground">
-                    {drop.waiterName ?? "Waiter"}
+                    {drop.waiterName ?? tCommon("waiter")}
                 </span>
                 <div className="flex items-center gap-2">
                     <Badge
@@ -85,7 +88,7 @@ function DropCard({
             {drop.status === "INITIATED" ? (
                 <div className="mt-3 space-y-2">
                     <label className="text-[12px] font-medium text-muted-foreground">
-                        Counted amount in drawer
+                        {t("countedAmountInDrawer")}
                     </label>
                     <div className="flex gap-2">
                         <Input
@@ -95,21 +98,26 @@ function DropCard({
                             className="font-mono text-base"
                         />
                         <Button disabled={receiving} onClick={onReceive}>
-                            {receiving ? "Receiving…" : "Receive into drawer"}
+                            {receiving
+                                ? t("receiving")
+                                : t("receiveIntoDrawer")}
                         </Button>
                     </div>
                     <p className="text-[11px] text-muted-foreground">
-                        Matching amount marks as Received. Different amount
-                        triggers dispute flow.
+                        {t("matchingAmountHint")}
                     </p>
                 </div>
             ) : null}
             {drop.status === "DISPUTED" ? (
                 <div className="mt-3 space-y-2">
                     <p className="text-[13px] text-muted-foreground">
-                        Counted: {formatEtb(Number(drop.countedAmount ?? 0))}
+                        {t("countedPrefix", {
+                            amount: formatEtb(Number(drop.countedAmount ?? 0)),
+                        })}
                         {drop.variance
-                            ? ` · Variance: ${formatEtb(Number(drop.variance))}`
+                            ? ` · ${t("variancePrefix", {
+                                  amount: formatEtb(Number(drop.variance)),
+                              })}`
                             : ""}
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -119,7 +127,7 @@ function DropCard({
                                 void onResolve("ACCEPT_COUNTED");
                             }}
                         >
-                            Accept counted
+                            {t("acceptCounted")}
                         </Button>
                         <Button
                             variant="outline"
@@ -128,7 +136,7 @@ function DropCard({
                                 void onResolve("ACCEPT_DECLARED");
                             }}
                         >
-                            Accept declared
+                            {t("acceptDeclared")}
                         </Button>
                         <Button
                             variant="ghost"
@@ -137,7 +145,7 @@ function DropCard({
                             className="gap-1 text-xs"
                         >
                             <ReceiptText className="size-3.5" />
-                            Voucher
+                            {t("voucher")}
                         </Button>
                     </div>
                 </div>
@@ -150,6 +158,8 @@ function DropCard({
 }
 
 export default function CashierCashDropsQueue() {
+    const t = useTranslations("cashier");
+    const tCommon = useTranslations("common");
     const [dateFilter, setDateFilter] = useState<
         "TODAY" | "YESTERDAY" | "LAST_7_DAYS" | "ALL"
     >("TODAY");
@@ -159,17 +169,12 @@ export default function CashierCashDropsQueue() {
     const [selectedDropForReceipt, setSelectedDropForReceipt] =
         useState<CashDrop | null>(null);
 
-    // 1. Pending Queue Query (real-time polling)
-    const {
-        data: pendingData,
-        isLoading: loadingPending,
-        refetch: refetchPending,
-    } = useCashierCashDropsQuery(
-        { status: "INITIATED,DISPUTED" },
-        { pollingInterval: 4000 },
-    );
+    const { data: pendingData, refetch: refetchPending } =
+        useCashierCashDropsQuery(
+            { status: "INITIATED,DISPUTED" },
+            { pollingInterval: 4000 },
+        );
 
-    // 2. History Table Query
     const historyStatusParam = statusFilter === "ALL" ? "ALL" : statusFilter;
     const {
         data: historyData,
@@ -196,13 +201,14 @@ export default function CashierCashDropsQueue() {
 
     return (
         <div className="space-y-6">
-            {/* Pending Inbox Section */}
             {pendingDrops.length > 0 && (
                 <div className="space-y-3">
                     <div className="flex items-center gap-2">
                         <Clock className="size-4 text-amber-500" />
                         <h3 className="text-[15px] font-semibold text-foreground">
-                            Pending Cash Drops ({pendingDrops.length})
+                            {t("pendingDropsTitle", {
+                                count: pendingDrops.length,
+                            })}
                         </h3>
                     </div>
                     <div className="grid gap-3 md:grid-cols-2">
@@ -217,16 +223,14 @@ export default function CashierCashDropsQueue() {
                 </div>
             )}
 
-            {/* Received Cash History & Filter Section */}
             <div className="rounded-[18px] border border-border/80 bg-card p-5 shadow-xs space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h3 className="text-[17px] font-semibold text-foreground">
-                            Received Cash Drops Ledger
+                            {t("receivedLedgerTitle")}
                         </h3>
                         <p className="text-[13px] text-muted-foreground">
-                            Verified cash custody turned in by waiters with
-                            voucher slips
+                            {t("receivedLedgerDesc")}
                         </p>
                     </div>
 
@@ -244,24 +248,28 @@ export default function CashierCashDropsQueue() {
                             <RefreshCw
                                 className={`size-3.5 ${fetchingHistory ? "animate-spin" : ""}`}
                             />
-                            <span>Refresh</span>
+                            <span>{tCommon("refresh")}</span>
                         </Button>
                     </div>
                 </div>
 
-                {/* Filter Controls */}
                 <div className="flex flex-wrap items-center justify-between gap-3 border-y border-border/50 py-3">
-                    {/* Date Filters */}
                     <div className="flex flex-wrap items-center gap-1.5">
                         <span className="text-[12px] font-medium text-muted-foreground mr-1 flex items-center gap-1">
-                            <Calendar className="size-3.5" /> Date:
+                            <Calendar className="size-3.5" /> {t("dateColon")}
                         </span>
                         {(
                             [
-                                { key: "TODAY", label: "Today" },
-                                { key: "YESTERDAY", label: "Yesterday" },
-                                { key: "LAST_7_DAYS", label: "Last 7 Days" },
-                                { key: "ALL", label: "All Dates" },
+                                { key: "TODAY" as const, label: t("today") },
+                                {
+                                    key: "YESTERDAY" as const,
+                                    label: t("yesterday"),
+                                },
+                                {
+                                    key: "LAST_7_DAYS" as const,
+                                    label: t("last7Days"),
+                                },
+                                { key: "ALL" as const, label: t("allDates") },
                             ] as const
                         ).map(tab => (
                             <button
@@ -278,17 +286,28 @@ export default function CashierCashDropsQueue() {
                         ))}
                     </div>
 
-                    {/* Status Filters */}
                     <div className="flex flex-wrap items-center gap-1.5">
                         <span className="text-[12px] font-medium text-muted-foreground mr-1">
-                            Status:
+                            {t("statusColon")}
                         </span>
                         {(
                             [
-                                { key: "ALL", label: "All" },
-                                { key: "RECEIVED", label: "Received" },
-                                { key: "DISPUTED", label: "Disputed" },
-                                { key: "INITIATED", label: "Pending" },
+                                {
+                                    key: "ALL" as const,
+                                    label: tCommon("all"),
+                                },
+                                {
+                                    key: "RECEIVED" as const,
+                                    label: t("statusReceived"),
+                                },
+                                {
+                                    key: "DISPUTED" as const,
+                                    label: t("statusDisputed"),
+                                },
+                                {
+                                    key: "INITIATED" as const,
+                                    label: t("statusPending"),
+                                },
                             ] as const
                         ).map(st => (
                             <button
@@ -306,24 +325,22 @@ export default function CashierCashDropsQueue() {
                     </div>
                 </div>
 
-                {/* Total Received Summary Badge */}
                 <div className="flex items-center justify-between rounded-[12px] bg-secondary/50 px-4 py-3">
                     <span className="text-xs font-medium text-muted-foreground">
-                        Total Counted Cash in Selected Period:
+                        {t("totalCountedCash")}
                     </span>
                     <span className="text-base font-bold text-foreground">
                         {formatEtb(totalCounted)}
                     </span>
                 </div>
 
-                {/* Drops History Table */}
                 {loadingHistory ? (
                     <p className="py-8 text-center text-xs text-muted-foreground">
-                        Loading cash drops history…
+                        {t("loadingCashDropsHistory")}
                     </p>
                 ) : historyDrops.length === 0 ? (
                     <div className="py-8 text-center text-xs text-muted-foreground">
-                        No cash drops found for this filter.
+                        {t("noCashDropsForFilter")}
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
@@ -331,25 +348,25 @@ export default function CashierCashDropsQueue() {
                             <thead>
                                 <tr className="border-b border-border/60 text-xs font-medium text-muted-foreground">
                                     <th className="pb-2.5 pt-1 font-medium">
-                                        Waiter
+                                        {tCommon("waiter")}
                                     </th>
                                     <th className="pb-2.5 pt-1 font-medium">
-                                        Date & Time
+                                        {t("dateAndTime")}
                                     </th>
                                     <th className="pb-2.5 pt-1 font-medium text-right">
-                                        Declared
+                                        {t("declared")}
                                     </th>
                                     <th className="pb-2.5 pt-1 font-medium text-right">
-                                        Counted
+                                        {t("counted")}
                                     </th>
                                     <th className="pb-2.5 pt-1 font-medium text-right">
-                                        Variance
+                                        {t("variance")}
                                     </th>
                                     <th className="pb-2.5 pt-1 font-medium text-center">
-                                        Status
+                                        {tCommon("status")}
                                     </th>
                                     <th className="pb-2.5 pt-1 font-medium text-right">
-                                        Voucher
+                                        {t("voucher")}
                                     </th>
                                 </tr>
                             </thead>
@@ -370,7 +387,8 @@ export default function CashierCashDropsQueue() {
                                             className="hover:bg-muted/40 transition-colors"
                                         >
                                             <td className="py-3 font-medium text-foreground">
-                                                {drop.waiterName ?? "Waiter"}
+                                                {drop.waiterName ??
+                                                    tCommon("waiter")}
                                             </td>
                                             <td className="py-3 text-muted-foreground font-mono text-xs">
                                                 {formattedTime}
@@ -446,7 +464,7 @@ export default function CashierCashDropsQueue() {
                                                     className="h-8 gap-1 rounded-full px-2.5 text-xs text-primary hover:bg-primary/10"
                                                 >
                                                     <ReceiptText className="size-3.5" />
-                                                    <span>Receipt</span>
+                                                    <span>{t("receipt")}</span>
                                                 </Button>
                                             </td>
                                         </tr>
@@ -458,7 +476,6 @@ export default function CashierCashDropsQueue() {
                 )}
             </div>
 
-            {/* Receipt / Voucher Modal Preview */}
             <CashDropReceiptModal
                 open={Boolean(selectedDropForReceipt)}
                 onOpenChange={open => {

@@ -10,6 +10,7 @@ import { ROLE_LABELS } from "@/domains/identity/domain/role";
 import { performSignOut } from "@/domains/identity/application/signOut";
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
 function InfoRow({ label, value }: { label: string; value: string }) {
     return (
@@ -21,12 +22,19 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 export default function WaiterProfilePage() {
+    const t = useTranslations("waiter");
+    const tRole = useTranslations("roleLabels");
     const staff = useAppSelector(selectCurrentStaff);
     const session = useAppSelector(state => state.identity.session);
     const dispatch = useAppDispatch();
     const router = useRouter();
 
     if (!staff) return null;
+
+    const roleKey = staff.role as Parameters<typeof tRole>[0];
+    const roleLabel = tRole.has(roleKey)
+        ? tRole(roleKey)
+        : (ROLE_LABELS[staff.role] ?? staff.role);
 
     return (
         <section className="mx-auto w-full max-w-3xl space-y-6">
@@ -46,7 +54,7 @@ export default function WaiterProfilePage() {
                             {staff.name}
                         </p>
                         <p className="mt-0.5 text-[14px] text-slate-gray">
-                            {ROLE_LABELS[staff.role]}
+                            {roleLabel}
                         </p>
                     </div>
                     <Badge
@@ -54,16 +62,22 @@ export default function WaiterProfilePage() {
                             session?.shiftSessionId ? "success" : "secondary"
                         }
                     >
-                        {session?.shiftSessionId ? "On shift" : "Off shift"}
+                        {session?.shiftSessionId ? t("onShift") : t("offShift")}
                     </Badge>
                 </div>
                 <div className="px-5">
-                    <InfoRow label="Role" value={ROLE_LABELS[staff.role]} />
-                    <InfoRow label="Email" value={staff.email || "—"} />
-                    <InfoRow label="Phone" value={staff.phone || "—"} />
+                    <InfoRow label={t("roleLabel")} value={roleLabel} />
                     <InfoRow
-                        label="Branch"
-                        value={session?.branchName || "This branch"}
+                        label={t("emailLabel")}
+                        value={staff.email || "—"}
+                    />
+                    <InfoRow
+                        label={t("phoneLabel")}
+                        value={staff.phone || "—"}
+                    />
+                    <InfoRow
+                        label={t("branchLabel")}
+                        value={session?.branchName || t("thisBranchLabel")}
                     />
                 </div>
             </div>
@@ -72,10 +86,10 @@ export default function WaiterProfilePage() {
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                     <div>
                         <p className="text-[13px] font-medium tracking-[0.08em] text-steel-gray uppercase">
-                            Appearance
+                            {t("appearance")}
                         </p>
                         <p className="mt-1 text-[13px] text-slate-gray">
-                            Light, dark, or match the device.
+                            {t("appearanceHint")}
                         </p>
                     </div>
                     <div className="w-[180px]">
@@ -90,9 +104,11 @@ export default function WaiterProfilePage() {
                         <Shield className="size-4" />
                     </span>
                     <div>
-                        <p className="text-[15px] font-semibold">Session</p>
+                        <p className="text-[15px] font-semibold">
+                            {t("sessionLabel")}
+                        </p>
                         <p className="text-[13px] text-slate-gray">
-                            Sign out of this device.
+                            {t("signOutDevice")}
                         </p>
                     </div>
                 </div>
@@ -104,7 +120,7 @@ export default function WaiterProfilePage() {
                     }}
                 >
                     <LogOut className="size-4" />
-                    Sign out
+                    {t("signOut")}
                 </Button>
             </div>
         </section>

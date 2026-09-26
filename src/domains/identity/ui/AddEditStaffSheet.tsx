@@ -16,6 +16,7 @@ import {
     UtensilsCrossed,
     X,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useAppDispatch, useAppSelector } from "@/context/hooks";
 import { closeAddEditStaff } from "@/context/slices/identitySlice";
 import {
@@ -55,7 +56,24 @@ function isUuid(id: string) {
     );
 }
 
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+
+const DAY_LABEL_KEYS: Record<
+    (typeof WEEKDAYS)[number],
+    "dayMon" | "dayTue" | "dayWed" | "dayThu" | "dayFri" | "daySat" | "daySun"
+> = {
+    Mon: "dayMon",
+    Tue: "dayTue",
+    Wed: "dayWed",
+    Thu: "dayThu",
+    Fri: "dayFri",
+    Sat: "daySat",
+    Sun: "daySun",
+};
+
 export default function AddEditStaffSheet() {
+    const t = useTranslations("managerStaff");
+    const tCommon = useTranslations("common");
     const dispatch = useAppDispatch();
     const isOpen = useAppSelector(state => state.identity.isAddEditOpen);
     const editingStaff = useAppSelector(state => state.identity.editingStaff);
@@ -79,15 +97,13 @@ export default function AddEditStaffSheet() {
         const baseRoles = [
             {
                 id: "waiter",
-                label: "Waiter / Server",
-                description:
-                    "Takes table orders, manages table guests, handles bill requests",
+                label: t("roleWaiter"),
+                description: t("roleWaiterDesc"),
             },
             {
                 id: "cashier",
-                label: "Cashier",
-                description:
-                    "Settles checks, confirms cash/Telebirr/CBE payments, prints receipts",
+                label: t("roleCashier"),
+                description: t("roleCashierDesc"),
             },
         ];
 
@@ -95,10 +111,9 @@ export default function AddEditStaffSheet() {
             id: `station:${st.id}`,
             stationId: st.id,
             stationCode: st.code || st.name.toUpperCase().replace(/\s+/g, "_"),
-            label: `${st.name} Station`,
+            label: t("stationRoleLabel", { name: st.name }),
             description:
-                st.description ||
-                `Food prep queue, order ticket dispatch for ${st.name}`,
+                st.description || t("stationRoleDesc", { name: st.name }),
             isStation: true,
             color: st.color,
         }));
@@ -108,30 +123,26 @@ export default function AddEditStaffSheet() {
                 ? [
                       {
                           id: "kitchen",
-                          label: "Kitchen Station",
-                          description:
-                              "Food prep queue, burger, pasta, pizza hot tickets",
+                          label: t("fallbackKitchen"),
+                          description: t("fallbackKitchenDesc"),
                           isStation: true,
                       },
                       {
                           id: "barista",
-                          label: "Barista Station",
-                          description:
-                              "Espresso, macchiato, hot tea, specialty coffee bar",
+                          label: t("fallbackBarista"),
+                          description: t("fallbackBaristaDesc"),
                           isStation: true,
                       },
                       {
                           id: "cakes",
-                          label: "Cakes & Pastry",
-                          description:
-                              "Desserts, croissants, tiramisu pastry queue",
+                          label: t("fallbackCakes"),
+                          description: t("fallbackCakesDesc"),
                           isStation: true,
                       },
                       {
                           id: "soft_drinks",
-                          label: "Beverages / Soft Drinks",
-                          description:
-                              "Fresh juices, bottled sodas, water station",
+                          label: t("fallbackSoftDrinks"),
+                          description: t("fallbackSoftDrinksDesc"),
                           isStation: true,
                       },
                   ]
@@ -142,11 +153,11 @@ export default function AddEditStaffSheet() {
             ...(activeStations.length > 0 ? stationRoles : fallbackStations),
             {
                 id: "owner",
-                label: "Owner / Administrator",
-                description: "Full restaurant administrative privileges",
+                label: t("roleOwner"),
+                description: t("roleOwnerDesc"),
             },
         ];
-    }, [activeStations]);
+    }, [activeStations, t]);
 
     const [saving, setSaving] = useState(false);
     const [setCoverage] = useSetWaiterTableCoverageMutation();
@@ -180,14 +191,15 @@ export default function AddEditStaffSheet() {
                 endLocalTime: "15:00",
             });
             toast.success(
-                "Shift created",
-                `${created.data.name} (${created.data.startLocalTime}–${created.data.endLocalTime}).`,
+                t("toastShiftCreated"),
+                t("toastShiftCreatedBody", {
+                    name: created.data.name,
+                    start: created.data.startLocalTime,
+                    end: created.data.endLocalTime,
+                }),
             );
         } catch (err) {
-            toast.fromUnknown(
-                err,
-                "Could not create shift. Use times like 07:00.",
-            );
+            toast.fromUnknown(err, t("toastShiftCreateError"));
         }
     }
 
@@ -326,7 +338,10 @@ export default function AddEditStaffSheet() {
             !current.includes(tableId);
         if (ownedByOther) {
             const ok = confirm(
-                `${ownerName || "Another waiter"} already covers this table on this shift. Take it for ${nameValue.trim() || "this waiter"}?`,
+                t("confirmTakeTable", {
+                    owner: ownerName || t("anotherWaiter"),
+                    waiter: nameValue.trim() || t("thisWaiter"),
+                }),
             );
             if (!ok) return;
         }
@@ -372,7 +387,7 @@ export default function AddEditStaffSheet() {
             if (!isEditMode && !values.pin.trim()) {
                 form.setError("pin", {
                     type: "manual",
-                    message: "PIN must be exactly 4 digits.",
+                    message: t("pinValidationError"),
                 });
                 setSaving(false);
                 return;
@@ -402,7 +417,7 @@ export default function AddEditStaffSheet() {
                         tableIds: values.assignedTableIds,
                     }).unwrap();
                 }
-                toast.success("Staff updated", values.name.trim());
+                toast.success(t("toastStaffUpdated"), values.name.trim());
                 dispatch(closeAddEditStaff());
             } else {
                 await createStaff({
@@ -423,15 +438,13 @@ export default function AddEditStaffSheet() {
                             ? values.assignedTableIds
                             : undefined,
                 }).unwrap();
-                toast.success("Staff registered", values.name.trim());
+                toast.success(t("toastStaffRegistered"), values.name.trim());
                 dispatch(closeAddEditStaff());
             }
         } catch (err) {
             toast.fromUnknown(
                 err,
-                isEditMode
-                    ? "Could not update staff."
-                    : "Could not register staff on the server.",
+                isEditMode ? t("toastUpdateError") : t("toastRegisterError"),
             );
         } finally {
             setSaving(false);
@@ -440,10 +453,10 @@ export default function AddEditStaffSheet() {
 
     async function handleDelete() {
         if (!editingStaff || !editingMembershipId) {
-            toast.error("This staff record is not on the server yet.");
+            toast.error(t("toastNotOnServer"));
             return;
         }
-        if (!confirm(`Are you sure you want to remove ${editingStaff.name}?`)) {
+        if (!confirm(t("confirmRemove", { name: editingStaff.name ?? "" }))) {
             return;
         }
         setSaving(true);
@@ -452,10 +465,10 @@ export default function AddEditStaffSheet() {
                 membershipId: editingMembershipId,
                 body: { active: false },
             }).unwrap();
-            toast.success("Staff deactivated", editingStaff.name);
+            toast.success(t("toastDeactivated"), editingStaff.name);
             dispatch(closeAddEditStaff());
         } catch (err) {
-            toast.fromUnknown(err, "Could not deactivate staff.");
+            toast.fromUnknown(err, t("toastDeactivateError"));
         } finally {
             setSaving(false);
         }
@@ -476,14 +489,14 @@ export default function AddEditStaffSheet() {
                         </div>
                         <div>
                             <h2 className="text-[17px] font-semibold text-foreground">
-                                {isEditMode
-                                    ? "Edit Staff Member"
-                                    : "Register New Staff"}
+                                {isEditMode ? t("editTitle") : t("addTitle")}
                             </h2>
                             <p className="text-[13px] text-slate-gray">
                                 {isEditMode
-                                    ? `Update details for ${editingStaff?.name}`
-                                    : "Register a server, station cook, or manager"}
+                                    ? t("editSubtitle", {
+                                          name: editingStaff?.name ?? "",
+                                      })
+                                    : t("addSubtitle")}
                             </p>
                         </div>
                     </div>
@@ -506,7 +519,7 @@ export default function AddEditStaffSheet() {
                     >
                         <div className="space-y-4">
                             <h3 className="text-[12px] font-semibold tracking-wider text-slate-gray uppercase">
-                                Personal & Role Details
+                                {t("personalRoleDetails")}
                             </h3>
 
                             <FormField
@@ -515,14 +528,16 @@ export default function AddEditStaffSheet() {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>
-                                            Full Name{" "}
+                                            {t("fullName")}{" "}
                                             <span className="text-primary">
                                                 *
                                             </span>
                                         </FormLabel>
                                         <FormControl>
                                             <Input
-                                                placeholder="e.g. Karim Tesfaye"
+                                                placeholder={t(
+                                                    "fullNamePlaceholder",
+                                                )}
                                                 className="h-10 rounded-[10px]"
                                                 {...field}
                                             />
@@ -538,12 +553,16 @@ export default function AddEditStaffSheet() {
                                     name="phone"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Phone Number</FormLabel>
+                                            <FormLabel>
+                                                {t("phoneNumber")}
+                                            </FormLabel>
                                             <div className="relative">
                                                 <Phone className="absolute top-2.5 left-3 size-4 text-slate-gray" />
                                                 <FormControl>
                                                     <Input
-                                                        placeholder="+251 91 234 5678"
+                                                        placeholder={t(
+                                                            "phonePlaceholder",
+                                                        )}
                                                         className="h-10 rounded-[10px] pl-9"
                                                         {...field}
                                                     />
@@ -559,7 +578,7 @@ export default function AddEditStaffSheet() {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>
-                                                Quick Access PIN{" "}
+                                                {t("quickAccessPin")}{" "}
                                                 {!isEditMode ? (
                                                     <span className="text-primary">
                                                         *
@@ -581,8 +600,12 @@ export default function AddEditStaffSheet() {
                                                         autoComplete="new-password"
                                                         placeholder={
                                                             isEditMode
-                                                                ? "Leave blank to keep current"
-                                                                : "4-digit numeric PIN"
+                                                                ? t(
+                                                                      "pinPlaceholderEdit",
+                                                                  )
+                                                                : t(
+                                                                      "pinPlaceholder",
+                                                                  )
                                                         }
                                                         className="h-10 rounded-[10px] pl-9 pr-10 font-mono tracking-wider"
                                                         {...field}
@@ -607,8 +630,8 @@ export default function AddEditStaffSheet() {
                                                     className="absolute top-2.5 right-3 z-10 flex size-5 cursor-pointer items-center justify-center text-slate-gray hover:text-foreground transition-colors"
                                                     title={
                                                         showPin
-                                                            ? "Hide PIN"
-                                                            : "Show PIN"
+                                                            ? t("hidePin")
+                                                            : t("showPin")
                                                     }
                                                 >
                                                     {showPin ? (
@@ -620,8 +643,7 @@ export default function AddEditStaffSheet() {
                                             </div>
                                             {isEditMode ? (
                                                 <p className="text-[12px] text-slate-gray">
-                                                    Only fill this if you want
-                                                    to reset their PIN.
+                                                    {t("pinResetHint")}
                                                 </p>
                                             ) : null}
                                             <FormMessage />
@@ -636,7 +658,7 @@ export default function AddEditStaffSheet() {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>
-                                            Email{" "}
+                                            {t("email")}{" "}
                                             <span className="text-primary">
                                                 *
                                             </span>
@@ -644,7 +666,9 @@ export default function AddEditStaffSheet() {
                                         <FormControl>
                                             <Input
                                                 type="email"
-                                                placeholder="name@restaurant.com"
+                                                placeholder={t(
+                                                    "emailPlaceholder",
+                                                )}
                                                 className="h-10 rounded-[10px]"
                                                 {...field}
                                             />
@@ -660,7 +684,7 @@ export default function AddEditStaffSheet() {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>
-                                            Restaurant Role{" "}
+                                            {t("restaurantRole")}{" "}
                                             <span className="text-primary">
                                                 *
                                             </span>
@@ -711,13 +735,11 @@ export default function AddEditStaffSheet() {
                                 <div className="flex items-center gap-2">
                                     <UtensilsCrossed className="size-4 text-primary" />
                                     <h4 className="text-[13px] font-semibold">
-                                        Shift & floor coverage
+                                        {t("shiftCoverageTitle")}
                                     </h4>
                                 </div>
                                 <p className="text-[12px] text-slate-gray">
-                                    Pick a shift to see the live floor: free
-                                    tables, and who already owns each table in
-                                    that window.
+                                    {t("shiftCoverageDesc")}
                                 </p>
 
                                 <FormField
@@ -727,7 +749,7 @@ export default function AddEditStaffSheet() {
                                         <FormItem>
                                             <div className="flex items-center justify-between">
                                                 <FormLabel>
-                                                    Shift window
+                                                    {t("shiftWindow")}
                                                 </FormLabel>
                                                 <button
                                                     type="button"
@@ -738,8 +760,8 @@ export default function AddEditStaffSheet() {
                                                 >
                                                     <Plus className="size-3.5" />
                                                     {showNewShift
-                                                        ? "Close"
-                                                        : "New shift"}
+                                                        ? tCommon("close")
+                                                        : t("newShift")}
                                                 </button>
                                             </div>
                                             <FormControl>
@@ -754,14 +776,15 @@ export default function AddEditStaffSheet() {
                                                 >
                                                     {shifts.length === 0 ? (
                                                         <option value="">
-                                                            No shifts yet —
-                                                            click &ldquo;+ New
-                                                            shift&rdquo; above
+                                                            {t(
+                                                                "noShiftsOption",
+                                                            )}
                                                         </option>
                                                     ) : (
                                                         <option value="">
-                                                            Select a shift
-                                                            window
+                                                            {t(
+                                                                "selectShiftOption",
+                                                            )}
                                                         </option>
                                                     )}
                                                     {shifts.map(shift => (
@@ -783,14 +806,11 @@ export default function AddEditStaffSheet() {
                                             {selectedShift ? (
                                                 <p className="flex items-center gap-1.5 text-[12px] text-slate-gray">
                                                     <Clock3 className="size-3.5" />
-                                                    Showing floor for{" "}
-                                                    {selectedShift.name} (
-                                                    {
-                                                        selectedShift.startLocalTime
-                                                    }
-                                                    –
-                                                    {selectedShift.endLocalTime}
-                                                    )
+                                                    {t("showingFloorFor", {
+                                                        name: selectedShift.name,
+                                                        start: selectedShift.startLocalTime,
+                                                        end: selectedShift.endLocalTime,
+                                                    })}
                                                 </p>
                                             ) : null}
                                         </FormItem>
@@ -801,18 +821,20 @@ export default function AddEditStaffSheet() {
                                     <div className="space-y-2.5 rounded-[12px] border border-dashed border-primary/40 bg-surface-ivory p-3.5 dark:bg-card">
                                         <div className="flex items-center justify-between">
                                             <p className="text-[12px] font-semibold text-foreground">
-                                                Create shift with custom times
+                                                {t("createShiftTitle")}
                                             </p>
                                             <span className="text-[11px] text-slate-gray">
-                                                Adds to restaurant shifts
+                                                {t("createShiftHint")}
                                             </span>
                                         </div>
                                         <div>
                                             <label className="sr-only">
-                                                Shift name
+                                                {t("shiftNameSr")}
                                             </label>
                                             <Input
-                                                placeholder="e.g. Morning, Evening, Night"
+                                                placeholder={t(
+                                                    "shiftNamePlaceholder",
+                                                )}
                                                 className="h-9 text-[13px] bg-white dark:bg-card"
                                                 value={shiftForm.watch("name")}
                                                 onChange={e =>
@@ -837,7 +859,7 @@ export default function AddEditStaffSheet() {
                                         <div className="grid grid-cols-2 gap-2">
                                             <div>
                                                 <label className="text-[11px] font-medium text-slate-gray">
-                                                    Start time
+                                                    {t("startTime")}
                                                 </label>
                                                 <Input
                                                     type="time"
@@ -869,7 +891,7 @@ export default function AddEditStaffSheet() {
                                             </div>
                                             <div>
                                                 <label className="text-[11px] font-medium text-slate-gray">
-                                                    End time
+                                                    {t("endTime")}
                                                 </label>
                                                 <Input
                                                     type="time"
@@ -910,7 +932,7 @@ export default function AddEditStaffSheet() {
                                                     setShowNewShift(false)
                                                 }
                                             >
-                                                Cancel
+                                                {tCommon("cancel")}
                                             </Button>
                                             <Button
                                                 type="button"
@@ -925,8 +947,8 @@ export default function AddEditStaffSheet() {
                                                 )}
                                             >
                                                 {creatingShift
-                                                    ? "Saving…"
-                                                    : "Save shift"}
+                                                    ? t("saving")
+                                                    : t("saveShift")}
                                             </Button>
                                         </div>
                                     </div>
@@ -935,30 +957,36 @@ export default function AddEditStaffSheet() {
                                 {shiftDefinitionId ? (
                                     <div className="flex flex-wrap gap-2 text-[11px]">
                                         <span className="rounded-full border border-hairline bg-card px-2.5 py-1">
-                                            {assignmentStats.total} tables
+                                            {t("statsTables", {
+                                                count: assignmentStats.total,
+                                            })}
                                         </span>
                                         <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-emerald-800">
-                                            {assignmentStats.free} free
+                                            {t("statsFree", {
+                                                count: assignmentStats.free,
+                                            })}
                                         </span>
                                         <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-800">
-                                            {assignmentStats.assigned} assigned
+                                            {t("statsAssigned", {
+                                                count: assignmentStats.assigned,
+                                            })}
                                         </span>
                                         <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-primary">
-                                            {assignedTableIds.length} selected
-                                            for this waiter
+                                            {t("statsSelected", {
+                                                count: assignedTableIds.length,
+                                            })}
                                         </span>
                                     </div>
                                 ) : null}
 
                                 {floorLoading ? (
                                     <p className="text-[12px] text-slate-gray">
-                                        Loading floor for this shift…
+                                        {t("loadingFloor")}
                                     </p>
                                 ) : null}
                                 {floorError ? (
                                     <p className="text-[12px] text-destructive">
-                                        Could not load shift floor. Check the
-                                        API.
+                                        {t("floorLoadError")}
                                     </p>
                                 ) : null}
 
@@ -1026,7 +1054,9 @@ export default function AddEditStaffSheet() {
                                                                         </span>
                                                                         {selected ? (
                                                                             <span className="text-[10px] opacity-90">
-                                                                                Mine
+                                                                                {t(
+                                                                                    "tableMine",
+                                                                                )}
                                                                             </span>
                                                                         ) : null}
                                                                     </div>
@@ -1044,10 +1074,19 @@ export default function AddEditStaffSheet() {
                                                                     >
                                                                         {selected
                                                                             ? nameValue.trim() ||
-                                                                              "This waiter"
+                                                                              t(
+                                                                                  "thisWaiter",
+                                                                              )
                                                                             : ownerName
-                                                                              ? `Assigned · ${ownerName}`
-                                                                              : "Free"}
+                                                                              ? t(
+                                                                                    "tableAssigned",
+                                                                                    {
+                                                                                        name: ownerName,
+                                                                                    },
+                                                                                )
+                                                                              : t(
+                                                                                    "tableFree",
+                                                                                )}
                                                                     </span>
                                                                 </button>
                                                             );
@@ -1059,24 +1098,20 @@ export default function AddEditStaffSheet() {
                                         <div className="flex flex-wrap gap-3 text-[11px] text-slate-gray">
                                             <span className="inline-flex items-center gap-1.5">
                                                 <span className="size-2.5 rounded-sm border border-hairline bg-card" />
-                                                Free
+                                                {t("legendFree")}
                                             </span>
                                             <span className="inline-flex items-center gap-1.5">
                                                 <span className="size-2.5 rounded-sm bg-amber-200" />
-                                                Taken by another waiter
+                                                {t("legendTaken")}
                                             </span>
                                             <span className="inline-flex items-center gap-1.5">
                                                 <span className="size-2.5 rounded-sm bg-primary" />
-                                                Selected for this waiter
+                                                {t("legendSelected")}
                                             </span>
                                         </div>
                                         {!editingMembershipId ? (
                                             <p className="text-[11px] text-slate-gray">
-                                                New staff registration still
-                                                saves locally first. For live
-                                                coverage on an existing waiter,
-                                                use Edit / Assign by shift on
-                                                the staff list.
+                                                {t("newStaffCoverageNote")}
                                             </p>
                                         ) : null}
                                     </div>
@@ -1086,7 +1121,7 @@ export default function AddEditStaffSheet() {
 
                         <div className="space-y-4 pt-2">
                             <h3 className="text-[12px] font-semibold tracking-wider text-slate-gray uppercase">
-                                Duty & account
+                                {t("dutyAndAccount")}
                             </h3>
 
                             <FormField
@@ -1095,18 +1130,10 @@ export default function AddEditStaffSheet() {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>
-                                            Scheduled working days
+                                            {t("scheduledWorkingDays")}
                                         </FormLabel>
                                         <div className="flex flex-wrap gap-1.5">
-                                            {[
-                                                "Mon",
-                                                "Tue",
-                                                "Wed",
-                                                "Thu",
-                                                "Fri",
-                                                "Sat",
-                                                "Sun",
-                                            ].map(day => {
+                                            {WEEKDAYS.map(day => {
                                                 const isSelected =
                                                     field.value.includes(day);
                                                 return (
@@ -1134,7 +1161,7 @@ export default function AddEditStaffSheet() {
                                                                 : "border-hairline bg-surface-ivory text-slate-gray",
                                                         )}
                                                     >
-                                                        {day}
+                                                        {t(DAY_LABEL_KEYS[day])}
                                                     </button>
                                                 );
                                             })}
@@ -1150,24 +1177,27 @@ export default function AddEditStaffSheet() {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>
-                                            Current duty state
+                                            {t("currentDutyState")}
                                         </FormLabel>
                                         <div className="grid grid-cols-3 gap-2">
                                             {(
                                                 [
                                                     {
                                                         id: "on_duty",
-                                                        label: "On Duty",
+                                                        labelKey:
+                                                            "onDuty" as const,
                                                         color: "bg-emerald-500",
                                                     },
                                                     {
                                                         id: "on_break",
-                                                        label: "On Break",
+                                                        labelKey:
+                                                            "onBreak" as const,
                                                         color: "bg-amber-500",
                                                     },
                                                     {
                                                         id: "off_duty",
-                                                        label: "Off Duty",
+                                                        labelKey:
+                                                            "offDuty" as const,
                                                         color: "bg-zinc-400",
                                                     },
                                                 ] as const
@@ -1196,7 +1226,7 @@ export default function AddEditStaffSheet() {
                                                                 st.color,
                                                             )}
                                                         />
-                                                        {st.label}
+                                                        {t(st.labelKey)}
                                                     </button>
                                                 );
                                             })}
@@ -1213,11 +1243,10 @@ export default function AddEditStaffSheet() {
                                     <div className="flex items-center justify-between rounded-[14px] border border-hairline bg-surface-ivory/40 p-4">
                                         <div>
                                             <p className="text-[14px] font-medium">
-                                                Account active
+                                                {t("accountActive")}
                                             </p>
                                             <p className="text-[12px] text-slate-gray">
-                                                Deactivated staff cannot sign
-                                                in.
+                                                {t("accountActiveDesc")}
                                             </p>
                                         </div>
                                         <button
@@ -1256,7 +1285,7 @@ export default function AddEditStaffSheet() {
                             className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[13px] font-medium text-red-600"
                         >
                             <Trash2 className="size-4" />
-                            Remove
+                            {t("remove")}
                         </button>
                     ) : (
                         <div />
@@ -1268,7 +1297,7 @@ export default function AddEditStaffSheet() {
                             onClick={() => dispatch(closeAddEditStaff())}
                             className="rounded-full text-[13px]"
                         >
-                            Cancel
+                            {tCommon("cancel")}
                         </Button>
                         <Button
                             type="submit"
@@ -1277,10 +1306,10 @@ export default function AddEditStaffSheet() {
                             className="rounded-full px-5 text-[13px] font-semibold"
                         >
                             {saving
-                                ? "Saving…"
+                                ? t("saving")
                                 : isEditMode
-                                  ? "Save Changes"
-                                  : "Register Staff"}
+                                  ? t("saveChanges")
+                                  : t("registerStaff")}
                         </Button>
                     </div>
                 </div>

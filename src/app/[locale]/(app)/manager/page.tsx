@@ -59,8 +59,8 @@ export default function ManagerPage() {
                     title={`${tRoles("manager")} ${tTopBar("dashboard")}`}
                     description={
                         dash
-                            ? `${dash.branchName} · Live for ${dash.businessDate}`
-                            : "Live revenue, floor, and station telemetry."
+                            ? `${dash.branchName} · ${tManager("liveFor", { date: dash.businessDate })}`
+                            : tManager("liveDescription")
                     }
                 />
                 <div
@@ -75,7 +75,7 @@ export default function ManagerPage() {
                             error ? "text-red-500" : "text-emerald-500",
                         )}
                     />
-                    {error ? "Offline" : "Auto-updating"}
+                    {error ? tManager("offline") : tManager("autoUpdating")}
                     {isFetching ? (
                         <RefreshCw className="size-3 animate-spin" />
                     ) : null}
@@ -84,8 +84,7 @@ export default function ManagerPage() {
 
             {error && (
                 <div className="rounded-[16px] border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive">
-                    Unable to load live telemetry. Check connection and
-                    permissions.
+                    {tManager("loadError")}
                 </div>
             )}
 
@@ -95,7 +94,7 @@ export default function ManagerPage() {
                 <>
                     <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
                         <KpiCard
-                            label="Collected today"
+                            label={tManager("collectedToday")}
                             value={dash?.kpis.collectionsFormatted ?? "ETB 0"}
                             trend={{
                                 value: dash?.kpis.dailyRevenueTrend ?? "0%",
@@ -105,7 +104,7 @@ export default function ManagerPage() {
                                     )
                                         ? "up"
                                         : "neutral",
-                                label: "vs billed / yesterday",
+                                label: tManager("vsBilledYesterday"),
                             }}
                             sparkline={{
                                 badge:
@@ -116,13 +115,13 @@ export default function ManagerPage() {
                             tone="brand"
                         />
                         <KpiCard
-                            label="Open tables"
+                            label={tManager("openTables")}
                             value={dash?.kpis.activeTablesFormatted ?? "0 / 0"}
                             trend={{
                                 value:
                                     dash?.kpis.floorCapacityPercentage ?? "0%",
                                 direction: "neutral",
-                                label: "floor capacity",
+                                label: tManager("floorCapacity"),
                             }}
                             sparkline={{
                                 badge:
@@ -133,11 +132,11 @@ export default function ManagerPage() {
                             tone="amber"
                         />
                         <KpiCard
-                            label="Station backlog"
+                            label={tManager("stationBacklog")}
                             value={dash?.kpis.stationBacklogFormatted ?? "0"}
                             hint={
                                 dash?.kpis.stationBacklogHint ??
-                                "stations clear"
+                                tManager("stationsClear")
                             }
                             sparkline={{
                                 badge:
@@ -148,11 +147,11 @@ export default function ManagerPage() {
                             tone="emerald"
                         />
                         <KpiCard
-                            label="Needs attention"
+                            label={tManager("needsAttention")}
                             value={dash?.kpis.pendingActionsFormatted ?? "0"}
                             hint={
                                 dash?.kpis.pendingActionsHint ??
-                                "nothing waiting"
+                                tManager("nothingWaiting")
                             }
                             sparkline={{
                                 badge: tManager("tinaVerifyMix"),
@@ -164,14 +163,14 @@ export default function ManagerPage() {
                     </div>
                     <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
                         <KpiCard
-                            label="Net billed"
+                            label={tManager("netBilled")}
                             value={dash?.kpis.billedFormatted ?? "ETB 0"}
                             trend={{
                                 value:
                                     dash?.kpis.collectionGapFormatted ??
                                     "ETB 0",
                                 direction: "neutral",
-                                label: "collection gap",
+                                label: tManager("collectionGap"),
                             }}
                             sparkline={{
                                 badge: dash?.kpis.avgCheckFormatted ?? "0",
@@ -181,12 +180,12 @@ export default function ManagerPage() {
                             tone="brand"
                         />
                         <KpiCard
-                            label="Avg check"
+                            label={tManager("avgCheck")}
                             value={dash?.kpis.avgCheckFormatted ?? "ETB 0"}
                             trend={{
                                 value: dash?.kpis.ordersFormatted ?? "0",
                                 direction: "neutral",
-                                label: "orders today",
+                                label: tManager("ordersToday"),
                             }}
                             sparkline={{
                                 badge: dash?.kpis.coversFormatted ?? "0",
@@ -196,9 +195,9 @@ export default function ManagerPage() {
                             tone="amber"
                         />
                         <KpiCard
-                            label="Covers"
+                            label={tManager("covers")}
                             value={dash?.kpis.coversFormatted ?? "0"}
-                            hint="guests seated today"
+                            hint={tManager("guestsSeatedToday")}
                             sparkline={{
                                 badge: dash?.kpis.coversFormatted ?? "0",
                                 color: "#046645",
@@ -207,14 +206,14 @@ export default function ManagerPage() {
                             tone="emerald"
                         />
                         <KpiCard
-                            label="Avg prep"
+                            label={tManager("avgPrep")}
                             value={dash?.kpis.avgPrepTimeFormatted ?? "0 min"}
                             trend={{
                                 value: dash?.kpis.avgPrepTimeTrend ?? "0%",
                                 direction: "neutral",
                                 label:
                                     dash?.kpis.avgPrepTimeTrendLabel ??
-                                    "fulfillment",
+                                    tManager("fulfillment"),
                             }}
                             sparkline={{
                                 badge:

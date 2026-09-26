@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
     Building2,
     Calendar,
@@ -29,9 +30,14 @@ interface TenantDetailViewProps {
 }
 
 export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
+    const t = useTranslations("tenancy");
     const [editOpen, setEditOpen] = useState(false);
-    const { data: response, isLoading, error, refetch } =
-        useGetSuperAdminTenantByIdQuery(tenantId);
+    const {
+        data: response,
+        isLoading,
+        error,
+        refetch,
+    } = useGetSuperAdminTenantByIdQuery(tenantId);
     const tenant = response?.data;
 
     if (isLoading) {
@@ -40,7 +46,7 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                 <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
                     <Loader2 className="size-8 animate-spin text-brand" />
                     <p className="text-[13px] text-slate-gray">
-                        Loading tenant details & operational telemetry...
+                        {t("detail.loading")}
                     </p>
                 </div>
             </DashboardFrame>
@@ -54,21 +60,21 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                     href="/super-admin/tenants"
                     className="text-[14px] text-brand hover:underline font-medium"
                 >
-                    ← Back to Tenants
+                    {t("detail.backToTenants")}
                 </Link>
                 <div className="mt-8 rounded-[16px] border border-destructive/20 bg-destructive/10 p-8 text-center">
                     <h2 className="text-[18px] font-semibold text-destructive">
-                        Tenant Not Found
+                        {t("detail.notFoundTitle")}
                     </h2>
                     <p className="mt-2 text-[13px] text-slate-gray">
-                        The requested tenant ID &quot;{tenantId}&quot; could not be retrieved from the database.
+                        {t("detail.notFoundBody", { tenantId })}
                     </p>
                     <div className="mt-4">
                         <Link
                             href="/super-admin/tenants"
                             className="inline-flex rounded-xl bg-foreground px-4 py-2 text-[13px] font-medium text-background"
                         >
-                            Return to Fleet Table
+                            {t("detail.returnToFleetTable")}
                         </Link>
                     </div>
                 </div>
@@ -77,20 +83,90 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
     }
 
     const facts = [
-        { label: "City", value: tenant.city, icon: MapPin },
-        { label: "Area / District", value: tenant.area || "Downtown", icon: MapPin },
-        { label: "Physical Address", value: tenant.address, icon: Store },
-        { label: "Primary Phone", value: tenant.phone, icon: Phone },
-        { label: "Contact Email", value: tenant.email, icon: Mail },
-        { label: "House Manager", value: tenant.manager, icon: Users },
-        { label: "Operating Hours", value: tenant.hours, icon: Calendar },
-        { label: "Concept / Cuisine", value: tenant.concept, icon: UtensilsCrossed },
-        { label: "Active Branches", value: String(tenant.branches), icon: GitBranch },
-        { label: "Dining Tables", value: String(tenant.tableCount), icon: UtensilsCrossed },
-        { label: "Staff Members", value: String(tenant.staffCount), icon: Users },
-        { label: "Subscription SLA", value: tenant.plan, icon: Shield },
-        { label: "Provisioned On", value: tenant.provisionedAt, icon: Calendar },
-        { label: "Tenant UUID", value: tenant.id, icon: CheckCircle2 },
+        {
+            id: "city",
+            label: t("detail.factCity"),
+            value: tenant.city,
+            icon: MapPin,
+        },
+        {
+            id: "area",
+            label: t("detail.factAreaDistrict"),
+            value: tenant.area || t("detail.defaultArea"),
+            icon: MapPin,
+        },
+        {
+            id: "address",
+            label: t("detail.factPhysicalAddress"),
+            value: tenant.address,
+            icon: Store,
+        },
+        {
+            id: "phone",
+            label: t("detail.factPrimaryPhone"),
+            value: tenant.phone,
+            icon: Phone,
+        },
+        {
+            id: "email",
+            label: t("detail.factContactEmail"),
+            value: tenant.email,
+            icon: Mail,
+        },
+        {
+            id: "manager",
+            label: t("detail.factHouseManager"),
+            value: tenant.manager,
+            icon: Users,
+        },
+        {
+            id: "hours",
+            label: t("detail.factOperatingHours"),
+            value: tenant.hours,
+            icon: Calendar,
+        },
+        {
+            id: "concept",
+            label: t("detail.factConceptCuisine"),
+            value: tenant.concept,
+            icon: UtensilsCrossed,
+        },
+        {
+            id: "branches",
+            label: t("detail.factActiveBranches"),
+            value: String(tenant.branches),
+            icon: GitBranch,
+        },
+        {
+            id: "tables",
+            label: t("detail.factDiningTables"),
+            value: String(tenant.tableCount),
+            icon: UtensilsCrossed,
+        },
+        {
+            id: "staff",
+            label: t("detail.factStaffMembers"),
+            value: String(tenant.staffCount),
+            icon: Users,
+        },
+        {
+            id: "subscriptionSla",
+            label: t("detail.factSubscriptionSla"),
+            value: tenant.plan,
+            icon: Shield,
+        },
+        {
+            id: "provisionedOn",
+            label: t("detail.factProvisionedOn"),
+            value: tenant.provisionedAt,
+            icon: Calendar,
+        },
+        {
+            id: "tenantUuid",
+            label: t("detail.factTenantUuid"),
+            value: tenant.id,
+            icon: CheckCircle2,
+        },
     ];
 
     return (
@@ -99,7 +175,7 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                 href="/super-admin/tenants"
                 className="text-[14px] text-brand hover:underline font-medium inline-flex items-center gap-1"
             >
-                ← Back to Tenants Fleet
+                {t("detail.backToTenantsFleet")}
             </Link>
 
             {/* Tenant Title & Header Capsule */}
@@ -113,17 +189,31 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                             <h1 className="text-[28px] font-bold tracking-tight text-foreground">
                                 {tenant.name}
                             </h1>
-                            <Badge variant={tenant.active ? "success" : "secondary"}>
-                                {tenant.active ? "Active" : "Suspended"}
+                            <Badge
+                                variant={
+                                    tenant.active ? "success" : "secondary"
+                                }
+                            >
+                                {tenant.active ? t("active") : t("suspended")}
                             </Badge>
-                            <Badge variant="outline" className="capitalize text-[12px]">
-                                {tenant.plan} SLA
+                            <Badge
+                                variant="outline"
+                                className="capitalize text-[12px]"
+                            >
+                                {t("detail.planSlaBadge", {
+                                    plan: tenant.plan,
+                                })}
                             </Badge>
                         </div>
                         <p className="mt-1 text-[14px] text-slate-gray">
-                            {tenant.concept} · {tenant.area ? `${tenant.area}, ` : ""}{tenant.city}
+                            {tenant.concept} ·{" "}
+                            {tenant.area ? `${tenant.area}, ` : ""}
+                            {tenant.city}
                             {tenant.legalName && (
-                                <span className="text-slate-gray/70"> ({tenant.legalName})</span>
+                                <span className="text-slate-gray/70">
+                                    {" "}
+                                    ({tenant.legalName})
+                                </span>
                             )}
                         </p>
                     </div>
@@ -134,7 +224,7 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                     className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-brand/90"
                 >
                     <Pencil className="size-3.5" />
-                    Edit tenant
+                    {t("editTenant")}
                 </button>
             </div>
 
@@ -142,7 +232,9 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
             <div className="mt-6 grid gap-3 sm:grid-cols-4">
                 <div className="rounded-[14px] border border-hairline bg-card p-4">
                     <div className="flex items-center justify-between text-slate-gray">
-                        <span className="text-[11px] font-medium">Today GMV</span>
+                        <span className="text-[11px] font-medium">
+                            {t("todayGmv")}
+                        </span>
                         <DollarSign className="size-4 text-brand" />
                     </div>
                     <p className="mt-1.5 text-[20px] font-bold tracking-tight text-foreground">
@@ -151,7 +243,9 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                 </div>
                 <div className="rounded-[14px] border border-hairline bg-card p-4">
                     <div className="flex items-center justify-between text-slate-gray">
-                        <span className="text-[11px] font-medium">Physical Branches</span>
+                        <span className="text-[11px] font-medium">
+                            {t("detail.metricPhysicalBranches")}
+                        </span>
                         <GitBranch className="size-4 text-brand" />
                     </div>
                     <p className="mt-1.5 text-[20px] font-bold tracking-tight text-foreground">
@@ -160,7 +254,9 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                 </div>
                 <div className="rounded-[14px] border border-hairline bg-card p-4">
                     <div className="flex items-center justify-between text-slate-gray">
-                        <span className="text-[11px] font-medium">Floor Tables</span>
+                        <span className="text-[11px] font-medium">
+                            {t("detail.metricFloorTables")}
+                        </span>
                         <UtensilsCrossed className="size-4 text-brand" />
                     </div>
                     <p className="mt-1.5 text-[20px] font-bold tracking-tight text-foreground">
@@ -169,7 +265,9 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                 </div>
                 <div className="rounded-[14px] border border-hairline bg-card p-4">
                     <div className="flex items-center justify-between text-slate-gray">
-                        <span className="text-[11px] font-medium">Staff Members</span>
+                        <span className="text-[11px] font-medium">
+                            {t("detail.metricStaffMembers")}
+                        </span>
                         <Users className="size-4 text-brand" />
                     </div>
                     <p className="mt-1.5 text-[20px] font-bold tracking-tight text-foreground">
@@ -181,7 +279,9 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
             {/* Provisioned Branches Section */}
             {tenant.branchesList && tenant.branchesList.length > 0 && (
                 <div className="mt-6">
-                    <h2 className="text-[15px] font-semibold mb-3">Provisioned Branches</h2>
+                    <h2 className="text-[15px] font-semibold mb-3">
+                        {t("detail.provisionedBranches")}
+                    </h2>
                     <div className="grid gap-3 sm:grid-cols-2">
                         {tenant.branchesList.map(b => (
                             <div
@@ -190,16 +290,29 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                             >
                                 <div className="flex items-center gap-3">
                                     <div className="flex size-10 items-center justify-center rounded-xl bg-surface-ivory text-foreground font-semibold text-xs border border-hairline">
-                                        {b.displayCode || "MAIN"}
+                                        {b.displayCode ||
+                                            t("detail.branchFallbackCode")}
                                     </div>
                                     <div>
-                                        <p className="font-semibold text-[14px]">{b.name}</p>
+                                        <p className="font-semibold text-[14px]">
+                                            {b.name}
+                                        </p>
                                         <p className="text-[12px] text-slate-gray">
-                                            {b.tablesCount} Tables · {b.staffCount} Staff · {b.timezone}
+                                            {t("detail.branchMeta", {
+                                                tablesCount: b.tablesCount,
+                                                staffCount: b.staffCount,
+                                                timezone: b.timezone,
+                                            })}
                                         </p>
                                     </div>
                                 </div>
-                                <Badge variant={b.status === "ACTIVE" ? "success" : "secondary"}>
+                                <Badge
+                                    variant={
+                                        b.status === "ACTIVE"
+                                            ? "success"
+                                            : "secondary"
+                                    }
+                                >
                                     {b.status}
                                 </Badge>
                             </div>
@@ -211,9 +324,11 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
             {/* Restaurant Detail Facts */}
             <div className="mt-6 overflow-hidden rounded-[16px] border border-hairline bg-card">
                 <div className="border-b border-hairline px-5 py-3.5 bg-surface-ivory/50">
-                    <h2 className="text-[15px] font-semibold">Restaurant & Operations Specification</h2>
+                    <h2 className="text-[15px] font-semibold">
+                        {t("detail.specTitle")}
+                    </h2>
                     <p className="text-[12px] text-slate-gray">
-                        Complete configuration metadata from database
+                        {t("detail.specSubtitle")}
                     </p>
                 </div>
                 <dl className="divide-y divide-hairline">
@@ -221,7 +336,7 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                         const Icon = fact.icon;
                         return (
                             <div
-                                key={fact.label}
+                                key={fact.id}
                                 className="grid gap-1 px-5 py-3 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-center hover:bg-surface-ivory/30 transition-colors"
                             >
                                 <dt className="flex items-center gap-2 text-[12px] font-medium text-slate-gray">
@@ -230,9 +345,9 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                                 </dt>
                                 <dd
                                     className={
-                                        fact.label === "Subscription SLA"
+                                        fact.id === "subscriptionSla"
                                             ? "text-[14px] font-semibold text-brand capitalize"
-                                            : fact.label === "Tenant UUID"
+                                            : fact.id === "tenantUuid"
                                               ? "text-[13px] font-mono text-slate-gray"
                                               : "text-[14px] font-medium text-foreground"
                                     }

@@ -10,6 +10,7 @@ import {
     Sparkles,
     Wifi,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { QrMenuConfig } from "@/context/services/qrMenuApi";
 import { MenuItem } from "@/domains/catalog/domain/menu";
 import { formatEtb } from "@/lib/money";
@@ -27,6 +28,7 @@ export const LivePhoneSimulator: React.FC<LivePhoneSimulatorProps> = ({
     tableName = "Table 4 · Rooftop Terrace",
     restaurantName = "Restaurant Lounge & Grill",
 }) => {
+    const t = useTranslations("qrMenuStudio");
     const [activeTab, setActiveTab] = useState<string>("all");
     const [search, setSearch] = useState("");
     const [selectedDiet, setSelectedDiet] = useState<string>("ALL");
@@ -94,8 +96,7 @@ export const LivePhoneSimulator: React.FC<LivePhoneSimulatorProps> = ({
                             {config.welcomeMessage || restaurantName}
                         </h2>
                         <p className="mt-0.5 text-[11px] text-white/80 line-clamp-1">
-                            {config.subtitle ||
-                                "Dine-in menu & mobile ordering"}
+                            {config.subtitle || t("dineInFallback")}
                         </p>
                     </div>
                 </div>
@@ -105,12 +106,12 @@ export const LivePhoneSimulator: React.FC<LivePhoneSimulatorProps> = ({
                     <div className="mx-3 mt-2.5 flex items-center justify-between rounded-xl bg-amber-500/10 px-3 py-1.5 border border-amber-500/20 text-[11px] text-amber-900">
                         <span className="flex items-center gap-1.5 font-medium">
                             <Wifi className="size-3.5 text-amber-600" />
-                            WiFi:{" "}
+                            {t("wifiPrefix")}{" "}
                             <span className="font-bold">{config.wifiSsid}</span>
                         </span>
                         {config.wifiPassword ? (
                             <span className="text-[10px] text-amber-700">
-                                Pass:{" "}
+                                {t("passPrefix")}{" "}
                                 <code className="font-mono">
                                     {config.wifiPassword}
                                 </code>
@@ -125,7 +126,7 @@ export const LivePhoneSimulator: React.FC<LivePhoneSimulatorProps> = ({
                         <Search className="absolute left-2.5 size-3.5 text-slate-400" />
                         <input
                             type="text"
-                            placeholder="Search dishes, drinks, desserts…"
+                            placeholder={t("searchPlaceholder")}
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                             className="w-full rounded-xl border border-slate-200 bg-white py-1.5 pr-3 pl-8 text-[12px] text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-amber-500"
@@ -145,10 +146,11 @@ export const LivePhoneSimulator: React.FC<LivePhoneSimulatorProps> = ({
                                     : "bg-slate-200/80 text-slate-600 hover:bg-slate-200"
                             }`}
                         >
-                            {tag === "ALL" && "All"}
-                            {tag === "FASTING" && "ፆም Fasting"}
-                            {tag === "VEGETARIAN" && "🥗 Vegetarian"}
-                            {tag === "SPICY" && "🌶️ Spicy"}
+                            {tag === "ALL" && t("dietAll")}
+                            {tag === "FASTING" && t("dietFasting")}
+                            {tag === "VEGETARIAN" &&
+                                `🥗 ${t("dietVegetarian")}`}
+                            {tag === "SPICY" && `🌶️ ${t("dietSpicy")}`}
                         </button>
                     ))}
                 </div>
@@ -159,10 +161,10 @@ export const LivePhoneSimulator: React.FC<LivePhoneSimulatorProps> = ({
                         <div className="flex items-center justify-between">
                             <h3 className="text-[12px] font-bold tracking-tight text-slate-900 flex items-center gap-1">
                                 <Sparkles className="size-3 text-amber-500" />
-                                Chef&apos;s Highlights
+                                {t("chefsHighlights")}
                             </h3>
                             <span className="text-[10px] font-medium text-amber-600">
-                                Must Try
+                                {t("mustTry")}
                             </span>
                         </div>
 
@@ -181,11 +183,11 @@ export const LivePhoneSimulator: React.FC<LivePhoneSimulatorProps> = ({
                                             />
                                         ) : (
                                             <div className="flex h-full w-full items-center justify-center text-[10px] text-slate-400">
-                                                No Photo
+                                                {t("noPhoto")}
                                             </div>
                                         )}
                                         <span className="absolute top-1 left-1 rounded-md bg-amber-600/90 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-xs">
-                                            Special
+                                            {t("special")}
                                         </span>
                                     </div>
                                     <h4 className="mt-1.5 text-[11px] font-semibold text-slate-900 truncate">
@@ -215,7 +217,7 @@ export const LivePhoneSimulator: React.FC<LivePhoneSimulatorProps> = ({
                                 : "text-slate-500 hover:text-slate-800"
                         }`}
                     >
-                        All Menu
+                        {t("allMenu")}
                     </button>
                     {categories.map(cat => (
                         <button
@@ -236,7 +238,7 @@ export const LivePhoneSimulator: React.FC<LivePhoneSimulatorProps> = ({
                 <div className="p-3 space-y-2.5 pb-20">
                     {filteredItems.length === 0 ? (
                         <div className="py-8 text-center text-[12px] text-slate-400">
-                            No menu items match your search.
+                            {t("noMatchSearch")}
                         </div>
                     ) : (
                         filteredItems.map(item => (
@@ -282,7 +284,7 @@ export const LivePhoneSimulator: React.FC<LivePhoneSimulatorProps> = ({
                                     </div>
                                     <p className="mt-0.5 text-[10px] text-slate-500 line-clamp-1">
                                         {item.description ||
-                                            "Freshly prepared to order"}
+                                            t("freshlyPrepared")}
                                     </p>
                                     <div className="mt-1 flex items-center justify-between">
                                         <span className="text-[11px] font-bold text-slate-900">
@@ -306,7 +308,7 @@ export const LivePhoneSimulator: React.FC<LivePhoneSimulatorProps> = ({
                         <span className="flex size-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-black text-slate-950">
                             2
                         </span>
-                        <span>View Cart</span>
+                        <span>{t("viewCart")}</span>
                     </div>
                     <span className="text-xs font-bold text-amber-400">
                         {formatEtb(470)}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
     Building2,
     LayoutGrid,
@@ -22,6 +23,7 @@ import { cn } from "@/lib/utils";
 import CreateTenantSheet from "./CreateTenantSheet";
 
 export default function TenantsBoard() {
+    const t = useTranslations("tenancy");
     const [view, setView] = useState<"cards" | "table">("table");
     const [isCreateOpen, setIsCreateOpen] = useState(false);
 
@@ -41,7 +43,7 @@ export default function TenantsBoard() {
         () => [
             {
                 id: "company",
-                header: "Restaurant Company",
+                header: t("board.columnRestaurantCompany"),
                 sortValue: row => row.name,
                 cell: row => (
                     <Link
@@ -65,7 +67,7 @@ export default function TenantsBoard() {
             },
             {
                 id: "location",
-                header: "Location & Address",
+                header: t("board.columnLocationAddress"),
                 sortValue: row => `${row.city} ${row.area}`,
                 cell: row => (
                     <div>
@@ -80,17 +82,17 @@ export default function TenantsBoard() {
             },
             {
                 id: "concept",
-                header: "Concept",
+                header: t("board.columnConcept"),
                 sortValue: row => row.concept,
                 cell: row => (
                     <span className="text-[13px] text-slate-gray">
-                        {row.concept || "Casual Dining"}
+                        {row.concept || t("concepts.casualDining")}
                     </span>
                 ),
             },
             {
                 id: "plan",
-                header: "Plan SLA",
+                header: t("board.columnPlanSla"),
                 sortValue: row => row.plan,
                 cell: row => (
                     <Badge variant="outline" className="capitalize text-[12px]">
@@ -100,18 +102,17 @@ export default function TenantsBoard() {
             },
             {
                 id: "branches",
-                header: "Branches",
+                header: t("board.columnBranches"),
                 sortValue: row => row.branches,
                 cell: row => (
                     <span className="font-medium text-[13px]">
-                        {row.branches}{" "}
-                        {row.branches === 1 ? "branch" : "branches"}
+                        {t("board.branchCount", { count: row.branches })}
                     </span>
                 ),
             },
             {
                 id: "today",
-                header: "Today GMV",
+                header: t("board.columnTodayGmv"),
                 sortValue: row => row.gmvToday,
                 cell: row => (
                     <span className="font-semibold text-[13px] tabular-nums">
@@ -121,16 +122,16 @@ export default function TenantsBoard() {
             },
             {
                 id: "status",
-                header: "Status",
-                sortValue: row => (row.active ? "Active" : "Suspended"),
+                header: t("board.columnStatus"),
+                sortValue: row => (row.active ? t("active") : t("suspended")),
                 cell: row => (
                     <Badge variant={row.active ? "success" : "secondary"}>
-                        {row.active ? "Active" : "Suspended"}
+                        {row.active ? t("active") : t("suspended")}
                     </Badge>
                 ),
             },
         ],
-        [],
+        [t],
     );
 
     return (
@@ -143,7 +144,7 @@ export default function TenantsBoard() {
                         onClick={() => refetch()}
                         disabled={isFetching}
                         className="flex items-center gap-1.5 rounded-xl border border-hairline bg-card px-3 py-1.5 text-[12px] font-medium text-slate-gray hover:text-foreground transition-colors disabled:opacity-50"
-                        title="Refresh Tenant Fleet"
+                        title={t("board.refreshTitle")}
                     >
                         <RefreshCw
                             className={cn(
@@ -151,12 +152,14 @@ export default function TenantsBoard() {
                                 isFetching && "animate-spin",
                             )}
                         />
-                        <span>Sync</span>
+                        <span>{t("board.sync")}</span>
                     </button>
                     <span className="text-[12px] text-slate-gray">
                         {isLoading
-                            ? "Loading fleet..."
-                            : `${tenants.length} tenants provisioned`}
+                            ? t("board.loadingFleet")
+                            : t("board.tenantsProvisioned", {
+                                  count: tenants.length,
+                              })}
                     </span>
                 </div>
 
@@ -172,7 +175,7 @@ export default function TenantsBoard() {
                                     ? "border border-hairline bg-card text-foreground shadow-xs"
                                     : "text-slate-gray hover:text-foreground",
                             )}
-                            title="Table view (Default)"
+                            title={t("board.tableViewTitle")}
                         >
                             <TableIcon className="size-4" />
                         </button>
@@ -185,7 +188,7 @@ export default function TenantsBoard() {
                                     ? "border border-hairline bg-card text-foreground shadow-xs"
                                     : "text-slate-gray hover:text-foreground",
                             )}
-                            title="Card view"
+                            title={t("board.cardViewTitle")}
                         >
                             <LayoutGrid className="size-4" />
                         </button>
@@ -198,7 +201,7 @@ export default function TenantsBoard() {
                         className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-[13px] font-semibold text-white shadow-xs hover:bg-brand/90 transition-all"
                     >
                         <Plus className="size-4" />
-                        <span>Provision Tenant</span>
+                        <span>{t("board.provisionTenant")}</span>
                     </button>
                 </div>
             </div>
@@ -221,11 +224,11 @@ export default function TenantsBoard() {
                     columns={columns}
                     data={tenants}
                     rowKey={row => row.id}
-                    searchPlaceholder="Search restaurant, city, area, concept, or plan..."
+                    searchPlaceholder={t("board.searchPlaceholder")}
                     searchText={row =>
                         `${row.name} ${row.city} ${row.area || ""} ${row.concept || ""} ${row.plan} ${row.manager}`
                     }
-                    empty="No tenants provisioned yet. Click 'Provision Tenant' to onboard your first restaurant company."
+                    empty={t("board.emptyState")}
                 />
             ) : (
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -247,7 +250,9 @@ export default function TenantsBoard() {
                                         tenant.active ? "success" : "secondary"
                                     }
                                 >
-                                    {tenant.active ? "Active" : "Suspended"}
+                                    {tenant.active
+                                        ? t("active")
+                                        : t("suspended")}
                                 </Badge>
                             </div>
                             <h2 className="mt-3 text-[18px] font-semibold group-hover:text-brand transition-colors">
@@ -262,12 +267,13 @@ export default function TenantsBoard() {
                                     {tenant.plan}
                                 </span>
                                 {" · "}
-                                {tenant.branches} branch
-                                {tenant.branches > 1 ? "es" : ""}
+                                {t("board.branchCount", {
+                                    count: tenant.branches,
+                                })}
                                 {" · "}
                                 {tenant.gmvTodayFormatted ||
                                     formatEtb(tenant.gmvToday)}{" "}
-                                today
+                                {t("board.cardToday")}
                             </p>
                         </Link>
                     ))}

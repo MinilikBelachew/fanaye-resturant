@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Puck, type Data } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
 import {
@@ -51,8 +52,8 @@ import WebsiteTemplatePicker from "@/domains/site/ui/WebsiteTemplatePicker";
 // International Curated Mood Themes (1-Click Presets)
 interface ThemePreset {
     id: string;
-    name: string;
-    subtitle: string;
+    labelKey: string;
+    descKey: string;
     theme: Partial<SiteTheme>;
     previewColors: string[];
     /** Mini mock surface for the picker card */
@@ -68,8 +69,8 @@ interface ThemePreset {
 const INTERNATIONAL_MOOD_THEMES: ThemePreset[] = [
     {
         id: "golden-cloche",
-        name: "Golden Cloche",
-        subtitle: "Champagne gold on charcoal — fine dining polish",
+        labelKey: "goldenCloche_name",
+        descKey: "goldenCloche_desc",
         previewColors: ["#b45309", "#0c0a09", "#f5f0e6"],
         mock: {
             hero: "linear-gradient(135deg, #1c1917 0%, #44403c 55%, #a16207 120%)",
@@ -93,8 +94,8 @@ const INTERNATIONAL_MOOD_THEMES: ThemePreset[] = [
     },
     {
         id: "warm-habesha",
-        name: "Habesha Ember",
-        subtitle: "Spice red, deep espresso, and parchment light",
+        labelKey: "habeshaEmber_name",
+        descKey: "habeshaEmber_desc",
         previewColors: ["#9a3412", "#1c0a05", "#f7efe8"],
         mock: {
             hero: "linear-gradient(145deg, #1c0a05 0%, #7c2d12 70%, #ea580c 130%)",
@@ -116,8 +117,8 @@ const INTERNATIONAL_MOOD_THEMES: ThemePreset[] = [
     },
     {
         id: "emerald-garden",
-        name: "Botanical Quiet",
-        subtitle: "Forest green, soft sage, gallery-white space",
+        labelKey: "botanicalQuiet_name",
+        descKey: "botanicalQuiet_desc",
         previewColors: ["#047857", "#022c22", "#ecfdf5"],
         mock: {
             hero: "linear-gradient(150deg, #022c22 0%, #065f46 60%, #34d399 125%)",
@@ -141,8 +142,8 @@ const INTERNATIONAL_MOOD_THEMES: ThemePreset[] = [
     },
     {
         id: "midnight-obsidian",
-        name: "Midnight Service",
-        subtitle: "Ink black room with molten gold accents",
+        labelKey: "midnightService_name",
+        descKey: "midnightService_desc",
         previewColors: ["#fbbf24", "#020617", "#1e293b"],
         mock: {
             hero: "linear-gradient(160deg, #020617 0%, #0f172a 50%, #334155 100%)",
@@ -166,8 +167,8 @@ const INTERNATIONAL_MOOD_THEMES: ThemePreset[] = [
     },
     {
         id: "coastal-slate",
-        name: "Coastal Slate",
-        subtitle: "Sea mist, stone blue, and crisp linen white",
+        labelKey: "coastalSlate_name",
+        descKey: "coastalSlate_desc",
         previewColors: ["#0e7490", "#0f172a", "#f0f9ff"],
         mock: {
             hero: "linear-gradient(145deg, #0c4a6e 0%, #155e75 55%, #67e8f9 130%)",
@@ -191,8 +192,8 @@ const INTERNATIONAL_MOOD_THEMES: ThemePreset[] = [
     },
     {
         id: "minimalist-pearl",
-        name: "Gallery Mono",
-        subtitle: "Strict black & white — editorial menu energy",
+        labelKey: "galleryMono_name",
+        descKey: "galleryMono_desc",
         previewColors: ["#09090b", "#a1a1aa", "#ffffff"],
         mock: {
             hero: "linear-gradient(180deg, #09090b 0%, #27272a 100%)",
@@ -218,32 +219,32 @@ const INTERNATIONAL_MOOD_THEMES: ThemePreset[] = [
 const CURATED_GRADIENTS = [
     {
         id: "golden-amber",
-        label: "Golden Amber",
+        labelKey: "gradientGoldenAmber",
         value: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 45%, #fde68a 100%)",
     },
     {
         id: "sunset-ember",
-        label: "Sunset Ember",
+        labelKey: "gradientSunsetEmber",
         value: "linear-gradient(135deg, #fff7ed 0%, #fed7aa 50%, #fbcfe8 100%)",
     },
     {
         id: "obsidian-slate",
-        label: "Obsidian Slate",
+        labelKey: "gradientObsidianSlate",
         value: "linear-gradient(180deg, #0b1120 0%, #1e293b 100%)",
     },
     {
         id: "deep-espresso",
-        label: "Deep Espresso",
+        labelKey: "gradientDeepEspresso",
         value: "linear-gradient(180deg, #1c1917 0%, #292524 100%)",
     },
     {
         id: "emerald-mint",
-        label: "Emerald Mint",
+        labelKey: "gradientEmeraldMint",
         value: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #bbf7d0 100%)",
     },
     {
         id: "rose-quartz",
-        label: "Rose Quartz",
+        labelKey: "gradientRoseQuartz",
         value: "linear-gradient(135deg, #fff1f2 0%, #ffe4e6 50%, #fecdd3 100%)",
     },
 ];
@@ -252,22 +253,22 @@ const CURATED_GRADIENTS = [
 const CURATED_WALLPAPERS = [
     {
         id: "coffee-ceremony",
-        label: "Coffee Ceremony",
+        labelKey: "wallpaperCoffeeCeremony",
         url: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?q=80&w=1200&auto=format&fit=crop",
     },
     {
         id: "luxury-dining",
-        label: "Fine Dining",
+        labelKey: "wallpaperFineDining",
         url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
     },
     {
         id: "warm-stone",
-        label: "Slate & Marble",
+        labelKey: "wallpaperSlateMarble",
         url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200&auto=format&fit=crop",
     },
     {
         id: "cozy-bistro",
-        label: "Cozy Bistro",
+        labelKey: "wallpaperCozyBistro",
         url: "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?q=80&w=1200&auto=format&fit=crop",
     },
 ];
@@ -275,6 +276,7 @@ const CURATED_WALLPAPERS = [
 type CustomizerTab = "mood" | "background" | "branding" | "typography";
 
 export default function WebsiteEditorPage() {
+    const t = useTranslations("websiteStudio");
     const { data, isLoading, error, refetch } = useGetTenantSiteQuery();
     const { data: menuData } = useAdminMenuItemsQuery();
     const [updateSite, { isLoading: saving }] = useUpdateTenantSiteMutation();
@@ -344,16 +346,16 @@ export default function WebsiteEditorPage() {
             setDraftData(result.data.draftData as Data);
             if (action === "publish") {
                 await publishSite().unwrap();
-                toast.success("Template applied & published");
+                toast.success(t("toastTemplateAppliedPublished"));
             } else {
-                toast.success("Template applied — customize below");
+                toast.success(t("toastTemplateAppliedCustomize"));
             }
             dismissTemplateGate();
             void refetch();
         } catch (err: unknown) {
             const message =
                 (err as { data?: { message?: string } })?.data?.message ||
-                "Could not apply template.";
+                t("errorCouldNotApplyTemplate");
             toast.error(message);
         } finally {
             setTemplateBusy(false);
@@ -375,13 +377,13 @@ export default function WebsiteEditorPage() {
             setSlug(result.data.slug);
             setTheme(result.data.theme);
             setDraftData(result.data.draftData as Data);
-            toast.success("Blank site ready — add your sections");
+            toast.success(t("toastBlankSiteReady"));
             dismissTemplateGate();
             void refetch();
         } catch (err: unknown) {
             const message =
                 (err as { data?: { message?: string } })?.data?.message ||
-                "Could not start blank site.";
+                t("errorCouldNotStartBlank");
             toast.error(message);
         } finally {
             setTemplateBusy(false);
@@ -452,7 +454,10 @@ export default function WebsiteEditorPage() {
             ...theme,
             ...preset.theme,
         });
-        toast.success("Theme Applied!", `${preset.name} style is now active.`);
+        toast.success(
+            t("toastThemeAppliedTitle"),
+            t("toastThemeAppliedDesc", { name: t(preset.labelKey) }),
+        );
     }
 
     async function saveDraft(nextData?: Data) {
@@ -468,12 +473,12 @@ export default function WebsiteEditorPage() {
             setSlug(result.data.slug);
             setTheme(result.data.theme);
             setDraftData(result.data.draftData as Data);
-            toast.success("Draft saved");
+            toast.success(t("toastDraftSaved"));
             void refetch();
         } catch (err: unknown) {
             const message =
                 (err as { data?: { message?: string } })?.data?.message ||
-                "Could not save website draft.";
+                t("errorCouldNotSaveDraft");
             toast.error(message);
         }
     }
@@ -482,12 +487,12 @@ export default function WebsiteEditorPage() {
         try {
             await saveDraft();
             await publishSite().unwrap();
-            toast.success("Website published");
+            toast.success(t("toastWebsitePublished"));
             void refetch();
         } catch (err: unknown) {
             const message =
                 (err as { data?: { message?: string } })?.data?.message ||
-                "Could not publish website.";
+                t("errorCouldNotPublish");
             toast.error(message);
         }
     }
@@ -495,12 +500,12 @@ export default function WebsiteEditorPage() {
     async function onUnpublish() {
         try {
             await unpublishSite().unwrap();
-            toast.success("Website unpublished");
+            toast.success(t("toastWebsiteUnpublished"));
             void refetch();
         } catch (err: unknown) {
             const message =
                 (err as { data?: { message?: string } })?.data?.message ||
-                "Could not unpublish website.";
+                t("errorCouldNotUnpublish");
             toast.error(message);
         }
     }
@@ -510,7 +515,7 @@ export default function WebsiteEditorPage() {
             <DashboardFrame>
                 <div className="flex min-h-[320px] items-center justify-center gap-2 text-[13px] text-slate-gray">
                     <Loader2 className="size-4 animate-spin text-brand" />
-                    Loading website editor…
+                    {t("loadingEditor")}
                 </div>
             </DashboardFrame>
         );
@@ -525,7 +530,7 @@ export default function WebsiteEditorPage() {
                     description="Build and publish your public restaurant site."
                 />
                 <div className="rounded-[16px] border border-destructive/20 bg-destructive/10 p-4 text-[13px] text-destructive">
-                    Unable to load website editor. Sign in as owner or manager.
+                    {t("errorLoadEditor")}
                 </div>
             </DashboardFrame>
         );
@@ -563,7 +568,7 @@ export default function WebsiteEditorPage() {
                 />
                 <div className="flex flex-wrap items-center gap-2">
                     <Badge variant={published ? "success" : "secondary"}>
-                        {published ? "Published" : "Draft"}
+                        {published ? t("statusPublished") : t("statusDraft")}
                     </Badge>
                     <button
                         type="button"
@@ -571,7 +576,7 @@ export default function WebsiteEditorPage() {
                         className="inline-flex items-center gap-1.5 rounded-xl border border-hairline px-3 py-2 text-[12px] font-medium hover:bg-surface-ivory"
                     >
                         <LayoutTemplate className="size-3.5" />
-                        Templates
+                        {t("layoutTemplates")}
                     </button>
                     <a
                         href={publicHref}
@@ -580,7 +585,7 @@ export default function WebsiteEditorPage() {
                         className="inline-flex items-center gap-1.5 rounded-xl border border-hairline px-3 py-2 text-[12px] font-medium hover:bg-surface-ivory"
                     >
                         <ExternalLink className="size-3.5" />
-                        Open public URL
+                        {t("openPublicUrl")}
                     </a>
                     <button
                         type="button"
@@ -588,7 +593,7 @@ export default function WebsiteEditorPage() {
                         onClick={() => void saveDraft()}
                         className="rounded-xl border border-hairline px-3 py-2 text-[12px] font-medium hover:bg-surface-ivory disabled:opacity-60"
                     >
-                        {saving ? "Saving…" : "Save draft"}
+                        {saving ? t("saving") : t("saveDraft")}
                     </button>
                     {published ? (
                         <button
@@ -597,7 +602,7 @@ export default function WebsiteEditorPage() {
                             onClick={() => void onUnpublish()}
                             className="rounded-xl border border-hairline px-3 py-2 text-[12px] font-medium hover:bg-surface-ivory"
                         >
-                            Unpublish
+                            {t("unpublish")}
                         </button>
                     ) : null}
                     <button
@@ -607,7 +612,7 @@ export default function WebsiteEditorPage() {
                         className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-3.5 py-2 text-[12px] font-semibold text-white hover:bg-brand/90 disabled:opacity-60 shadow-xs"
                     >
                         <Globe2 className="size-3.5" />
-                        {publishing ? "Publishing…" : "Publish"}
+                        {publishing ? t("publishing") : t("publish")}
                     </button>
                 </div>
             </div>
@@ -620,22 +625,22 @@ export default function WebsiteEditorPage() {
                         {[
                             {
                                 id: "mood",
-                                label: "Mood Themes",
+                                labelKey: "tabMoodThemes",
                                 icon: Sparkles,
                             },
                             {
                                 id: "background",
-                                label: "Background & Gradient",
+                                labelKey: "tabBackgroundGradient",
                                 icon: Layers,
                             },
                             {
                                 id: "branding",
-                                label: "Brand Colors & Logo",
+                                labelKey: "tabBrandColorsLogo",
                                 icon: Palette,
                             },
                             {
                                 id: "typography",
-                                label: "Typography & Shape",
+                                labelKey: "tabTypographyShape",
                                 icon: Type,
                             },
                         ].map(tab => {
@@ -658,7 +663,7 @@ export default function WebsiteEditorPage() {
                                     <Icon
                                         className={`size-3.5 ${isActive ? "text-brand" : "text-slate-400"}`}
                                     />
-                                    {tab.label}
+                                    {t(tab.labelKey)}
                                 </button>
                             );
                         })}
@@ -669,7 +674,7 @@ export default function WebsiteEditorPage() {
                         onClick={() => setIsCustomizerOpen(!isCustomizerOpen)}
                         className="text-xs text-slate-500 hover:text-slate-900 font-medium inline-flex items-center gap-1"
                     >
-                        {isCustomizerOpen ? "Collapse" : "Expand"}
+                        {isCustomizerOpen ? t("collapse") : t("expand")}
                         <ChevronDown
                             className={`size-3.5 transition-transform ${isCustomizerOpen ? "rotate-180" : ""}`}
                         />
@@ -684,11 +689,10 @@ export default function WebsiteEditorPage() {
                             <div className="space-y-3">
                                 <div>
                                     <h4 className="text-[12px] font-semibold tracking-tight text-slate-900">
-                                        Site mood presets
+                                        {t("moodSectionTitle")}
                                     </h4>
                                     <p className="mt-0.5 text-[11px] text-slate-500">
-                                        One tap applies palette, type, and
-                                        surface radius.
+                                        {t("moodSectionDesc")}
                                     </p>
                                 </div>
 
@@ -721,7 +725,7 @@ export default function WebsiteEditorPage() {
                                                                     .badge,
                                                         }}
                                                     >
-                                                        Menu
+                                                        {t("mockMenu")}
                                                     </span>
                                                 </div>
                                                 <div className="absolute inset-x-2 bottom-0 translate-y-1 rounded-t-[8px] border border-black/5 bg-white/95 p-1.5 shadow-sm">
@@ -772,7 +776,7 @@ export default function WebsiteEditorPage() {
                                                                     .mock.ink,
                                                             }}
                                                         >
-                                                            {preset.name}
+                                                            {t(preset.labelKey)}
                                                         </h5>
                                                         <p
                                                             className="mt-0.5 line-clamp-2 text-[9px] leading-snug"
@@ -781,7 +785,7 @@ export default function WebsiteEditorPage() {
                                                                     .mock.muted,
                                                             }}
                                                         >
-                                                            {preset.subtitle}
+                                                            {t(preset.descKey)}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -812,12 +816,10 @@ export default function WebsiteEditorPage() {
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <h4 className="text-xs font-bold text-slate-900">
-                                            Background Styling & Atmosphere
+                                            {t("bgSectionTitle")}
                                         </h4>
                                         <p className="text-[11px] text-slate-500">
-                                            Choose between solid minimalist
-                                            colors, multi-stop luxury gradients,
-                                            or restaurant atmosphere wallpapers.
+                                            {t("bgSectionDesc")}
                                         </p>
                                     </div>
 
@@ -826,15 +828,15 @@ export default function WebsiteEditorPage() {
                                         {[
                                             {
                                                 id: "solid",
-                                                label: "Solid Color",
+                                                labelKey: "bgModeSolid",
                                             },
                                             {
                                                 id: "gradient",
-                                                label: "Gradient",
+                                                labelKey: "bgModeGradient",
                                             },
                                             {
                                                 id: "image",
-                                                label: "Wallpaper Image",
+                                                labelKey: "bgModeWallpaper",
                                             },
                                         ].map(m => (
                                             <button
@@ -856,7 +858,7 @@ export default function WebsiteEditorPage() {
                                                         : "text-slate-500 hover:text-slate-900"
                                                 }`}
                                             >
-                                                {m.label}
+                                                {t(m.labelKey)}
                                             </button>
                                         ))}
                                     </div>
@@ -868,7 +870,7 @@ export default function WebsiteEditorPage() {
                                     <div className="space-y-3 rounded-2xl bg-slate-50 p-3.5 border border-slate-100">
                                         <div className="flex flex-wrap items-center gap-3">
                                             <label className="flex items-center gap-2 text-xs font-medium text-slate-700">
-                                                <span>Custom Hex:</span>
+                                                <span>{t("customHex")}</span>
                                                 <input
                                                     type="color"
                                                     value={
@@ -896,31 +898,37 @@ export default function WebsiteEditorPage() {
 
                                             <div className="flex items-center gap-1.5">
                                                 <span className="text-[11px] text-slate-500 font-medium">
-                                                    Quick Swatches:
+                                                    {t("quickSwatches")}
                                                 </span>
                                                 {[
                                                     {
-                                                        label: "Ivory Cream",
+                                                        labelKey:
+                                                            "swatchIvoryCream",
                                                         hex: "#fffaf5",
                                                     },
                                                     {
-                                                        label: "Crisp White",
+                                                        labelKey:
+                                                            "swatchCrispWhite",
                                                         hex: "#ffffff",
                                                     },
                                                     {
-                                                        label: "Warm Linen",
+                                                        labelKey:
+                                                            "swatchWarmLinen",
                                                         hex: "#fdf8f4",
                                                     },
                                                     {
-                                                        label: "Slate Stone",
+                                                        labelKey:
+                                                            "swatchSlateStone",
                                                         hex: "#f8fafc",
                                                     },
                                                     {
-                                                        label: "Obsidian Dark",
+                                                        labelKey:
+                                                            "swatchObsidianDark",
                                                         hex: "#0f172a",
                                                     },
                                                     {
-                                                        label: "Espresso",
+                                                        labelKey:
+                                                            "swatchEspresso",
                                                         hex: "#1c1917",
                                                     },
                                                 ].map(swatch => (
@@ -946,7 +954,9 @@ export default function WebsiteEditorPage() {
                                                                 swatch.hex,
                                                         }}
                                                         className="size-6 rounded-full border border-slate-300 shadow-2xs hover:scale-110 transition-transform"
-                                                        title={swatch.label}
+                                                        title={t(
+                                                            swatch.labelKey,
+                                                        )}
                                                     />
                                                 ))}
                                             </div>
@@ -987,7 +997,7 @@ export default function WebsiteEditorPage() {
                                                     }}
                                                 >
                                                     <span className="absolute bottom-1.5 left-2 rounded-md bg-black/50 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-xs">
-                                                        {grad.label}
+                                                        {t(grad.labelKey)}
                                                     </span>
                                                 </button>
                                             ))}
@@ -995,7 +1005,7 @@ export default function WebsiteEditorPage() {
 
                                         <div>
                                             <Label className="text-[11px] font-semibold text-slate-700">
-                                                Custom CSS Gradient Formula:
+                                                {t("customCssGradient")}
                                             </Label>
                                             <Input
                                                 value={
@@ -1021,7 +1031,7 @@ export default function WebsiteEditorPage() {
                                     <div className="space-y-3 rounded-2xl bg-slate-50 p-3.5 border border-slate-100">
                                         <div>
                                             <span className="text-[11px] text-slate-500 font-medium">
-                                                Curated Restaurant Atmospheres:
+                                                {t("curatedAtmospheres")}
                                             </span>
                                             <div className="mt-1.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
                                                 {CURATED_WALLPAPERS.map(wp => (
@@ -1044,11 +1054,11 @@ export default function WebsiteEditorPage() {
                                                     >
                                                         <img
                                                             src={wp.url}
-                                                            alt={wp.label}
+                                                            alt={t(wp.labelKey)}
                                                             className="h-full w-full object-cover group-hover:scale-105 transition-transform"
                                                         />
                                                         <span className="absolute bottom-1.5 left-2 rounded-md bg-black/60 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-xs">
-                                                            {wp.label}
+                                                            {t(wp.labelKey)}
                                                         </span>
                                                     </button>
                                                 ))}
@@ -1058,7 +1068,7 @@ export default function WebsiteEditorPage() {
                                         <div className="grid gap-3 sm:grid-cols-2 pt-2 border-t border-slate-200/60">
                                             <div>
                                                 <Label className="text-[11px] font-semibold text-slate-700">
-                                                    Custom Image Wallpaper URL:
+                                                    {t("customImageUrl")}
                                                 </Label>
                                                 <Input
                                                     value={
@@ -1072,7 +1082,9 @@ export default function WebsiteEditorPage() {
                                                                 e.target.value,
                                                         })
                                                     }
-                                                    placeholder="Paste image link (https://...)"
+                                                    placeholder={t(
+                                                        "imageUrlPlaceholder",
+                                                    )}
                                                     className="mt-1 text-xs"
                                                 />
                                             </div>
@@ -1080,7 +1092,9 @@ export default function WebsiteEditorPage() {
                                             <div>
                                                 <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700">
                                                     <span>
-                                                        Overlay Contrast Tint:
+                                                        {t(
+                                                            "overlayContrastTint",
+                                                        )}
                                                     </span>
                                                     <span>
                                                         {Math.round(
@@ -1112,9 +1126,9 @@ export default function WebsiteEditorPage() {
                                                     className="mt-2 w-full accent-brand cursor-pointer"
                                                 />
                                                 <p className="mt-1 text-[10px] text-slate-400">
-                                                    Higher overlay guarantees
-                                                    perfect readability of menu
-                                                    dishes and text.
+                                                    {t(
+                                                        "overlayReadabilityHint",
+                                                    )}
                                                 </p>
                                             </div>
                                         </div>
@@ -1128,18 +1142,17 @@ export default function WebsiteEditorPage() {
                             <div className="space-y-4">
                                 <div>
                                     <h4 className="text-xs font-bold text-slate-900">
-                                        Core Brand Palette & Identity
+                                        {t("brandSectionTitle")}
                                     </h4>
                                     <p className="text-[11px] text-slate-500">
-                                        Configure your signature button colors,
-                                        accent highlights, and official logo.
+                                        {t("brandSectionDesc")}
                                     </p>
                                 </div>
 
                                 <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-5">
                                     <label className="space-y-1 text-xs">
                                         <span className="font-semibold text-slate-700">
-                                            Public Slug
+                                            {t("publicSlug")}
                                         </span>
                                         <Input
                                             value={slug}
@@ -1155,7 +1168,7 @@ export default function WebsiteEditorPage() {
 
                                     <label className="space-y-1 text-xs">
                                         <span className="font-semibold text-slate-700">
-                                            Primary Brand
+                                            {t("primaryBrand")}
                                         </span>
                                         <div className="flex items-center gap-2">
                                             <Input
@@ -1178,7 +1191,7 @@ export default function WebsiteEditorPage() {
 
                                     <label className="space-y-1 text-xs">
                                         <span className="font-semibold text-slate-700">
-                                            Accent Highlight
+                                            {t("accentHighlight")}
                                         </span>
                                         <div className="flex items-center gap-2">
                                             <Input
@@ -1201,7 +1214,7 @@ export default function WebsiteEditorPage() {
 
                                     <label className="space-y-1 text-xs">
                                         <span className="font-semibold text-slate-700">
-                                            Text Color
+                                            {t("textColor")}
                                         </span>
                                         <div className="flex items-center gap-2">
                                             <Input
@@ -1224,7 +1237,7 @@ export default function WebsiteEditorPage() {
 
                                     <div>
                                         <ImageUploadField
-                                            label="Official Logo"
+                                            label={t("officialLogo")}
                                             value={theme.logoUrl || ""}
                                             onChange={logoUrl =>
                                                 setTheme({
@@ -1243,18 +1256,17 @@ export default function WebsiteEditorPage() {
                             <div className="space-y-4">
                                 <div>
                                     <h4 className="text-xs font-bold text-slate-900">
-                                        Typography Pairings & Card Shape
+                                        {t("typographySectionTitle")}
                                     </h4>
                                     <p className="text-[11px] text-slate-500">
-                                        Select international headline font
-                                        pairings and button corner curvature.
+                                        {t("typographySectionDesc")}
                                     </p>
                                 </div>
 
                                 <div className="grid gap-4 sm:grid-cols-3">
                                     <div>
                                         <Label className="text-xs font-semibold text-slate-700">
-                                            Headline Display Font
+                                            {t("headlineDisplayFont")}
                                         </Label>
                                         <select
                                             value={
@@ -1270,23 +1282,23 @@ export default function WebsiteEditorPage() {
                                             className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 text-xs font-medium text-slate-800 focus:outline-none focus:ring-1 focus:ring-brand"
                                         >
                                             <option value="Fraunces, serif">
-                                                Fraunces (Luxury Serif)
+                                                {t("fontFrauncesLuxury")}
                                             </option>
                                             <option value="Playfair Display, serif">
-                                                Playfair Display (Editorial)
+                                                {t("fontPlayfairEditorial")}
                                             </option>
                                             <option value="Inter, sans-serif">
-                                                Inter (Modern Clean)
+                                                {t("fontInterModern")}
                                             </option>
                                             <option value="Georgia, serif">
-                                                Georgia (Classic Bistro)
+                                                {t("fontGeorgiaClassic")}
                                             </option>
                                         </select>
                                     </div>
 
                                     <div>
                                         <Label className="text-xs font-semibold text-slate-700">
-                                            Body Reading Font
+                                            {t("bodyReadingFont")}
                                         </Label>
                                         <select
                                             value={
@@ -1302,30 +1314,42 @@ export default function WebsiteEditorPage() {
                                             className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 text-xs font-medium text-slate-800 focus:outline-none focus:ring-1 focus:ring-brand"
                                         >
                                             <option value="DM Sans, sans-serif">
-                                                DM Sans (Warm Modern)
+                                                {t("fontDmSansWarm")}
                                             </option>
                                             <option value="Inter, sans-serif">
-                                                Inter (High Legibility)
+                                                {t("fontInterLegibility")}
                                             </option>
                                             <option value="Plus Jakarta Sans, sans-serif">
-                                                Plus Jakarta Sans (Crisp)
+                                                {t("fontPlusJakarta")}
                                             </option>
                                             <option value="system-ui, sans-serif">
-                                                System UI (Native)
+                                                {t("fontSystemNative")}
                                             </option>
                                         </select>
                                     </div>
 
                                     <div>
                                         <Label className="text-xs font-semibold text-slate-700">
-                                            Button & Card Corner Radius
+                                            {t("buttonCardCornerRadius")}
                                         </Label>
                                         <div className="mt-1.5 grid grid-cols-4 gap-1">
                                             {[
-                                                { id: "none", label: "Sharp" },
-                                                { id: "md", label: "Subtle" },
-                                                { id: "xl", label: "Curved" },
-                                                { id: "full", label: "Pill" },
+                                                {
+                                                    id: "none",
+                                                    labelKey: "radiusSharp",
+                                                },
+                                                {
+                                                    id: "md",
+                                                    labelKey: "radiusSubtle",
+                                                },
+                                                {
+                                                    id: "xl",
+                                                    labelKey: "radiusCurved",
+                                                },
+                                                {
+                                                    id: "full",
+                                                    labelKey: "radiusPill",
+                                                },
                                             ].map(r => (
                                                 <button
                                                     key={r.id}
@@ -1348,7 +1372,7 @@ export default function WebsiteEditorPage() {
                                                             : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                                                     }`}
                                                 >
-                                                    {r.label}
+                                                    {t(r.labelKey)}
                                                 </button>
                                             ))}
                                         </div>
@@ -1385,7 +1409,9 @@ export default function WebsiteEditorPage() {
                                 setDraftData(data);
                                 await saveDraft(data);
                             }}
-                            headerTitle={`${site.tenantName} site`}
+                            headerTitle={t("siteEditorHeader", {
+                                tenantName: site.tenantName,
+                            })}
                         />
                     </div>
                 </SiteRenderContext.Provider>

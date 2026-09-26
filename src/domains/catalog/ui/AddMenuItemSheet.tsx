@@ -42,6 +42,7 @@ import { formatEtb } from "@/lib/money";
 import { toast } from "@/lib/toast";
 import { menuItemFormSchema } from "@/lib/validators/catalog";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface AddMenuItemSheetProps {
     isOpen: boolean;
@@ -118,6 +119,8 @@ export default function AddMenuItemSheet({
     onClose,
     initialItem,
 }: AddMenuItemSheetProps) {
+    const t = useTranslations("menuSheets");
+    const tCommon = useTranslations("common");
     const reduxStations = useAppSelector(state => state.station.stations);
     const { data: dbStations } = useGetStationsQuery(undefined, {
         skip: !isOpen,
@@ -435,10 +438,10 @@ export default function AddMenuItemSheet({
             setUploadPreviewUrl(
                 filePublicUrl(uploaded.file.path) || URL.createObjectURL(file),
             );
-            toast.success("Image uploaded");
+            toast.success(t("imageUploaded"));
         } catch (err) {
-            setSubmitError("Could not upload image. Use JPG or PNG.");
-            toast.fromUnknown(err, "Could not upload image. Use JPG or PNG.");
+            setSubmitError(t("imageUploadError"));
+            toast.fromUnknown(err, t("imageUploadError"));
         }
     }
 
@@ -457,7 +460,7 @@ export default function AddMenuItemSheet({
                 {/* Header */}
                 <div className="flex shrink-0 items-center justify-between border-b border-hairline bg-surface-ivory px-5 py-3.5">
                     <h2 className="text-[16px] font-semibold text-foreground">
-                        {initialItem ? "Edit menu item" : "Add menu item"}
+                        {initialItem ? t("editMenuItem") : t("addMenuItem")}
                     </h2>
                     <div className="flex items-center gap-1.5">
                         {initialItem ? (
@@ -465,7 +468,7 @@ export default function AddMenuItemSheet({
                                 type="button"
                                 onClick={handleDeleteItem}
                                 className="flex size-8 items-center justify-center rounded-full border border-hairline bg-card text-slate-gray transition-colors hover:bg-red-50 hover:text-destructive"
-                                title="Delete item"
+                                title={t("deleteItem")}
                             >
                                 <Trash2 className="size-4" />
                             </button>
@@ -490,27 +493,27 @@ export default function AddMenuItemSheet({
                     <div className="space-y-3.5">
                         <div>
                             <label className="text-[13px] font-medium text-foreground">
-                                Item name{" "}
+                                {t("itemName")}{" "}
                                 <span className="text-destructive">*</span>
                             </label>
                             <Input
                                 required
                                 value={name}
                                 onChange={e => setName(e.target.value)}
-                                placeholder="e.g. Special Kitfo, Double Cheeseburger, Iced Spanish Latte"
+                                placeholder={t("itemNamePlaceholder")}
                                 className="mt-1 h-10 rounded-[10px] bg-card text-[13px]"
                             />
                         </div>
 
                         <div>
                             <label className="text-[13px] font-medium text-foreground">
-                                Description
+                                {t("description")}
                             </label>
                             <textarea
                                 value={description}
                                 onChange={e => setDescription(e.target.value)}
                                 rows={2}
-                                placeholder="e.g. Prime minced beef with spiced clarified butter, mitmita, and cheese."
+                                placeholder={t("descriptionPlaceholder")}
                                 className="mt-1 w-full rounded-[10px] border border-input bg-card p-2.5 text-[13px] outline-none transition-colors focus:border-brand focus:ring-1 focus:ring-brand"
                             />
                         </div>
@@ -518,12 +521,12 @@ export default function AddMenuItemSheet({
                         <div className="grid grid-cols-2 gap-3">
                             <div>
                                 <label className="text-[13px] font-medium text-foreground">
-                                    Base price (ETB){" "}
+                                    {t("basePrice")}{" "}
                                     <span className="text-destructive">*</span>
                                 </label>
                                 <div className="relative mt-1">
                                     <span className="absolute inset-y-0 left-3 flex items-center text-[12px] font-medium text-slate-gray">
-                                        ETB
+                                        {tCommon("currency")}
                                     </span>
                                     <Input
                                         required
@@ -539,7 +542,7 @@ export default function AddMenuItemSheet({
 
                             <div>
                                 <label className="text-[13px] font-medium text-foreground">
-                                    Prep time (min)
+                                    {t("prepTime")}
                                 </label>
                                 <div className="mt-1 flex items-center gap-1.5">
                                     <Input
@@ -584,10 +587,10 @@ export default function AddMenuItemSheet({
                     <div className="space-y-2.5">
                         <div className="flex items-center justify-between">
                             <label className="text-[13px] font-medium text-foreground">
-                                Preparation station
+                                {t("prepStation")}
                             </label>
                             <span className="text-[11px] text-slate-gray">
-                                Destination KDS queue
+                                {t("destinationKds")}
                             </span>
                         </div>
 
@@ -595,7 +598,7 @@ export default function AddMenuItemSheet({
                             {stations.map(st => {
                                 const Icon = stationIconForName(st.name);
                                 const isSelected = stationId === st.id;
-                                const label = st.name || "Station";
+                                const label = st.name || t("stationFallback");
                                 const prepMin = st.avgPrepMin || 10;
 
                                 return (
@@ -632,7 +635,7 @@ export default function AddMenuItemSheet({
                         </div>
                         {stations.length === 0 ? (
                             <p className="text-[12px] text-slate-gray">
-                                Loading stations from the server…
+                                {t("loadingStations")}
                             </p>
                         ) : null}
                     </div>
@@ -642,11 +645,10 @@ export default function AddMenuItemSheet({
                     {/* Image upload */}
                     <div className="space-y-2.5">
                         <label className="text-[13px] font-medium text-foreground">
-                            Dish photo
+                            {t("dishPhoto")}
                         </label>
                         <p className="text-[12px] text-slate-gray">
-                            Upload a JPG or PNG. It is stored with this menu
-                            item.
+                            {t("dishPhotoHint")}
                         </p>
 
                         <div className="overflow-hidden rounded-[14px] border border-hairline bg-surface-ivory">
@@ -655,13 +657,13 @@ export default function AddMenuItemSheet({
                                     <>
                                         <img
                                             src={effectiveImage}
-                                            alt={name || "Dish preview"}
+                                            alt={name || t("dishPreview")}
                                             className="size-full object-cover"
                                         />
                                         <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black/55 to-transparent p-3 pt-10">
                                             <div className="min-w-0">
                                                 <p className="truncate text-[13px] font-semibold text-white">
-                                                    {name || "Item name"}
+                                                    {name || t("itemName")}
                                                 </p>
                                                 <p className="text-[12px] text-white/85">
                                                     {formatEtb(
@@ -675,7 +677,7 @@ export default function AddMenuItemSheet({
                                                 onClick={clearImage}
                                                 className="shrink-0 rounded-full bg-white/90 px-3 py-1 text-[11px] font-medium text-foreground"
                                             >
-                                                Remove
+                                                {t("remove")}
                                             </button>
                                         </div>
                                     </>
@@ -690,12 +692,11 @@ export default function AddMenuItemSheet({
                                         </span>
                                         <span className="text-[13px] font-medium text-foreground">
                                             {uploading
-                                                ? "Uploading…"
-                                                : "Click to upload photo"}
+                                                ? t("uploading")
+                                                : t("clickToUpload")}
                                         </span>
                                         <span className="text-[11px] text-slate-gray">
-                                            JPG or PNG · best at least 800px
-                                            wide
+                                            {t("uploadHint")}
                                         </span>
                                         <input
                                             type="file"
@@ -716,7 +717,7 @@ export default function AddMenuItemSheet({
                                 <div className="border-t border-hairline bg-card px-3 py-2">
                                     <label className="inline-flex cursor-pointer items-center gap-2 text-[12px] font-medium text-brand">
                                         <Upload className="size-3.5" />
-                                        Replace photo
+                                        {t("replacePhoto")}
                                         <input
                                             type="file"
                                             accept="image/jpeg,image/png,image/gif"
@@ -741,18 +742,17 @@ export default function AddMenuItemSheet({
                     <div className="space-y-3">
                         <div>
                             <label className="text-[13px] font-medium text-foreground">
-                                Options & modifiers (Optional)
+                                {t("optionsModifiers")}
                             </label>
                             <p className="text-[12px] text-slate-gray">
-                                Attach saved groups (Hold / Extra / Choice), or
-                                create a new one just for this dish.
+                                {t("optionsModifiersHint")}
                             </p>
                         </div>
 
                         {libraryGroups.length > 0 ? (
                             <div className="space-y-2">
                                 <p className="text-[11px] font-medium uppercase tracking-wide text-slate-gray">
-                                    Saved groups
+                                    {t("savedGroups")}
                                 </p>
                                 <div className="space-y-1.5">
                                     {libraryGroups.map(group => {
@@ -797,7 +797,7 @@ export default function AddMenuItemSheet({
                                                         {group.options
                                                             .map(o => o.name)
                                                             .join(" · ") ||
-                                                            "No options"}
+                                                            t("noOptions")}
                                                     </span>
                                                 </span>
                                             </button>
@@ -807,18 +807,14 @@ export default function AddMenuItemSheet({
                             </div>
                         ) : (
                             <p className="rounded-[12px] border border-dashed border-hairline bg-secondary/20 px-3 py-2 text-[12px] text-slate-gray">
-                                No saved groups yet. Use{" "}
-                                <span className="font-medium text-foreground">
-                                    Add modifier group
-                                </span>{" "}
-                                on the menu page, or create one below.
+                                {t("noSavedGroups")}
                             </p>
                         )}
 
                         {modifierGroups.length > 0 ? (
                             <div className="space-y-2.5">
                                 <p className="text-[11px] font-medium uppercase tracking-wide text-slate-gray">
-                                    New for this dish
+                                    {t("newForThisDish")}
                                 </p>
                                 {modifierGroups.map(group => (
                                     <div
@@ -876,7 +872,9 @@ export default function AddMenuItemSheet({
 
                                         <div className="mt-2.5 flex items-center gap-2 border-t border-hairline pt-2">
                                             <Input
-                                                placeholder="Option name"
+                                                placeholder={t(
+                                                    "optionNamePlaceholder",
+                                                )}
                                                 value={
                                                     targetGroupId === group.id
                                                         ? optionName
@@ -927,7 +925,7 @@ export default function AddMenuItemSheet({
                                                 className="h-8 shrink-0 rounded-full px-3 text-[11px]"
                                             >
                                                 <Plus className="size-3" />
-                                                Add
+                                                {t("add")}
                                             </Button>
                                         </div>
                                     </div>
@@ -937,11 +935,11 @@ export default function AddMenuItemSheet({
 
                         <div className="rounded-[12px] border border-dashed border-hairline bg-secondary/30 p-2.5">
                             <p className="mb-2 text-[11px] text-slate-gray">
-                                Create a new group for this dish only
+                                {t("createGroupForDish")}
                             </p>
                             <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
                                 <Input
-                                    placeholder="Group name (e.g. Milk Choice)"
+                                    placeholder={t("groupNameExample")}
                                     value={newGroupName}
                                     onChange={e =>
                                         setNewGroupName(e.target.value)
@@ -958,13 +956,13 @@ export default function AddMenuItemSheet({
                                     className="h-8 rounded-[8px] border border-input bg-card px-2 text-[11px]"
                                 >
                                     <option value="included">
-                                        Included (Hold)
+                                        {t("includedHold")}
                                     </option>
                                     <option value="extra">
-                                        Extra (+Price)
+                                        {t("extraPrice")}
                                     </option>
                                     <option value="choice">
-                                        Single Choice
+                                        {t("singleChoice")}
                                     </option>
                                 </select>
                                 <Button
@@ -974,7 +972,7 @@ export default function AddMenuItemSheet({
                                     disabled={!newGroupName.trim()}
                                     className="h-8 shrink-0 rounded-full px-3 text-[11px]"
                                 >
-                                    Create group
+                                    {t("createGroup")}
                                 </Button>
                             </div>
                         </div>
@@ -986,12 +984,12 @@ export default function AddMenuItemSheet({
                     <div className="flex items-center justify-between rounded-[12px] border border-hairline bg-surface-ivory p-3">
                         <div>
                             <p className="text-[13px] font-medium text-foreground">
-                                Active on floor
+                                {t("activeOnFloor")}
                             </p>
                             <p className="text-[11px] text-slate-gray">
                                 {available
-                                    ? "Waiters can order this dish immediately."
-                                    : "Marked 86 / Sold out."}
+                                    ? t("waitersCanOrder")
+                                    : t("markedSoldOut")}
                             </p>
                         </div>
                         <button
@@ -1036,7 +1034,7 @@ export default function AddMenuItemSheet({
                             onClick={onClose}
                             className="h-9 rounded-full px-4 text-[13px]"
                         >
-                            Cancel
+                            {t("cancel")}
                         </Button>
                         <Button
                             type="submit"
@@ -1045,16 +1043,16 @@ export default function AddMenuItemSheet({
                             className="h-9 flex items-center gap-1.5 rounded-full bg-brand px-5 text-[13px] text-white hover:bg-brand-deep"
                         >
                             {saving ? (
-                                "Saving…"
+                                t("saving")
                             ) : initialItem ? (
                                 <>
                                     <Save className="size-3.5" />
-                                    Save changes
+                                    {t("saveChanges")}
                                 </>
                             ) : (
                                 <>
                                     <Plus className="size-3.5" />
-                                    Add menu item
+                                    {t("addMenuItem")}
                                 </>
                             )}
                         </Button>

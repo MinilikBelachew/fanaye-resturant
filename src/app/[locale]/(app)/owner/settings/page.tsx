@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Loader2, Save } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,9 @@ function slugify(value: string) {
 }
 
 export default function OwnerSettingsPage() {
+    const t = useTranslations("owner");
+    const tTopBar = useTranslations("topbar");
+    const tRoles = useTranslations("roleLabels");
     const session = useAppSelector(state => state.identity.session);
     const staff = useAppSelector(selectCurrentStaff);
     const { data: siteRes, isLoading: siteLoading } = useGetTenantSiteQuery();
@@ -61,12 +65,12 @@ export default function OwnerSettingsPage() {
     async function onSave() {
         const name = tenantName.trim();
         if (name.length < 2) {
-            toast.error("Restaurant name needs at least 2 characters.");
+            toast.error(t("nameMinChars"));
             return;
         }
         const nextSlug = slugify(slug || name);
         if (nextSlug.length < 2) {
-            toast.error("Public site slug needs at least 2 characters.");
+            toast.error(t("slugMinChars"));
             return;
         }
         try {
@@ -81,11 +85,16 @@ export default function OwnerSettingsPage() {
             setTenantName(result.data.tenantName);
             setSlug(result.data.slug);
             setLogoUrl(result.data.theme?.logoUrl || "");
-            toast.success("Settings saved");
+            toast.success(t("settingsSaved"));
         } catch (err: unknown) {
-            toast.fromUnknown(err, "Could not save settings.");
+            toast.fromUnknown(err, t("settingsSaveError"));
         }
     }
+
+    const roleKey = (staff?.role || "owner").toLowerCase();
+    const roleLabel = tRoles.has(roleKey)
+        ? tRoles(roleKey)
+        : ROLE_LABELS[roleKey] || tRoles("owner");
 
     return (
         <DashboardFrame>
@@ -94,7 +103,7 @@ export default function OwnerSettingsPage() {
                     compact
                     eyebrow="Business"
                     title="Settings"
-                    description="Update restaurant name, public site link, and logo."
+                    description={t("settingsDesc")}
                 />
                 <Button
                     size="sm"
@@ -107,14 +116,16 @@ export default function OwnerSettingsPage() {
                     ) : (
                         <Save className="size-3.5" />
                     )}
-                    {saving ? "Saving…" : "Save changes"}
+                    {saving ? t("saving") : t("saveChanges")}
                 </Button>
             </div>
 
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
                 <section className="space-y-4 rounded-[16px] border border-hairline bg-card p-4 shadow-subtle sm:p-5">
                     <div className="space-y-1.5">
-                        <Label htmlFor="restaurant-name">Restaurant name</Label>
+                        <Label htmlFor="restaurant-name">
+                            {t("restaurantName")}
+                        </Label>
                         <Input
                             id="restaurant-name"
                             value={tenantName}
@@ -125,14 +136,14 @@ export default function OwnerSettingsPage() {
                                     setSlug(slugify(next));
                                 }
                             }}
-                            placeholder="Your restaurant name"
+                            placeholder={t("restaurantNamePlaceholder")}
                             className="h-10 rounded-xl"
                             disabled={siteLoading}
                         />
                     </div>
 
                     <div className="space-y-1.5">
-                        <Label htmlFor="site-slug">Public site slug</Label>
+                        <Label htmlFor="site-slug">{t("publicSiteSlug")}</Label>
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                             <span className="shrink-0 text-[12px] text-slate-gray">
                                 /r/
@@ -150,7 +161,7 @@ export default function OwnerSettingsPage() {
                             />
                         </div>
                         <p className="text-[11px] text-slate-gray">
-                            Guests open{" "}
+                            {t("guestsOpenPrefix")}{" "}
                             <span className="font-medium text-foreground">
                                 {site?.publicPath || `/r/${slug || "…"}`}
                             </span>
@@ -158,7 +169,7 @@ export default function OwnerSettingsPage() {
                     </div>
 
                     <ImageUploadField
-                        label="Restaurant logo"
+                        label={t("restaurantLogo")}
                         value={logoUrl}
                         onChange={setLogoUrl}
                     />
@@ -166,39 +177,36 @@ export default function OwnerSettingsPage() {
 
                 <section className="rounded-[16px] border border-hairline bg-card p-4 shadow-subtle sm:p-5">
                     <h2 className="text-[14px] font-semibold tracking-tight">
-                        Workspace
+                        {t("workspace")}
                     </h2>
                     <p className="mt-1 text-[12px] text-slate-gray">
-                        Read-only details from your signed-in account.
+                        {t("workspaceHint")}
                     </p>
                     <ul className="mt-4 space-y-3">
                         {[
                             {
-                                name: "Site status",
+                                name: t("siteStatus"),
                                 value:
                                     site?.status || (siteLoading ? "…" : "—"),
                             },
                             {
-                                name: "Branch",
+                                name: t("branch"),
                                 value:
                                     dash?.data?.branchName ||
                                     session?.branchName ||
                                     "—",
                             },
                             {
-                                name: "Signed in as",
+                                name: tTopBar("signedInAs"),
                                 value:
                                     session?.displayName || staff?.name || "—",
                             },
                             {
-                                name: "Role",
-                                value:
-                                    (staff?.role && ROLE_LABELS[staff.role]) ||
-                                    session?.roleCode ||
-                                    "Owner",
+                                name: tTopBar("role"),
+                                value: roleLabel,
                             },
                             {
-                                name: "Business date",
+                                name: t("businessDate"),
                                 value: dash?.data?.businessDate || "—",
                             },
                         ].map(row => (

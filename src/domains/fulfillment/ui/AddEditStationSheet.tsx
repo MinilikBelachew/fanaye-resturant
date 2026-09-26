@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { Loader2, Trash2, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useAppDispatch, useAppSelector } from "@/context/hooks";
 import { closeStationSheet } from "@/context/slices/stationSlice";
 import {
@@ -28,6 +29,9 @@ import {
 import { cn } from "@/lib/utils";
 
 export default function AddEditStationSheet() {
+    const t = useTranslations("managerStations");
+    const tCommon = useTranslations("common");
+    const tSheets = useTranslations("menuSheets");
     const dispatch = useAppDispatch();
     const isOpen = useAppSelector(state => state.station.isSheetOpen);
     const editingStation = useAppSelector(
@@ -85,7 +89,7 @@ export default function AddEditStationSheet() {
                     avgPrepMin: values.avgPrepMin,
                     enabled: values.enabled,
                 }).unwrap();
-                toast.success("Station updated", values.name);
+                toast.success(t("toastUpdated"), values.name);
             } else {
                 await createStation({
                     name: values.name,
@@ -93,14 +97,14 @@ export default function AddEditStationSheet() {
                     avgPrepMin: values.avgPrepMin,
                     status: values.enabled ? "ACTIVE" : "DISABLED",
                 }).unwrap();
-                toast.success("Station created", values.name);
+                toast.success(t("toastCreated"), values.name);
             }
             handleClose();
         } catch (err: unknown) {
             const msg =
                 (err as { data?: { message?: string } })?.data?.message ||
-                "Failed to save preparation station.";
-            toast.error("Operation failed", msg);
+                t("toastSaveFailed");
+            toast.error(t("toastOpFailed"), msg);
         }
     }
 
@@ -113,15 +117,15 @@ export default function AddEditStationSheet() {
         try {
             const res = await deleteStation(editingStation.id).unwrap();
             toast.success(
-                "Station removed",
+                t("toastRemoved"),
                 res.message || editingStation.name,
             );
             handleClose();
         } catch (err: unknown) {
             const msg =
                 (err as { data?: { message?: string } })?.data?.message ||
-                "Failed to remove station.";
-            toast.error("Delete failed", msg);
+                t("toastRemoveFailed");
+            toast.error(t("toastDeleteErrorTitle"), msg);
         }
     }
 
@@ -133,17 +137,17 @@ export default function AddEditStationSheet() {
                 <div className="flex shrink-0 items-center justify-between border-b border-hairline bg-surface-ivory px-6 py-4">
                     <div>
                         <h2 className="text-[17px] font-semibold text-foreground">
-                            {editingStation ? "Edit Station" : "Add Station"}
+                            {editingStation ? t("editTitle") : t("addTitle")}
                         </h2>
                         <p className="text-[12px] text-slate-gray">
-                            Name, prep target, and online / offline control.
+                            {t("sheetSubtitle")}
                         </p>
                     </div>
                     <button
                         type="button"
                         onClick={handleClose}
                         className="flex size-8 items-center justify-center rounded-full text-slate-gray hover:bg-secondary hover:text-foreground transition-colors"
-                        aria-label="Close"
+                        aria-label={tCommon("cancel")}
                     >
                         <X className="size-4" />
                     </button>
@@ -161,7 +165,7 @@ export default function AddEditStationSheet() {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>
-                                        Station Name{" "}
+                                        {t("stationName")}{" "}
                                         <span className="text-destructive">
                                             *
                                         </span>
@@ -169,7 +173,9 @@ export default function AddEditStationSheet() {
                                     <FormControl>
                                         <input
                                             type="text"
-                                            placeholder="e.g. Kitchen, Barista, Grill"
+                                            placeholder={t(
+                                                "stationNamePlaceholder",
+                                            )}
                                             className="w-full rounded-xl border border-hairline bg-background px-3.5 py-2.5 text-[14px] text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary"
                                             {...field}
                                         />
@@ -184,11 +190,11 @@ export default function AddEditStationSheet() {
                             name="code"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Code (optional)</FormLabel>
+                                    <FormLabel>{t("codeOptional")}</FormLabel>
                                     <FormControl>
                                         <input
                                             type="text"
-                                            placeholder="e.g. kitchen"
+                                            placeholder={t("codePlaceholder")}
                                             className="w-full rounded-xl border border-hairline bg-background px-3.5 py-2.5 text-[14px] text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary"
                                             {...field}
                                         />
@@ -203,9 +209,7 @@ export default function AddEditStationSheet() {
                             name="avgPrepMin"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>
-                                        Target prep time (minutes)
-                                    </FormLabel>
+                                    <FormLabel>{t("prepTime")}</FormLabel>
                                     <FormControl>
                                         <input
                                             type="number"
@@ -235,11 +239,10 @@ export default function AddEditStationSheet() {
                                 <div className="flex items-center justify-between rounded-xl border border-hairline bg-surface-ivory p-4">
                                     <div className="pr-3">
                                         <p className="text-[14px] font-medium text-foreground">
-                                            Station online
+                                            {t("stationOnline")}
                                         </p>
                                         <p className="text-[12px] text-slate-gray">
-                                            Off hides linked dishes from waiter
-                                            & QR menus and blocks new tickets.
+                                            {t("stationOnlineDesc")}
                                         </p>
                                     </div>
                                     <button
@@ -286,7 +289,9 @@ export default function AddEditStationSheet() {
                         >
                             <Trash2 className="size-4" />
                             <span>
-                                {confirmDelete ? "Confirm Delete?" : "Delete"}
+                                {confirmDelete
+                                    ? t("confirmDeleteQ")
+                                    : tCommon("delete")}
                             </span>
                         </button>
                     ) : (
@@ -300,7 +305,7 @@ export default function AddEditStationSheet() {
                             onClick={handleClose}
                             className="rounded-full border border-hairline bg-card px-4 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-secondary disabled:opacity-50"
                         >
-                            Cancel
+                            {tCommon("cancel")}
                         </button>
                         <button
                             type="submit"
@@ -313,8 +318,8 @@ export default function AddEditStationSheet() {
                             ) : null}
                             <span>
                                 {editingStation
-                                    ? "Save Changes"
-                                    : "Create Station"}
+                                    ? tSheets("saveChanges")
+                                    : t("createStation")}
                             </span>
                         </button>
                     </div>

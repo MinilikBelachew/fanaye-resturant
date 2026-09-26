@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
     Building2,
     Check,
@@ -60,23 +61,12 @@ export function getAvatarSolidColor(name: string): string {
     return AVATAR_SOLID_PALETTES[index];
 }
 
-const ROLE_OPTIONS = [
-    { value: "waiter", label: "Waiter / Server" },
-    { value: "cashier", label: "Cashier" },
-    { value: "manager", label: "Floor Manager" },
-    { value: "owner", label: "Owner / Admin" },
-    { value: "kitchen", label: "Kitchen Station" },
-    { value: "barista", label: "Barista Station" },
-    { value: "cakes", label: "Cakes & Pastry" },
-    { value: "soft_drinks", label: "Soft Drinks" },
-];
-
 function getRoleBadgeStyle(role: string) {
     return "bg-secondary text-foreground border-border/80 font-medium";
 }
 
-function formatLogin(value?: string | null) {
-    if (!value) return "Never";
+function formatLogin(value: string | null | undefined, neverLabel: string) {
+    if (!value) return neverLabel;
     try {
         return new Date(value).toLocaleString("en-GB", {
             day: "numeric",
@@ -91,6 +81,24 @@ function formatLogin(value?: string | null) {
 }
 
 export default function StaffDirectoryPage() {
+    const t = useTranslations("superAdmin");
+    const tCommon = useTranslations("common");
+    const tTenancy = useTranslations("tenancy");
+
+    const roleOptions = useMemo(
+        () => [
+            { value: "waiter", label: t("staff.roleWaiterServer") },
+            { value: "cashier", label: t("staff.roleCashier") },
+            { value: "manager", label: t("staff.roleFloorManager") },
+            { value: "owner", label: t("staff.roleOwnerAdmin") },
+            { value: "kitchen", label: t("staff.roleKitchenStation") },
+            { value: "barista", label: t("staff.roleBaristaStation") },
+            { value: "cakes", label: t("staff.roleCakesPastry") },
+            { value: "soft_drinks", label: t("staff.roleSoftDrinks") },
+        ],
+        [t],
+    );
+
     // Search, Pagination & Filter state
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState("");
@@ -160,15 +168,15 @@ export default function StaffDirectoryPage() {
     async function handleCreateStaff(e: React.FormEvent) {
         e.preventDefault();
         if (!newStaffTenantId) {
-            toast.error("Please select a target restaurant tenant.");
+            toast.error(t("staff.toastSelectTenant"));
             return;
         }
         if (!newStaffName.trim()) {
-            toast.error("Staff name is required.");
+            toast.error(t("staff.toastNameRequired"));
             return;
         }
         if (!/^\d{4,6}$/.test(newStaffPin.trim())) {
-            toast.error("PIN must be 4 to 6 numeric digits.");
+            toast.error(t("staff.toastPinInvalid"));
             return;
         }
 
@@ -182,7 +190,7 @@ export default function StaffDirectoryPage() {
                 phone: newStaffPhone.trim() || undefined,
             }).unwrap();
 
-            toast.success("Staff user created", newStaffName.trim());
+            toast.success(t("staff.toastStaffCreated"), newStaffName.trim());
             setIsCreateOpen(false);
             setNewStaffName("");
             setNewStaffPin("1234");
@@ -192,7 +200,7 @@ export default function StaffDirectoryPage() {
         } catch (err: unknown) {
             const message =
                 (err as { data?: { message?: string } })?.data?.message ||
-                "Could not create staff user.";
+                t("staff.toastCreateFailed");
             toast.error(message);
         }
     }
@@ -201,7 +209,7 @@ export default function StaffDirectoryPage() {
     async function handleSavePin() {
         if (!pinTarget) return;
         if (!/^\d{4,6}$/.test(pinValue.trim())) {
-            toast.error("PIN must be 4 to 6 numeric digits.");
+            toast.error(t("staff.toastPinInvalid"));
             return;
         }
 
@@ -211,14 +219,14 @@ export default function StaffDirectoryPage() {
                 pin: pinValue.trim(),
             }).unwrap();
 
-            toast.success("PIN updated successfully", pinTarget.displayName);
+            toast.success(t("staff.toastPinUpdated"), pinTarget.displayName);
             setPinTarget(null);
             setPinValue("");
             void refetch();
         } catch (err: unknown) {
             const message =
                 (err as { data?: { message?: string } })?.data?.message ||
-                "Could not update staff PIN.";
+                t("staff.toastPinUpdateFailed");
             toast.error(message);
         }
     }
@@ -227,7 +235,7 @@ export default function StaffDirectoryPage() {
     async function handleSavePassword() {
         if (!passwordTarget) return;
         if (passwordValue.trim().length < 6) {
-            toast.error("Password must be at least 6 characters.");
+            toast.error(t("staff.toastPasswordMinLength"));
             return;
         }
 
@@ -237,14 +245,17 @@ export default function StaffDirectoryPage() {
                 password: passwordValue.trim(),
             }).unwrap();
 
-            toast.success("Password updated", passwordTarget.displayName);
+            toast.success(
+                t("staff.toastPasswordUpdated"),
+                passwordTarget.displayName,
+            );
             setPasswordTarget(null);
             setPasswordValue("");
             void refetch();
         } catch (err: unknown) {
             const message =
                 (err as { data?: { message?: string } })?.data?.message ||
-                "Could not reset password.";
+                t("staff.toastPasswordResetFailed");
             toast.error(message);
         }
     }
@@ -261,14 +272,16 @@ export default function StaffDirectoryPage() {
             }).unwrap();
 
             toast.success(
-                suspended ? "User suspended" : "User reactivated",
+                suspended
+                    ? t("staff.toastUserSuspended")
+                    : t("staff.toastUserReactivated"),
                 row.displayName,
             );
             void refetch();
         } catch (err: unknown) {
             const message =
                 (err as { data?: { message?: string } })?.data?.message ||
-                "Could not update staff status.";
+                t("staff.toastStatusUpdateFailed");
             toast.error(message);
         }
     }
@@ -278,7 +291,7 @@ export default function StaffDirectoryPage() {
         () => [
             {
                 id: "staff",
-                header: "Staff Member",
+                header: t("staff.colStaffMember"),
                 sortValue: row => row.displayName,
                 cell: row => (
                     <div className="flex items-center gap-3">
@@ -295,7 +308,9 @@ export default function StaffDirectoryPage() {
                                 {row.displayName}
                             </span>
                             <span className="text-[11.5px] text-slate-gray">
-                                {row.email || row.phone || "No contact info"}
+                                {row.email ||
+                                    row.phone ||
+                                    t("staff.noContactInfo")}
                             </span>
                         </div>
                     </div>
@@ -303,7 +318,7 @@ export default function StaffDirectoryPage() {
             },
             {
                 id: "tenant",
-                header: "Restaurant Tenant",
+                header: t("staff.colRestaurantTenant"),
                 sortValue: row => row.tenantName,
                 cell: row => (
                     <div className="flex items-center gap-2">
@@ -316,7 +331,7 @@ export default function StaffDirectoryPage() {
             },
             {
                 id: "role",
-                header: "Role",
+                header: t("staff.colRole"),
                 sortValue: row => row.roles[0] || "",
                 cell: row => (
                     <div className="flex flex-wrap gap-1">
@@ -336,21 +351,21 @@ export default function StaffDirectoryPage() {
             },
             {
                 id: "pinStatus",
-                header: "PIN Status",
+                header: t("staff.colPinStatus"),
                 cell: row => (
                     <div className="flex items-center gap-1.5 text-[12px] font-mono text-muted-foreground">
                         <span className="text-foreground font-bold text-[14px] tracking-widest">
                             ••••
                         </span>
                         <span className="text-[11.5px] text-muted-foreground font-sans">
-                            Active
+                            {t("staff.pinActive")}
                         </span>
                     </div>
                 ),
             },
             {
                 id: "status",
-                header: "Status",
+                header: t("staff.colStatus"),
                 sortValue: row => row.accountStatus,
                 cell: row => {
                     const isSuspended =
@@ -359,29 +374,29 @@ export default function StaffDirectoryPage() {
                     return isSuspended ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 px-2.5 py-0.5 text-[11.5px] font-medium text-red-700 dark:text-red-400">
                             <span className="size-1.5 rounded-full bg-red-500" />
-                            Suspended
+                            {tTenancy("suspended")}
                         </span>
                     ) : (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 px-2.5 py-0.5 text-[11.5px] font-medium text-emerald-700 dark:text-emerald-400">
                             <span className="size-1.5 rounded-full bg-emerald-500" />
-                            Active
+                            {tTenancy("active")}
                         </span>
                     );
                 },
             },
             {
                 id: "lastLogin",
-                header: "Last Login",
+                header: t("staff.colLastLogin"),
                 sortValue: row => row.lastLoginAt || "",
                 cell: row => (
                     <span className="text-[12px] text-slate-gray">
-                        {formatLogin(row.lastLoginAt)}
+                        {formatLogin(row.lastLoginAt, t("never"))}
                     </span>
                 ),
             },
             {
                 id: "actions",
-                header: "Actions",
+                header: t("staff.colActions"),
                 headerClassName: "text-right",
                 className: "text-right",
                 cell: row => {
@@ -400,10 +415,10 @@ export default function StaffDirectoryPage() {
                                     setPinValue("");
                                 }}
                                 className="h-8 gap-1.5 px-2.5 rounded-lg text-[12px] border-hairline hover:border-primary/40 hover:text-primary"
-                                title="Change PIN"
+                                title={t("staff.titleChangePin")}
                             >
                                 <KeyRound className="size-3.5" />
-                                <span>PIN</span>
+                                <span>{t("staff.btnPin")}</span>
                             </Button>
 
                             {/* Reset Password Button */}
@@ -416,11 +431,11 @@ export default function StaffDirectoryPage() {
                                     setPasswordValue("");
                                 }}
                                 className="h-8 gap-1.5 px-2.5 rounded-lg text-[12px] border-hairline hover:border-slate-400"
-                                title="Reset Web Password"
+                                title={t("staff.titleResetWebPassword")}
                             >
                                 <Lock className="size-3.5" />
                                 <span className="hidden sm:inline">
-                                    Password
+                                    {t("staff.btnPassword")}
                                 </span>
                             </Button>
 
@@ -438,19 +453,19 @@ export default function StaffDirectoryPage() {
                                 )}
                                 title={
                                     isSuspended
-                                        ? "Reactivate Staff"
-                                        : "Suspend Staff"
+                                        ? t("staff.titleReactivateStaff")
+                                        : t("staff.titleSuspendStaff")
                                 }
                             >
                                 {isSuspended ? (
                                     <>
                                         <ShieldCheck className="size-3.5" />
-                                        <span>Activate</span>
+                                        <span>{t("staff.btnActivate")}</span>
                                     </>
                                 ) : (
                                     <>
                                         <ShieldOff className="size-3.5" />
-                                        <span>Suspend</span>
+                                        <span>{t("staff.btnSuspend")}</span>
                                     </>
                                 )}
                             </Button>
@@ -459,7 +474,7 @@ export default function StaffDirectoryPage() {
                 },
             },
         ],
-        [],
+        [t, tTenancy],
     );
 
     return (
@@ -486,7 +501,7 @@ export default function StaffDirectoryPage() {
                                 isFetching && "animate-spin",
                             )}
                         />
-                        <span>Refresh</span>
+                        <span>{t("refresh")}</span>
                     </Button>
 
                     <Button
@@ -500,14 +515,14 @@ export default function StaffDirectoryPage() {
                         className="h-9 gap-1.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary-deep text-[13px] font-semibold shadow-sm shadow-primary/20"
                     >
                         <UserPlus className="size-4" />
-                        <span>Create Staff User</span>
+                        <span>{t("staff.createStaffUser")}</span>
                     </Button>
                 </div>
             </div>
 
             {error && (
                 <div className="mb-4 rounded-[16px] border border-red-200 bg-red-50 p-4 text-[13px] text-red-700 dark:border-red-950 dark:bg-red-950/40 dark:text-red-400">
-                    Unable to load staff directory from the platform backend.
+                    {t("staff.errorLoadDirectory")}
                 </div>
             )}
 
@@ -516,7 +531,7 @@ export default function StaffDirectoryPage() {
                 columns={columns}
                 data={staffList}
                 rowKey={row => row.membershipId}
-                searchPlaceholder="Search staff by name, email, phone, tenant…"
+                searchPlaceholder={t("staff.searchPlaceholder")}
                 searchQuery={search}
                 onSearchChange={val => {
                     setSearch(val);
@@ -527,10 +542,10 @@ export default function StaffDirectoryPage() {
                     isLoading ? (
                         <div className="flex items-center justify-center gap-2 py-10 text-[13px] text-slate-gray">
                             <span className="size-4 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-                            <span>Loading staff across tenants…</span>
+                            <span>{t("staff.loadingStaff")}</span>
                         </div>
                     ) : (
-                        "No staff members matching your filters."
+                        t("staff.emptyNoMatches")
                     )
                 }
                 headerActions={
@@ -544,7 +559,9 @@ export default function StaffDirectoryPage() {
                             }}
                             className="h-9 rounded-md border border-hairline bg-card px-2.5 text-[12.5px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                         >
-                            <option value="">All Restaurant Tenants</option>
+                            <option value="">
+                                {t("staff.filterAllTenants")}
+                            </option>
                             {tenantsList.map(t => (
                                 <option key={t.id} value={t.id}>
                                     {t.name}
@@ -561,13 +578,23 @@ export default function StaffDirectoryPage() {
                             }}
                             className="h-9 rounded-md border border-hairline bg-card px-2.5 text-[12.5px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                         >
-                            <option value="">All Roles</option>
-                            <option value="WAITER">Waiters</option>
-                            <option value="CASHIER">Cashiers</option>
-                            <option value="MANAGER">Managers</option>
-                            <option value="OWNER_ADMIN">Owners & Admins</option>
+                            <option value="">
+                                {t("staff.filterAllRoles")}
+                            </option>
+                            <option value="WAITER">
+                                {t("staff.filterWaiters")}
+                            </option>
+                            <option value="CASHIER">
+                                {t("staff.filterCashiers")}
+                            </option>
+                            <option value="MANAGER">
+                                {t("staff.filterManagers")}
+                            </option>
+                            <option value="OWNER_ADMIN">
+                                {t("staff.filterOwnersAdmins")}
+                            </option>
                             <option value="STATION_OPERATOR">
-                                Station Operators
+                                {t("staff.filterStationOperators")}
                             </option>
                         </select>
 
@@ -580,9 +607,13 @@ export default function StaffDirectoryPage() {
                             }}
                             className="h-9 rounded-md border border-hairline bg-card px-2.5 text-[12.5px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                         >
-                            <option value="">All Statuses</option>
-                            <option value="ACTIVE">Active</option>
-                            <option value="SUSPENDED">Suspended</option>
+                            <option value="">
+                                {t("staff.filterAllStatuses")}
+                            </option>
+                            <option value="ACTIVE">{tTenancy("active")}</option>
+                            <option value="SUSPENDED">
+                                {tTenancy("suspended")}
+                            </option>
                         </select>
                     </div>
                 }
@@ -612,7 +643,7 @@ export default function StaffDirectoryPage() {
                                     <UserPlus className="size-4" />
                                 </div>
                                 <h3 className="font-bold text-[16px] text-foreground">
-                                    Create Staff Under Tenant
+                                    {t("staff.modalCreateTitle")}
                                 </h3>
                             </div>
                             <button
@@ -631,7 +662,7 @@ export default function StaffDirectoryPage() {
                             {/* Target Tenant */}
                             <div className="space-y-1">
                                 <label className="font-medium text-foreground">
-                                    Restaurant Tenant{" "}
+                                    {t("staff.labelRestaurantTenant")}{" "}
                                     <span className="text-primary">*</span>
                                 </label>
                                 <select
@@ -643,7 +674,7 @@ export default function StaffDirectoryPage() {
                                     className="w-full h-10 rounded-[10px] border border-hairline bg-card px-3 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                                 >
                                     <option value="" disabled>
-                                        Select restaurant...
+                                        {t("staff.selectRestaurant")}
                                     </option>
                                     {tenantsList.map(t => (
                                         <option key={t.id} value={t.id}>
@@ -656,7 +687,7 @@ export default function StaffDirectoryPage() {
                             {/* Staff Name */}
                             <div className="space-y-1">
                                 <label className="font-medium text-foreground">
-                                    Full Name{" "}
+                                    {t("staff.labelFullName")}{" "}
                                     <span className="text-primary">*</span>
                                 </label>
                                 <Input
@@ -664,7 +695,7 @@ export default function StaffDirectoryPage() {
                                     onChange={e =>
                                         setNewStaffName(e.target.value)
                                     }
-                                    placeholder="e.g. Dawit Alemu"
+                                    placeholder={t("staff.placeholderFullName")}
                                     required
                                     className="h-10 rounded-[10px]"
                                 />
@@ -673,7 +704,8 @@ export default function StaffDirectoryPage() {
                             {/* Role Picker */}
                             <div className="space-y-1">
                                 <label className="font-medium text-foreground">
-                                    Role <span className="text-primary">*</span>
+                                    {t("staff.labelRole")}{" "}
+                                    <span className="text-primary">*</span>
                                 </label>
                                 <select
                                     value={newStaffRole}
@@ -683,7 +715,7 @@ export default function StaffDirectoryPage() {
                                     required
                                     className="w-full h-10 rounded-[10px] border border-hairline bg-card px-3 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary capitalize"
                                 >
-                                    {ROLE_OPTIONS.map(opt => (
+                                    {roleOptions.map(opt => (
                                         <option
                                             key={opt.value}
                                             value={opt.value}
@@ -697,7 +729,7 @@ export default function StaffDirectoryPage() {
                             {/* PIN with Eye Toggle */}
                             <div className="space-y-1">
                                 <label className="font-medium text-foreground">
-                                    Quick Access PIN{" "}
+                                    {t("staff.labelQuickAccessPin")}{" "}
                                     <span className="text-primary">*</span>
                                 </label>
                                 <div className="relative">
@@ -720,7 +752,9 @@ export default function StaffDirectoryPage() {
                                                 ),
                                             )
                                         }
-                                        placeholder="4-digit numeric PIN"
+                                        placeholder={t(
+                                            "staff.placeholderPin4Digit",
+                                        )}
                                         required
                                         className="h-10 rounded-[10px] pr-10 font-mono tracking-wider"
                                     />
@@ -732,8 +766,8 @@ export default function StaffDirectoryPage() {
                                         className="absolute right-3 top-2.5 z-10 flex size-5 cursor-pointer items-center justify-center text-slate-gray hover:text-foreground transition-colors"
                                         title={
                                             showNewStaffPin
-                                                ? "Hide PIN"
-                                                : "Show PIN"
+                                                ? t("hidePin")
+                                                : t("showPin")
                                         }
                                     >
                                         {showNewStaffPin ? (
@@ -748,9 +782,9 @@ export default function StaffDirectoryPage() {
                             {/* Email (Optional) */}
                             <div className="space-y-1">
                                 <label className="font-medium text-foreground">
-                                    Email Address{" "}
+                                    {t("staff.labelEmailAddress")}{" "}
                                     <span className="text-slate-gray font-normal">
-                                        (Optional)
+                                        {t("optional")}
                                     </span>
                                 </label>
                                 <Input
@@ -759,7 +793,7 @@ export default function StaffDirectoryPage() {
                                     onChange={e =>
                                         setNewStaffEmail(e.target.value)
                                     }
-                                    placeholder="optional@example.com"
+                                    placeholder={t("staff.placeholderEmail")}
                                     className="h-10 rounded-[10px]"
                                 />
                             </div>
@@ -767,9 +801,9 @@ export default function StaffDirectoryPage() {
                             {/* Phone (Optional) */}
                             <div className="space-y-1">
                                 <label className="font-medium text-foreground">
-                                    Phone Number{" "}
+                                    {t("staff.labelPhoneNumber")}{" "}
                                     <span className="text-slate-gray font-normal">
-                                        (Optional)
+                                        {t("optional")}
                                     </span>
                                 </label>
                                 <Input
@@ -778,7 +812,7 @@ export default function StaffDirectoryPage() {
                                     onChange={e =>
                                         setNewStaffPhone(e.target.value)
                                     }
-                                    placeholder="+251 91 123 4567"
+                                    placeholder={t("staff.placeholderPhone")}
                                     className="h-10 rounded-[10px]"
                                 />
                             </div>
@@ -790,7 +824,7 @@ export default function StaffDirectoryPage() {
                                     onClick={() => setIsCreateOpen(false)}
                                     className="h-9 rounded-xl text-[13px]"
                                 >
-                                    Cancel
+                                    {tCommon("cancel")}
                                 </Button>
                                 <Button
                                     type="submit"
@@ -798,8 +832,8 @@ export default function StaffDirectoryPage() {
                                     className="h-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary-deep text-[13px] font-semibold"
                                 >
                                     {creatingStaff
-                                        ? "Creating..."
-                                        : "Create Staff"}
+                                        ? t("creating")
+                                        : t("staff.createStaff")}
                                 </Button>
                             </div>
                         </form>
@@ -822,7 +856,7 @@ export default function StaffDirectoryPage() {
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-[15px] text-foreground">
-                                        Change Quick Access PIN
+                                        {t("staff.modalChangePinTitle")}
                                     </h3>
                                     <p className="text-[12px] text-slate-gray">
                                         {pinTarget.displayName} (
@@ -842,7 +876,7 @@ export default function StaffDirectoryPage() {
                         <div className="space-y-4 text-[13px]">
                             <div className="space-y-1">
                                 <label className="font-medium text-foreground">
-                                    New Numeric PIN (4–6 digits)
+                                    {t("staff.labelNewNumericPin")}
                                 </label>
                                 <div className="relative">
                                     <Input
@@ -862,7 +896,9 @@ export default function StaffDirectoryPage() {
                                                 ),
                                             )
                                         }
-                                        placeholder="Enter 4-digit PIN"
+                                        placeholder={t(
+                                            "staff.placeholderEnterPin",
+                                        )}
                                         className="h-10 rounded-[10px] pr-10 font-mono tracking-wider text-[15px]"
                                     />
                                     <button
@@ -871,8 +907,8 @@ export default function StaffDirectoryPage() {
                                         className="absolute right-3 top-2.5 z-10 flex size-5 cursor-pointer items-center justify-center text-slate-gray hover:text-foreground transition-colors"
                                         title={
                                             showPinValue
-                                                ? "Hide PIN"
-                                                : "Show PIN"
+                                                ? t("hidePin")
+                                                : t("showPin")
                                         }
                                     >
                                         {showPinValue ? (
@@ -891,7 +927,7 @@ export default function StaffDirectoryPage() {
                                     onClick={() => setPinTarget(null)}
                                     className="h-9 rounded-xl text-[13px]"
                                 >
-                                    Cancel
+                                    {tCommon("cancel")}
                                 </Button>
                                 <Button
                                     type="button"
@@ -901,7 +937,9 @@ export default function StaffDirectoryPage() {
                                     onClick={() => void handleSavePin()}
                                     className="h-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary-deep text-[13px] font-semibold"
                                 >
-                                    {resettingPin ? "Saving..." : "Update PIN"}
+                                    {resettingPin
+                                        ? t("saving")
+                                        : t("staff.updatePin")}
                                 </Button>
                             </div>
                         </div>
@@ -924,7 +962,7 @@ export default function StaffDirectoryPage() {
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-[15px] text-foreground">
-                                        Reset Web Password
+                                        {t("staff.modalResetPasswordTitle")}
                                     </h3>
                                     <p className="text-[12px] text-slate-gray">
                                         {passwordTarget.displayName}
@@ -943,7 +981,7 @@ export default function StaffDirectoryPage() {
                         <div className="space-y-4 text-[13px]">
                             <div className="space-y-1">
                                 <label className="font-medium text-foreground">
-                                    New Password (min 6 chars)
+                                    {t("staff.labelNewPassword")}
                                 </label>
                                 <div className="relative">
                                     <Input
@@ -956,7 +994,9 @@ export default function StaffDirectoryPage() {
                                         onChange={e =>
                                             setPasswordValue(e.target.value)
                                         }
-                                        placeholder="Enter new password"
+                                        placeholder={t(
+                                            "staff.placeholderNewPassword",
+                                        )}
                                         className="h-10 rounded-[10px] pr-10"
                                     />
                                     <button
@@ -967,8 +1007,8 @@ export default function StaffDirectoryPage() {
                                         className="absolute right-3 top-2.5 z-10 flex size-5 cursor-pointer items-center justify-center text-slate-gray hover:text-foreground transition-colors"
                                         title={
                                             showPasswordValue
-                                                ? "Hide Password"
-                                                : "Show Password"
+                                                ? t("hidePassword")
+                                                : t("showPassword")
                                         }
                                     >
                                         {showPasswordValue ? (
@@ -987,7 +1027,7 @@ export default function StaffDirectoryPage() {
                                     onClick={() => setPasswordTarget(null)}
                                     className="h-9 rounded-xl text-[13px]"
                                 >
-                                    Cancel
+                                    {tCommon("cancel")}
                                 </Button>
                                 <Button
                                     type="button"
@@ -999,8 +1039,8 @@ export default function StaffDirectoryPage() {
                                     className="h-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary-deep text-[13px] font-semibold"
                                 >
                                     {resettingPassword
-                                        ? "Saving..."
-                                        : "Update Password"}
+                                        ? t("saving")
+                                        : t("staff.updatePassword")}
                                 </Button>
                             </div>
                         </div>

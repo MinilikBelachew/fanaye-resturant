@@ -41,6 +41,7 @@ import {
     type ProvisionTenantValues,
 } from "@/lib/validators/provisionTenant";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface CreateTenantSheetProps {
     open: boolean;
@@ -48,93 +49,9 @@ interface CreateTenantSheetProps {
     onSuccess?: () => void;
 }
 
-const PLANS = [
-    {
-        code: "STARTER" as const,
-        name: "Starter",
-        price: "ETB 2,400/mo",
-        badge: "1 Branch",
-        desc: "Single location & cash ops",
-    },
-    {
-        code: "PRO" as const,
-        name: "Pro Tier",
-        price: "ETB 6,800/mo",
-        badge: "Recommended",
-        desc: "Multi-station KDS & analytics",
-    },
-    {
-        code: "GROWTH" as const,
-        name: "Growth",
-        price: "ETB 14,500/mo",
-        badge: "Up to 5 Branches",
-        desc: "Multi-branch & daily close",
-    },
-    {
-        code: "ENTERPRISE" as const,
-        name: "Enterprise",
-        price: "Custom",
-        badge: "Unlimited",
-        desc: "Dedicated SLA & multi-brand",
-    },
-];
-
-const STATIONS_PRESET = [
-    { id: "KITCHEN", label: "Kitchen Station", icon: ChefHat },
-    { id: "BARISTA", label: "Barista Station", icon: Coffee },
-    { id: "CAKES", label: "Cakes & Pastry", icon: CakeSlice },
-    { id: "SOFT_DRINKS", label: "Soft Drinks & Bar", icon: Wine },
-];
-
 const CITIES = ["Addis Ababa", "Hawassa", "Adama", "Bahir Dar", "Dire Dawa"];
 
 type StepId = "company" | "location" | "manager" | "ops";
-
-const STEPS: Array<{
-    id: StepId;
-    label: string;
-    short: string;
-    icon: typeof Building2;
-    title: string;
-    description: string;
-}> = [
-    {
-        id: "company",
-        label: "Company & Plan",
-        short: "Company",
-        icon: Building2,
-        title: "Company & subscription",
-        description:
-            "Brand identity and the SLA plan this restaurant will run on.",
-    },
-    {
-        id: "location",
-        label: "Branch & Location",
-        short: "Branch",
-        icon: MapPin,
-        title: "Primary branch",
-        description:
-            "Flagship location, city, and operating hours for day-one floor ops.",
-    },
-    {
-        id: "manager",
-        label: "House Manager",
-        short: "Manager",
-        icon: UserCheck,
-        title: "House manager account",
-        description:
-            "Login that unlocks staff, shifts, approvals, and daily close.",
-    },
-    {
-        id: "ops",
-        label: "Floor & KDS",
-        short: "Floor",
-        icon: UtensilsCrossed,
-        title: "Floor & KDS stations",
-        description:
-            "Seed tables and the preparation stations that will receive tickets.",
-    },
-];
 
 const fieldClass =
     "h-11 rounded-[12px] border-hairline bg-card text-[14px] focus-visible:border-brand/40 focus-visible:ring-brand/20";
@@ -144,6 +61,7 @@ export default function CreateTenantSheet({
     onClose,
     onSuccess,
 }: CreateTenantSheetProps) {
+    const t = useTranslations("tenancy");
     const [createTenant, { isLoading }] = useCreateSuperAdminTenantMutation();
     const [activeTab, setActiveTab] = useState<StepId>("company");
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -152,6 +70,137 @@ export default function CreateTenantSheet({
         defaultValues: provisionTenantDefaults,
         mode: "onSubmit",
     });
+
+    const PLANS = useMemo(
+        () =>
+            [
+                {
+                    code: "STARTER" as const,
+                    name: t("plans.starter.name"),
+                    price: t("plans.starter.price"),
+                    badge: t("plans.starter.badge"),
+                    desc: t("plans.starter.desc"),
+                },
+                {
+                    code: "PRO" as const,
+                    name: t("plans.pro.name"),
+                    price: t("plans.pro.price"),
+                    badge: t("plans.pro.badge"),
+                    desc: t("plans.pro.desc"),
+                },
+                {
+                    code: "GROWTH" as const,
+                    name: t("plans.growth.name"),
+                    price: t("plans.growth.price"),
+                    badge: t("plans.growth.badge"),
+                    desc: t("plans.growth.desc"),
+                },
+                {
+                    code: "ENTERPRISE" as const,
+                    name: t("plans.enterprise.name"),
+                    price: t("plans.enterprise.price"),
+                    badge: t("plans.enterprise.badge"),
+                    desc: t("plans.enterprise.desc"),
+                },
+            ] as const,
+        [t],
+    );
+
+    const STATIONS_PRESET = useMemo(
+        () => [
+            {
+                id: "KITCHEN" as const,
+                label: t("stationsPreset.kitchen"),
+                icon: ChefHat,
+            },
+            {
+                id: "BARISTA" as const,
+                label: t("stationsPreset.barista"),
+                icon: Coffee,
+            },
+            {
+                id: "CAKES" as const,
+                label: t("stationsPreset.cakes"),
+                icon: CakeSlice,
+            },
+            {
+                id: "SOFT_DRINKS" as const,
+                label: t("stationsPreset.softDrinks"),
+                icon: Wine,
+            },
+        ],
+        [t],
+    );
+
+    const STEPS = useMemo(
+        () =>
+            [
+                {
+                    id: "company" as const,
+                    label: t("create.steps.company.label"),
+                    short: t("create.steps.company.short"),
+                    icon: Building2,
+                    title: t("create.steps.company.title"),
+                    description: t("create.steps.company.description"),
+                },
+                {
+                    id: "location" as const,
+                    label: t("create.steps.location.label"),
+                    short: t("create.steps.location.short"),
+                    icon: MapPin,
+                    title: t("create.steps.location.title"),
+                    description: t("create.steps.location.description"),
+                },
+                {
+                    id: "manager" as const,
+                    label: t("create.steps.manager.label"),
+                    short: t("create.steps.manager.short"),
+                    icon: UserCheck,
+                    title: t("create.steps.manager.title"),
+                    description: t("create.steps.manager.description"),
+                },
+                {
+                    id: "ops" as const,
+                    label: t("create.steps.ops.label"),
+                    short: t("create.steps.ops.short"),
+                    icon: UtensilsCrossed,
+                    title: t("create.steps.ops.title"),
+                    description: t("create.steps.ops.description"),
+                },
+            ] as const,
+        [t],
+    );
+
+    const CONCEPT_OPTIONS = useMemo(
+        () =>
+            [
+                {
+                    value: "Casual Dining",
+                    label: t("concepts.casualDining"),
+                },
+                {
+                    value: "Fine Dining & Wine Bar",
+                    label: t("concepts.fineDiningWineBar"),
+                },
+                {
+                    value: "Cafe & Roastery",
+                    label: t("concepts.cafeRoastery"),
+                },
+                {
+                    value: "Grill & Bistro",
+                    label: t("concepts.grillBistro"),
+                },
+                {
+                    value: "Lounge & Nightclub",
+                    label: t("concepts.loungeNightclub"),
+                },
+                {
+                    value: "Fast Casual",
+                    label: t("concepts.fastCasual"),
+                },
+            ] as const,
+        [t],
+    );
 
     const values = form.watch();
     const stepIndex = STEPS.findIndex(step => step.id === activeTab);
@@ -162,7 +211,7 @@ export default function CreateTenantSheet({
         () =>
             PLANS.find(plan => plan.code === values.planCode)?.name ??
             values.planCode,
-        [values.planCode],
+        [PLANS, values.planCode],
     );
 
     useEffect(() => {
@@ -177,7 +226,10 @@ export default function CreateTenantSheet({
     function autofillFromBrand(brandName: string) {
         form.setValue("name", brandName, { shouldDirty: true });
         if (!form.getValues("branchName")?.trim() && brandName.trim()) {
-            form.setValue("branchName", `${brandName.trim()} Flagship`);
+            form.setValue(
+                "branchName",
+                `${brandName.trim()}${t("create.flagshipSuffix")}`,
+            );
         }
         if (!form.getValues("branchCode")?.trim() && brandName.trim()) {
             const prefix = brandName
@@ -203,7 +255,8 @@ export default function CreateTenantSheet({
             const parsed = provisionCompanySchema.safeParse(current);
             if (!parsed.success) {
                 const message =
-                    parsed.error.issues[0]?.message || "Check company fields.";
+                    parsed.error.issues[0]?.message ||
+                    t("create.checkCompanyFields");
                 setErrorMsg(message);
                 toast.error(message);
                 for (const issue of parsed.error.issues) {
@@ -224,7 +277,8 @@ export default function CreateTenantSheet({
             const parsed = provisionLocationSchema.safeParse(current);
             if (!parsed.success) {
                 const message =
-                    parsed.error.issues[0]?.message || "Check branch fields.";
+                    parsed.error.issues[0]?.message ||
+                    t("create.checkBranchFields");
                 setErrorMsg(message);
                 toast.error(message);
                 for (const issue of parsed.error.issues) {
@@ -245,7 +299,8 @@ export default function CreateTenantSheet({
             const parsed = provisionManagerSchema.safeParse(current);
             if (!parsed.success) {
                 const message =
-                    parsed.error.issues[0]?.message || "Check manager fields.";
+                    parsed.error.issues[0]?.message ||
+                    t("create.checkManagerFields");
                 setErrorMsg(message);
                 toast.error(message);
                 for (const issue of parsed.error.issues) {
@@ -280,7 +335,7 @@ export default function CreateTenantSheet({
         const parsed = provisionTenantSchema.safeParse(data);
         if (!parsed.success) {
             const message =
-                parsed.error.issues[0]?.message || "Check the form fields.";
+                parsed.error.issues[0]?.message || t("checkFormFields");
             setErrorMsg(message);
             toast.error(message);
             for (const issue of parsed.error.issues) {
@@ -324,7 +379,7 @@ export default function CreateTenantSheet({
                 activeStations: payload.activeStations,
             }).unwrap();
 
-            toast.success("Tenant provisioned", payload.name.trim());
+            toast.success(t("tenantProvisioned"), payload.name.trim());
             onSuccess?.();
             onClose();
         } catch (err: unknown) {
@@ -336,8 +391,7 @@ export default function CreateTenantSheet({
             };
             const message = Array.isArray(errObj?.data?.message)
                 ? errObj.data.message.join(", ")
-                : errObj?.data?.message ||
-                  "Failed to provision tenant. Please check required fields.";
+                : errObj?.data?.message || t("failedToProvisionTenant");
             setErrorMsg(message);
             toast.error(message);
         }
@@ -347,7 +401,7 @@ export default function CreateTenantSheet({
         <div className="fixed inset-0 z-50 flex justify-end">
             <button
                 type="button"
-                aria-label="Close provision sheet"
+                aria-label={t("create.ariaClose")}
                 className="fixed inset-0 bg-black/55 backdrop-blur-[3px]"
                 onClick={onClose}
             />
@@ -364,7 +418,7 @@ export default function CreateTenantSheet({
                         <button
                             type="button"
                             onClick={onClose}
-                            aria-label="Close provision sheet"
+                            aria-label={t("create.ariaClose")}
                             className="rounded-full p-2 text-slate-gray transition-colors hover:bg-secondary hover:text-foreground"
                         >
                             <X className="size-5" />
@@ -434,7 +488,7 @@ export default function CreateTenantSheet({
                             onClick={() => setErrorMsg(null)}
                             className="shrink-0 text-[12px] font-semibold underline"
                         >
-                            Dismiss
+                            {t("dismiss")}
                         </button>
                     </div>
                 ) : null}
@@ -471,7 +525,10 @@ export default function CreateTenantSheet({
                             <div className="space-y-5 px-7 py-6">
                                 <div>
                                     <p className="text-[12px] font-medium text-slate-gray">
-                                        Step {stepIndex + 1} of {STEPS.length}
+                                        {t("create.stepOf", {
+                                            current: stepIndex + 1,
+                                            total: STEPS.length,
+                                        })}
                                     </p>
                                     <h3 className="mt-1 text-[18px] font-semibold tracking-tight">
                                         {currentStep.title}
@@ -489,14 +546,18 @@ export default function CreateTenantSheet({
                                             render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel>
-                                                        Restaurant brand name{" "}
+                                                        {t(
+                                                            "create.fields.brandName",
+                                                        )}{" "}
                                                         <span className="text-brand">
                                                             *
                                                         </span>
                                                     </FormLabel>
                                                     <FormControl>
                                                         <Input
-                                                            placeholder="e.g. Abyssinia Grill & Lounge"
+                                                            placeholder={t(
+                                                                "create.fields.brandNamePlaceholder",
+                                                            )}
                                                             className={
                                                                 fieldClass
                                                             }
@@ -521,11 +582,15 @@ export default function CreateTenantSheet({
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>
-                                                            Legal entity name
+                                                            {t(
+                                                                "create.fields.legalName",
+                                                            )}
                                                         </FormLabel>
                                                         <FormControl>
                                                             <Input
-                                                                placeholder="e.g. Abyssinia Hospitality PLC"
+                                                                placeholder={t(
+                                                                    "create.fields.legalNamePlaceholder",
+                                                                )}
                                                                 className={
                                                                     fieldClass
                                                                 }
@@ -542,7 +607,9 @@ export default function CreateTenantSheet({
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>
-                                                            Culinary concept
+                                                            {t(
+                                                                "create.fields.concept",
+                                                            )}
                                                         </FormLabel>
                                                         <FormControl>
                                                             <select
@@ -552,29 +619,22 @@ export default function CreateTenantSheet({
                                                                 )}
                                                                 {...field}
                                                             >
-                                                                <option value="Casual Dining">
-                                                                    Casual
-                                                                    Dining
-                                                                </option>
-                                                                <option value="Fine Dining & Wine Bar">
-                                                                    Fine Dining
-                                                                    & Wine Bar
-                                                                </option>
-                                                                <option value="Cafe & Roastery">
-                                                                    Cafe &
-                                                                    Roastery
-                                                                </option>
-                                                                <option value="Grill & Bistro">
-                                                                    Grill &
-                                                                    Bistro
-                                                                </option>
-                                                                <option value="Lounge & Nightclub">
-                                                                    Lounge &
-                                                                    Nightclub
-                                                                </option>
-                                                                <option value="Fast Casual">
-                                                                    Fast Casual
-                                                                </option>
+                                                                {CONCEPT_OPTIONS.map(
+                                                                    option => (
+                                                                        <option
+                                                                            key={
+                                                                                option.value
+                                                                            }
+                                                                            value={
+                                                                                option.value
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                option.label
+                                                                            }
+                                                                        </option>
+                                                                    ),
+                                                                )}
                                                             </select>
                                                         </FormControl>
                                                         <FormMessage />
@@ -589,7 +649,9 @@ export default function CreateTenantSheet({
                                             render={({ field }) => (
                                                 <div>
                                                     <p className="mb-2.5 text-[13px] font-medium">
-                                                        Subscription plan
+                                                        {t(
+                                                            "create.fields.subscriptionPlan",
+                                                        )}
                                                     </p>
                                                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                                         {PLANS.map(plan => {
@@ -667,7 +729,9 @@ export default function CreateTenantSheet({
                                                 render={({ field }) => (
                                                     <FormItem className="sm:col-span-2">
                                                         <FormLabel>
-                                                            Primary branch name{" "}
+                                                            {t(
+                                                                "create.fields.branchName",
+                                                            )}{" "}
                                                             <span className="text-brand">
                                                                 *
                                                             </span>
@@ -690,7 +754,9 @@ export default function CreateTenantSheet({
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>
-                                                            Branch code
+                                                            {t(
+                                                                "create.fields.branchCode",
+                                                            )}
                                                         </FormLabel>
                                                         <FormControl>
                                                             <Input
@@ -713,7 +779,9 @@ export default function CreateTenantSheet({
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>
-                                                            City
+                                                            {t(
+                                                                "create.fields.city",
+                                                            )}
                                                         </FormLabel>
                                                         <FormControl>
                                                             <select
@@ -751,7 +819,9 @@ export default function CreateTenantSheet({
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>
-                                                            Area / district
+                                                            {t(
+                                                                "create.fields.area",
+                                                            )}
                                                         </FormLabel>
                                                         <FormControl>
                                                             <Input
@@ -772,7 +842,9 @@ export default function CreateTenantSheet({
                                             render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel>
-                                                        Street address{" "}
+                                                        {t(
+                                                            "create.fields.address",
+                                                        )}{" "}
                                                         <span className="text-brand">
                                                             *
                                                         </span>
@@ -795,7 +867,9 @@ export default function CreateTenantSheet({
                                             render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel>
-                                                        Operating hours
+                                                        {t(
+                                                            "create.fields.hours",
+                                                        )}
                                                     </FormLabel>
                                                     <FormControl>
                                                         <Input
@@ -820,7 +894,9 @@ export default function CreateTenantSheet({
                                             render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel>
-                                                        Full name{" "}
+                                                        {t(
+                                                            "create.fields.managerFullName",
+                                                        )}{" "}
                                                         <span className="text-brand">
                                                             *
                                                         </span>
@@ -844,7 +920,9 @@ export default function CreateTenantSheet({
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>
-                                                            Work email
+                                                            {t(
+                                                                "create.fields.workEmail",
+                                                            )}
                                                         </FormLabel>
                                                         <FormControl>
                                                             <Input
@@ -865,7 +943,9 @@ export default function CreateTenantSheet({
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>
-                                                            Phone{" "}
+                                                            {t(
+                                                                "create.fields.phone",
+                                                            )}{" "}
                                                             <span className="text-brand">
                                                                 *
                                                             </span>
@@ -873,7 +953,9 @@ export default function CreateTenantSheet({
                                                         <FormControl>
                                                             <Input
                                                                 inputMode="tel"
-                                                                placeholder="+251 91 234 5678"
+                                                                placeholder={t(
+                                                                    "create.fields.phonePlaceholder",
+                                                                )}
                                                                 className={
                                                                     fieldClass
                                                                 }
@@ -909,7 +991,9 @@ export default function CreateTenantSheet({
                                             render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel>
-                                                        Temporary password
+                                                        {t(
+                                                            "create.fields.temporaryPassword",
+                                                        )}
                                                     </FormLabel>
                                                     <FormControl>
                                                         <Input
@@ -935,7 +1019,9 @@ export default function CreateTenantSheet({
                                             render={({ field }) => (
                                                 <FormItem className="rounded-[16px] border border-hairline bg-card p-4">
                                                     <FormLabel>
-                                                        Initial dining tables
+                                                        {t(
+                                                            "create.fields.initialTables",
+                                                        )}
                                                     </FormLabel>
                                                     <div className="mt-2 flex flex-wrap items-center gap-3">
                                                         <FormControl>
@@ -959,11 +1045,13 @@ export default function CreateTenantSheet({
                                                             />
                                                         </FormControl>
                                                         <p className="text-[13px] text-slate-gray">
-                                                            Provisions Table 1–
-                                                            {
-                                                                values.tableCount
-                                                            }{" "}
-                                                            on Main Floor.
+                                                            {t(
+                                                                "create.fields.initialTablesHint",
+                                                                {
+                                                                    tableCount:
+                                                                        values.tableCount,
+                                                                },
+                                                            )}
                                                         </p>
                                                     </div>
                                                     <FormMessage />
@@ -977,7 +1065,9 @@ export default function CreateTenantSheet({
                                             render={({ field }) => (
                                                 <div>
                                                     <p className="mb-2.5 text-[13px] font-medium">
-                                                        Active KDS stations
+                                                        {t(
+                                                            "create.fields.activeKdsStations",
+                                                        )}
                                                     </p>
                                                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                                         {STATIONS_PRESET.map(
@@ -1046,9 +1136,9 @@ export default function CreateTenantSheet({
                                                                                     }
                                                                                 </span>
                                                                                 <span className="block text-[11px] text-slate-gray">
-                                                                                    KDS
-                                                                                    display
-                                                                                    queue
+                                                                                    {t(
+                                                                                        "create.fields.kdsQueueHint",
+                                                                                    )}
                                                                                 </span>
                                                                             </span>
                                                                         </span>
@@ -1091,21 +1181,23 @@ export default function CreateTenantSheet({
                                 <div className="sticky top-6 space-y-4">
                                     <div className="flex items-center gap-2 text-[13px] font-semibold">
                                         <Sparkles className="size-4 text-brand" />
-                                        Live summary
+                                        {t("create.summary.title")}
                                     </div>
                                     <dl className="space-y-3 text-[12px]">
                                         <div>
                                             <dt className="text-slate-gray">
-                                                Restaurant
+                                                {t("create.summary.restaurant")}
                                             </dt>
                                             <dd className="mt-0.5 font-medium">
                                                 {values.name.trim() ||
-                                                    "Untitled brand"}
+                                                    t(
+                                                        "create.summary.untitledBrand",
+                                                    )}
                                             </dd>
                                         </div>
                                         <div>
                                             <dt className="text-slate-gray">
-                                                Plan
+                                                {t("create.summary.plan")}
                                             </dt>
                                             <dd className="mt-0.5 font-medium text-brand">
                                                 {planLabel}
@@ -1113,20 +1205,20 @@ export default function CreateTenantSheet({
                                         </div>
                                         <div>
                                             <dt className="text-slate-gray">
-                                                Branch
+                                                {t("create.summary.branch")}
                                             </dt>
                                             <dd className="mt-0.5 font-medium">
                                                 {values.branchName.trim() ||
-                                                    "Not set"}
+                                                    t("create.summary.notSet")}
                                             </dd>
                                         </div>
                                         <div>
                                             <dt className="text-slate-gray">
-                                                Manager
+                                                {t("create.summary.manager")}
                                             </dt>
                                             <dd className="mt-0.5 font-medium">
                                                 {values.managerName.trim() ||
-                                                    "Not set"}
+                                                    t("create.summary.notSet")}
                                             </dd>
                                             <dd className="text-slate-gray">
                                                 {values.managerPhone}
@@ -1134,12 +1226,20 @@ export default function CreateTenantSheet({
                                         </div>
                                         <div>
                                             <dt className="text-slate-gray">
-                                                Floor setup
+                                                {t("create.summary.floorSetup")}
                                             </dt>
                                             <dd className="mt-0.5 font-medium">
-                                                {values.tableCount} tables ·{" "}
-                                                {values.activeStations.length}{" "}
-                                                stations
+                                                {t(
+                                                    "create.summary.floorSetupValue",
+                                                    {
+                                                        tableCount:
+                                                            values.tableCount,
+                                                        stationCount:
+                                                            values
+                                                                .activeStations
+                                                                .length,
+                                                    },
+                                                )}
                                             </dd>
                                         </div>
                                     </dl>
@@ -1155,7 +1255,7 @@ export default function CreateTenantSheet({
                         onClick={onClose}
                         className="order-3 rounded-[12px] px-3 py-2.5 text-[13px] font-medium text-slate-gray hover:bg-secondary sm:order-1"
                     >
-                        Cancel
+                        {t("cancel")}
                     </button>
 
                     <div className="order-1 flex items-center justify-end gap-2 sm:order-2">
@@ -1166,7 +1266,7 @@ export default function CreateTenantSheet({
                                 className="inline-flex items-center gap-1.5 rounded-[12px] border border-hairline bg-card px-4 py-2.5 text-[13px] font-medium hover:bg-secondary"
                             >
                                 <ArrowLeft className="size-3.5" />
-                                Back
+                                {t("back")}
                             </button>
                         ) : null}
 
@@ -1177,7 +1277,7 @@ export default function CreateTenantSheet({
                                 onClick={() => void goNext()}
                                 className="inline-flex min-w-[132px] items-center justify-center gap-1.5 rounded-[12px] bg-brand px-5 py-2.5 text-[13px] font-semibold text-white shadow-sm hover:bg-brand/90"
                             >
-                                Next
+                                {t("next")}
                                 <ArrowRight className="size-3.5" />
                             </button>
                         ) : (
@@ -1195,12 +1295,12 @@ export default function CreateTenantSheet({
                                 {isLoading ? (
                                     <>
                                         <Loader2 className="size-4 animate-spin" />
-                                        Provisioning…
+                                        {t("create.provisioning")}
                                     </>
                                 ) : (
                                     <>
                                         <Layers className="size-4" />
-                                        Provision tenant
+                                        {t("create.provisionTenant")}
                                     </>
                                 )}
                             </button>
