@@ -33,12 +33,15 @@ export const provisionLocationSchema = z.object({
 });
 
 export const provisionManagerSchema = z.object({
+    ownerName: z.string().trim().min(2, "Owner name is required."),
+    ownerEmail: z
+        .union([z.literal(""), z.string().trim().email("Enter a valid email.")])
+        .optional(),
+    ownerPhone: etPhone,
+    ownerPassword: z.string().min(6, "Password must be at least 6 characters."),
     managerName: z.string().trim().min(2, "Manager name is required."),
     managerEmail: z
-        .union([
-            z.literal(""),
-            z.string().trim().email("Enter a valid email."),
-        ])
+        .union([z.literal(""), z.string().trim().email("Enter a valid email.")])
         .optional(),
     managerPhone: etPhone,
     managerPassword: z
@@ -77,10 +80,7 @@ export const editTenantSchema = z.object({
     hours: z.string().trim().min(1, "Hours are required."),
     managerName: z.string().trim().min(2, "Manager name is required."),
     managerEmail: z
-        .union([
-            z.literal(""),
-            z.string().trim().email("Enter a valid email."),
-        ])
+        .union([z.literal(""), z.string().trim().email("Enter a valid email.")])
         .optional(),
     managerPhone: etPhone,
     managerPassword: z
@@ -104,6 +104,10 @@ export const provisionTenantDefaults: ProvisionTenantValues = {
     area: "Bole",
     address: "",
     hours: "08:00 – 23:00",
+    ownerName: "",
+    ownerEmail: "",
+    ownerPhone: "+251 9",
+    ownerPassword: "Password123!",
     managerName: "",
     managerEmail: "",
     managerPhone: "+251 9",

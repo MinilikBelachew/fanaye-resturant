@@ -124,6 +124,8 @@ export interface TenantDetail {
     phone: string;
     email: string;
     manager: string;
+    managerEmail?: string;
+    managerPhone?: string;
     hours: string;
     concept: string;
     branches: number;
@@ -155,6 +157,10 @@ export interface CreateTenantPayload {
     address: string;
     phone: string;
     email: string;
+    ownerName: string;
+    ownerEmail?: string;
+    ownerPhone?: string;
+    ownerPassword?: string;
     managerName: string;
     managerPhone?: string;
     managerEmail?: string;
@@ -164,6 +170,11 @@ export interface CreateTenantPayload {
     hours?: string;
     tableCount?: number;
     activeStations?: string[];
+}
+
+export interface DeleteTenantResponse {
+    ok: boolean;
+    deletedTenantId: string;
 }
 
 export interface UpdateTenantPayload {
@@ -359,6 +370,14 @@ export const superAdminApi = api.injectEndpoints({
             invalidatesTags: ["Auth", "Floor", "DailyClose", "Shift"],
         }),
 
+        deleteSuperAdminTenant: builder.mutation<DeleteTenantResponse, string>({
+            query: id => ({
+                url: `/super-admin/tenants/${id}`,
+                method: "DELETE",
+            }),
+            invalidatesTags: ["Auth", "Floor", "DailyClose", "Shift"],
+        }),
+
         getSuperAdminAudit: builder.query<
             PlatformAuditListResponse,
             PlatformAuditQueryParams | void
@@ -447,6 +466,7 @@ export const {
     useGetSuperAdminTenantByIdQuery,
     useCreateSuperAdminTenantMutation,
     useUpdateSuperAdminTenantMutation,
+    useDeleteSuperAdminTenantMutation,
     useGetSuperAdminAuditQuery,
     useGetSuperAdminLiveOpsQuery,
     useGetSuperAdminStaffQuery,

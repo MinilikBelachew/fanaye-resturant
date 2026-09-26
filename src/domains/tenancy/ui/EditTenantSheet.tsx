@@ -54,8 +54,10 @@ function valuesFromTenant(tenant: TenantDetail): EditTenantValues {
         address: tenant.address || "",
         hours: tenant.hours || "08:00 – 23:00",
         managerName: tenant.manager || "",
-        managerEmail: tenant.email || "",
-        managerPhone: maskEthiopianPhone(tenant.phone || "+251 9"),
+        managerEmail: tenant.managerEmail || "",
+        managerPhone: maskEthiopianPhone(
+            tenant.managerPhone || tenant.phone || "+251 9",
+        ),
         managerPassword: "",
     };
 }
@@ -163,6 +165,7 @@ export default function EditTenantSheet({
                     phone: payload.managerPhone.trim(),
                     email:
                         payload.managerEmail?.trim() ||
+                        tenant.email?.trim() ||
                         `hello@${
                             payload.name
                                 .trim()

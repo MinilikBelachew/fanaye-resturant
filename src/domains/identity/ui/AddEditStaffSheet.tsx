@@ -151,11 +151,6 @@ export default function AddEditStaffSheet() {
         return [
             ...baseRoles,
             ...(activeStations.length > 0 ? stationRoles : fallbackStations),
-            {
-                id: "owner",
-                label: t("roleOwner"),
-                description: t("roleOwnerDesc"),
-            },
         ];
     }, [activeStations, t]);
 
@@ -250,7 +245,7 @@ export default function AddEditStaffSheet() {
 
             form.reset({
                 name: editingStaff.name || "",
-                role: selectedRole === "manager" ? "owner" : selectedRole,
+                role: selectedRole,
                 phone: editingStaff.phone || "",
                 email: editingStaff.email || "",
                 pin: "",

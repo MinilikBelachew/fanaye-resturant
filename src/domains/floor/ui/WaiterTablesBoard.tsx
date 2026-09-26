@@ -226,7 +226,7 @@ export default function WaiterTablesBoard({
                         </div>
                     </div>
                     <Link
-                        href="/waiter/shifts"
+                        href="/waiter/shift"
                         className="inline-flex items-center gap-1.5 rounded-full bg-amber-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-amber-700"
                     >
                         <span>{tWaiter("clockIn")}</span>
