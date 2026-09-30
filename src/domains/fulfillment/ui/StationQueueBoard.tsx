@@ -82,9 +82,6 @@ function TicketCard({
     const tStations = useTranslations("stations");
     const tCommon = useTranslations("common");
     const image = imageForDish(ticket.itemName);
-    const customized =
-        ticket.modifiers.length > 0 ||
-        Boolean(ticket.specialInstruction?.trim());
     const fresh = isFreshTicket(ticket);
 
     return (
@@ -127,11 +124,23 @@ function TicketCard({
                         </span>{" "}
                         {ticket.itemName}
                     </h2>
-                    <p className="mt-1 line-clamp-1 text-[11px] text-white/55">
-                        {customized
-                            ? stationTicketExtras(ticket)
-                            : tStations("asListed")}
-                    </p>
+                    {ticket.modifiers.length > 0 ? (
+                        <p className="mt-1 line-clamp-2 text-[11px] text-white/70">
+                            {ticket.modifiers
+                                .map(entry => entry.name)
+                                .join(" · ")}
+                        </p>
+                    ) : (
+                        <p className="mt-1 text-[11px] text-white/45">
+                            {tStations("asListed")}
+                        </p>
+                    )}
+                    {ticket.specialInstruction?.trim() ? (
+                        <p className="mt-1.5 line-clamp-3 rounded-md bg-amber-400/25 px-2 py-1 text-[12px] font-semibold leading-snug text-amber-100 ring-1 ring-amber-200/40">
+                            {tStations("notePrefix")}:{" "}
+                            {ticket.specialInstruction.trim()}
+                        </p>
+                    ) : null}
                     {ticket.exceptionReason ? (
                         <p className="mt-1 line-clamp-1 text-[11px] text-red-200">
                             {ticket.exceptionReason}
@@ -258,14 +267,11 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
             return haystack.includes(query.trim().toLowerCase());
         })
         .sort((a, b) => {
-            const rank = (state: string) => {
-                if (state === "QUEUED") return 0;
-                if (state === "ACKNOWLEDGED") return 1;
-                return (STATUS_RANK[state] ?? 50) + 2;
-            };
-            const diff = rank(a.ticket.state) - rank(b.ticket.state);
-            if (diff !== 0) return diff;
-            // Newest new tickets first.
+            // Stable by arrival — status changes must not reshuffle cards/rows.
+            // Ready tickets sink to the bottom while keeping relative order.
+            const aReady = a.ticket.state === "READY" ? 1 : 0;
+            const bReady = b.ticket.state === "READY" ? 1 : 0;
+            if (aReady !== bReady) return aReady - bReady;
             return b.receivedAt - a.receivedAt;
         });
 
@@ -318,14 +324,33 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                 id: "extras",
                 header: tStations("extras"),
                 sortValue: row => row.extras,
-                cell: row =>
-                    row.extras ? (
-                        row.extras
-                    ) : (
-                        <span className="text-slate-gray">
-                            {tStations("asListed")}
-                        </span>
-                    ),
+                cell: row => {
+                    const modifiers = row.ticket.modifiers
+                        .map(entry => entry.name)
+                        .join(" · ");
+                    const note = row.ticket.specialInstruction?.trim();
+                    if (!modifiers && !note) {
+                        return (
+                            <span className="text-slate-gray">
+                                {tStations("asListed")}
+                            </span>
+                        );
+                    }
+                    return (
+                        <div className="space-y-0.5">
+                            {modifiers ? (
+                                <p className="text-[13px] text-foreground">
+                                    {modifiers}
+                                </p>
+                            ) : null}
+                            {note ? (
+                                <p className="text-[12px] font-semibold text-amber-700 dark:text-amber-300">
+                                    {tStations("notePrefix")}: {note}
+                                </p>
+                            ) : null}
+                        </div>
+                    );
+                },
             },
             {
                 id: "status",

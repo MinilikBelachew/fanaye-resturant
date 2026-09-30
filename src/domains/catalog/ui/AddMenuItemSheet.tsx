@@ -22,6 +22,7 @@ import {
     useUpdateAdminMenuItemMutation,
     useUploadMenuImageMutation,
 } from "@/context/services/menuApi";
+import { useListInventoryIngredientsQuery } from "@/context/services/inventoryApi";
 import { useGetStationsQuery } from "@/context/services/stationsApi";
 import {
     catalogModifiersToApi,
@@ -139,7 +140,13 @@ export default function AddMenuItemSheet({
     const [uploadImage, { isLoading: uploading }] =
         useUploadMenuImageMutation();
 
+    const { data: inventoryIngredients } = useListInventoryIngredientsQuery(
+        { page: 1, limit: 100, status: "ACTIVE" },
+        { skip: !isOpen },
+    );
+
     const libraryGroups = libraryData?.data ?? [];
+    const ingredientOptions = inventoryIngredients?.data ?? [];
 
     const stations = useMemo(() => {
         if (dbStations && dbStations.length > 0) {
@@ -204,6 +211,9 @@ export default function AddMenuItemSheet({
 
     const [selectedLibraryIds, setSelectedLibraryIds] = useState<string[]>([]);
     const [modifierGroups, setModifierGroups] = useState<ModifierGroup[]>([]);
+    const [recipeLines, setRecipeLines] = useState<
+        Array<{ ingredientId: string; quantityPerServing: string }>
+    >([]);
     const [newGroupName, setNewGroupName] = useState("");
     const [newGroupKind, setNewGroupKind] =
         useState<ModifierGroupKind>("included");
@@ -236,6 +246,12 @@ export default function AddMenuItemSheet({
             setModifierGroups(
                 attached.filter(group => !isPersistedId(group.id)),
             );
+            setRecipeLines(
+                (initialItem.recipeLines ?? []).map(line => ({
+                    ingredientId: line.ingredientId,
+                    quantityPerServing: String(line.quantityPerServing),
+                })),
+            );
         } else {
             setName("");
             setDescription("");
@@ -248,6 +264,7 @@ export default function AddMenuItemSheet({
             setAvailable(true);
             setSelectedLibraryIds([]);
             setModifierGroups([]);
+            setRecipeLines([]);
         }
         setSubmitError("");
         setNewGroupName("");
@@ -398,6 +415,12 @@ export default function AddMenuItemSheet({
                   : {}),
             modifierGroupIds: selectedLibraryIds,
             modifierGroups: catalogModifiersToApi(modifierGroups),
+            recipeLines: recipeLines
+                .filter(l => l.ingredientId && Number(l.quantityPerServing) > 0)
+                .map(l => ({
+                    ingredientId: l.ingredientId,
+                    quantityPerServing: Number(l.quantityPerServing),
+                })),
         };
 
         try {
@@ -810,6 +833,120 @@ export default function AddMenuItemSheet({
                                 {t("noSavedGroups")}
                             </p>
                         )}
+
+                        <div className="space-y-2.5 rounded-[14px] border border-hairline p-3.5">
+                            <div className="flex items-center justify-between gap-2">
+                                <div>
+                                    <p className="text-[13px] font-semibold">
+                                        Recipe (per serving)
+                                    </p>
+                                    <p className="text-[11px] text-slate-gray">
+                                        Optional. Used to deduct inventory when
+                                        this dish is ordered.
+                                    </p>
+                                </div>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                        setRecipeLines(rows => [
+                                            ...rows,
+                                            {
+                                                ingredientId: "",
+                                                quantityPerServing: "0.25",
+                                            },
+                                        ])
+                                    }
+                                >
+                                    <Plus className="size-3.5" />
+                                    Add line
+                                </Button>
+                            </div>
+                            {recipeLines.length === 0 ? (
+                                <p className="text-[12px] text-slate-gray">
+                                    No recipe lines — stock will not deplete for
+                                    this dish.
+                                </p>
+                            ) : (
+                                <div className="space-y-2">
+                                    {recipeLines.map((line, index) => (
+                                        <div
+                                            key={`${line.ingredientId}-${index}`}
+                                            className="flex flex-wrap items-center gap-2"
+                                        >
+                                            <select
+                                                value={line.ingredientId}
+                                                onChange={e =>
+                                                    setRecipeLines(rows =>
+                                                        rows.map((r, i) =>
+                                                            i === index
+                                                                ? {
+                                                                      ...r,
+                                                                      ingredientId:
+                                                                          e
+                                                                              .target
+                                                                              .value,
+                                                                  }
+                                                                : r,
+                                                        ),
+                                                    )
+                                                }
+                                                className="h-9 min-w-[10rem] flex-1 rounded-lg border border-hairline bg-background px-2 text-[12px]"
+                                            >
+                                                <option value="">
+                                                    Ingredient…
+                                                </option>
+                                                {ingredientOptions.map(ing => (
+                                                    <option
+                                                        key={ing.id}
+                                                        value={ing.id}
+                                                    >
+                                                        {ing.name} ({ing.unit})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <input
+                                                type="number"
+                                                min={0}
+                                                step="0.01"
+                                                value={line.quantityPerServing}
+                                                onChange={e =>
+                                                    setRecipeLines(rows =>
+                                                        rows.map((r, i) =>
+                                                            i === index
+                                                                ? {
+                                                                      ...r,
+                                                                      quantityPerServing:
+                                                                          e
+                                                                              .target
+                                                                              .value,
+                                                                  }
+                                                                : r,
+                                                        ),
+                                                    )
+                                                }
+                                                className="h-9 w-24 rounded-lg border border-hairline bg-background px-2 text-[12px]"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setRecipeLines(rows =>
+                                                        rows.filter(
+                                                            (_, i) =>
+                                                                i !== index,
+                                                        ),
+                                                    )
+                                                }
+                                                className="rounded-lg p-2 text-slate-gray hover:bg-secondary"
+                                            >
+                                                <Trash2 className="size-3.5" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
 
                         {modifierGroups.length > 0 ? (
                             <div className="space-y-2.5">

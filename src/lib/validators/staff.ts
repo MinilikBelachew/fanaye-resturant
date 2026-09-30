@@ -20,7 +20,6 @@ export const staffFormSchema = z
                 message: "PIN must be exactly 4 digits.",
             }),
         active: z.boolean(),
-        shiftStatus: z.enum(["on_duty", "on_break", "off_duty"]),
         workingDays: z
             .array(z.string())
             .min(1, "Select at least one working day."),
@@ -53,7 +52,6 @@ export const staffFormDefaults: StaffFormValues = {
     email: "",
     pin: "",
     active: true,
-    shiftStatus: "on_duty",
     workingDays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
     shiftDefinitionId: "",
     assignedTableIds: [],

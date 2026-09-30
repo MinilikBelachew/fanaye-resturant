@@ -24,6 +24,7 @@ export function toCatalogMenuItem(item: WaiterMenuItem): MenuItem {
         stationId: item.station.id,
         expectedPreparationMinutes: item.expectedPrepMinutes ?? 0,
         available: !item.soldOut,
+        remainingQty: item.remainingQty ?? null,
         image: resolvedImage,
         imageFileId: item.imageFileId ?? undefined,
         modifierGroups: item.modifierGroups.map(toModifierGroup),

@@ -71,9 +71,11 @@ export function isNotificationVisibleForRole(
             type === "approval.decided" ||
             type === "cash_drop.resolved" ||
             type === "production.exception" ||
+            type === "menu.item.availability" ||
             normalized === "BILL_READY" ||
             normalized === "GUEST_ORDER_PLACED" ||
             normalized === "ITEM_READY" ||
+            normalized === "MENU_ITEM_AVAILABILITY" ||
             [
                 "CALL_WAITER",
                 "REQUEST_WATER",
@@ -98,6 +100,7 @@ export function isNotificationVisibleForRole(
             type === "cash_drop.pending" ||
             type === "bill.request.created" ||
             type === "ticket.queued" ||
+            type === "menu.item.availability" ||
             type.startsWith("approval") ||
             type.startsWith("cash_drop") ||
             type.startsWith("bill.")

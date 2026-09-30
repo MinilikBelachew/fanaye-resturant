@@ -535,6 +535,12 @@ export default function AddOrderMenu({
                                                         </span>
                                                     )}
                                                 </p>
+                                                {item.available &&
+                                                item.remainingQty != null ? (
+                                                    <p className="mt-1 text-[11px] font-semibold text-amber-700">
+                                                        {item.remainingQty} left
+                                                    </p>
+                                                ) : null}
                                             </div>
 
                                             {/* PRICE & ACTIONS ROW */}
@@ -636,6 +642,15 @@ export default function AddOrderMenu({
                             setDraft({ ...line });
                             setEditingId(line.id);
                         }}
+                        onInstructionChange={(lineId, instruction) =>
+                            setLines(current =>
+                                current.map(line =>
+                                    line.id === lineId
+                                        ? { ...line, instruction }
+                                        : line,
+                                ),
+                            )
+                        }
                         onSubmit={commit}
                     />
                 </aside>
@@ -688,6 +703,15 @@ export default function AddOrderMenu({
                                 setEditingId(line.id);
                                 setMobileTicketOpen(false);
                             }}
+                            onInstructionChange={(lineId, instruction) =>
+                                setLines(current =>
+                                    current.map(line =>
+                                        line.id === lineId
+                                            ? { ...line, instruction }
+                                            : line,
+                                    ),
+                                )
+                            }
                             onCloseMobile={() => setMobileTicketOpen(false)}
                             onSubmit={commit}
                         />
@@ -753,6 +777,7 @@ function OrderTicketContent({
     onRemoveLine,
     onClearAll,
     onEditLine,
+    onInstructionChange,
     onCloseMobile,
     onSubmit,
 }: {
@@ -767,6 +792,7 @@ function OrderTicketContent({
     onRemoveLine: (lineId: string) => void;
     onClearAll: () => void;
     onEditLine: (line: BasketLine) => void;
+    onInstructionChange: (lineId: string, instruction: string) => void;
     onCloseMobile?: () => void;
     onSubmit: () => void;
 }) {
@@ -826,12 +852,7 @@ function OrderTicketContent({
                             entry => entry.id === line.menuItemId,
                         );
                         if (!item) return null;
-                        const extras = [
-                            formatModifiers(line.modifiers),
-                            line.instruction.trim(),
-                        ]
-                            .filter(Boolean)
-                            .join(" · ");
+                        const modifierText = formatModifiers(line.modifiers);
                         const linePrice =
                             unitPriceFor(item, line.modifiers) * line.quantity;
 
@@ -845,9 +866,9 @@ function OrderTicketContent({
                                         <h4 className="text-[13.5px] font-medium text-foreground">
                                             {item.name}
                                         </h4>
-                                        {extras ? (
+                                        {modifierText ? (
                                             <p className="mt-0.5 text-[11.5px] text-slate-gray">
-                                                {extras}
+                                                {modifierText}
                                             </p>
                                         ) : null}
                                     </div>
@@ -856,7 +877,20 @@ function OrderTicketContent({
                                     </span>
                                 </div>
 
-                                <div className="flex items-center justify-between pt-1">
+                                <Input
+                                    value={line.instruction}
+                                    onChange={e =>
+                                        onInstructionChange(
+                                            line.id,
+                                            e.target.value,
+                                        )
+                                    }
+                                    placeholder="Note for kitchen (e.g. less salt)"
+                                    maxLength={240}
+                                    className="h-8 rounded-lg border-hairline bg-secondary/30 px-2.5 text-[12px] placeholder:text-slate-gray/70"
+                                />
+
+                                <div className="flex items-center justify-between pt-0.5">
                                     {/* Stepper */}
                                     <div className="flex items-center gap-1 rounded-full border border-hairline bg-secondary/40 px-1 py-0.5">
                                         <button
@@ -964,6 +998,9 @@ function orderError(error: unknown) {
         }
         if (data?.code === "MENU_ITEM_SOLD_OUT") {
             return "One dish is sold out.";
+        }
+        if (data?.code === "MENU_ITEM_LIMIT_EXCEEDED") {
+            return "Not enough portions left for one of the dishes.";
         }
         if (data?.code === "REQUIRED_MODIFIER_MISSING") {
             return "Finish options on each dish before sending.";

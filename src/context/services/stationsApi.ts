@@ -141,17 +141,101 @@ export const stationsApi = api.injectEndpoints({
                 orderItemId: string;
                 expectedVersion: number;
                 reasonDetail?: string;
+                markSoldOut?: boolean;
             }
         >({
-            query: ({ orderItemId, expectedVersion, reasonDetail }) => ({
+            query: ({
+                orderItemId,
+                expectedVersion,
+                reasonDetail,
+                markSoldOut,
+            }) => ({
                 url: `/order-items/${orderItemId}/production-exceptions`,
                 method: "POST",
-                body: { expectedVersion, reasonDetail },
+                body: { expectedVersion, reasonDetail, markSoldOut },
             }),
-            invalidatesTags: ["Station", "Floor", "Order"],
+            invalidatesTags: ["Station", "Floor", "Order", "Menu"],
+        }),
+        stationMenu: builder.query<StationMenuResponse, string>({
+            query: stationId => ({
+                url: `/stations/${stationId}/menu`,
+                method: "GET",
+            }),
+            providesTags: (_result, _error, stationId) => [
+                { type: "Station", id: `${stationId}-menu` },
+                "Menu",
+            ],
+        }),
+        markStationItemSoldOut: builder.mutation<
+            StationMenuItem,
+            { stationId: string; menuItemId: string; reason?: string }
+        >({
+            query: ({ stationId, menuItemId, reason }) => ({
+                url: `/stations/${stationId}/menu/${menuItemId}/sold-out`,
+                method: "POST",
+                body: reason ? { reason } : {},
+            }),
+            invalidatesTags: ["Station", "Menu", "Order"],
+        }),
+        clearStationItemSoldOut: builder.mutation<
+            StationMenuItem,
+            { stationId: string; menuItemId: string }
+        >({
+            query: ({ stationId, menuItemId }) => ({
+                url: `/stations/${stationId}/menu/${menuItemId}/sold-out`,
+                method: "DELETE",
+            }),
+            invalidatesTags: ["Station", "Menu", "Order"],
+        }),
+        setStationItemLimit: builder.mutation<
+            StationMenuItem,
+            {
+                stationId: string;
+                menuItemId: string;
+                remainingQty: number;
+                reason?: string;
+            }
+        >({
+            query: ({ stationId, menuItemId, remainingQty, reason }) => ({
+                url: `/stations/${stationId}/menu/${menuItemId}/limit`,
+                method: "PUT",
+                body: { remainingQty, reason },
+            }),
+            invalidatesTags: ["Station", "Menu", "Order"],
+        }),
+        clearStationItemLimit: builder.mutation<
+            StationMenuItem,
+            { stationId: string; menuItemId: string }
+        >({
+            query: ({ stationId, menuItemId }) => ({
+                url: `/stations/${stationId}/menu/${menuItemId}/limit`,
+                method: "DELETE",
+            }),
+            invalidatesTags: ["Station", "Menu", "Order"],
         }),
     }),
 });
+
+export type StationMenuItem = {
+    id: string;
+    name: string;
+    description: string | null;
+    price: string;
+    currencyCode: string;
+    soldOut: boolean;
+    remainingQty: number | null;
+    availabilityState: string | null;
+    availabilityReason: string | null;
+    imageKey: string | null;
+    imageUrl: string | null;
+    categoryName: string | null;
+};
+
+export type StationMenuResponse = {
+    stationId: string;
+    stationName: string;
+    data: StationMenuItem[];
+};
 
 export const {
     useGetStationsQuery,
@@ -164,4 +248,9 @@ export const {
     useStartPreparationMutation,
     useMarkItemReadyMutation,
     useReportCannotPrepareMutation,
+    useStationMenuQuery,
+    useMarkStationItemSoldOutMutation,
+    useClearStationItemSoldOutMutation,
+    useSetStationItemLimitMutation,
+    useClearStationItemLimitMutation,
 } = stationsApi;
