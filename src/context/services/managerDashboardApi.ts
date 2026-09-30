@@ -19,6 +19,8 @@ export interface ManagerKpi {
     tinaVerifyTrendLabel: string;
     collectionsFormatted: string;
     collectionsValue: number;
+    collectionsTrend?: string;
+    collectionsTrendLabel?: string;
     stationBacklogFormatted: string;
     stationBacklogCount: number;
     stationBacklogHint: string;
@@ -99,6 +101,14 @@ export interface OrderVolumePoint {
     avgCheck: number;
 }
 
+export type ManagerDashboardPeriod =
+    | "today"
+    | "week"
+    | "month"
+    | "quarter"
+    | "year"
+    | "custom";
+
 export interface ManagerDashboardData {
     kpis: ManagerKpi;
     salesTrend: RevenueVsCollectionsPoint[];
@@ -110,6 +120,11 @@ export interface ManagerDashboardData {
     stationThroughput: StationThroughputPoint[];
     orderVolumeTrend: OrderVolumePoint[];
     businessDate: string;
+    fromDate?: string;
+    toDate?: string;
+    period?: ManagerDashboardPeriod;
+    periodLabel?: string;
+    timezone?: string;
     branchName: string;
 }
 
@@ -156,7 +171,12 @@ export const managerDashboardApi = api.injectEndpoints({
     endpoints: builder => ({
         getManagerDashboard: builder.query<
             ManagerDashboardResponse,
-            { businessDate?: string } | void
+            {
+                businessDate?: string;
+                period?: ManagerDashboardPeriod;
+                fromDate?: string;
+                toDate?: string;
+            } | void
         >({
             query: params => ({
                 url: "/manager/dashboard",

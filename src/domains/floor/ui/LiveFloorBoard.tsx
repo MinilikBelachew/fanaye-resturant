@@ -6,10 +6,16 @@ import { tableNumber } from "@/domains/floor/application/groupFloor";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { LiveFloorSkeleton } from "@/components/custom/molecules/Skeletons";
+import { Link, usePathname } from "@/i18n/navigation";
 
 export default function LiveFloorBoard() {
     const tWaiter = useTranslations("waiter");
     const tCommon = useTranslations("common");
+    const pathname = usePathname();
+    const basePath = pathname.startsWith("/owner/")
+        ? "/owner/live"
+        : "/manager/live";
+
     const { data, isLoading } = useFloorTablesQuery(undefined, {
         pollingInterval: 8000,
     });
@@ -34,10 +40,11 @@ export default function LiveFloorBoard() {
     return (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {open.map(table => (
-                <article
+                <Link
                     key={table.tableId}
+                    href={`${basePath}/${table.tableId}`}
                     className={cn(
-                        "flex flex-col justify-between rounded-[16px] border p-4",
+                        "flex flex-col justify-between rounded-[16px] border p-4 transition-colors hover:border-primary/50 hover:bg-accent/30",
                         table.mine
                             ? "border-primary/40 bg-accent/40"
                             : "border-amber-200 bg-amber-50/20",
@@ -65,7 +72,7 @@ export default function LiveFloorBoard() {
                             {table.readyItemCount} {tWaiter("readyCount")}
                         </p>
                     </div>
-                </article>
+                </Link>
             ))}
         </div>
     );
