@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { Radio, RefreshCw } from "lucide-react";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import KpiCard from "@/components/custom/organisms/KpiCard";
@@ -23,7 +24,10 @@ import {
 } from "@/domains/reporting/ui/ManagerDashboardTables";
 import { useListAuditEventsQuery } from "@/context/services/auditApi";
 import { useFloorTablesQuery } from "@/context/services/floorApi";
-import { useGetManagerDashboardQuery } from "@/context/services/managerDashboardApi";
+import {
+    type ManagerDashboardPeriod,
+    useGetManagerDashboardQuery,
+} from "@/context/services/managerDashboardApi";
 import { useTranslations } from "next-intl";
 import { KpiStatsSkeleton } from "@/components/custom/molecules/Skeletons";
 import { cn } from "@/lib/utils";
@@ -32,13 +36,37 @@ const POLL_DASH = 10000;
 const POLL_FLOOR = 8000;
 const POLL_AUDIT = 15000;
 
+const PERIODS: ManagerDashboardPeriod[] = [
+    "today",
+    "week",
+    "month",
+    "quarter",
+    "year",
+    "custom",
+];
+
 export default function ManagerPage() {
     const tManager = useTranslations("manager");
     const tNav = useTranslations("appNav");
     const tRoles = useTranslations("roles");
     const tTopBar = useTranslations("topbar");
+
+    const [period, setPeriod] = useState<ManagerDashboardPeriod>("today");
+    const [fromDate, setFromDate] = useState("");
+    const [toDate, setToDate] = useState("");
+    const [customFrom, setCustomFrom] = useState("");
+    const [customTo, setCustomTo] = useState("");
+
+    const queryArg = useMemo(() => {
+        if (period === "custom") {
+            if (!fromDate || !toDate) return { period: "today" as const };
+            return { period, fromDate, toDate };
+        }
+        return { period };
+    }, [period, fromDate, toDate]);
+
     const { data, isLoading, isFetching, error } = useGetManagerDashboardQuery(
-        undefined,
+        queryArg,
         { pollingInterval: POLL_DASH },
     );
     const { data: audit } = useListAuditEventsQuery(
@@ -49,6 +77,31 @@ export default function ManagerPage() {
         pollingInterval: POLL_FLOOR,
     });
     const dash = data?.data;
+    const isToday = (dash?.period ?? period) === "today";
+
+    const periodLabel = (id: ManagerDashboardPeriod) => {
+        if (id === "today") return tManager("periodToday");
+        if (id === "week") return tManager("periodWeek");
+        if (id === "month") return tManager("periodMonth");
+        if (id === "quarter") return tManager("periodQuarter");
+        if (id === "year") return tManager("periodYear");
+        return tManager("periodCustom");
+    };
+
+    const applyCustom = () => {
+        if (!customFrom || !customTo) return;
+        setFromDate(customFrom);
+        setToDate(customTo);
+        setPeriod("custom");
+    };
+
+    const collectionsTrend =
+        dash?.kpis.collectionsTrend ?? dash?.kpis.dailyRevenueTrend ?? "0%";
+    const collectionsTrendLabel =
+        dash?.kpis.collectionsTrendLabel ??
+        (isToday
+            ? tManager("vsCollectedYesterday")
+            : tManager("vsPriorPeriod"));
 
     return (
         <DashboardFrame>
@@ -59,7 +112,10 @@ export default function ManagerPage() {
                     title={`${tRoles("manager")} ${tTopBar("dashboard")}`}
                     description={
                         dash
-                            ? `${dash.branchName} · ${tManager("liveFor", { date: dash.businessDate })}`
+                            ? tManager("periodRange", {
+                                  branch: dash.branchName,
+                                  label: dash.periodLabel ?? dash.businessDate,
+                              })
                             : tManager("liveDescription")
                     }
                 />
@@ -82,6 +138,67 @@ export default function ManagerPage() {
                 </div>
             </div>
 
+            <div className="flex flex-col gap-2">
+                <div className="flex flex-wrap gap-1.5">
+                    {PERIODS.map(id => {
+                        const active = period === id;
+                        return (
+                            <button
+                                key={id}
+                                type="button"
+                                onClick={() => {
+                                    if (id !== "custom") {
+                                        setPeriod(id);
+                                        setFromDate("");
+                                        setToDate("");
+                                    } else {
+                                        setPeriod("custom");
+                                    }
+                                }}
+                                className={cn(
+                                    "rounded-full border px-3 py-1 text-[12px] font-medium transition-colors",
+                                    active
+                                        ? "border-primary bg-primary text-primary-foreground"
+                                        : "border-hairline bg-card text-slate-gray hover:text-foreground",
+                                )}
+                            >
+                                {periodLabel(id)}
+                            </button>
+                        );
+                    })}
+                </div>
+                {period === "custom" ? (
+                    <div className="flex flex-wrap items-end gap-2">
+                        <label className="flex flex-col gap-1 text-[11px] text-slate-gray">
+                            {tManager("fromDate")}
+                            <input
+                                type="date"
+                                value={customFrom}
+                                onChange={e => setCustomFrom(e.target.value)}
+                                className="rounded-md border border-hairline bg-card px-2 py-1.5 text-[13px] text-foreground"
+                            />
+                        </label>
+                        <label className="flex flex-col gap-1 text-[11px] text-slate-gray">
+                            {tManager("toDate")}
+                            <input
+                                type="date"
+                                value={customTo}
+                                onChange={e => setCustomTo(e.target.value)}
+                                className="rounded-md border border-hairline bg-card px-2 py-1.5 text-[13px] text-foreground"
+                            />
+                        </label>
+                        <button
+                            type="button"
+                            onClick={applyCustom}
+                            disabled={!customFrom || !customTo}
+                            className="rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground disabled:opacity-50"
+                        >
+                            {tManager("applyRange")}
+                        </button>
+                    </div>
+                ) : null}
+            </div>
+
             {error && (
                 <div className="rounded-[16px] border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive">
                     {tManager("loadError")}
@@ -94,17 +211,20 @@ export default function ManagerPage() {
                 <>
                     <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
                         <KpiCard
-                            label={tManager("collectedToday")}
+                            label={
+                                isToday
+                                    ? tManager("collectedToday")
+                                    : tManager("collected")
+                            }
                             value={dash?.kpis.collectionsFormatted ?? "ETB 0"}
                             trend={{
-                                value: dash?.kpis.dailyRevenueTrend ?? "0%",
-                                direction:
-                                    dash?.kpis.dailyRevenueTrend?.startsWith(
-                                        "+",
-                                    )
-                                        ? "up"
-                                        : "neutral",
-                                label: tManager("vsBilledYesterday"),
+                                value: collectionsTrend,
+                                direction: collectionsTrend.startsWith("+")
+                                    ? "up"
+                                    : collectionsTrend.startsWith("-")
+                                      ? "down"
+                                      : "neutral",
+                                label: collectionsTrendLabel,
                             }}
                             sparkline={{
                                 badge:
@@ -154,7 +274,9 @@ export default function ManagerPage() {
                                 tManager("nothingWaiting")
                             }
                             sparkline={{
-                                badge: tManager("tinaVerifyMix"),
+                                badge:
+                                    dash?.kpis.pendingActionsHint ||
+                                    tManager("nothingWaiting"),
                                 color: "#c2410c",
                                 variant: "wave4",
                             }}
@@ -185,7 +307,9 @@ export default function ManagerPage() {
                             trend={{
                                 value: dash?.kpis.ordersFormatted ?? "0",
                                 direction: "neutral",
-                                label: tManager("ordersToday"),
+                                label: isToday
+                                    ? tManager("ordersToday")
+                                    : tManager("ordersInPeriod"),
                             }}
                             sparkline={{
                                 badge: dash?.kpis.coversFormatted ?? "0",
@@ -197,7 +321,11 @@ export default function ManagerPage() {
                         <KpiCard
                             label={tManager("covers")}
                             value={dash?.kpis.coversFormatted ?? "0"}
-                            hint={tManager("guestsSeatedToday")}
+                            hint={
+                                isToday
+                                    ? tManager("guestsSeatedToday")
+                                    : tManager("guestsInPeriod")
+                            }
                             sparkline={{
                                 badge: dash?.kpis.coversFormatted ?? "0",
                                 color: "#046645",
@@ -242,7 +370,10 @@ export default function ManagerPage() {
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
-                <HourlySalesChart data={dash?.hourlySales ?? []} />
+                <HourlySalesChart
+                    data={dash?.hourlySales ?? []}
+                    timezone={dash?.timezone}
+                />
                 <OrderVolumeChart data={dash?.orderVolumeTrend ?? []} />
             </div>
 

@@ -609,11 +609,18 @@ export function TopDishesLeaderboard({
     );
 }
 
-export function HourlySalesChart({ data = [] }: { data?: HourlySalesPoint[] }) {
+export function HourlySalesChart({
+    data = [],
+    timezone,
+}: {
+    data?: HourlySalesPoint[];
+    timezone?: string;
+}) {
     const t = useTranslations("dashboardCharts");
     const tCommon = useTranslations("common");
     const currency = tCommon("currency");
     const hasData = data.some(d => d.billed > 0 || d.collected > 0);
+    const tz = timezone || "Africa/Addis_Ababa";
 
     return (
         <div className="flex h-full flex-col justify-between rounded-[16px] border border-hairline bg-card p-6">
@@ -622,13 +629,15 @@ export function HourlySalesChart({ data = [] }: { data?: HourlySalesPoint[] }) {
                     {t("hourlyTitle")}
                 </h3>
                 <p className="mt-0.5 text-[12px] text-slate-gray">
-                    {t("hourlySubtitle", { currency })}
+                    {t("hourlySubtitle", { currency, timezone: tz })}
                 </p>
 
                 <div className="mt-6 h-[220px] w-full">
                     {!hasData ? (
                         <div className="flex h-full items-center justify-center text-[13px] text-slate-gray">
-                            {t("hourlyEmpty")}
+                            {data.length === 0
+                                ? t("hourlyMultiDay")
+                                : t("hourlyEmpty")}
                         </div>
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
