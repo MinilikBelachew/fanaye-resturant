@@ -13,6 +13,7 @@ export type CreateAdminStaffBody = {
     email?: string;
     pin?: string;
     active?: boolean;
+    workingDays?: string[];
     stationCode?: string;
     preparationStationId?: string;
     shiftDefinitionId?: string;
@@ -26,6 +27,7 @@ export type UpdateAdminStaffBody = {
     email?: string;
     pin?: string;
     active?: boolean;
+    workingDays?: string[];
     stationCode?: string;
     preparationStationId?: string;
 };

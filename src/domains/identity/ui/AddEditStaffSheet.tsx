@@ -151,11 +151,6 @@ export default function AddEditStaffSheet() {
         return [
             ...baseRoles,
             ...(activeStations.length > 0 ? stationRoles : fallbackStations),
-            {
-                id: "owner",
-                label: t("roleOwner"),
-                description: t("roleOwnerDesc"),
-            },
         ];
     }, [activeStations, t]);
 
@@ -250,20 +245,14 @@ export default function AddEditStaffSheet() {
 
             form.reset({
                 name: editingStaff.name || "",
-                role: selectedRole === "manager" ? "owner" : selectedRole,
+                role: selectedRole,
                 phone: editingStaff.phone || "",
                 email: editingStaff.email || "",
                 pin: "",
                 active: editingStaff.active !== false,
-                shiftStatus: editingStaff.shiftStatus || "on_duty",
-                workingDays: editingStaff.workingDays || [
-                    "Mon",
-                    "Tue",
-                    "Wed",
-                    "Thu",
-                    "Fri",
-                    "Sat",
-                ],
+                workingDays: editingStaff.workingDays?.length
+                    ? editingStaff.workingDays
+                    : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
                 shiftDefinitionId: "",
                 assignedTableIds: editingStaff.assignedTableIds || [],
             });
@@ -405,6 +394,7 @@ export default function AddEditStaffSheet() {
                             ? { pin: values.pin.trim() }
                             : {}),
                         active: values.active,
+                        workingDays: values.workingDays,
                         stationCode,
                         preparationStationId,
                     },
@@ -427,6 +417,7 @@ export default function AddEditStaffSheet() {
                     email: values.email.trim(),
                     pin: values.pin.trim(),
                     active: values.active,
+                    workingDays: values.workingDays,
                     stationCode,
                     preparationStationId,
                     shiftDefinitionId:
@@ -1121,7 +1112,7 @@ export default function AddEditStaffSheet() {
 
                         <div className="space-y-4 pt-2">
                             <h3 className="text-[12px] font-semibold tracking-wider text-slate-gray uppercase">
-                                {t("dutyAndAccount")}
+                                {t("scheduleAndAccount")}
                             </h3>
 
                             <FormField
@@ -1162,71 +1153,6 @@ export default function AddEditStaffSheet() {
                                                         )}
                                                     >
                                                         {t(DAY_LABEL_KEYS[day])}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="shiftStatus"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>
-                                            {t("currentDutyState")}
-                                        </FormLabel>
-                                        <div className="grid grid-cols-3 gap-2">
-                                            {(
-                                                [
-                                                    {
-                                                        id: "on_duty",
-                                                        labelKey:
-                                                            "onDuty" as const,
-                                                        color: "bg-emerald-500",
-                                                    },
-                                                    {
-                                                        id: "on_break",
-                                                        labelKey:
-                                                            "onBreak" as const,
-                                                        color: "bg-amber-500",
-                                                    },
-                                                    {
-                                                        id: "off_duty",
-                                                        labelKey:
-                                                            "offDuty" as const,
-                                                        color: "bg-zinc-400",
-                                                    },
-                                                ] as const
-                                            ).map(st => {
-                                                const selected =
-                                                    field.value === st.id;
-                                                return (
-                                                    <button
-                                                        key={st.id}
-                                                        type="button"
-                                                        onClick={() =>
-                                                            field.onChange(
-                                                                st.id,
-                                                            )
-                                                        }
-                                                        className={cn(
-                                                            "flex items-center justify-center gap-2 rounded-[12px] border py-2.5 text-[13px] font-medium",
-                                                            selected
-                                                                ? "border-foreground bg-secondary font-semibold"
-                                                                : "border-hairline bg-surface-ivory/50 text-slate-gray",
-                                                        )}
-                                                    >
-                                                        <span
-                                                            className={cn(
-                                                                "size-2 rounded-full",
-                                                                st.color,
-                                                            )}
-                                                        />
-                                                        {t(st.labelKey)}
                                                     </button>
                                                 );
                                             })}

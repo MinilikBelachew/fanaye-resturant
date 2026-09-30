@@ -27,6 +27,7 @@ export type WaiterMenuItem = {
     price: string;
     currencyCode: string;
     soldOut: boolean;
+    remainingQty?: number | null;
     categoryId: string | null;
     categoryName: string;
     station: { id: string; name: string };

@@ -361,6 +361,7 @@ export default function CreateTenantSheet({
                 address: payload.address.trim(),
                 phone: payload.managerPhone.trim(),
                 email:
+                    payload.ownerEmail?.trim() ||
                     payload.managerEmail?.trim() ||
                     `hello@${
                         payload.name
@@ -368,6 +369,10 @@ export default function CreateTenantSheet({
                             .toLowerCase()
                             .replace(/[^a-z0-9]+/g, "") || "restaurant"
                     }.et`,
+                ownerName: payload.ownerName.trim(),
+                ownerEmail: payload.ownerEmail?.trim() || undefined,
+                ownerPhone: payload.ownerPhone.trim(),
+                ownerPassword: payload.ownerPassword,
                 managerName: payload.managerName.trim(),
                 managerEmail: payload.managerEmail?.trim() || undefined,
                 managerPhone: payload.managerPhone.trim(),
@@ -888,45 +893,27 @@ export default function CreateTenantSheet({
 
                                 {activeTab === "manager" ? (
                                     <div className="space-y-5 animate-in fade-in duration-200">
-                                        <FormField
-                                            control={form.control}
-                                            name="managerName"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>
-                                                        {t(
-                                                            "create.fields.managerFullName",
-                                                        )}{" "}
-                                                        <span className="text-brand">
-                                                            *
-                                                        </span>
-                                                    </FormLabel>
-                                                    <FormControl>
-                                                        <Input
-                                                            className={
-                                                                fieldClass
-                                                            }
-                                                            {...field}
-                                                        />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                        <div className="space-y-4">
+                                            <p className="text-[12px] font-semibold uppercase tracking-wide text-slate-gray">
+                                                {t(
+                                                    "create.fields.ownerSection",
+                                                )}
+                                            </p>
                                             <FormField
                                                 control={form.control}
-                                                name="managerEmail"
+                                                name="ownerName"
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>
                                                             {t(
-                                                                "create.fields.workEmail",
-                                                            )}
+                                                                "create.fields.ownerFullName",
+                                                            )}{" "}
+                                                            <span className="text-brand">
+                                                                *
+                                                            </span>
                                                         </FormLabel>
                                                         <FormControl>
                                                             <Input
-                                                                type="email"
                                                                 className={
                                                                     fieldClass
                                                                 }
@@ -937,47 +924,97 @@ export default function CreateTenantSheet({
                                                     </FormItem>
                                                 )}
                                             />
+                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="ownerEmail"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>
+                                                                {t(
+                                                                    "create.fields.ownerEmail",
+                                                                )}
+                                                            </FormLabel>
+                                                            <FormControl>
+                                                                <Input
+                                                                    type="email"
+                                                                    className={
+                                                                        fieldClass
+                                                                    }
+                                                                    {...field}
+                                                                />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name="ownerPhone"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>
+                                                                {t(
+                                                                    "create.fields.ownerPhone",
+                                                                )}{" "}
+                                                                <span className="text-brand">
+                                                                    *
+                                                                </span>
+                                                            </FormLabel>
+                                                            <FormControl>
+                                                                <Input
+                                                                    inputMode="tel"
+                                                                    placeholder={t(
+                                                                        "create.fields.phonePlaceholder",
+                                                                    )}
+                                                                    className={
+                                                                        fieldClass
+                                                                    }
+                                                                    value={
+                                                                        field.value
+                                                                    }
+                                                                    onChange={e =>
+                                                                        field.onChange(
+                                                                            maskEthiopianPhone(
+                                                                                e
+                                                                                    .target
+                                                                                    .value,
+                                                                            ),
+                                                                        )
+                                                                    }
+                                                                    onBlur={
+                                                                        field.onBlur
+                                                                    }
+                                                                    name={
+                                                                        field.name
+                                                                    }
+                                                                    ref={
+                                                                        field.ref
+                                                                    }
+                                                                />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
                                             <FormField
                                                 control={form.control}
-                                                name="managerPhone"
+                                                name="ownerPassword"
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>
                                                             {t(
-                                                                "create.fields.phone",
-                                                            )}{" "}
-                                                            <span className="text-brand">
-                                                                *
-                                                            </span>
+                                                                "create.fields.ownerPassword",
+                                                            )}
                                                         </FormLabel>
                                                         <FormControl>
                                                             <Input
-                                                                inputMode="tel"
-                                                                placeholder={t(
-                                                                    "create.fields.phonePlaceholder",
+                                                                className={cn(
+                                                                    fieldClass,
+                                                                    "font-mono",
                                                                 )}
-                                                                className={
-                                                                    fieldClass
-                                                                }
-                                                                value={
-                                                                    field.value
-                                                                }
-                                                                onChange={e =>
-                                                                    field.onChange(
-                                                                        maskEthiopianPhone(
-                                                                            e
-                                                                                .target
-                                                                                .value,
-                                                                        ),
-                                                                    )
-                                                                }
-                                                                onBlur={
-                                                                    field.onBlur
-                                                                }
-                                                                name={
-                                                                    field.name
-                                                                }
-                                                                ref={field.ref}
+                                                                {...field}
                                                             />
                                                         </FormControl>
                                                         <FormMessage />
@@ -985,29 +1022,136 @@ export default function CreateTenantSheet({
                                                 )}
                                             />
                                         </div>
-                                        <FormField
-                                            control={form.control}
-                                            name="managerPassword"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>
-                                                        {t(
-                                                            "create.fields.temporaryPassword",
-                                                        )}
-                                                    </FormLabel>
-                                                    <FormControl>
-                                                        <Input
-                                                            className={cn(
-                                                                fieldClass,
-                                                                "font-mono",
+
+                                        <div className="space-y-4 border-t border-hairline pt-5">
+                                            <p className="text-[12px] font-semibold uppercase tracking-wide text-slate-gray">
+                                                {t(
+                                                    "create.fields.managerSection",
+                                                )}
+                                            </p>
+                                            <FormField
+                                                control={form.control}
+                                                name="managerName"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>
+                                                            {t(
+                                                                "create.fields.managerFullName",
+                                                            )}{" "}
+                                                            <span className="text-brand">
+                                                                *
+                                                            </span>
+                                                        </FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                className={
+                                                                    fieldClass
+                                                                }
+                                                                {...field}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="managerEmail"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>
+                                                                {t(
+                                                                    "create.fields.workEmail",
+                                                                )}
+                                                            </FormLabel>
+                                                            <FormControl>
+                                                                <Input
+                                                                    type="email"
+                                                                    className={
+                                                                        fieldClass
+                                                                    }
+                                                                    {...field}
+                                                                />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name="managerPhone"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>
+                                                                {t(
+                                                                    "create.fields.phone",
+                                                                )}{" "}
+                                                                <span className="text-brand">
+                                                                    *
+                                                                </span>
+                                                            </FormLabel>
+                                                            <FormControl>
+                                                                <Input
+                                                                    inputMode="tel"
+                                                                    placeholder={t(
+                                                                        "create.fields.phonePlaceholder",
+                                                                    )}
+                                                                    className={
+                                                                        fieldClass
+                                                                    }
+                                                                    value={
+                                                                        field.value
+                                                                    }
+                                                                    onChange={e =>
+                                                                        field.onChange(
+                                                                            maskEthiopianPhone(
+                                                                                e
+                                                                                    .target
+                                                                                    .value,
+                                                                            ),
+                                                                        )
+                                                                    }
+                                                                    onBlur={
+                                                                        field.onBlur
+                                                                    }
+                                                                    name={
+                                                                        field.name
+                                                                    }
+                                                                    ref={
+                                                                        field.ref
+                                                                    }
+                                                                />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+                                            <FormField
+                                                control={form.control}
+                                                name="managerPassword"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>
+                                                            {t(
+                                                                "create.fields.temporaryPassword",
                                                             )}
-                                                            {...field}
-                                                        />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
+                                                        </FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                className={cn(
+                                                                    fieldClass,
+                                                                    "font-mono",
+                                                                )}
+                                                                {...field}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
                                     </div>
                                 ) : null}
 
@@ -1210,6 +1354,18 @@ export default function CreateTenantSheet({
                                             <dd className="mt-0.5 font-medium">
                                                 {values.branchName.trim() ||
                                                     t("create.summary.notSet")}
+                                            </dd>
+                                        </div>
+                                        <div>
+                                            <dt className="text-slate-gray">
+                                                {t("create.summary.owner")}
+                                            </dt>
+                                            <dd className="mt-0.5 font-medium">
+                                                {values.ownerName.trim() ||
+                                                    t("create.summary.notSet")}
+                                            </dd>
+                                            <dd className="text-slate-gray">
+                                                {values.ownerPhone}
                                             </dd>
                                         </div>
                                         <div>

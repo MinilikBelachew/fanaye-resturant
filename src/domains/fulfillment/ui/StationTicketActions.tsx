@@ -137,13 +137,19 @@ export default function StationTicketActions({
                             : "text-destructive hover:bg-destructive/10",
                     )}
                     onClick={() => {
+                        const alsoSoldOut = window.confirm(
+                            "Also mark this dish sold out so waiters cannot order it again?",
+                        );
                         void run(
                             () =>
                                 cannotPrepare({
                                     ...body,
                                     reasonDetail: "Cannot prepare",
+                                    markSoldOut: alsoSoldOut,
                                 }).unwrap(),
-                            "Reported cannot prepare",
+                            alsoSoldOut
+                                ? "Cannot prepare · sold out for waiters"
+                                : "Reported cannot prepare",
                             "Could not report exception.",
                         );
                     }}

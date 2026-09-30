@@ -117,6 +117,8 @@ export const api = createApi({
         "Site",
         "QrMenu",
         "Notifications",
+        "Branches",
+        "Inventory",
     ],
     endpoints: () => ({}),
 });

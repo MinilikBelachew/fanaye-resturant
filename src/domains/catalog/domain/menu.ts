@@ -11,10 +11,18 @@ export interface MenuItem {
     stationId: StationId;
     expectedPreparationMinutes: number;
     available: boolean;
+    remainingQty?: number | null;
     image?: string;
     imageFileId?: string;
     modifierGroups: ModifierGroup[];
     version?: number;
+    recipeLines?: Array<{
+        ingredientId: string;
+        quantityPerServing: number;
+        ingredientName?: string;
+        unit?: string;
+    }>;
+    hasRecipe?: boolean;
 }
 
 const PIZZA_HOLD: ModifierGroup = {
@@ -228,8 +236,7 @@ export function unitPriceFor(
     modifiers: { priceDelta: number }[],
 ): number {
     return (
-        item.price +
-        modifiers.reduce((sum, entry) => sum + entry.priceDelta, 0)
+        item.price + modifiers.reduce((sum, entry) => sum + entry.priceDelta, 0)
     );
 }
 

@@ -14,6 +14,7 @@ import {
     Inbox,
     LayoutDashboard,
     LayoutGrid,
+    Package,
     QrCode,
     Radio,
     ScrollText,
@@ -79,6 +80,16 @@ function stationQueueNav(home: string): NavSection[] {
                     icon: AlertTriangle,
                     filter: "exceptions",
                     badgeKey: "exceptions",
+                },
+            ],
+        },
+        {
+            title: "Station",
+            items: [
+                {
+                    href: `${home}/menu`,
+                    label: "Station menu",
+                    icon: UtensilsCrossed,
                 },
             ],
         },
@@ -176,6 +187,11 @@ export function navForRole(role: Role): NavSection[] {
                             icon: Building2,
                         },
                         {
+                            href: "/owner/inventory",
+                            label: "Inventory",
+                            icon: Package,
+                        },
+                        {
                             href: "/owner/settings",
                             label: "Settings",
                             icon: Store,
@@ -229,6 +245,11 @@ export function navForRole(role: Role): NavSection[] {
                             href: "/manager/stations",
                             label: "Stations",
                             icon: Warehouse,
+                        },
+                        {
+                            href: "/manager/inventory",
+                            label: "Inventory",
+                            icon: Package,
                         },
                         {
                             href: "/manager/tables",

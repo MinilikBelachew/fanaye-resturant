@@ -47,6 +47,8 @@ export function adminMenuItemToCatalog(
             })),
         })),
         version: item.version,
+        recipeLines: item.recipeLines ?? [],
+        hasRecipe: item.hasRecipe ?? (item.recipeLines?.length ?? 0) > 0,
     };
 }
 

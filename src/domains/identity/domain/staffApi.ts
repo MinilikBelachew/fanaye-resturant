@@ -28,6 +28,7 @@ export type AdminStaffMember = {
     roleCode: string;
     roleLabel: string;
     active: boolean;
+    workingDays: string[];
     phone: string | null;
     email: string | null;
     hasPin?: boolean;

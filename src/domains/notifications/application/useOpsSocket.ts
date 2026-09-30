@@ -41,6 +41,16 @@ function invalidateForType(
             api.util.invalidateTags(["Station", "Menu", "Order", "Floor"]),
         );
     }
+    if (type === "menu.item.availability") {
+        dispatch(
+            api.util.invalidateTags([
+                "Menu",
+                "Order",
+                "Station",
+                "Notifications",
+            ]),
+        );
+    }
     if (type === "bill.request.created" || type === "bill.ready") {
         dispatch(api.util.invalidateTags(["Bill", "Floor", "Notifications"]));
     }

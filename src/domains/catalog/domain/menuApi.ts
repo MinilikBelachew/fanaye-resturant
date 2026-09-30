@@ -15,6 +15,13 @@ export type AdminModifierGroup = {
     options: AdminModifierOption[];
 };
 
+export type AdminRecipeLine = {
+    ingredientId: string;
+    ingredientName?: string;
+    unit?: string;
+    quantityPerServing: number;
+};
+
 export type AdminMenuItem = {
     id: string;
     menuId: string;
@@ -37,6 +44,8 @@ export type AdminMenuItem = {
     badge?: string | null;
     showOnQrMenu?: boolean;
     modifierGroups: AdminModifierGroup[];
+    recipeLines?: AdminRecipeLine[];
+    hasRecipe?: boolean;
 };
 
 export type ScannedMenuItem = {
@@ -82,6 +91,10 @@ export type CreateAdminMenuItemBody = {
         name: string;
         kind?: "included" | "extra" | "choice";
         options: Array<{ name: string; priceDelta?: string }>;
+    }>;
+    recipeLines?: Array<{
+        ingredientId: string;
+        quantityPerServing: number;
     }>;
 };
 

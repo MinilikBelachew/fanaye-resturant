@@ -18,6 +18,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 const SETTABLE = [
@@ -50,9 +51,7 @@ export default function StationStatusSelect({
     const [start] = useStartPreparationMutation();
     const [ready] = useMarkItemReadyMutation();
     const [cannotPrepare] = useReportCannotPrepareMutation();
-    const current = SETTABLE.includes(
-        ticket.state as (typeof SETTABLE)[number],
-    )
+    const current = SETTABLE.includes(ticket.state as (typeof SETTABLE)[number])
         ? ticket.state
         : null;
 
@@ -76,19 +75,44 @@ export default function StationStatusSelect({
         orderItemId: ticket.orderItemId,
         expectedVersion: ticket.version,
     };
+    const label = ticket.itemName || "Ticket";
 
-    function apply(next: string) {
+    async function apply(next: string) {
         if (next === ticket.state) return;
-        if (next === "ACKNOWLEDGED") void acknowledge(body);
-        else if (next === "IN_PREPARATION") void start(body);
-        else if (next === "READY") void ready(body);
-        else if (next === "CANNOT_PREPARE") {
-            void cannotPrepare({ ...body, reasonDetail: "Cannot prepare" });
+
+        try {
+            if (next === "ACKNOWLEDGED") {
+                await acknowledge(body).unwrap();
+                toast.success("Acknowledged", label);
+            } else if (next === "IN_PREPARATION") {
+                await start(body).unwrap();
+                toast.success("Prep started", label);
+            } else if (next === "READY") {
+                await ready(body).unwrap();
+                toast.success("Marked ready", label);
+            } else if (next === "CANNOT_PREPARE") {
+                const alsoSoldOut = window.confirm(
+                    "Also mark this dish sold out so waiters cannot order it again?",
+                );
+                await cannotPrepare({
+                    ...body,
+                    reasonDetail: "Cannot prepare",
+                    markSoldOut: alsoSoldOut,
+                }).unwrap();
+                toast.success(
+                    alsoSoldOut
+                        ? "Cannot prepare · sold out for waiters"
+                        : "Reported cannot prepare",
+                    label,
+                );
+            }
+        } catch (err) {
+            toast.fromUnknown(err, "Could not update status.");
         }
     }
 
     return (
-        <Select value={current} onValueChange={apply}>
+        <Select value={current} onValueChange={value => void apply(value)}>
             <SelectTrigger
                 size="sm"
                 aria-label="Status"

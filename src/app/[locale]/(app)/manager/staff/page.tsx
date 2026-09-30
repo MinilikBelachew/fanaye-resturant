@@ -92,6 +92,9 @@ function toLegacyStaff(member: AdminStaffMember): Staff {
         email: member.email ?? undefined,
         active: member.active,
         stationId: member.stationId ?? undefined,
+        workingDays: member.workingDays?.length
+            ? member.workingDays
+            : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
         assignedTableIds: member.shiftCoverages.flatMap(coverage =>
             coverage.tables.map(table => table.tableId),
         ),

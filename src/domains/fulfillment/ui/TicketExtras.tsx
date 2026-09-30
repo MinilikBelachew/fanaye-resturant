@@ -77,14 +77,35 @@ export default function TicketExtras({
                 </div>
             ) : null}
             {instruction?.trim() ? (
-                <p
+                <div
                     className={cn(
-                        "text-[13px]",
-                        overlay ? "text-white/85" : "text-ink-charcoal",
+                        "rounded-lg px-2.5 py-2",
+                        overlay
+                            ? "bg-amber-400/25 ring-1 ring-amber-200/40"
+                            : "bg-amber-50 ring-1 ring-amber-200/70 dark:bg-amber-950/40 dark:ring-amber-700/50",
                     )}
                 >
-                    Note: {instruction.trim()}
-                </p>
+                    <p
+                        className={cn(
+                            "text-[11px] font-semibold tracking-[0.06em] uppercase",
+                            overlay
+                                ? "text-amber-100/80"
+                                : "text-amber-800/80 dark:text-amber-200/80",
+                        )}
+                    >
+                        Note
+                    </p>
+                    <p
+                        className={cn(
+                            "mt-0.5 text-[13px] font-medium leading-snug",
+                            overlay
+                                ? "text-amber-50"
+                                : "text-amber-950 dark:text-amber-100",
+                        )}
+                    >
+                        {instruction.trim()}
+                    </p>
+                </div>
             ) : null}
         </div>
     );
