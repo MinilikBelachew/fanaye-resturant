@@ -44,6 +44,7 @@ const LABEL_KEYS: Record<string, string> = {
     Approvals: "approvals",
     Payments: "payments",
     "Bill requests": "billRequests",
+    "New sale": "newSale",
     "Cash drops": "cashDrops",
     "Closed Bills": "closedBills",
     Reconciliation: "reconciliation",
@@ -86,7 +87,10 @@ function AppTopBarInner({ className }: { className?: string }) {
 
     const { toggle } = useSidebarUi();
     const home = staff ? homePathForRole(staff.role) : "/";
-    const sections = staff ? navForRole(staff.role) : [];
+    const serviceMode = useAppSelector(
+        state => state.identity.session?.serviceMode,
+    );
+    const sections = staff ? navForRole(staff.role, serviceMode) : [];
     const items = sections.flatMap(section => section.items);
     const isOrderDetail = pathname.includes("/orders/");
     const status = parseQueueFilter(searchParams.get("status"));
@@ -151,7 +155,8 @@ function AppTopBarInner({ className }: { className?: string }) {
                 <BranchSwitcher />
                 {stationQueue ? (
                     <StationTopBarTools search={false} />
-                ) : (
+                ) : serviceMode === "BAKERY" &&
+                  staff?.role === "cashier" ? null : (
                     <OpsNotificationsBell />
                 )}
                 <LocaleSwitcher className="hidden sm:inline-flex" />

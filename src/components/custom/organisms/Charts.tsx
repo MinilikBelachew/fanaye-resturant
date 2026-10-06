@@ -125,6 +125,12 @@ export function RevenueVsCollectionsChart({
     const tCommon = useTranslations("common");
     const currency = tCommon("currency");
     const chartData = withLocalizedDays(t, data, "period");
+    const hasData = chartData.some(
+        row =>
+            Number(row.grossSales || 0) > 0 ||
+            Number(row.netRevenue || 0) > 0 ||
+            Number(row.collections || 0) > 0,
+    );
 
     return (
         <div className="flex h-full flex-col justify-between rounded-[16px] border border-hairline bg-card p-6">
@@ -141,7 +147,7 @@ export function RevenueVsCollectionsChart({
                 </div>
 
                 <div className="mt-6 h-[250px] w-full">
-                    {chartData.length === 0 ? (
+                    {!hasData ? (
                         <div className="flex h-full items-center justify-center text-[13px] text-slate-gray">
                             {t("revenueEmpty")}
                         </div>
@@ -482,6 +488,10 @@ export function WeeklyCashMovementChart({
     const tCommon = useTranslations("common");
     const currency = tCommon("currency");
     const chartData = withLocalizedDays(t, movement, "day");
+    const hasData = chartData.some(
+        row =>
+            Number(row.digitalInflow || 0) > 0 || Number(row.cashDrop || 0) > 0,
+    );
 
     return (
         <div className="flex h-full flex-col justify-between rounded-[16px] border border-hairline bg-card p-6">
@@ -494,7 +504,7 @@ export function WeeklyCashMovementChart({
                 </p>
 
                 <div className="mt-6 h-[200px] w-full">
-                    {chartData.length === 0 ? (
+                    {!hasData ? (
                         <div className="flex h-full items-center justify-center text-[13px] text-slate-gray">
                             {t("cashMovementEmpty")}
                         </div>

@@ -6,9 +6,10 @@ export default function ManagerDailyClosePage() {
     return (
         <DashboardFrame>
             <PageHeader
-                eyebrow="Control"
-                title="Operational Daily Close"
-                description="Not a fiscal Z-report. Review waiter lines, then lock the day."
+                compact
+                eyebrow="Close"
+                title="Daily close"
+                description="Review the snapshot, approve, then lock. Locking freezes the business day."
             />
             <DailyClosePanel mode="manager" />
         </DashboardFrame>

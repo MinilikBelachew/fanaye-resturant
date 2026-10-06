@@ -12,6 +12,7 @@ function idempotencyKey() {
 }
 
 export const cashApi = api.injectEndpoints({
+    overrideExisting: true,
     endpoints: builder => ({
         waiterCashSummary: builder.query<WaiterCashSummary, void>({
             query: () => ({

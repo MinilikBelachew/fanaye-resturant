@@ -25,13 +25,13 @@ export default function LandingHardwareCompatibility() {
             <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <ScrollReveal className="text-center max-w-2xl mx-auto">
-                    <div className="inline-flex items-center gap-1.5 rounded-full border border-orange-500/20 bg-orange-500/10 px-3 py-0.5 text-[11px] font-medium text-orange-600 dark:text-orange-400">
+                    <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-3 py-0.5 text-[11px] font-medium text-muted-foreground">
                         <Sparkles className="size-3" />
                         <span>{t("badge")}</span>
                     </div>
                     <h2 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                         {t("titlePrefix")}
-                        <span className="bg-gradient-to-r from-orange-500 to-rose-500 bg-clip-text text-transparent">
+                        <span className="text-foreground">
                             {t("titleHighlight")}
                         </span>
                     </h2>
@@ -51,7 +51,7 @@ export default function LandingHardwareCompatibility() {
                             >
                                 <div>
                                     <div className="flex items-center justify-between">
-                                        <div className="flex size-10 items-center justify-center rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
+                                        <div className="flex size-10 items-center justify-center rounded-xl bg-secondary text-foreground border border-border">
                                             <Icon className="size-5" />
                                         </div>
                                         <span className="rounded bg-secondary px-2 py-0.2 text-[9px] font-mono text-muted-foreground">
@@ -65,7 +65,7 @@ export default function LandingHardwareCompatibility() {
                                         {d.desc}
                                     </p>
                                 </div>
-                                <div className="mt-4 pt-3 border-t border-border/50 flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                                <div className="mt-4 pt-3 border-t border-border/50 flex items-center gap-1.5 text-[11px] text-foreground font-medium">
                                     <CheckCircle2 className="size-3.5" />
                                     <span>{t("instantPwa")}</span>
                                 </div>

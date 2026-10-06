@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
     useApproveDailyCloseMutation,
     useCreateDailyCloseMutation,
@@ -14,15 +14,21 @@ import {
     usePendingReconciliationsQuery,
 } from "@/context/services/reconciliationApi";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { formatEtb } from "@/lib/money";
+import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 
-function statusBadge(status: string) {
-    if (status === "LOCKED") return "success" as const;
-    if (status === "APPROVED" || status === "READY_FOR_REVIEW")
-        return "warning" as const;
-    return "outline" as const;
+function localYmd(date = new Date()) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+}
+
+function shiftYmd(ymd: string, days: number) {
+    const date = new Date(`${ymd}T12:00:00`);
+    date.setDate(date.getDate() + days);
+    return localYmd(date);
 }
 
 function closeStatusLabel(
@@ -33,11 +39,19 @@ function closeStatusLabel(
     if (status === "LOCKED") return t("statusLocked");
     if (status === "APPROVED") return t("statusApproved");
     if (status === "READY_FOR_REVIEW") return t("statusReadyForReview");
+    if (status === "DRAFT") return t("statusDraft");
     return status;
 }
 
+function blockerTitle(
+    code: string,
+    t: ReturnType<typeof useTranslations<"managerDailyClose">>,
+) {
+    const key = `blocker.${code}` as const;
+    return t.has(key) ? t(key) : code.replaceAll("_", " ").toLowerCase();
+}
+
 type DailyClosePanelProps = {
-    /** Cashiers prepare/refresh; managers approve & lock. */
     mode?: "manager" | "cashier";
 };
 
@@ -46,10 +60,13 @@ export default function DailyClosePanel({
 }: DailyClosePanelProps) {
     const t = useTranslations("managerDailyClose");
     const isCashier = mode === "cashier";
-    const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+    const today = localYmd();
+    const yesterday = shiftYmd(today, -1);
+    const [selectedDate, setSelectedDate] = useState(today);
+    const businessDate = isCashier ? today : selectedDate;
     const { data, isLoading, isError } = useDailyClosePreviewQuery(
-        { businessDate: today },
-        { pollingInterval: 10000 },
+        { businessDate },
+        { pollingInterval: 10000, refetchOnFocus: true },
     );
     const { data: pendingRecons } = usePendingReconciliationsQuery(undefined, {
         skip: isCashier,
@@ -74,7 +91,6 @@ export default function DailyClosePanel({
     const ready = preview?.readiness.ready ?? false;
     const blockers = preview?.readiness.blockers ?? [];
     const waiters = preview?.waiters ?? [];
-    const stations = preview?.stations ?? [];
     const recons = pendingRecons?.data ?? [];
 
     async function onCreate() {
@@ -146,267 +162,331 @@ export default function DailyClosePanel({
     }
 
     if (isLoading) {
-        return <p className="text-slate-gray">{t("loading")}</p>;
+        return <p className="text-[12px] text-slate-gray">{t("loading")}</p>;
     }
 
     if (isError || !preview) {
-        return <p className="text-slate-gray">{t("loadError")}</p>;
+        return <p className="text-[12px] text-slate-gray">{t("loadError")}</p>;
     }
 
     const summary = preview.summary;
+    const pendingTransfer = Number(summary.pendingTransferAmount);
+    const undropped = Number(summary.undroppedWaiterCash);
+    const openTables = preview.openTableCount ?? 0;
 
     return (
-        <div className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-3">
-                <div className="rounded-[16px] border border-hairline bg-card p-4">
-                    <p className="text-[12px] text-slate-gray">
-                        {t("netBilled")}
-                    </p>
-                    <p className="text-[20px] font-semibold">
-                        {formatEtb(Number(summary.netBilledSales))}
-                    </p>
-                </div>
-                <div className="rounded-[16px] border border-hairline bg-card p-4">
-                    <p className="text-[12px] text-slate-gray">
-                        {t("cashSales")}
-                    </p>
-                    <p className="text-[20px] font-semibold">
-                        {formatEtb(Number(summary.cashSales))}
-                    </p>
-                </div>
-                <div className="rounded-[16px] border border-hairline bg-card p-4">
-                    <p className="text-[12px] text-slate-gray">
-                        {t("verifiedTransfer")}
-                    </p>
-                    <p className="text-[20px] font-semibold text-brand">
-                        {formatEtb(Number(summary.verifiedTransferSales))}
-                    </p>
-                </div>
-            </div>
-
-            <article className="rounded-[16px] border border-hairline bg-card p-6">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                        <h2 className="font-semibold">
-                            {preview.businessDate}
-                        </h2>
-                        <p className="text-[13px] text-slate-gray">
-                            {t("cashierVarianceLine", {
-                                variance: formatEtb(
-                                    Number(summary.cashierVariance),
-                                ),
-                                undropped: formatEtb(
-                                    Number(summary.undroppedWaiterCash),
-                                ),
-                            })}
+        <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                    {isCashier ? (
+                        <p className="text-[12px] font-medium text-foreground">
+                            {t("todayOnly")}
                         </p>
-                    </div>
-                    <Badge variant={statusBadge(status)}>
+                    ) : (
+                        <div className="inline-flex rounded-full border border-hairline bg-card p-0.5">
+                            {(
+                                [
+                                    { id: today, label: t("today") },
+                                    { id: yesterday, label: t("yesterday") },
+                                ] as const
+                            ).map(chip => (
+                                <button
+                                    key={chip.id}
+                                    type="button"
+                                    onClick={() => setSelectedDate(chip.id)}
+                                    className={cn(
+                                        "h-6 rounded-full px-2 text-[11px] font-medium",
+                                        selectedDate === chip.id
+                                            ? "bg-foreground text-background"
+                                            : "text-slate-gray hover:text-foreground",
+                                    )}
+                                >
+                                    {chip.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                    <Badge
+                        variant={
+                            status === "LOCKED"
+                                ? "success"
+                                : status === "NONE"
+                                  ? "outline"
+                                  : "warning"
+                        }
+                    >
                         {closeStatusLabel(status, t)}
                     </Badge>
                 </div>
+                <div className="flex flex-wrap gap-1.5">
+                    {!closeId ? (
+                        <button
+                            type="button"
+                            disabled={creating}
+                            onClick={() => void onCreate()}
+                            className="inline-flex h-7 items-center rounded-full bg-foreground px-3 text-[11px] font-medium text-background disabled:opacity-50"
+                        >
+                            {creating ? t("creating") : t("createDraft")}
+                        </button>
+                    ) : (
+                        <button
+                            type="button"
+                            disabled={refreshing || status === "LOCKED"}
+                            onClick={() => void onRefresh()}
+                            className="inline-flex h-7 items-center rounded-full border border-hairline px-3 text-[11px] font-medium disabled:opacity-50"
+                        >
+                            {refreshing ? t("refreshing") : t("refresh")}
+                        </button>
+                    )}
+                    {!isCashier && closeId ? (
+                        <>
+                            <button
+                                type="button"
+                                disabled={
+                                    approving ||
+                                    status === "LOCKED" ||
+                                    status === "APPROVED"
+                                }
+                                onClick={() => void onApprove()}
+                                className="inline-flex h-7 items-center rounded-full border border-hairline px-3 text-[11px] font-medium disabled:opacity-50"
+                            >
+                                {approving ? t("approving") : t("approve")}
+                            </button>
+                            <button
+                                type="button"
+                                disabled={
+                                    locking || status === "LOCKED" || !ready
+                                }
+                                onClick={() => void onLock()}
+                                className="inline-flex h-7 items-center rounded-full bg-foreground px-3 text-[11px] font-medium text-background disabled:opacity-50"
+                            >
+                                {locking ? t("locking") : t("lockDay")}
+                            </button>
+                        </>
+                    ) : null}
+                </div>
+            </div>
 
+            <div className="flex flex-wrap gap-x-5 gap-y-1 text-[13px] text-slate-gray">
+                <span>
+                    <strong className="text-[16px] text-foreground">
+                        {preview.orderCount ?? 0}
+                    </strong>{" "}
+                    {t("ordersToday")}
+                </span>
+                <span>
+                    <strong className="text-[16px] text-foreground">
+                        {preview.itemCount ?? 0}
+                    </strong>{" "}
+                    {t("itemsToday")}
+                </span>
+                <span
+                    className={openTables > 0 ? "text-destructive" : undefined}
+                >
+                    <strong className="text-[16px]">{openTables}</strong>{" "}
+                    {t("openTables")}
+                </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {(
+                    [
+                        {
+                            label: t("netBilled"),
+                            value: formatEtb(Number(summary.netBilledSales)),
+                        },
+                        {
+                            label: t("cashSales"),
+                            value: formatEtb(Number(summary.cashSales)),
+                        },
+                        {
+                            label: t("expectedCash"),
+                            value: formatEtb(
+                                Number(summary.cashierExpectedCash),
+                            ),
+                        },
+                        {
+                            label: t("undroppedCash"),
+                            value: formatEtb(undropped),
+                            warn: undropped > 0,
+                        },
+                    ] as const
+                ).map(card => (
+                    <div
+                        key={card.label}
+                        className="rounded-2xl border border-hairline bg-card px-4 py-3"
+                    >
+                        <p className="text-[11px] font-medium text-slate-gray">
+                            {card.label}
+                        </p>
+                        <p
+                            className={cn(
+                                "mt-1 text-[18px] font-semibold tracking-tight",
+                                "warn" in card && card.warn
+                                    ? "text-destructive"
+                                    : "text-foreground",
+                            )}
+                        >
+                            {card.value}
+                        </p>
+                    </div>
+                ))}
+            </div>
+
+            {pendingTransfer > 0 ? (
+                <p className="text-[13px] text-destructive">
+                    {t("pendingTransfer")}: {formatEtb(pendingTransfer)}
+                </p>
+            ) : null}
+
+            <section className="rounded-2xl border border-hairline bg-card p-4">
+                <h2 className="text-[14px] font-semibold">
+                    {t("leftoverTitle")}
+                </h2>
                 {blockers.length > 0 ? (
-                    <ul className="mt-4 space-y-2 text-[14px]">
+                    <ul className="mt-3 space-y-2">
                         {blockers.map(blocker => (
                             <li
                                 key={`${blocker.code}-${blocker.entityId ?? blocker.message}`}
-                                className="text-slate-gray"
+                                className="rounded-xl border border-hairline bg-secondary/40 px-3 py-2"
                             >
-                                <span className="font-medium text-foreground">
-                                    {blocker.code}
-                                </span>
-                                {" — "}
-                                {blocker.message}
+                                <p className="text-[13px] font-semibold text-foreground">
+                                    {blockerTitle(blocker.code, t)}
+                                </p>
+                                <p className="text-[12px] text-slate-gray">
+                                    {blocker.message}
+                                </p>
                             </li>
                         ))}
                     </ul>
                 ) : (
-                    <p className="mt-4 text-[14px] text-[#046645]">
-                        {t("readyNoBlockers")}
+                    <p className="mt-1 text-[13px] text-slate-gray">
+                        {t("leftoverEmpty")}
                     </p>
                 )}
+            </section>
 
-                <div className="mt-4 flex flex-wrap gap-2">
-                    {!closeId ? (
-                        <Button disabled={creating} onClick={onCreate}>
-                            {creating ? t("creating") : t("createDraft")}
-                        </Button>
-                    ) : (
-                        <>
-                            <Button
-                                variant="outline"
-                                disabled={refreshing || status === "LOCKED"}
-                                onClick={onRefresh}
-                            >
-                                {refreshing ? t("refreshing") : t("refresh")}
-                            </Button>
-                            {!isCashier ? (
-                                <>
-                                    <Button
-                                        variant="outline"
-                                        disabled={
-                                            approving ||
-                                            status === "LOCKED" ||
-                                            status === "APPROVED"
-                                        }
-                                        onClick={onApprove}
-                                    >
-                                        {approving
-                                            ? t("approving")
-                                            : t("approve")}
-                                    </Button>
-                                    <Button
-                                        disabled={
-                                            locking ||
-                                            status === "LOCKED" ||
-                                            !ready
-                                        }
-                                        onClick={onLock}
-                                    >
-                                        {locking ? t("locking") : t("lockDay")}
-                                    </Button>
-                                </>
-                            ) : null}
-                        </>
-                    )}
-                </div>
-                {isCashier ? (
-                    <p className="mt-3 text-[13px] text-slate-gray">
-                        {t("cashierHint")}
+            <section className="overflow-hidden rounded-2xl border border-hairline bg-card">
+                <div className="border-b border-hairline px-4 py-3">
+                    <h2 className="text-[14px] font-semibold">
+                        {t("waiterLines")}
+                    </h2>
+                    <p className="text-[12px] text-slate-gray">
+                        {t("waiterLinesHint")}
                     </p>
-                ) : null}
-            </article>
-
-            {waiters.length > 0 ? (
-                <article className="rounded-[16px] border border-hairline bg-card p-6">
-                    <h2 className="font-semibold">{t("waiterLines")}</h2>
-                    <ul className="mt-4 space-y-3 text-[14px]">
-                        {waiters.map(waiter => (
-                            <li key={waiter.shiftSessionId}>
-                                <div className="flex justify-between gap-3">
-                                    <span>
-                                        {waiter.waiterName} ·{" "}
-                                        {t("ordersCount", {
-                                            count: waiter.ordersCreatedCount,
-                                        })}
-                                    </span>
-                                    <span>
-                                        {formatEtb(
-                                            Number(waiter.netAttributedSales),
-                                        )}
-                                    </span>
-                                </div>
-                                <p className="text-slate-gray">
-                                    {t("waiterCashLine", {
-                                        cash: formatEtb(
-                                            Number(waiter.cashCollected),
-                                        ),
-                                        dropped: formatEtb(
-                                            Number(waiter.cashDropped),
-                                        ),
-                                        still: formatEtb(
-                                            Number(waiter.undroppedCash),
-                                        ),
-                                    })}
-                                </p>
-                            </li>
-                        ))}
-                    </ul>
-                </article>
-            ) : null}
-
-            {stations.length > 0 ? (
-                <article className="rounded-[16px] border border-hairline bg-card p-6">
-                    <h2 className="font-semibold">{t("stationLines")}</h2>
-                    <ul className="mt-4 space-y-3 text-[14px]">
-                        {stations.map(station => (
-                            <li key={station.stationId}>
-                                <div className="flex justify-between gap-3">
-                                    <span>{station.stationName}</span>
-                                    <span>
-                                        {t("itemsCount", {
-                                            count: station.itemsHandledCount,
-                                        })}
-                                    </span>
-                                </div>
-                                <p className="text-slate-gray">
-                                    {t("stationStats", {
-                                        delayed: station.delayedItemCount,
-                                        cannot: station.cannotPrepareCount,
-                                    })}
-                                </p>
-                            </li>
-                        ))}
-                    </ul>
-                </article>
-            ) : null}
+                </div>
+                {waiters.length > 0 ? (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-[13px]">
+                            <thead>
+                                <tr className="border-b border-hairline text-[11px] font-medium text-slate-gray">
+                                    <th className="px-4 py-2">
+                                        {t("colWaiter")}
+                                    </th>
+                                    <th className="px-4 py-2 text-right">
+                                        {t("colOrders")}
+                                    </th>
+                                    <th className="px-4 py-2 text-right">
+                                        {t("colCash")}
+                                    </th>
+                                    <th className="px-4 py-2 text-right">
+                                        {t("colDropped")}
+                                    </th>
+                                    <th className="px-4 py-2 text-right">
+                                        {t("colStill")}
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-hairline">
+                                {waiters.map(waiter => (
+                                    <tr key={waiter.shiftSessionId}>
+                                        <td className="px-4 py-2.5 font-medium">
+                                            {waiter.waiterName}
+                                        </td>
+                                        <td className="px-4 py-2.5 text-right text-slate-gray">
+                                            {waiter.ordersCreatedCount}
+                                        </td>
+                                        <td className="px-4 py-2.5 text-right">
+                                            {formatEtb(
+                                                Number(waiter.cashCollected),
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-2.5 text-right">
+                                            {formatEtb(
+                                                Number(waiter.cashDropped),
+                                            )}
+                                        </td>
+                                        <td
+                                            className={cn(
+                                                "px-4 py-2.5 text-right font-medium",
+                                                Number(waiter.undroppedCash) > 0
+                                                    ? "text-destructive"
+                                                    : "text-slate-gray",
+                                            )}
+                                        >
+                                            {formatEtb(
+                                                Number(waiter.undroppedCash),
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <p className="px-4 py-3 text-[13px] text-slate-gray">
+                        {t("waiterLinesHint")}
+                    </p>
+                )}
+            </section>
 
             {!isCashier && recons.length > 0 ? (
-                <article className="rounded-[16px] border border-hairline bg-card p-6">
-                    <h2 className="font-semibold">
-                        {t("reconciliationsToReview")}
-                    </h2>
-                    <ul className="mt-4 space-y-3">
-                        {recons.map(recon => (
-                            <li
-                                key={recon.reconciliationId}
-                                className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline pb-3 last:border-0"
-                            >
-                                <div>
-                                    <p className="font-medium">
-                                        {recon.cashierName ??
-                                            t("cashierFallback")}
-                                    </p>
-                                    <p className="text-[13px] text-slate-gray">
-                                        {t("reconAmounts", {
-                                            expected: formatEtb(
-                                                Number(recon.expectedCash),
-                                            ),
-                                            counted: formatEtb(
-                                                Number(recon.countedCash),
-                                            ),
-                                            variance: formatEtb(
-                                                Number(recon.variance),
-                                            ),
-                                        })}
-                                    </p>
-                                </div>
-                                <div className="flex gap-2">
-                                    <Button
-                                        size="sm"
-                                        onClick={() => {
-                                            void approveRecon({
-                                                reconciliationId:
-                                                    recon.reconciliationId,
-                                            });
-                                        }}
-                                    >
-                                        {t("approve")}
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => {
-                                            void flagRecon({
-                                                reconciliationId:
-                                                    recon.reconciliationId,
-                                                reviewComment:
-                                                    t("flagFollowUp"),
-                                            });
-                                        }}
-                                    >
-                                        {t("flag")}
-                                    </Button>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                </article>
+                <ul className="space-y-2">
+                    {recons.map(recon => (
+                        <li
+                            key={recon.reconciliationId}
+                            className="flex flex-wrap items-center justify-between gap-2 text-[12px]"
+                        >
+                            <span>
+                                {recon.cashierName ?? t("cashierFallback")} ·{" "}
+                                {formatEtb(Number(recon.countedCash))}
+                            </span>
+                            <span className="flex gap-1.5">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        void approveRecon({
+                                            reconciliationId:
+                                                recon.reconciliationId,
+                                        });
+                                    }}
+                                    className="h-7 rounded-full bg-foreground px-2.5 text-[11px] font-medium text-background"
+                                >
+                                    {t("approve")}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        void flagRecon({
+                                            reconciliationId:
+                                                recon.reconciliationId,
+                                            reviewComment: t("flagFollowUp"),
+                                        });
+                                    }}
+                                    className="h-7 rounded-full border border-hairline px-2.5 text-[11px]"
+                                >
+                                    {t("flag")}
+                                </button>
+                            </span>
+                        </li>
+                    ))}
+                </ul>
             ) : null}
 
-            {error ? <p className="text-[13px] text-red-600">{error}</p> : null}
-            {ok ? <p className="text-[13px] text-[#046645]">{ok}</p> : null}
+            {error ? (
+                <p className="text-[12px] text-destructive">{error}</p>
+            ) : null}
+            {ok ? <p className="text-[12px] text-emerald-700">{ok}</p> : null}
         </div>
     );
 }

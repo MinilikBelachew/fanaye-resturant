@@ -169,30 +169,49 @@ export default function CashierCashDropsQueue() {
     const [selectedDropForReceipt, setSelectedDropForReceipt] =
         useState<CashDrop | null>(null);
 
-    const { data: pendingData, refetch: refetchPending } =
-        useCashierCashDropsQuery(
-            { status: "INITIATED,DISPUTED" },
-            { pollingInterval: 4000 },
-        );
+    const {
+        data: pendingData,
+        isError: pendingError,
+        refetch: refetchPending,
+    } = useCashierCashDropsQuery(
+        { status: "INITIATED,DISPUTED" },
+        { pollingInterval: 4000, refetchOnFocus: true },
+    );
 
     const historyStatusParam = statusFilter === "ALL" ? "ALL" : statusFilter;
     const {
         data: historyData,
         isLoading: loadingHistory,
         isFetching: fetchingHistory,
+        isError: historyError,
         refetch: refetchHistory,
     } = useCashierCashDropsQuery(
         {
             status: historyStatusParam,
             dateFilter,
         },
-        { pollingInterval: 6000 },
+        { pollingInterval: 6000, refetchOnFocus: true },
     );
 
-    const pendingDrops = pendingData?.data ?? [];
+    const pendingFromQueue = pendingData?.data ?? [];
     const historyDrops = historyData?.data ?? [];
+    const pendingDrops = [
+        ...pendingFromQueue,
+        ...historyDrops.filter(drop =>
+            ["INITIATED", "DISPUTED"].includes(drop.status.toUpperCase()),
+        ),
+    ].filter(
+        (drop, index, all) =>
+            all.findIndex(item => item.cashDropId === drop.cashDropId) ===
+            index,
+    );
+    const ledgerDrops = historyDrops.filter(
+        drop =>
+            !["INITIATED", "DISPUTED"].includes(drop.status.toUpperCase()) ||
+            dateFilter === "ALL",
+    );
 
-    const totalCounted = historyDrops
+    const totalCounted = ledgerDrops
         .filter(d => d.status === "RECEIVED" || d.status === "RESOLVED")
         .reduce(
             (sum, d) => sum + Number(d.countedAmount ?? d.declaredAmount ?? 0),
@@ -334,11 +353,17 @@ export default function CashierCashDropsQueue() {
                     </span>
                 </div>
 
+                {pendingError || historyError ? (
+                    <p className="rounded-[12px] border border-destructive/20 bg-destructive/10 px-3 py-2 text-[12px] text-destructive">
+                        {t("cashDropsLoadError")}
+                    </p>
+                ) : null}
+
                 {loadingHistory ? (
                     <p className="py-8 text-center text-xs text-muted-foreground">
                         {t("loadingCashDropsHistory")}
                     </p>
-                ) : historyDrops.length === 0 ? (
+                ) : ledgerDrops.length === 0 ? (
                     <div className="py-8 text-center text-xs text-muted-foreground">
                         {t("noCashDropsForFilter")}
                     </div>
@@ -371,7 +396,7 @@ export default function CashierCashDropsQueue() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border/40">
-                                {historyDrops.map(drop => {
+                                {ledgerDrops.map(drop => {
                                     const dateObj = drop.receivedAt
                                         ? new Date(drop.receivedAt)
                                         : drop.initiatedAt

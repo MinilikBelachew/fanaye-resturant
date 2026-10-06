@@ -6,9 +6,10 @@ export default function CashierDailyClosePage() {
     return (
         <DashboardFrame>
             <PageHeader
+                compact
                 eyebrow="Close"
-                title="Operational Daily Close"
-                description="Prepare today’s draft and refresh the snapshot. Managers approve and lock."
+                title="Daily close"
+                description="Today’s bills, cash, and drops. A manager locks the day."
             />
             <DailyClosePanel mode="cashier" />
         </DashboardFrame>

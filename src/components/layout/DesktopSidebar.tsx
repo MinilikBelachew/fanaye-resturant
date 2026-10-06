@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 
 export default function DesktopSidebar({ className }: { className?: string }) {
     const staff = useAppSelector(selectCurrentStaff);
+    const session = useAppSelector(state => state.identity.session);
     const router = useRouter();
     const dispatch = useAppDispatch();
     const tTopBar = useTranslations("topbar");
@@ -23,7 +24,7 @@ export default function DesktopSidebar({ className }: { className?: string }) {
     const { counts: liveCounts } = useCurrentStationQueue();
     const counts = staff && isStationRole(staff.role) ? liveCounts : null;
     if (!staff) return null;
-    const sections = navForRole(staff.role);
+    const sections = navForRole(staff.role, session?.serviceMode);
 
     async function logOut() {
         await performSignOut(dispatch);

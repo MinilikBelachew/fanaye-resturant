@@ -19,6 +19,7 @@ import { useRouter } from "@/i18n/navigation";
 import { FileDown, LayoutGrid, Loader2, Receipt, Table2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { CashierPaymentsSkeleton } from "@/components/custom/molecules/Skeletons";
+import { useAppSelector } from "@/context/hooks";
 
 type ViewMode = "table" | "cards";
 
@@ -26,6 +27,9 @@ export default function CashierPaymentsLog() {
     const tCashier = useTranslations("cashier");
     const tCommon = useTranslations("common");
     const router = useRouter();
+    const isBakery =
+        useAppSelector(state => state.identity.session?.serviceMode) ===
+        "BAKERY";
     const logRef = useRef<HTMLDivElement>(null);
     const [view, setView] = useState<ViewMode>("table");
     const [isExportingPdf, setIsExportingPdf] = useState(false);
@@ -102,20 +106,27 @@ export default function CashierPaymentsLog() {
         }
     }
 
-    const columns = useMemo<DataTableColumn<(typeof payments)[number]>[]>(
-        () => [
-            {
-                id: "table",
-                header: tCommon("table"),
-                cell: row => row.tableDisplayName,
-                sortValue: row => row.tableDisplayName,
-            },
-            {
-                id: "waiter",
-                header: tCommon("waiter"),
-                cell: row => row.waiterName,
-                sortValue: row => row.waiterName,
-            },
+    const columns = useMemo<
+        DataTableColumn<(typeof payments)[number]>[]
+    >(() => {
+        const cols: DataTableColumn<(typeof payments)[number]>[] = [];
+        if (!isBakery) {
+            cols.push(
+                {
+                    id: "table",
+                    header: tCommon("table"),
+                    cell: row => row.tableDisplayName,
+                    sortValue: row => row.tableDisplayName,
+                },
+                {
+                    id: "waiter",
+                    header: tCommon("waiter"),
+                    cell: row => row.waiterName,
+                    sortValue: row => row.waiterName,
+                },
+            );
+        }
+        cols.push(
             {
                 id: "amount",
                 header: tCommon("amount"),
@@ -140,14 +151,18 @@ export default function CashierPaymentsLog() {
                 cell: row => row.billNumber,
                 sortValue: row => row.billNumber,
             },
-            {
+        );
+        if (!isBakery) {
+            cols.push({
                 id: "status",
                 header: tCommon("table"),
                 cell: row =>
                     row.tableClosed
                         ? tCashier("tableClosed")
                         : tCashier("tableOpen"),
-            },
+            });
+        }
+        cols.push(
             {
                 id: "billReceipt",
                 header: tCashier("billReceipt"),
@@ -179,9 +194,9 @@ export default function CashierPaymentsLog() {
                     </span>
                 ),
             },
-        ],
-        [loadingBillId, tCashier, tCommon],
-    );
+        );
+        return cols;
+    }, [isBakery, loadingBillId, tCashier, tCommon]);
 
     if (isLoading) {
         return <CashierPaymentsSkeleton />;
@@ -294,9 +309,9 @@ export default function CashierPaymentsLog() {
                                 className="cursor-pointer rounded-[14px] border border-hairline bg-card p-4 transition-colors hover:bg-secondary/30"
                             >
                                 <p className="text-[12px] text-slate-gray">
-                                    {tCommon("table")}{" "}
-                                    {payment.tableDisplayName} ·{" "}
-                                    {payment.waiterName}
+                                    {isBakery
+                                        ? payment.billNumber
+                                        : `${tCommon("table")} ${payment.tableDisplayName} · ${payment.waiterName}`}
                                 </p>
                                 <p className="mt-1 text-[15px] font-medium tabular-nums tracking-tight">
                                     {formatEtb(Number(payment.amount))}
@@ -305,11 +320,14 @@ export default function CashierPaymentsLog() {
                                     {methodLabel(
                                         payment.method,
                                         payment.transferChannel,
-                                    )}{" "}
-                                    · {payment.billNumber}
-                                    {payment.tableClosed
-                                        ? ` · ${tCashier("tableClosed")}`
-                                        : ` · ${tCashier("tableOpen")}`}
+                                    )}
+                                    {isBakery
+                                        ? null
+                                        : ` · ${payment.billNumber}${
+                                              payment.tableClosed
+                                                  ? ` · ${tCashier("tableClosed")}`
+                                                  : ` · ${tCashier("tableOpen")}`
+                                          }`}
                                 </p>
                                 <div className="mt-3 flex flex-wrap gap-2">
                                     <Button
@@ -344,8 +362,12 @@ export default function CashierPaymentsLog() {
                 open={Boolean(activeReceipt)}
                 onOpenChange={open => !open && setActiveReceipt(null)}
                 bill={activeReceipt?.bill || null}
-                tableDisplayName={activeReceipt?.tableDisplayName}
-                waiterName={activeReceipt?.waiterName}
+                tableDisplayName={
+                    isBakery ? undefined : activeReceipt?.tableDisplayName
+                }
+                waiterName={isBakery ? undefined : activeReceipt?.waiterName}
+                showSendToWaiter={!isBakery}
+                hideTable={isBakery}
             />
         </div>
     );

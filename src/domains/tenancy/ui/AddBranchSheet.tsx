@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
+import { Loader2, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { EthiopianPhoneInput } from "@/components/ui/ethiopian-phone-input";
+import { PasswordLiveChecks } from "@/components/ui/password-live-checks";
 import { Label } from "@/components/ui/label";
 import {
     useCreateBranchMutation,
@@ -11,7 +14,26 @@ import {
     type CreateBranchBody,
 } from "@/context/services/branchesApi";
 import { toast } from "@/lib/toast";
-import { X } from "lucide-react";
+import {
+    createBranchFormSchema,
+    type CreateBranchFormValues,
+} from "@/lib/validators/provisionTenant";
+import { cn } from "@/lib/utils";
+
+const fieldClass =
+    "h-9 rounded-[10px] border-hairline bg-card text-[13px] focus-visible:border-foreground/30 focus-visible:ring-foreground/10";
+
+const defaults: CreateBranchFormValues = {
+    name: "",
+    displayCode: "",
+    tableCount: 8,
+    copyFromBranchId: "",
+    serviceMode: "RESTAURANT",
+    managerName: "",
+    managerEmail: "",
+    managerPhone: "+251 ",
+    managerPassword: "",
+};
 
 export default function AddBranchSheet({
     open,
@@ -27,135 +49,226 @@ export default function AddBranchSheet({
         skip: !open,
     });
     const [createBranch, { isLoading }] = useCreateBranchMutation();
-    const [name, setName] = useState("");
-    const [displayCode, setDisplayCode] = useState("");
-    const [tableCount, setTableCount] = useState("8");
-    const [copyFromBranchId, setCopyFromBranchId] = useState("");
-    const [managerName, setManagerName] = useState("");
-    const [managerEmail, setManagerEmail] = useState("");
-    const [managerPhone, setManagerPhone] = useState("");
-    const [managerPassword, setManagerPassword] = useState("");
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+    const form = useForm<CreateBranchFormValues>({
+        defaultValues: defaults,
+        mode: "onTouched",
+    });
+
+    useEffect(() => {
+        if (!open) return;
+        form.reset(defaults);
+        setErrorMsg(null);
+    }, [open]);
 
     if (!open) return null;
 
-    function reset() {
-        setName("");
-        setDisplayCode("");
-        setTableCount("8");
-        setCopyFromBranchId("");
-        setManagerName("");
-        setManagerEmail("");
-        setManagerPhone("");
-        setManagerPassword("");
-    }
+    const atLimit = data != null && data.activeCount >= data.maxBranches;
+    const values = form.watch();
 
-    async function onSubmit(e: React.FormEvent) {
-        e.preventDefault();
+    async function onSubmit(raw: CreateBranchFormValues) {
+        setErrorMsg(null);
+        const parsed = createBranchFormSchema.safeParse(raw);
+        if (!parsed.success) {
+            const message =
+                parsed.error.issues[0]?.message || "Check the form.";
+            setErrorMsg(message);
+            for (const issue of parsed.error.issues) {
+                const path = issue.path[0];
+                if (typeof path === "string") {
+                    form.setError(path as keyof CreateBranchFormValues, {
+                        message: issue.message,
+                    });
+                }
+            }
+            return;
+        }
+
+        const payload = parsed.data;
         const body: CreateBranchBody = {
-            name: name.trim(),
-            ...(displayCode.trim() ? { displayCode: displayCode.trim() } : {}),
-            tableCount: Number(tableCount) || 8,
-            ...(copyFromBranchId ? { copyFromBranchId } : {}),
+            name: payload.name.trim(),
+            ...(payload.displayCode?.trim()
+                ? { displayCode: payload.displayCode.trim() }
+                : {}),
+            tableCount:
+                payload.serviceMode === "BAKERY" ? 1 : payload.tableCount,
+            serviceMode: payload.serviceMode,
+            ...(payload.copyFromBranchId
+                ? { copyFromBranchId: payload.copyFromBranchId }
+                : {}),
             ...(tenantId ? { tenantId } : {}),
             manager: {
-                name: managerName.trim(),
-                password: managerPassword,
-                ...(managerEmail.trim() ? { email: managerEmail.trim() } : {}),
-                ...(managerPhone.trim() ? { phone: managerPhone.trim() } : {}),
+                name: payload.managerName.trim(),
+                password: payload.managerPassword,
+                ...(payload.managerEmail?.trim()
+                    ? { email: payload.managerEmail.trim() }
+                    : {}),
+                phone: payload.managerPhone.trim(),
             },
         };
+
         try {
             await createBranch(body).unwrap();
             toast.success(t("branchCreated"));
-            reset();
+            form.reset(defaults);
             onClose();
         } catch (err) {
             toast.fromUnknown(err, t("branchCreateError"));
+            setErrorMsg(t("branchCreateError"));
         }
     }
 
-    const atLimit = data != null && data.activeCount >= data.maxBranches;
+    const isBakery = values.serviceMode === "BAKERY";
 
     return (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/40">
+        <div className="fixed inset-0 z-50">
             <button
                 type="button"
-                className="absolute inset-0 cursor-default"
+                className="absolute inset-0 bg-black/55 backdrop-blur-[3px]"
                 aria-label={t("closeBranchMenu")}
                 onClick={onClose}
             />
-            <aside className="relative z-10 flex h-full w-full max-w-md flex-col border-l border-hairline bg-card shadow-2xl">
-                <div className="flex items-start justify-between gap-3 border-b border-hairline px-5 py-4">
+            <aside className="absolute inset-y-0 right-0 z-10 flex h-full w-[24rem] max-w-[calc(100vw-1rem)] flex-col border-l border-hairline bg-background shadow-2xl animate-in slide-in-from-right duration-300">
+                <div className="flex items-start justify-between gap-3 border-b border-hairline px-5 py-3">
                     <div>
-                        <h2 className="text-[17px] font-semibold">
+                        <h2 className="text-[16px] font-semibold">
                             {t("addBranchTitle")}
                         </h2>
-                        <p className="mt-1 text-[12px] text-slate-gray">
-                            {t("addBranchDesc")}
+                        <p className="mt-0.5 text-[12px] text-slate-gray">
+                            {atLimit
+                                ? `Plan limit reached (${data?.activeCount}/${data?.maxBranches} branches).`
+                                : t("addBranchDesc")}
                         </p>
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="rounded-full p-1 text-slate-gray hover:bg-secondary"
+                        className="rounded-full p-1.5 text-slate-gray hover:bg-secondary hover:text-foreground"
                     >
                         <X className="size-4" />
                     </button>
                 </div>
 
                 <form
-                    onSubmit={onSubmit}
-                    className="flex flex-1 flex-col overflow-y-auto px-5 py-4"
+                    onSubmit={form.handleSubmit(onSubmit)}
+                    className="flex min-h-0 flex-1 flex-col"
                 >
-                    <div className="space-y-4">
-                        <div className="space-y-1.5">
+                    <div className="app-scroll flex-1 space-y-3.5 overflow-y-auto px-5 py-4">
+                        {atLimit ? (
+                            <p className="rounded-[10px] border border-hairline bg-secondary/50 px-3 py-2 text-[12px] text-slate-gray">
+                                Upgrade the plan or archive a branch before
+                                adding another location.
+                            </p>
+                        ) : null}
+
+                        <div className="space-y-1">
                             <Label htmlFor="branch-name">
                                 {t("branchName")}
                             </Label>
                             <Input
                                 id="branch-name"
-                                value={name}
-                                onChange={e => setName(e.target.value)}
-                                required
-                                minLength={2}
+                                className={fieldClass}
+                                disabled={atLimit}
+                                {...form.register("name")}
                             />
+                            {form.formState.errors.name ? (
+                                <p className="text-[12px] text-destructive">
+                                    {form.formState.errors.name.message}
+                                </p>
+                            ) : null}
                         </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="branch-code">
-                                {t("branchCode")}
-                            </Label>
-                            <Input
-                                id="branch-code"
-                                value={displayCode}
-                                onChange={e => setDisplayCode(e.target.value)}
-                                placeholder={t("branchCodeHint")}
-                            />
+
+                        <div className="space-y-1">
+                            <Label>Branch type</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                                {(["RESTAURANT", "BAKERY"] as const).map(
+                                    mode => (
+                                        <button
+                                            key={mode}
+                                            type="button"
+                                            disabled={atLimit}
+                                            onClick={() =>
+                                                form.setValue(
+                                                    "serviceMode",
+                                                    mode,
+                                                )
+                                            }
+                                            className={cn(
+                                                "h-9 rounded-[10px] border text-[13px] font-medium",
+                                                values.serviceMode === mode
+                                                    ? "border-foreground bg-foreground text-background"
+                                                    : "border-hairline bg-card",
+                                            )}
+                                        >
+                                            {mode === "BAKERY"
+                                                ? "Bakery"
+                                                : "Restaurant"}
+                                        </button>
+                                    ),
+                                )}
+                            </div>
                         </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="table-count">
-                                {t("tableCountSeed")}
-                            </Label>
-                            <Input
-                                id="table-count"
-                                type="number"
-                                min={0}
-                                max={60}
-                                value={tableCount}
-                                onChange={e => setTableCount(e.target.value)}
-                            />
+
+                        <div
+                            className={cn(
+                                "grid gap-3",
+                                isBakery ? "grid-cols-1" : "grid-cols-2",
+                            )}
+                        >
+                            <div className="space-y-1">
+                                <Label htmlFor="branch-code">
+                                    {t("branchCode")}
+                                </Label>
+                                <Input
+                                    id="branch-code"
+                                    className={cn(fieldClass, "uppercase")}
+                                    disabled={atLimit}
+                                    placeholder={t("branchCodeHint")}
+                                    {...form.register("displayCode")}
+                                />
+                            </div>
+                            {isBakery ? null : (
+                                <div className="space-y-1">
+                                    <Label htmlFor="table-count">
+                                        {t("tableCountSeed")}
+                                    </Label>
+                                    <Input
+                                        id="table-count"
+                                        type="number"
+                                        min={0}
+                                        max={60}
+                                        className={fieldClass}
+                                        disabled={atLimit}
+                                        {...form.register("tableCount", {
+                                            valueAsNumber: true,
+                                        })}
+                                    />
+                                    {form.formState.errors.tableCount ? (
+                                        <p className="text-[12px] text-destructive">
+                                            {
+                                                form.formState.errors.tableCount
+                                                    .message
+                                            }
+                                        </p>
+                                    ) : null}
+                                </div>
+                            )}
                         </div>
-                        {(data?.data.length ?? 0) > 0 ? (
-                            <div className="space-y-1.5">
+
+                        {!isBakery && (data?.data.length ?? 0) > 0 ? (
+                            <div className="space-y-1">
                                 <Label htmlFor="copy-from">
                                     {t("copyFromBranch")}
                                 </Label>
                                 <select
                                     id="copy-from"
-                                    value={copyFromBranchId}
-                                    onChange={e =>
-                                        setCopyFromBranchId(e.target.value)
-                                    }
-                                    className="h-10 w-full rounded-md border border-hairline bg-card px-3 text-[13px]"
+                                    disabled={atLimit}
+                                    className={cn(
+                                        fieldClass,
+                                        "w-full border bg-card px-3",
+                                    )}
+                                    {...form.register("copyFromBranchId")}
                                 >
                                     <option value="">
                                         {t("copyFromNone")}
@@ -169,87 +282,134 @@ export default function AddBranchSheet({
                             </div>
                         ) : null}
 
-                        <div className="border-t border-hairline pt-4">
-                            <p className="mb-3 text-[12px] font-medium tracking-wide text-slate-gray uppercase">
+                        <div className="border-t border-hairline pt-3.5">
+                            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-gray">
                                 {t("managerSection")}
                             </p>
                             <div className="space-y-3">
-                                <div className="space-y-1.5">
+                                <div className="space-y-1">
                                     <Label htmlFor="mgr-name">
                                         {t("managerName")}
                                     </Label>
                                     <Input
                                         id="mgr-name"
-                                        value={managerName}
-                                        onChange={e =>
-                                            setManagerName(e.target.value)
-                                        }
-                                        required
-                                        minLength={2}
+                                        className={fieldClass}
+                                        disabled={atLimit}
+                                        {...form.register("managerName")}
                                     />
+                                    {form.formState.errors.managerName ? (
+                                        <p className="text-[12px] text-destructive">
+                                            {
+                                                form.formState.errors
+                                                    .managerName.message
+                                            }
+                                        </p>
+                                    ) : null}
                                 </div>
-                                <div className="space-y-1.5">
+                                <div className="space-y-1">
                                     <Label htmlFor="mgr-email">
                                         {t("managerEmail")}
                                     </Label>
                                     <Input
                                         id="mgr-email"
                                         type="email"
-                                        value={managerEmail}
-                                        onChange={e =>
-                                            setManagerEmail(e.target.value)
-                                        }
+                                        className={fieldClass}
+                                        disabled={atLimit}
+                                        {...form.register("managerEmail")}
                                     />
+                                    {form.formState.errors.managerEmail ? (
+                                        <p className="text-[12px] text-destructive">
+                                            {
+                                                form.formState.errors
+                                                    .managerEmail.message
+                                            }
+                                        </p>
+                                    ) : null}
                                 </div>
-                                <div className="space-y-1.5">
+                                <div className="space-y-1">
                                     <Label htmlFor="mgr-phone">
                                         {t("managerPhone")}
                                     </Label>
-                                    <Input
+                                    <EthiopianPhoneInput
                                         id="mgr-phone"
-                                        value={managerPhone}
-                                        onChange={e =>
-                                            setManagerPhone(e.target.value)
+                                        disabled={atLimit}
+                                        value={values.managerPhone}
+                                        onChange={value =>
+                                            form.setValue(
+                                                "managerPhone",
+                                                value,
+                                                {
+                                                    shouldValidate: true,
+                                                },
+                                            )
                                         }
                                     />
+                                    {form.formState.errors.managerPhone ? (
+                                        <p className="text-[12px] text-destructive">
+                                            {
+                                                form.formState.errors
+                                                    .managerPhone.message
+                                            }
+                                        </p>
+                                    ) : null}
                                 </div>
-                                <div className="space-y-1.5">
+                                <div className="space-y-1">
                                     <Label htmlFor="mgr-pass">
                                         {t("managerPassword")}
                                     </Label>
                                     <Input
                                         id="mgr-pass"
                                         type="password"
-                                        value={managerPassword}
-                                        onChange={e =>
-                                            setManagerPassword(e.target.value)
-                                        }
-                                        required
-                                        minLength={6}
+                                        autoComplete="new-password"
+                                        placeholder="Min. 8 characters"
+                                        className={cn(fieldClass, "font-mono")}
+                                        disabled={atLimit}
+                                        {...form.register("managerPassword")}
+                                    />
+                                    {form.formState.errors.managerPassword ? (
+                                        <p className="text-[12px] text-destructive">
+                                            {
+                                                form.formState.errors
+                                                    .managerPassword.message
+                                            }
+                                        </p>
+                                    ) : null}
+                                    <PasswordLiveChecks
+                                        value={values.managerPassword}
                                     />
                                 </div>
                             </div>
                         </div>
+
+                        {errorMsg ? (
+                            <p className="rounded-[10px] border border-destructive/20 bg-destructive/10 px-3 py-2 text-[12px] text-destructive">
+                                {errorMsg}
+                            </p>
+                        ) : null}
                     </div>
 
-                    <div className="mt-auto flex gap-2 border-t border-hairline pt-4">
-                        <Button
+                    <div className="flex items-center justify-end gap-2 border-t border-hairline px-5 py-3">
+                        <button
                             type="button"
-                            variant="outline"
-                            className="flex-1"
                             onClick={onClose}
+                            className="h-8 rounded-full px-3 text-[12px] font-medium text-slate-gray hover:bg-secondary"
                         >
                             {t("closeBranchMenu")}
-                        </Button>
-                        <Button
+                        </button>
+                        <button
                             type="submit"
-                            className="flex-1"
-                            disabled={isLoading || atLimit || !name.trim()}
+                            disabled={isLoading || atLimit}
+                            className="inline-flex h-8 min-w-[108px] items-center justify-center gap-1.5 rounded-full bg-foreground px-4 text-[12px] font-semibold text-background hover:bg-foreground/90 disabled:opacity-50"
                         >
-                            {isLoading
-                                ? t("creatingBranch")
-                                : t("createBranch")}
-                        </Button>
+                            {isLoading ? (
+                                <>
+                                    <Loader2 className="size-3.5 animate-spin" />
+                                    {t("creatingBranch")}
+                                </>
+                            ) : (
+                                t("createBranch")
+                            )}
+                        </button>
                     </div>
                 </form>
             </aside>

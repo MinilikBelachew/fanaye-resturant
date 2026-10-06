@@ -16,6 +16,7 @@ import RoleSwitcher from "@/domains/identity/ui/RoleSwitcher";
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { LocaleSwitcher } from "@/components/theme/LocaleSwitcher";
+import { useAppSelector } from "@/context/hooks";
 
 const NAV_LABEL_KEYS: Record<string, string> = {
     Dashboard: "dashboard",
@@ -41,6 +42,7 @@ const NAV_LABEL_KEYS: Record<string, string> = {
     Approvals: "approvals",
     Payments: "payments",
     "Bill requests": "billRequests",
+    "New sale": "newSale",
     "Cash drops": "cashDrops",
     "Closed Bills": "closedBills",
     Reconciliation: "reconciliation",
@@ -59,7 +61,12 @@ function CompactNav({ role }: { role: Role }) {
     const pathname = usePathname();
     const tNav = useTranslations("appNav");
     const home = homePathForRole(role);
-    const items = navForRole(role).flatMap(section => section.items);
+    const serviceMode = useAppSelector(
+        state => state.identity.session?.serviceMode,
+    );
+    const items = navForRole(role, serviceMode).flatMap(
+        section => section.items,
+    );
 
     return (
         <nav className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
@@ -103,6 +110,10 @@ export default function ResponsiveDeskShell({
     const home = homePathForRole(role);
     const stationQueueHome = station && pathname === home;
     const roleLabel = tRoles.has(role) ? tRoles(role) : role;
+    const serviceMode = useAppSelector(
+        state => state.identity.session?.serviceMode,
+    );
+    const hideNotifications = serviceMode === "BAKERY" && role === "cashier";
 
     return (
         <div className="flex h-svh overflow-hidden bg-white dark:bg-background">
@@ -119,7 +130,7 @@ export default function ResponsiveDeskShell({
                             <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1">
                                 {stationQueueHome ? (
                                     <StationTopBarTools search={false} />
-                                ) : (
+                                ) : hideNotifications ? null : (
                                     <OpsNotificationsBell />
                                 )}
                                 <LocaleSwitcher className="scale-90 origin-right sm:scale-100" />

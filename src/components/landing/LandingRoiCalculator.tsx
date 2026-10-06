@@ -30,13 +30,13 @@ export default function LandingRoiCalculator() {
             <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <ScrollReveal className="text-center max-w-2xl mx-auto">
-                    <div className="inline-flex items-center gap-1.5 rounded-full border border-orange-500/20 bg-orange-500/10 px-3 py-0.5 text-[11px] font-medium text-orange-600 dark:text-orange-400">
+                    <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-3 py-0.5 text-[11px] font-medium text-muted-foreground">
                         <Calculator className="size-3" />
                         <span>{t("badge")}</span>
                     </div>
                     <h2 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                         {t("titlePrefix")}
-                        <span className="bg-gradient-to-r from-orange-500 to-rose-500 bg-clip-text text-transparent">
+                        <span className="text-foreground">
                             {t("titleHighlight")}
                         </span>
                     </h2>
@@ -59,7 +59,7 @@ export default function LandingRoiCalculator() {
                                     >
                                         {t("activeTables")}
                                     </label>
-                                    <span className="rounded-lg border border-border bg-background px-2.5 py-0.5 font-mono text-xs font-bold text-orange-600 dark:text-orange-400">
+                                    <span className="rounded-lg border border-border bg-background px-2.5 py-0.5 font-mono text-xs font-bold text-foreground">
                                         {tables} {t("tablesUnit")}
                                     </span>
                                 </div>
@@ -70,8 +70,10 @@ export default function LandingRoiCalculator() {
                                     max="150"
                                     step="5"
                                     value={tables}
-                                    onChange={e => setTables(Number(e.target.value))}
-                                    className="w-full accent-orange-500 cursor-pointer h-1.5 bg-secondary rounded-lg appearance-none"
+                                    onChange={e =>
+                                        setTables(Number(e.target.value))
+                                    }
+                                    className="w-full accent-foreground cursor-pointer h-1.5 bg-secondary rounded-lg appearance-none"
                                 />
                                 <div className="flex justify-between text-[10px] text-muted-foreground">
                                     <span>{t("tablesBoutique")}</span>
@@ -88,7 +90,7 @@ export default function LandingRoiCalculator() {
                                     >
                                         {t("dailyOrders")}
                                     </label>
-                                    <span className="rounded-lg border border-border bg-background px-2.5 py-0.5 font-mono text-xs font-bold text-orange-600 dark:text-orange-400">
+                                    <span className="rounded-lg border border-border bg-background px-2.5 py-0.5 font-mono text-xs font-bold text-foreground">
                                         {dailyOrders} {t("ordersUnit")}
                                     </span>
                                 </div>
@@ -99,8 +101,10 @@ export default function LandingRoiCalculator() {
                                     max="1000"
                                     step="10"
                                     value={dailyOrders}
-                                    onChange={e => setDailyOrders(Number(e.target.value))}
-                                    className="w-full accent-orange-500 cursor-pointer h-1.5 bg-secondary rounded-lg appearance-none"
+                                    onChange={e =>
+                                        setDailyOrders(Number(e.target.value))
+                                    }
+                                    className="w-full accent-foreground cursor-pointer h-1.5 bg-secondary rounded-lg appearance-none"
                                 />
                                 <div className="flex justify-between text-[10px] text-muted-foreground">
                                     <span>{t("ordersMin")}</span>
@@ -117,7 +121,7 @@ export default function LandingRoiCalculator() {
                                     >
                                         {t("avgCheck")}
                                     </label>
-                                    <span className="rounded-lg border border-border bg-background px-2.5 py-0.5 font-mono text-xs font-bold text-orange-600 dark:text-orange-400">
+                                    <span className="rounded-lg border border-border bg-background px-2.5 py-0.5 font-mono text-xs font-bold text-foreground">
                                         ${avgCheck}.00
                                     </span>
                                 </div>
@@ -128,8 +132,10 @@ export default function LandingRoiCalculator() {
                                     max="200"
                                     step="5"
                                     value={avgCheck}
-                                    onChange={e => setAvgCheck(Number(e.target.value))}
-                                    className="w-full accent-orange-500 cursor-pointer h-1.5 bg-secondary rounded-lg appearance-none"
+                                    onChange={e =>
+                                        setAvgCheck(Number(e.target.value))
+                                    }
+                                    className="w-full accent-foreground cursor-pointer h-1.5 bg-secondary rounded-lg appearance-none"
                                 />
                                 <div className="flex justify-between text-[10px] text-muted-foreground">
                                     <span>{t("checkCafe")}</span>
@@ -139,19 +145,23 @@ export default function LandingRoiCalculator() {
                         </div>
 
                         {/* Right Computed Output */}
-                        <div className="lg:col-span-6 rounded-xl border border-orange-500/30 bg-gradient-to-br from-orange-500/10 via-amber-500/5 to-transparent p-5 sm:p-6 space-y-4">
+                        <div className="lg:col-span-6 rounded-xl border border-border bg-gradient-to-br from-secondary/80 via-card to-card p-5 sm:p-6 space-y-4">
                             <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-foreground">
                                     {t("annualValue")}
                                 </span>
-                                <span className="rounded-full bg-emerald-500/10 px-2 py-0.2 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                                <span className="rounded-full bg-secondary px-2 py-0.2 text-[10px] font-bold text-foreground">
                                     +ROI Positive
                                 </span>
                             </div>
 
                             <div>
                                 <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-foreground">
-                                    ${totalAnnualValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                    $
+                                    {totalAnnualValue.toLocaleString(
+                                        undefined,
+                                        { maximumFractionDigits: 0 },
+                                    )}
                                 </span>
                                 <span className="text-xs font-semibold text-muted-foreground ml-1.5">
                                     {t("perYear")}
@@ -160,27 +170,39 @@ export default function LandingRoiCalculator() {
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
                                 <div className="rounded-lg border border-border/80 bg-background/80 p-2.5 space-y-0.5">
-                                    <div className="flex items-center gap-1 text-emerald-600 text-[10px] font-semibold">
+                                    <div className="flex items-center gap-1 text-foreground text-[10px] font-semibold">
                                         <ShieldCheck className="size-3" />
                                         <span>{t("antiFraudSavings")}</span>
                                     </div>
                                     <p className="font-mono text-xs sm:text-sm font-bold text-foreground">
-                                        +${(monthlyFraudSavings * 12).toLocaleString(undefined, { maximumFractionDigits: 0 })}{t("perYr")}
+                                        +$
+                                        {(
+                                            monthlyFraudSavings * 12
+                                        ).toLocaleString(undefined, {
+                                            maximumFractionDigits: 0,
+                                        })}
+                                        {t("perYr")}
                                     </p>
                                 </div>
 
                                 <div className="rounded-lg border border-border/80 bg-background/80 p-2.5 space-y-0.5">
-                                    <div className="flex items-center gap-1 text-orange-600 text-[10px] font-semibold">
+                                    <div className="flex items-center gap-1 text-foreground text-[10px] font-semibold">
                                         <TrendingUp className="size-3" />
                                         <span>{t("turnoverGain")}</span>
                                     </div>
                                     <p className="font-mono text-xs sm:text-sm font-bold text-foreground">
-                                        +${(monthlyTurnoverGain * 12).toLocaleString(undefined, { maximumFractionDigits: 0 })}{t("perYr")}
+                                        +$
+                                        {(
+                                            monthlyTurnoverGain * 12
+                                        ).toLocaleString(undefined, {
+                                            maximumFractionDigits: 0,
+                                        })}
+                                        {t("perYr")}
                                     </p>
                                 </div>
 
                                 <div className="rounded-lg border border-border/80 bg-background/80 p-2.5 space-y-0.5">
-                                    <div className="flex items-center gap-1 text-purple-600 text-[10px] font-semibold">
+                                    <div className="flex items-center gap-1 text-muted-foreground text-[10px] font-semibold">
                                         <Clock className="size-3" />
                                         <span>{t("hoursSaved")}</span>
                                     </div>
@@ -193,7 +215,7 @@ export default function LandingRoiCalculator() {
                             <div className="pt-1">
                                 <Link
                                     href="/sign-in"
-                                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600 hover:bg-orange-700 py-2.5 text-xs font-bold text-white transition"
+                                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-foreground hover:bg-foreground/90 py-2.5 text-xs font-bold text-white transition"
                                 >
                                     <span>{t("deployBtn")}</span>
                                     <ArrowRight className="size-3.5" />

@@ -6,6 +6,7 @@ export default function TenantsPage() {
     return (
         <DashboardFrame>
             <PageHeader
+                compact
                 eyebrow="Platform"
                 title="Tenants"
                 description="Each tenant is a restaurant company. Open one for location and house details."

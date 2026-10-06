@@ -72,12 +72,12 @@ export function NetworkGmvGrowthChart({
                                     >
                                         <stop
                                             offset="0%"
-                                            stopColor="#e85d04"
-                                            stopOpacity="0.28"
+                                            stopColor="#171717"
+                                            stopOpacity="0.22"
                                         />
                                         <stop
                                             offset="100%"
-                                            stopColor="#e85d04"
+                                            stopColor="#171717"
                                             stopOpacity="0.0"
                                         />
                                     </linearGradient>
@@ -129,7 +129,7 @@ export function NetworkGmvGrowthChart({
                                     dataKey="networkGmv"
                                     name={t("charts.seriesNetworkGmv")}
                                     type="monotone"
-                                    stroke="#e85d04"
+                                    stroke="#171717"
                                     strokeWidth={2.5}
                                     fill="url(#gmvGrad)"
                                 />
@@ -157,7 +157,7 @@ export function NetworkGmvGrowthChart({
 
             <div className="mt-4 flex items-center justify-center gap-6 text-[12px] font-medium text-slate-gray">
                 <div className="flex items-center gap-1.5">
-                    <span className="size-2.5 rounded-full bg-[#e85d04]" />
+                    <span className="size-2.5 rounded-full bg-[#171717]" />
                     <span>{t("charts.seriesNetworkGmv")}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -240,8 +240,8 @@ export function PlatformHealthRadarChart({
                                 <Radar
                                     name={t("charts.healthScoreSeries")}
                                     dataKey="score"
-                                    stroke="#e85d04"
-                                    fill="#e85d04"
+                                    stroke="#171717"
+                                    fill="#171717"
                                     fillOpacity={0.35}
                                 />
                             </RadarChart>
@@ -272,7 +272,7 @@ export function PlanDistributionChart({
         <div className="flex h-full flex-col justify-between rounded-[16px] border border-hairline bg-card p-6 shadow-subtle">
             <div>
                 <div className="flex items-center gap-2">
-                    <Layers className="size-4 text-orange-500" />
+                    <Layers className="size-4 text-foreground" />
                     <h3 className="text-[17px] font-semibold text-foreground">
                         {t("charts.planMixTitle")}
                     </h3>
@@ -353,7 +353,7 @@ export function PlatformAuditStream({
             <div>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <ShieldCheck className="size-4 text-emerald-500" />
+                        <ShieldCheck className="size-4 text-foreground" />
                         <h3 className="text-[17px] font-semibold text-foreground">
                             {t("charts.auditStreamTitle")}
                         </h3>

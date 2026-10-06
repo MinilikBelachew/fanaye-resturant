@@ -16,6 +16,7 @@ function idempotencyKey() {
 }
 
 export const billingApi = api.injectEndpoints({
+    overrideExisting: true,
     endpoints: builder => ({
         sessionBill: builder.query<SessionBillResponse, string>({
             query: tableSessionId => ({
@@ -176,15 +177,20 @@ export const billingApi = api.injectEndpoints({
                 { type: "Bill", id: arg.tableSessionId },
             ],
         }),
-        cashierPayments: builder.query<{ data: CashierPaymentLogItem[] }, void>(
-            {
-                query: () => ({
-                    url: "/cashier/payments",
-                    method: "GET",
-                }),
-                providesTags: ["Bill"],
-            },
-        ),
+        cashierPayments: builder.query<
+            { data: CashierPaymentLogItem[] },
+            { from?: string; to?: string } | void
+        >({
+            query: arg => ({
+                url: "/cashier/payments",
+                method: "GET",
+                params: {
+                    ...(arg?.from ? { from: arg.from } : {}),
+                    ...(arg?.to ? { to: arg.to } : {}),
+                },
+            }),
+            providesTags: ["Bill"],
+        }),
         cashierPaymentDetail: builder.query<CashierPaymentDetail, string>({
             query: paymentId => ({
                 url: `/cashier/payments/${paymentId}`,

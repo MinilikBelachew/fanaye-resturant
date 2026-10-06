@@ -21,19 +21,20 @@ export default function LiveOpsPage() {
 
     return (
         <DashboardFrame>
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <PageHeader
-                    eyebrow="Overview"
+                    compact
+                    eyebrow="Platform"
                     title="Live ops"
                     description="Open floors, unpaid bills, and active branches across every tenant."
                 />
                 <button
                     type="button"
                     onClick={() => refetch()}
-                    className="inline-flex items-center gap-2 self-start rounded-xl border border-hairline px-3 py-2 text-[12px] font-medium text-foreground hover:bg-surface-ivory"
+                    className="inline-flex h-8 items-center gap-1.5 self-start rounded-full border border-hairline px-3 text-[11px] font-medium text-foreground hover:bg-secondary/50"
                 >
                     <Radio
-                        className={`size-3.5 text-brand ${isFetching ? "animate-pulse" : ""}`}
+                        className={`size-3.5 ${isFetching ? "animate-pulse" : ""}`}
                     />
                     {t("refresh")}
                 </button>
@@ -47,24 +48,25 @@ export default function LiveOpsPage() {
 
             <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-5">
                 <KpiCard
+                    compact
                     label={t("liveOps.kpiOpenSessions")}
                     value={isLoading ? "…" : String(summary?.openSessions ?? 0)}
                     hint={t("liveOps.kpiOpenSessionsHint")}
-                    tone="brand"
                 />
                 <KpiCard
+                    compact
                     label={t("liveOps.kpiOpenOrders")}
                     value={isLoading ? "…" : String(summary?.openOrders ?? 0)}
                     hint={t("liveOps.kpiOpenOrdersHint")}
-                    tone="amber"
                 />
                 <KpiCard
+                    compact
                     label={t("liveOps.kpiUnpaidBills")}
                     value={isLoading ? "…" : String(summary?.unpaidBills ?? 0)}
                     hint={t("liveOps.kpiUnpaidBillsHint")}
-                    tone="emerald"
                 />
                 <KpiCard
+                    compact
                     label={t("liveOps.kpiActiveBranches")}
                     value={
                         isLoading ? "…" : String(summary?.activeBranches ?? 0)
@@ -72,6 +74,7 @@ export default function LiveOpsPage() {
                     hint={t("liveOps.kpiActiveBranchesHint")}
                 />
                 <KpiCard
+                    compact
                     label={t("liveOps.kpiLiveTenants")}
                     value={isLoading ? "…" : String(summary?.liveTenants ?? 0)}
                     hint={t("liveOps.kpiLiveTenantsHint")}
@@ -90,7 +93,7 @@ export default function LiveOpsPage() {
 
                 {isLoading ? (
                     <div className="flex items-center justify-center gap-2 py-16 text-[13px] text-slate-gray">
-                        <Loader2 className="size-4 animate-spin text-brand" />
+                        <Loader2 className="size-4 animate-spin" />
                         {t("liveOps.loadingLiveFloors")}
                     </div>
                 ) : branches.length === 0 ? (
@@ -131,7 +134,7 @@ export default function LiveOpsPage() {
                                         <p className="mt-1 text-[12px] text-slate-gray">
                                             <Link
                                                 href={`/super-admin/tenants/${branch.tenantId}`}
-                                                className="text-brand hover:underline"
+                                                className="font-medium text-foreground hover:underline"
                                             >
                                                 {branch.tenantName}
                                             </Link>

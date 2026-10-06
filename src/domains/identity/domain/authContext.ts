@@ -14,6 +14,7 @@ export type AuthContext = {
     tenantId: string | null;
     branchId: string | null;
     branchName: string | null;
+    serviceMode: string | null;
     staffMembershipId: string | null;
     roleCode: string;
     stationId: string | null;

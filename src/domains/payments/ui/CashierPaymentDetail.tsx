@@ -9,6 +9,7 @@ import { filePublicUrl } from "@/domains/catalog/application/menuImages";
 import { CashierReceiptModal } from "@/domains/payments/ui/CashierReceiptModal";
 import { Button } from "@/components/ui/button";
 import { formatEtb } from "@/lib/money";
+import { useAppSelector } from "@/context/hooks";
 
 export default function CashierPaymentDetail({
     paymentId,
@@ -19,6 +20,9 @@ export default function CashierPaymentDetail({
 }) {
     const t = useTranslations("cashier");
     const tCommon = useTranslations("common");
+    const isBakery =
+        useAppSelector(state => state.identity.session?.serviceMode) ===
+        "BAKERY";
     const { data, isLoading, isError } =
         useCashierPaymentDetailQuery(paymentId);
     const [showBillReceipt, setShowBillReceipt] = useState(false);
@@ -91,26 +95,32 @@ export default function CashierPaymentDetail({
                     </div>
 
                     <dl className="grid gap-3 text-[13px] sm:grid-cols-2">
-                        <Detail
-                            label={tCommon("table")}
-                            value={payment.tableDisplayName}
-                        />
-                        <Detail
-                            label={tCommon("waiter")}
-                            value={payment.waiterName}
-                        />
+                        {isBakery ? null : (
+                            <>
+                                <Detail
+                                    label={tCommon("table")}
+                                    value={payment.tableDisplayName}
+                                />
+                                <Detail
+                                    label={tCommon("waiter")}
+                                    value={payment.waiterName}
+                                />
+                            </>
+                        )}
                         <Detail
                             label={tCommon("bill")}
                             value={payment.billNumber}
                         />
-                        <Detail
-                            label={tCommon("status")}
-                            value={
-                                payment.tableClosed
-                                    ? t("tableClosed")
-                                    : t("tableOpen")
-                            }
-                        />
+                        {isBakery ? null : (
+                            <Detail
+                                label={tCommon("status")}
+                                value={
+                                    payment.tableClosed
+                                        ? t("tableClosed")
+                                        : t("tableOpen")
+                                }
+                            />
+                        )}
                         <Detail
                             label={t("collectedAt")}
                             value={
@@ -212,8 +222,12 @@ export default function CashierPaymentDetail({
                 open={showBillReceipt}
                 onOpenChange={setShowBillReceipt}
                 bill={bill}
-                tableDisplayName={payment.tableDisplayName}
-                waiterName={payment.waiterName}
+                tableDisplayName={
+                    isBakery ? undefined : payment.tableDisplayName
+                }
+                waiterName={isBakery ? undefined : payment.waiterName}
+                showSendToWaiter={!isBakery}
+                hideTable={isBakery}
             />
         </div>
     );

@@ -100,11 +100,33 @@ function paymentTime(payment: CashierPaymentLogItem): Date | null {
     return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function localDayKey(date: Date) {
+export function localDayKey(date: Date) {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, "0");
     const d = String(date.getDate()).padStart(2, "0");
     return `${y}-${m}-${d}`;
+}
+
+export function todayYmd() {
+    return localDayKey(new Date());
+}
+
+export function shiftYmd(ymd: string, days: number) {
+    const date = new Date(`${ymd}T12:00:00`);
+    date.setDate(date.getDate() + days);
+    return localDayKey(date);
+}
+
+export function paymentBusinessDay(
+    payment: CashierPaymentLogItem,
+): string | null {
+    if (payment.businessDate) return payment.businessDate.slice(0, 10);
+    const time = paymentTime(payment);
+    return time ? localDayKey(time) : null;
+}
+
+export function paymentsOnDay(payments: CashierPaymentLogItem[], ymd: string) {
+    return payments.filter(payment => paymentBusinessDay(payment) === ymd);
 }
 
 export function buildHourlyCollections(
@@ -126,19 +148,19 @@ export function buildHourlyCollections(
 export function buildDailyCollectionsTrend(
     payments: CashierPaymentLogItem[],
     days = 7,
+    endYmd = todayYmd(),
 ): RevenueVsCollectionsPoint[] {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const end = new Date(`${endYmd}T12:00:00`);
+    end.setHours(0, 0, 0, 0);
     const map = new Map<string, { collections: number; gross: number }>();
     for (let i = days - 1; i >= 0; i -= 1) {
-        const day = new Date(today);
-        day.setDate(today.getDate() - i);
+        const day = new Date(end);
+        day.setDate(end.getDate() - i);
         map.set(localDayKey(day), { collections: 0, gross: 0 });
     }
     for (const payment of payments) {
-        const time = paymentTime(payment);
-        if (!time) continue;
-        const key = localDayKey(time);
+        const key = paymentBusinessDay(payment);
+        if (!key) continue;
         const row = map.get(key);
         if (!row) continue;
         const amount = Number(payment.amount || 0);
@@ -163,21 +185,22 @@ export function buildWeeklyCashMovement(
     payments: CashierPaymentLogItem[],
     cashDrops: CashDrop[],
     days = 7,
+    endYmd = todayYmd(),
 ): WeeklyCashMovementPoint[] {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const end = new Date(`${endYmd}T12:00:00`);
+    end.setHours(0, 0, 0, 0);
     const map = new Map<string, { digitalInflow: number; cashDrop: number }>();
     for (let i = days - 1; i >= 0; i -= 1) {
-        const day = new Date(today);
-        day.setDate(today.getDate() - i);
+        const day = new Date(end);
+        day.setDate(end.getDate() - i);
         map.set(localDayKey(day), { digitalInflow: 0, cashDrop: 0 });
     }
     for (const payment of payments) {
         const channel = paymentChannel(payment);
         if (channel === "cash") continue;
-        const time = paymentTime(payment);
-        if (!time) continue;
-        const row = map.get(localDayKey(time));
+        const key = paymentBusinessDay(payment);
+        if (!key) continue;
+        const row = map.get(key);
         if (!row) continue;
         row.digitalInflow += Number(payment.amount || 0);
     }

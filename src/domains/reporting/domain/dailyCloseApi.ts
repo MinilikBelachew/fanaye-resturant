@@ -16,6 +16,7 @@ export type DailyCloseSummary = {
     cashierCountedCash: string;
     cashierVariance: string;
     undroppedWaiterCash: string;
+    kitchenTicketValue: string;
 };
 
 export type DailyCloseWaiterLine = {
@@ -47,6 +48,10 @@ export type DailyClosePreview = {
         blockers: DailyCloseBlocker[];
     };
     summary: DailyCloseSummary;
+    orderCount: number;
+    itemCount: number;
+    tableCount: number;
+    openTableCount: number;
     waiters: DailyCloseWaiterLine[];
     stations: DailyCloseStationLine[];
     existingDailyCloseId?: string | null;

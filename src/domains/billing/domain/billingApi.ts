@@ -40,6 +40,7 @@ export type PaymentSummary = {
     collectedAt: string | null;
     verifiedAt: string | null;
     settledAt: string | null;
+    businessDate?: string;
 };
 
 export type SessionBillResponse = {

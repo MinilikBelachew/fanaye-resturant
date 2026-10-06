@@ -2,41 +2,59 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import {
-    Building2,
-    Calendar,
-    CheckCircle2,
-    DollarSign,
-    GitBranch,
-    Loader2,
-    Mail,
-    MapPin,
-    Pencil,
-    Phone,
-    Plus,
-    Shield,
-    Store,
-    Trash2,
-    Users,
-    UtensilsCrossed,
-} from "lucide-react";
+import { Building2, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useRouter } from "@/i18n/navigation";
 import {
     useDeleteSuperAdminTenantMutation,
     useGetSuperAdminTenantByIdQuery,
 } from "@/context/services/superAdminApi";
-import { useListBranchesQuery } from "@/context/services/branchesApi";
+import {
+    useListBranchesQuery,
+    useUpdateBranchMutation,
+} from "@/context/services/branchesApi";
 import { formatEtb } from "@/lib/money";
 import { toast } from "@/lib/toast";
-import EditTenantSheet from "./EditTenantSheet";
-import AddBranchSheet from "./AddBranchSheet";
+import { cn } from "@/lib/utils";
+import dynamic from "next/dynamic";
+
+const EditTenantSheet = dynamic(() => import("./EditTenantSheet"), {
+    ssr: false,
+});
+const AddBranchSheet = dynamic(() => import("./AddBranchSheet"), {
+    ssr: false,
+});
 
 interface TenantDetailViewProps {
     tenantId: string;
+}
+
+function Fact({
+    label,
+    value,
+    mono,
+}: {
+    label: string;
+    value: string;
+    mono?: boolean;
+}) {
+    return (
+        <div className="min-w-0">
+            <p className="text-[11px] font-medium text-slate-gray">{label}</p>
+            <p
+                className={
+                    mono
+                        ? "mt-0.5 truncate font-mono text-[12px] text-slate-gray"
+                        : "mt-0.5 truncate text-[13px] font-medium text-foreground"
+                }
+                title={value}
+            >
+                {value || "—"}
+            </p>
+        </div>
+    );
 }
 
 export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
@@ -53,6 +71,7 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
         error,
         refetch,
     } = useGetSuperAdminTenantByIdQuery(tenantId);
+    const [updateBranch] = useUpdateBranchMutation();
     const { data: branchesRes, refetch: refetchBranches } =
         useListBranchesQuery({ tenantId });
     const [deleteTenant, { isLoading: isDeleting }] =
@@ -63,7 +82,7 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
         return (
             <DashboardFrame>
                 <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
-                    <Loader2 className="size-8 animate-spin text-brand" />
+                    <Loader2 className="size-6 animate-spin text-slate-gray" />
                     <p className="text-[13px] text-slate-gray">
                         {t("detail.loading")}
                     </p>
@@ -77,12 +96,12 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
             <DashboardFrame>
                 <Link
                     href="/super-admin/tenants"
-                    className="text-[14px] text-brand hover:underline font-medium"
+                    className="text-[13px] font-medium text-slate-gray hover:text-foreground"
                 >
                     {t("detail.backToTenants")}
                 </Link>
-                <div className="mt-8 rounded-[16px] border border-destructive/20 bg-destructive/10 p-8 text-center">
-                    <h2 className="text-[18px] font-semibold text-destructive">
+                <div className="mt-8 rounded-2xl border border-destructive/20 bg-destructive/10 p-8 text-center">
+                    <h2 className="text-[16px] font-semibold text-destructive">
                         {t("detail.notFoundTitle")}
                     </h2>
                     <p className="mt-2 text-[13px] text-slate-gray">
@@ -91,7 +110,7 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                     <div className="mt-4">
                         <Link
                             href="/super-admin/tenants"
-                            className="inline-flex rounded-xl bg-foreground px-4 py-2 text-[13px] font-medium text-background"
+                            className="inline-flex rounded-full bg-foreground px-4 py-2 text-[13px] font-medium text-background"
                         >
                             {t("detail.returnToFleetTable")}
                         </Link>
@@ -101,111 +120,44 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
         );
     }
 
-    const facts = [
+    const metrics = [
         {
-            id: "city",
-            label: t("detail.factCity"),
-            value: tenant.city,
-            icon: MapPin,
+            label: t("todayGmv"),
+            value: tenant.gmvTodayFormatted || formatEtb(tenant.gmvToday),
         },
         {
-            id: "area",
-            label: t("detail.factAreaDistrict"),
-            value: tenant.area || t("detail.defaultArea"),
-            icon: MapPin,
-        },
-        {
-            id: "address",
-            label: t("detail.factPhysicalAddress"),
-            value: tenant.address,
-            icon: Store,
-        },
-        {
-            id: "phone",
-            label: t("detail.factPrimaryPhone"),
-            value: tenant.phone,
-            icon: Phone,
-        },
-        {
-            id: "email",
-            label: t("detail.factContactEmail"),
-            value: tenant.email,
-            icon: Mail,
-        },
-        {
-            id: "manager",
-            label: t("detail.factHouseManager"),
-            value: tenant.manager,
-            icon: Users,
-        },
-        {
-            id: "hours",
-            label: t("detail.factOperatingHours"),
-            value: tenant.hours,
-            icon: Calendar,
-        },
-        {
-            id: "concept",
-            label: t("detail.factConceptCuisine"),
-            value: tenant.concept,
-            icon: UtensilsCrossed,
-        },
-        {
-            id: "branches",
-            label: t("detail.factActiveBranches"),
+            label: t("detail.metricPhysicalBranches"),
             value: String(tenant.branches),
-            icon: GitBranch,
         },
         {
-            id: "tables",
-            label: t("detail.factDiningTables"),
+            label: t("detail.metricFloorTables"),
             value: String(tenant.tableCount),
-            icon: UtensilsCrossed,
         },
         {
-            id: "staff",
-            label: t("detail.factStaffMembers"),
+            label: t("detail.metricStaffMembers"),
             value: String(tenant.staffCount),
-            icon: Users,
-        },
-        {
-            id: "subscriptionSla",
-            label: t("detail.factSubscriptionSla"),
-            value: tenant.plan,
-            icon: Shield,
-        },
-        {
-            id: "provisionedOn",
-            label: t("detail.factProvisionedOn"),
-            value: tenant.provisionedAt,
-            icon: Calendar,
-        },
-        {
-            id: "tenantUuid",
-            label: t("detail.factTenantUuid"),
-            value: tenant.id,
-            icon: CheckCircle2,
         },
     ];
+
+    const branches = branchesRes?.data ?? tenant.branchesList ?? [];
 
     return (
         <DashboardFrame>
             <Link
                 href="/super-admin/tenants"
-                className="text-[14px] text-brand hover:underline font-medium inline-flex items-center gap-1"
+                className="text-[13px] font-medium text-slate-gray hover:text-foreground"
             >
                 {t("detail.backToTenantsFleet")}
             </Link>
 
-            {/* Tenant Title & Header Capsule */}
             <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
-                <div className="flex items-start gap-4">
-                    <div className="flex size-16 shrink-0 items-center justify-center rounded-[18px] border border-hairline bg-surface-ivory text-brand shadow-xs">
-                        <Building2 className="size-8" />
+                <div className="flex min-w-0 items-start gap-3">
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-hairline bg-secondary text-foreground">
+                        <Building2 className="size-5" />
                     </div>
-                    <div>
-                        <div className="flex flex-wrap items-center gap-2.5">
-                            <h1 className="text-[28px] font-bold tracking-tight text-foreground">
+                    <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <h1 className="text-[22px] font-semibold tracking-tight text-foreground">
                                 {tenant.name}
                             </h1>
                             <Badge
@@ -215,33 +167,28 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                             >
                                 {tenant.active ? t("active") : t("suspended")}
                             </Badge>
-                            <Badge
-                                variant="outline"
-                                className="capitalize text-[12px]"
-                            >
-                                {t("detail.planSlaBadge", {
-                                    plan: tenant.plan,
-                                })}
+                            <Badge variant="outline" className="capitalize">
+                                {tenant.plan}
                             </Badge>
                         </div>
-                        <p className="mt-1 text-[14px] text-slate-gray">
-                            {tenant.concept} ·{" "}
-                            {tenant.area ? `${tenant.area}, ` : ""}
-                            {tenant.city}
-                            {tenant.legalName && (
-                                <span className="text-slate-gray/70">
+                        <p className="mt-1 text-[13px] text-slate-gray">
+                            {[tenant.concept, tenant.area, tenant.city]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            {tenant.legalName ? (
+                                <span className="text-slate-gray/80">
                                     {" "}
-                                    ({tenant.legalName})
+                                    · {tenant.legalName}
                                 </span>
-                            )}
+                            ) : null}
                         </p>
                     </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2">
                     <button
                         type="button"
                         onClick={() => setEditOpen(true)}
-                        className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-brand/90"
+                        className="inline-flex h-8 items-center gap-1.5 rounded-full bg-foreground px-3.5 text-[12px] font-medium text-background hover:bg-foreground/90"
                     >
                         <Pencil className="size-3.5" />
                         {t("editTenant")}
@@ -252,7 +199,7 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                             setDeleteConfirmName("");
                             setDeleteOpen(true);
                         }}
-                        className="inline-flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-[13px] font-semibold text-destructive hover:bg-destructive/15"
+                        className="inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[12px] font-medium text-destructive hover:bg-destructive/10"
                     >
                         <Trash2 className="size-3.5" />
                         {t("detail.deleteRestaurant")}
@@ -260,79 +207,54 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                 </div>
             </div>
 
-            {/* Live Metrics Row */}
-            <div className="mt-6 grid gap-3 sm:grid-cols-4">
-                <div className="rounded-[14px] border border-hairline bg-card p-4">
-                    <div className="flex items-center justify-between text-slate-gray">
-                        <span className="text-[11px] font-medium">
-                            {t("todayGmv")}
-                        </span>
-                        <DollarSign className="size-4 text-brand" />
+            <div className="mt-5 grid grid-cols-2 overflow-hidden rounded-2xl border border-hairline bg-card sm:grid-cols-4">
+                {metrics.map((metric, index) => (
+                    <div
+                        key={metric.label}
+                        className={cn(
+                            "px-4 py-3.5",
+                            index % 2 === 1 && "border-l border-hairline",
+                            index >= 2 &&
+                                "border-t border-hairline sm:border-t-0",
+                            index > 0 && "sm:border-l sm:border-hairline",
+                        )}
+                    >
+                        <p className="text-[11px] font-medium text-slate-gray">
+                            {metric.label}
+                        </p>
+                        <p className="mt-1 text-[18px] font-semibold tracking-tight text-foreground">
+                            {metric.value}
+                        </p>
                     </div>
-                    <p className="mt-1.5 text-[20px] font-bold tracking-tight text-foreground">
-                        {tenant.gmvTodayFormatted || formatEtb(tenant.gmvToday)}
-                    </p>
-                </div>
-                <div className="rounded-[14px] border border-hairline bg-card p-4">
-                    <div className="flex items-center justify-between text-slate-gray">
-                        <span className="text-[11px] font-medium">
-                            {t("detail.metricPhysicalBranches")}
-                        </span>
-                        <GitBranch className="size-4 text-brand" />
-                    </div>
-                    <p className="mt-1.5 text-[20px] font-bold tracking-tight text-foreground">
-                        {tenant.branches}
-                    </p>
-                </div>
-                <div className="rounded-[14px] border border-hairline bg-card p-4">
-                    <div className="flex items-center justify-between text-slate-gray">
-                        <span className="text-[11px] font-medium">
-                            {t("detail.metricFloorTables")}
-                        </span>
-                        <UtensilsCrossed className="size-4 text-brand" />
-                    </div>
-                    <p className="mt-1.5 text-[20px] font-bold tracking-tight text-foreground">
-                        {tenant.tableCount}
-                    </p>
-                </div>
-                <div className="rounded-[14px] border border-hairline bg-card p-4">
-                    <div className="flex items-center justify-between text-slate-gray">
-                        <span className="text-[11px] font-medium">
-                            {t("detail.metricStaffMembers")}
-                        </span>
-                        <Users className="size-4 text-brand" />
-                    </div>
-                    <p className="mt-1.5 text-[20px] font-bold tracking-tight text-foreground">
-                        {tenant.staffCount}
-                    </p>
-                </div>
+                ))}
             </div>
 
-            {/* Provisioned Branches Section */}
-            <div className="mt-6">
+            <section className="mt-6">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                    <h2 className="text-[15px] font-semibold">
-                        {t("detail.provisionedBranches")}
-                    </h2>
-                    <Button
-                        size="sm"
-                        className="gap-1.5"
+                    <div>
+                        <h2 className="text-[14px] font-semibold text-foreground">
+                            {t("detail.provisionedBranches")}
+                        </h2>
+                        {branchesRes ? (
+                            <p className="mt-0.5 text-[12px] text-slate-gray">
+                                {tOwner("branchLimit", {
+                                    active: branchesRes.activeCount,
+                                    max: branchesRes.maxBranches,
+                                })}
+                            </p>
+                        ) : null}
+                    </div>
+                    <button
+                        type="button"
                         onClick={() => setAddBranchOpen(true)}
+                        className="inline-flex h-8 items-center gap-1.5 rounded-full border border-hairline bg-card px-3 text-[12px] font-medium text-foreground hover:bg-secondary"
                     >
                         <Plus className="size-3.5" />
                         {tOwner("addBranch")}
-                    </Button>
+                    </button>
                 </div>
-                {branchesRes ? (
-                    <p className="mb-3 text-[12px] text-slate-gray">
-                        {tOwner("branchLimit", {
-                            active: branchesRes.activeCount,
-                            max: branchesRes.maxBranches,
-                        })}
-                    </p>
-                ) : null}
-                <div className="grid gap-3 sm:grid-cols-2">
-                    {(branchesRes?.data ?? tenant.branchesList ?? []).map(
+                <div className="grid gap-2 sm:grid-cols-2">
+                    {branches.map(
                         (b: {
                             id: string;
                             name: string;
@@ -342,112 +264,165 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                             tablesCount?: number;
                             staffCount: number;
                             timezone?: string;
+                            serviceMode?: string;
                             manager?: { name: string | null } | null;
                         }) => (
                             <div
                                 key={b.id}
-                                className="rounded-[14px] border border-hairline bg-card p-4 flex items-center justify-between"
+                                className="flex items-center justify-between gap-3 rounded-2xl border border-hairline bg-card px-4 py-3"
                             >
-                                <div className="flex items-center gap-3">
-                                    <div className="flex size-10 items-center justify-center rounded-xl bg-surface-ivory text-foreground font-semibold text-xs border border-hairline">
-                                        {b.displayCode ||
-                                            t("detail.branchFallbackCode")}
-                                    </div>
-                                    <div>
-                                        <p className="font-semibold text-[14px]">
+                                <div className="min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        <span className="rounded-md bg-secondary px-1.5 py-0.5 font-mono text-[10px] font-medium text-slate-gray">
+                                            {b.displayCode ||
+                                                t("detail.branchFallbackCode")}
+                                        </span>
+                                        <p className="truncate text-[13px] font-semibold text-foreground">
                                             {b.name}
                                         </p>
-                                        <p className="text-[12px] text-slate-gray">
-                                            {t("detail.branchMeta", {
-                                                tablesCount:
-                                                    b.tableCount ??
-                                                    b.tablesCount ??
-                                                    0,
-                                                staffCount: b.staffCount,
-                                                timezone:
-                                                    b.timezone ||
-                                                    "Africa/Addis_Ababa",
-                                            })}
-                                        </p>
-                                        {b.manager?.name ? (
-                                            <p className="mt-0.5 text-[11px] text-slate-gray">
-                                                {tOwner("managerLabel")}:{" "}
-                                                {b.manager.name}
-                                            </p>
-                                        ) : null}
+                                        <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-slate-gray">
+                                            {b.serviceMode === "BAKERY"
+                                                ? "Bakery"
+                                                : "Restaurant"}
+                                        </span>
                                     </div>
+                                    <p className="mt-1 text-[12px] text-slate-gray">
+                                        {t("detail.branchMeta", {
+                                            tablesCount:
+                                                b.tableCount ??
+                                                b.tablesCount ??
+                                                0,
+                                            staffCount: b.staffCount,
+                                            timezone:
+                                                b.timezone ||
+                                                "Africa/Addis_Ababa",
+                                        })}
+                                        {b.manager?.name
+                                            ? ` · ${b.manager.name}`
+                                            : ""}
+                                    </p>
                                 </div>
-                                <Badge
-                                    variant={
-                                        b.status === "ACTIVE"
-                                            ? "success"
-                                            : "secondary"
-                                    }
-                                >
-                                    {b.status}
-                                </Badge>
+                                <div className="flex shrink-0 flex-col items-end gap-1">
+                                    <Badge
+                                        variant={
+                                            b.status === "ACTIVE"
+                                                ? "success"
+                                                : "secondary"
+                                        }
+                                    >
+                                        {b.status}
+                                    </Badge>
+                                    <button
+                                        type="button"
+                                        className="text-[11px] text-slate-gray underline-offset-2 hover:underline"
+                                        onClick={() =>
+                                            void updateBranch({
+                                                branchId: b.id,
+                                                body: {
+                                                    tenantId,
+                                                    serviceMode:
+                                                        b.serviceMode ===
+                                                        "BAKERY"
+                                                            ? "RESTAURANT"
+                                                            : "BAKERY",
+                                                },
+                                            })
+                                                .unwrap()
+                                                .then(() => refetchBranches())
+                                                .catch(() =>
+                                                    toast.error(
+                                                        "Could not update branch type.",
+                                                    ),
+                                                )
+                                        }
+                                    >
+                                        {b.serviceMode === "BAKERY"
+                                            ? "Make restaurant"
+                                            : "Make bakery"}
+                                    </button>
+                                </div>
                             </div>
                         ),
                     )}
                 </div>
-            </div>
+            </section>
 
-            <AddBranchSheet
-                open={addBranchOpen}
-                tenantId={tenantId}
-                onClose={() => {
-                    setAddBranchOpen(false);
-                    void refetch();
-                    void refetchBranches();
-                }}
-            />
-            {/* Restaurant Detail Facts */}
-            <div className="mt-6 overflow-hidden rounded-[16px] border border-hairline bg-card">
-                <div className="border-b border-hairline px-5 py-3.5 bg-surface-ivory/50">
-                    <h2 className="text-[15px] font-semibold">
+            <section className="mt-6 overflow-hidden rounded-2xl border border-hairline bg-card">
+                <div className="border-b border-hairline px-4 py-3">
+                    <h2 className="text-[14px] font-semibold text-foreground">
                         {t("detail.specTitle")}
                     </h2>
                     <p className="text-[12px] text-slate-gray">
                         {t("detail.specSubtitle")}
                     </p>
                 </div>
-                <dl className="divide-y divide-hairline">
-                    {facts.map(fact => {
-                        const Icon = fact.icon;
-                        return (
-                            <div
-                                key={fact.id}
-                                className="grid gap-1 px-5 py-3 sm:grid-cols-[200px_minmax(0,1fr)] sm:items-center hover:bg-surface-ivory/30 transition-colors"
-                            >
-                                <dt className="flex items-center gap-2 text-[12px] font-medium text-slate-gray">
-                                    <Icon className="size-3.5 text-slate-gray/70" />
-                                    <span>{fact.label}</span>
-                                </dt>
-                                <dd
-                                    className={
-                                        fact.id === "subscriptionSla"
-                                            ? "text-[14px] font-semibold text-brand capitalize"
-                                            : fact.id === "tenantUuid"
-                                              ? "text-[13px] font-mono text-slate-gray"
-                                              : "text-[14px] font-medium text-foreground"
-                                    }
-                                >
-                                    {fact.value}
-                                </dd>
-                            </div>
-                        );
-                    })}
-                </dl>
-            </div>
+                <div className="grid gap-x-6 gap-y-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <Fact label={t("detail.factCity")} value={tenant.city} />
+                    <Fact
+                        label={t("detail.factAreaDistrict")}
+                        value={tenant.area || t("detail.defaultArea")}
+                    />
+                    <Fact
+                        label={t("detail.factPhysicalAddress")}
+                        value={tenant.address}
+                    />
+                    <Fact
+                        label={t("detail.factPrimaryPhone")}
+                        value={tenant.phone}
+                    />
+                    <Fact
+                        label={t("detail.factContactEmail")}
+                        value={tenant.email}
+                    />
+                    <Fact
+                        label={t("detail.factHouseManager")}
+                        value={tenant.manager}
+                    />
+                    <Fact
+                        label={t("detail.factOperatingHours")}
+                        value={tenant.hours}
+                    />
+                    <Fact
+                        label={t("detail.factConceptCuisine")}
+                        value={tenant.concept}
+                    />
+                    <Fact
+                        label={t("detail.factSubscriptionSla")}
+                        value={tenant.plan}
+                    />
+                    <Fact
+                        label={t("detail.factProvisionedOn")}
+                        value={tenant.provisionedAt}
+                    />
+                    <Fact
+                        label={t("detail.factTenantUuid")}
+                        value={tenant.id}
+                        mono
+                    />
+                </div>
+            </section>
 
-            <EditTenantSheet
-                open={editOpen}
-                tenant={tenant}
-                onClose={() => setEditOpen(false)}
-                onSuccess={() => {
-                    void refetch();
-                }}
-            />
+            {addBranchOpen ? (
+                <AddBranchSheet
+                    open={addBranchOpen}
+                    tenantId={tenantId}
+                    onClose={() => {
+                        setAddBranchOpen(false);
+                        void refetch();
+                        void refetchBranches();
+                    }}
+                />
+            ) : null}
+            {editOpen ? (
+                <EditTenantSheet
+                    open={editOpen}
+                    tenant={tenant}
+                    onClose={() => setEditOpen(false)}
+                    onSuccess={() => {
+                        void refetch();
+                    }}
+                />
+            ) : null}
 
             {deleteOpen ? (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -455,7 +430,7 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby="delete-tenant-title"
-                        className="w-full max-w-md rounded-[16px] border border-hairline bg-card p-5 shadow-lg"
+                        className="w-full max-w-md rounded-2xl border border-hairline bg-card p-5 shadow-lg"
                     >
                         <h3
                             id="delete-tenant-title"
@@ -472,18 +447,18 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                             {t("detail.deleteConfirmHint")}
                         </p>
                         <Input
-                            className="mt-2 h-11 rounded-[12px]"
+                            className="mt-2 h-10 rounded-xl"
                             value={deleteConfirmName}
                             onChange={e => setDeleteConfirmName(e.target.value)}
                             placeholder={t("detail.deleteConfirmPlaceholder")}
                             autoFocus
                         />
-                        <div className="mt-5 flex flex-wrap justify-end gap-2">
+                        <div className="mt-5 flex justify-end gap-2">
                             <button
                                 type="button"
                                 disabled={isDeleting}
                                 onClick={() => setDeleteOpen(false)}
-                                className="rounded-xl px-4 py-2.5 text-[13px] font-medium text-slate-gray hover:bg-secondary"
+                                className="h-8 rounded-full px-3 text-[12px] font-medium text-slate-gray hover:bg-secondary"
                             >
                                 {t("detail.deleteCancelling")}
                             </button>
@@ -517,10 +492,10 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                                         toast.error(message);
                                     }
                                 }}
-                                className="inline-flex min-w-[140px] items-center justify-center gap-2 rounded-xl bg-destructive px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-destructive/90 disabled:opacity-50"
+                                className="inline-flex h-8 min-w-[120px] items-center justify-center gap-1.5 rounded-full bg-destructive px-3.5 text-[12px] font-medium text-white hover:bg-destructive/90 disabled:opacity-50"
                             >
                                 {isDeleting ? (
-                                    <Loader2 className="size-4 animate-spin" />
+                                    <Loader2 className="size-3.5 animate-spin" />
                                 ) : (
                                     <Trash2 className="size-3.5" />
                                 )}

@@ -17,7 +17,7 @@ import LandingFooter from "./LandingFooter";
 
 export default function LandingPage() {
     return (
-        <div className="relative min-h-screen w-full overflow-x-hidden no-scrollbar bg-background text-foreground scroll-smooth selection:bg-orange-500/30 selection:text-orange-900 dark:selection:text-orange-200">
+        <div className="relative min-h-screen w-full overflow-x-hidden no-scrollbar bg-background text-foreground scroll-smooth selection:bg-foreground/10">
             <LandingNavbar />
             <main className="flex flex-col">
                 <LandingHero />

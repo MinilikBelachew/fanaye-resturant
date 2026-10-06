@@ -9,7 +9,7 @@ export default function CashierPage() {
                 compact
                 eyebrow="Cashier desk"
                 title="Money desk"
-                description="Live collections, payment mix, and desk queues — no mock totals."
+                description="Collections for the selected day. Desk queues are live for today only."
             />
             <CashierHomeStats />
         </DashboardFrame>

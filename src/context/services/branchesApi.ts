@@ -20,6 +20,7 @@ export type BranchDto = {
     tableCount: number;
     stationCount: number;
     staffCount: number;
+    serviceMode?: string;
 };
 
 export type BranchListResponse = {
@@ -35,6 +36,7 @@ export type CreateBranchBody = {
     copyFromBranchId?: string;
     tableCount?: number;
     tenantId?: string;
+    serviceMode?: string;
     manager: {
         name: string;
         email?: string;
@@ -48,6 +50,7 @@ export type UpdateBranchBody = {
     displayCode?: string;
     status?: string;
     tenantId?: string;
+    serviceMode?: string;
 };
 
 export const branchesApi = api.injectEndpoints({

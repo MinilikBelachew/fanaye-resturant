@@ -12,7 +12,7 @@ export default function LandingFooter() {
         <footer className="relative border-t border-border/80 bg-card/60 backdrop-blur-2xl">
             {/* Top High-Conversion CTA Banner */}
             <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 -translate-y-8">
-                <div className="relative overflow-hidden rounded-2xl border border-orange-500/40 bg-gradient-to-r from-orange-600 via-amber-600 to-rose-600 p-6 sm:p-8 text-white">
+                <div className="relative overflow-hidden rounded-2xl border border-border bg-foreground p-6 sm:p-8 text-background">
                     <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
                         <div className="space-y-2 text-center lg:text-left max-w-xl">
                             <div className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider backdrop-blur-md">
@@ -22,7 +22,7 @@ export default function LandingFooter() {
                             <h3 className="text-xl sm:text-2xl font-bold tracking-tight leading-snug">
                                 {t("ctaTitle")}
                             </h3>
-                            <p className="text-white/90 text-xs sm:text-sm">
+                            <p className="text-background/70 text-xs sm:text-sm">
                                 {t("ctaDesc")}
                             </p>
                         </div>
@@ -30,7 +30,7 @@ export default function LandingFooter() {
                         <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
                             <Link
                                 href="/sign-in"
-                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-xs sm:text-sm font-bold text-orange-600 hover:bg-white/90 transition"
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-background px-5 py-2.5 text-xs sm:text-sm font-semibold text-foreground hover:bg-background/90 transition"
                             >
                                 <Zap className="size-3.5 fill-current" />
                                 <span>{t("getStarted")}</span>
@@ -63,8 +63,8 @@ export default function LandingFooter() {
                             {t("brandDesc")}
                         </p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span className="size-1.5 rounded-full bg-emerald-500 animate-ping" />
-                            <span className="font-mono text-emerald-600 dark:text-emerald-400 font-semibold text-[11px]">
+                            <span className="size-1.5 rounded-full bg-foreground animate-ping" />
+                            <span className="font-mono text-foreground font-semibold text-[11px]">
                                 {t("meshOnline")}
                             </span>
                         </div>
@@ -222,7 +222,7 @@ export default function LandingFooter() {
                 <div className="mt-8 pt-6 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-muted-foreground">
                     <p>{t("copyright")}</p>
                     <div className="flex items-center gap-3">
-                        <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+                        <span className="flex items-center gap-1 text-foreground font-semibold">
                             <ShieldCheck className="size-3" /> {t("encryption")}
                         </span>
                         <span>•</span>

@@ -20,7 +20,11 @@ import {
 } from "@/context/services/superAdminApi";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
-import CreateTenantSheet from "./CreateTenantSheet";
+import dynamic from "next/dynamic";
+
+const CreateTenantSheet = dynamic(() => import("./CreateTenantSheet"), {
+    ssr: false,
+});
 
 export default function TenantsBoard() {
     const t = useTranslations("tenancy");
@@ -50,11 +54,11 @@ export default function TenantsBoard() {
                         href={`/super-admin/tenants/${row.id}`}
                         className="flex items-center gap-3 group"
                     >
-                        <div className="flex size-10 shrink-0 items-center justify-center rounded-[12px] border border-hairline bg-surface-ivory font-semibold text-brand transition-colors group-hover:border-brand/40 group-hover:bg-brand/5">
+                        <div className="flex size-10 shrink-0 items-center justify-center rounded-[12px] border border-hairline bg-secondary font-semibold text-foreground">
                             <Building2 className="size-5" />
                         </div>
                         <div>
-                            <p className="font-semibold group-hover:text-brand transition-colors">
+                            <p className="font-semibold group-hover:text-foreground transition-colors">
                                 {row.name}
                             </p>
                             <p className="text-[12px] text-slate-gray">
@@ -198,7 +202,7 @@ export default function TenantsBoard() {
                     <button
                         type="button"
                         onClick={() => setIsCreateOpen(true)}
-                        className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-[13px] font-semibold text-white shadow-xs hover:bg-brand/90 transition-all"
+                        className="flex items-center gap-2 rounded-xl bg-foreground px-4 py-2 text-[13px] font-semibold text-background hover:bg-foreground/90 transition-all"
                     >
                         <Plus className="size-4" />
                         <span>{t("board.provisionTenant")}</span>
@@ -280,12 +284,13 @@ export default function TenantsBoard() {
                 </div>
             )}
 
-            {/* Slide-over Provisioning Sheet */}
-            <CreateTenantSheet
-                open={isCreateOpen}
-                onClose={() => setIsCreateOpen(false)}
-                onSuccess={() => refetch()}
-            />
+            {isCreateOpen ? (
+                <CreateTenantSheet
+                    open={isCreateOpen}
+                    onClose={() => setIsCreateOpen(false)}
+                    onSuccess={() => refetch()}
+                />
+            ) : null}
         </div>
     );
 }

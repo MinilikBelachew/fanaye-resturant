@@ -89,13 +89,13 @@ export default function LandingHowItWorks() {
             <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <ScrollReveal className="text-center max-w-2xl mx-auto">
-                    <div className="inline-flex items-center gap-1.5 rounded-full border border-orange-500/20 bg-orange-500/10 px-3 py-0.5 text-[11px] font-medium text-orange-600 dark:text-orange-400">
+                    <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-3 py-0.5 text-[11px] font-medium text-muted-foreground">
                         <Sparkles className="size-3" />
                         <span>{t("badge")}</span>
                     </div>
                     <h2 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                         {t("titlePrefix")}{" "}
-                        <span className="bg-gradient-to-r from-orange-500 to-rose-500 bg-clip-text text-transparent">
+                        <span className="text-foreground">
                             {t("titleHighlight")}
                         </span>
                     </h2>
@@ -105,7 +105,10 @@ export default function LandingHowItWorks() {
                 </ScrollReveal>
 
                 {/* Steps Navigation Bar */}
-                <ScrollReveal delay={0.1} className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <ScrollReveal
+                    delay={0.1}
+                    className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-2.5"
+                >
                     {steps.map((step, idx) => {
                         const StepIcon = step.icon;
                         const isActive = activeStep === idx;
@@ -117,15 +120,29 @@ export default function LandingHowItWorks() {
                                 className={cn(
                                     "flex flex-col items-start p-3 rounded-xl border text-left transition-all cursor-pointer",
                                     isActive
-                                        ? "border-orange-500 bg-orange-500/10"
-                                        : "border-border/70 bg-card/70 hover:bg-secondary hover:border-orange-500/40",
+                                        ? "border-foreground/30 bg-secondary"
+                                        : "border-border/70 bg-card/70 hover:bg-secondary hover:border-border",
                                 )}
                             >
                                 <div className="flex w-full items-center justify-between text-xs font-mono">
-                                    <span className={cn("font-bold", isActive ? "text-orange-600 dark:text-orange-400" : "text-muted-foreground")}>
+                                    <span
+                                        className={cn(
+                                            "font-bold",
+                                            isActive
+                                                ? "text-foreground"
+                                                : "text-muted-foreground",
+                                        )}
+                                    >
                                         STEP {step.num}
                                     </span>
-                                    <StepIcon className={cn("size-3.5", isActive ? "text-orange-500" : "text-muted-foreground")} />
+                                    <StepIcon
+                                        className={cn(
+                                            "size-3.5",
+                                            isActive
+                                                ? "text-foreground"
+                                                : "text-muted-foreground",
+                                        )}
+                                    />
                                 </div>
                                 <h3 className="mt-2 text-xs font-bold text-foreground line-clamp-1">
                                     {step.title}
@@ -139,12 +156,15 @@ export default function LandingHowItWorks() {
                 </ScrollReveal>
 
                 {/* Active Step Feature Box */}
-                <ScrollReveal delay={0.2} className="mt-6 rounded-2xl border border-border/80 bg-card/85 p-5 sm:p-7 backdrop-blur-xl">
+                <ScrollReveal
+                    delay={0.2}
+                    className="mt-6 rounded-2xl border border-border/80 bg-card/85 p-5 sm:p-7 backdrop-blur-xl"
+                >
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
                         {/* Left Details */}
                         <div className="lg:col-span-7 space-y-4">
                             <div className="flex items-center gap-2">
-                                <span className="rounded-md bg-orange-500/10 px-2 py-0.5 font-mono text-xs font-bold text-orange-600 dark:text-orange-400 border border-orange-500/20">
+                                <span className="rounded-md bg-secondary px-2 py-0.5 font-mono text-xs font-bold text-foreground border border-border">
                                     STAGE {current.num}
                                 </span>
                                 <span className="text-xs font-semibold text-muted-foreground">
@@ -158,18 +178,27 @@ export default function LandingHowItWorks() {
 
                             <div className="space-y-2 pt-1">
                                 {current.points.map((pt, i) => (
-                                    <div key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
-                                        <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0 mt-0.5" />
-                                        <span className="text-foreground/90">{pt}</span>
+                                    <div
+                                        key={i}
+                                        className="flex items-start gap-2 text-xs text-muted-foreground"
+                                    >
+                                        <CheckCircle2 className="size-3.5 text-foreground shrink-0 mt-0.5" />
+                                        <span className="text-foreground/90">
+                                            {pt}
+                                        </span>
                                     </div>
                                 ))}
                             </div>
 
                             <div className="pt-3 border-t border-border/50 flex items-center justify-between">
                                 <div className="flex items-center gap-2 text-xs">
-                                    <Zap className="size-3.5 text-orange-500" />
-                                    <span className="text-muted-foreground">{t("speedBenchmark")}</span>
-                                    <span className="font-bold text-emerald-600 font-mono">{current.metric}</span>
+                                    <Zap className="size-3.5 text-foreground" />
+                                    <span className="text-muted-foreground">
+                                        {t("speedBenchmark")}
+                                    </span>
+                                    <span className="font-bold text-foreground font-mono">
+                                        {current.metric}
+                                    </span>
                                 </div>
 
                                 <div className="flex items-center gap-1.5">
@@ -180,7 +209,9 @@ export default function LandingHowItWorks() {
                                             onClick={() => setActiveStep(i)}
                                             className={cn(
                                                 "size-1.5 rounded-full transition-all cursor-pointer",
-                                                activeStep === i ? "w-4 bg-orange-500" : "bg-muted-foreground/30"
+                                                activeStep === i
+                                                    ? "w-4 bg-foreground"
+                                                    : "bg-muted-foreground/30",
                                             )}
                                         />
                                     ))}
@@ -198,8 +229,10 @@ export default function LandingHowItWorks() {
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent flex items-end p-3">
                                 <div className="flex items-center gap-2 text-xs text-white">
-                                    <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-                                    <span className="font-mono">{current.title} • Live Flow</span>
+                                    <span className="size-2 rounded-full bg-foreground animate-pulse" />
+                                    <span className="font-mono">
+                                        {current.title} • Live Flow
+                                    </span>
                                 </div>
                             </div>
                         </div>

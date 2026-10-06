@@ -189,7 +189,7 @@ export default function LandingLiveDemoSimulation() {
                                 <span className="size-2 rounded-full bg-zinc-300 dark:bg-zinc-700" />
                             </div>
                             <span className="text-[11px] font-mono text-muted-foreground flex items-center gap-1.5">
-                                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                <span className="size-1.5 rounded-full bg-foreground animate-pulse" />
                                 fanaye.live://station/
                                 <span className="text-foreground font-semibold">
                                     {activeStation}
@@ -211,7 +211,7 @@ export default function LandingLiveDemoSimulation() {
                                 />
                                 <span>{t("simulateBtn")}</span>
                             </button>
-                            <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                            <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-foreground">
                                 {t("realtimeSync")}
                             </span>
                         </div>
@@ -224,7 +224,7 @@ export default function LandingLiveDemoSimulation() {
                             <div className="space-y-4">
                                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/50 pb-3">
                                     <div className="flex items-center gap-2.5">
-                                        <div className="flex size-9 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500 font-bold text-sm border border-orange-500/20">
+                                        <div className="flex size-9 items-center justify-center rounded-xl bg-secondary text-foreground font-bold text-sm border border-border">
                                             T-08
                                         </div>
                                         <div>
@@ -232,7 +232,7 @@ export default function LandingLiveDemoSimulation() {
                                                 <h3 className="font-bold text-foreground text-sm">
                                                     Table 08 • VIP Patio
                                                 </h3>
-                                                <span className="rounded-full bg-blue-500/10 px-2 py-0.2 text-[10px] font-semibold text-blue-600 dark:text-blue-400">
+                                                <span className="rounded-full bg-secondary px-2 py-0.2 text-[10px] font-semibold text-foreground">
                                                     4 Guests
                                                 </span>
                                             </div>
@@ -251,7 +251,7 @@ export default function LandingLiveDemoSimulation() {
                                     <div className="rounded-xl border border-border/70 bg-background/50 p-3 space-y-2">
                                         <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground pb-1.5 border-b border-border/40">
                                             <span>Kitchen Dispatch</span>
-                                            <span className="text-orange-500 font-mono">
+                                            <span className="text-foreground font-mono">
                                                 2 items
                                             </span>
                                         </div>
@@ -265,7 +265,7 @@ export default function LandingLiveDemoSimulation() {
                                                         Extra Parmigiano
                                                     </p>
                                                 </div>
-                                                <span className="rounded bg-amber-500/10 px-1 py-0.2 text-[9px] text-amber-600">
+                                                <span className="rounded bg-secondary px-1 py-0.2 text-[9px] text-muted-foreground">
                                                     Cooking (3m)
                                                 </span>
                                             </div>
@@ -278,7 +278,7 @@ export default function LandingLiveDemoSimulation() {
                                                         Brioche Bun
                                                     </p>
                                                 </div>
-                                                <span className="rounded bg-emerald-500/10 px-1 py-0.2 text-[9px] text-emerald-600">
+                                                <span className="rounded bg-secondary px-1 py-0.2 text-[9px] text-foreground">
                                                     Ready
                                                 </span>
                                             </div>
@@ -288,7 +288,7 @@ export default function LandingLiveDemoSimulation() {
                                     <div className="rounded-xl border border-border/70 bg-background/50 p-3 space-y-2">
                                         <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground pb-1.5 border-b border-border/40">
                                             <span>Barista & Drinks</span>
-                                            <span className="text-orange-500 font-mono">
+                                            <span className="text-foreground font-mono">
                                                 2 items
                                             </span>
                                         </div>
@@ -302,7 +302,7 @@ export default function LandingLiveDemoSimulation() {
                                                         Extra Shot
                                                     </p>
                                                 </div>
-                                                <span className="rounded bg-emerald-500/10 px-1 py-0.2 text-[9px] text-emerald-600">
+                                                <span className="rounded bg-secondary px-1 py-0.2 text-[9px] text-foreground">
                                                     Ready
                                                 </span>
                                             </div>
@@ -315,7 +315,7 @@ export default function LandingLiveDemoSimulation() {
                                                         Cold Foam
                                                     </p>
                                                 </div>
-                                                <span className="rounded bg-emerald-500/10 px-1 py-0.2 text-[9px] text-emerald-600">
+                                                <span className="rounded bg-secondary px-1 py-0.2 text-[9px] text-foreground">
                                                     Ready
                                                 </span>
                                             </div>
@@ -326,7 +326,7 @@ export default function LandingLiveDemoSimulation() {
                                         <div>
                                             <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground pb-1.5 border-b border-border/40">
                                                 <span>Check & Settlement</span>
-                                                <span className="text-emerald-500 font-mono">
+                                                <span className="text-foreground font-mono">
                                                     Ready
                                                 </span>
                                             </div>
@@ -347,7 +347,7 @@ export default function LandingLiveDemoSimulation() {
                                                 </div>
                                                 <div className="flex justify-between text-xs font-bold text-foreground pt-1 border-t border-border/40">
                                                     <span>Total Check</span>
-                                                    <span className="font-mono text-orange-600 dark:text-orange-400">
+                                                    <span className="font-mono text-foreground">
                                                         $136.95
                                                     </span>
                                                 </div>
@@ -358,7 +358,7 @@ export default function LandingLiveDemoSimulation() {
                                             onClick={() =>
                                                 setActiveStation("tinaverify")
                                             }
-                                            className="mt-3 flex items-center justify-center gap-1.5 rounded-lg bg-primary py-1.5 text-xs font-semibold text-primary-foreground transition hover:opacity-95"
+                                            className="mt-3 flex items-center justify-center gap-1.5 rounded-lg bg-foreground py-1.5 text-xs font-semibold text-background transition hover:bg-foreground/90"
                                         >
                                             <ShieldCheck className="size-3.5" />
                                             <span>
@@ -375,13 +375,13 @@ export default function LandingLiveDemoSimulation() {
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between border-b border-border/50 pb-2.5">
                                     <div className="flex items-center gap-2">
-                                        <ChefHat className="size-4 text-orange-600" />
+                                        <ChefHat className="size-4 text-foreground" />
                                         <h3 className="font-bold text-foreground text-xs sm:text-sm">
                                             Kitchen Display System (KDS) — Hot
                                             Line
                                         </h3>
                                     </div>
-                                    <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600">
+                                    <span className="flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                                         <Clock className="size-3" /> Average
                                         Prep: 7.5m
                                     </span>
@@ -394,9 +394,9 @@ export default function LandingLiveDemoSimulation() {
                                             className={cn(
                                                 "flex flex-col justify-between rounded-xl border p-3 transition-colors",
                                                 item.status === "ready"
-                                                    ? "border-emerald-500/40 bg-emerald-500/5"
+                                                    ? "border-border bg-secondary/60"
                                                     : item.urgent
-                                                      ? "border-rose-500/40 bg-rose-500/5"
+                                                      ? "border-border bg-secondary/60"
                                                       : "border-border/80 bg-background/60",
                                             )}
                                         >
@@ -406,7 +406,7 @@ export default function LandingLiveDemoSimulation() {
                                                         className={cn(
                                                             "rounded px-1.5 py-0.2 font-mono text-[10px]",
                                                             item.urgent
-                                                                ? "bg-rose-500 text-white"
+                                                                ? "bg-foreground text-background"
                                                                 : "bg-secondary text-foreground",
                                                         )}
                                                     >
@@ -431,7 +431,7 @@ export default function LandingLiveDemoSimulation() {
                                                         <h4 className="font-bold text-foreground text-xs leading-snug">
                                                             {item.name}
                                                         </h4>
-                                                        <p className="text-[10px] text-orange-600 dark:text-orange-400 font-medium">
+                                                        <p className="text-[10px] text-foreground font-medium">
                                                             {item.mod}
                                                         </p>
                                                     </div>
@@ -446,8 +446,8 @@ export default function LandingLiveDemoSimulation() {
                                                 className={cn(
                                                     "mt-3 flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition-colors cursor-pointer",
                                                     item.status === "ready"
-                                                        ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                                                        : "bg-secondary hover:bg-primary hover:text-white text-foreground border border-border",
+                                                        ? "bg-foreground text-background hover:bg-foreground/90"
+                                                        : "bg-secondary hover:bg-foreground hover:text-background text-foreground border border-border",
                                                 )}
                                             >
                                                 {item.status === "ready" ? (
@@ -477,22 +477,22 @@ export default function LandingLiveDemoSimulation() {
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between border-b border-border/50 pb-2.5">
                                     <div className="flex items-center gap-2">
-                                        <Coffee className="size-4 text-amber-600" />
+                                        <Coffee className="size-4 text-muted-foreground" />
                                         <h3 className="font-bold text-foreground text-xs sm:text-sm">
                                             Barista & Specialty Beverage
                                             Dispatch
                                         </h3>
                                     </div>
-                                    <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-medium text-emerald-600">
+                                    <span className="rounded-full bg-secondary px-2.5 py-0.5 text-[10px] font-medium text-foreground">
                                         Queue: 1.8 min/drink
                                     </span>
                                 </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                    <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/5 p-3 flex flex-col justify-between">
+                                    <div className="rounded-xl border border-border bg-secondary/60 p-3 flex flex-col justify-between">
                                         <div>
                                             <div className="flex justify-between items-center text-[10px] text-muted-foreground font-mono">
-                                                <span className="font-bold text-emerald-600">
+                                                <span className="font-bold text-foreground">
                                                     T-08 • #1042
                                                 </span>
                                                 <span>0:45s ago</span>
@@ -516,7 +516,7 @@ export default function LandingLiveDemoSimulation() {
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="mt-3 flex items-center justify-between text-[10px] font-medium text-emerald-600 pt-2 border-t border-emerald-500/20">
+                                        <div className="mt-3 flex items-center justify-between text-[10px] font-medium text-foreground pt-2 border-t border-border">
                                             <span className="flex items-center gap-1">
                                                 <CheckCircle2 className="size-3" />{" "}
                                                 Dispatched
@@ -556,7 +556,7 @@ export default function LandingLiveDemoSimulation() {
                                         </div>
                                         <button
                                             type="button"
-                                            className="mt-3 w-full rounded-lg bg-secondary hover:bg-emerald-600 hover:text-white py-1.5 text-[11px] font-semibold text-foreground transition"
+                                            className="mt-3 w-full rounded-lg bg-secondary hover:bg-foreground hover:text-background py-1.5 text-[11px] font-semibold text-foreground transition"
                                         >
                                             Mark Drink Ready
                                         </button>
@@ -591,7 +591,7 @@ export default function LandingLiveDemoSimulation() {
                                         </div>
                                         <button
                                             type="button"
-                                            className="mt-3 w-full rounded-lg bg-secondary hover:bg-emerald-600 hover:text-white py-1.5 text-[11px] font-semibold text-foreground transition"
+                                            className="mt-3 w-full rounded-lg bg-secondary hover:bg-foreground hover:text-background py-1.5 text-[11px] font-semibold text-foreground transition"
                                         >
                                             Mark Ready
                                         </button>
@@ -605,13 +605,13 @@ export default function LandingLiveDemoSimulation() {
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between border-b border-border/50 pb-2.5">
                                     <div className="flex items-center gap-2">
-                                        <ShieldCheck className="size-4 text-orange-600" />
+                                        <ShieldCheck className="size-4 text-foreground" />
                                         <h3 className="font-bold text-foreground text-xs sm:text-sm">
                                             TinaVerify™ AI Bank Transfer
                                             Validator
                                         </h3>
                                     </div>
-                                    <span className="rounded-full bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 text-[10px] font-semibold text-orange-600 dark:text-orange-400">
+                                    <span className="rounded-full bg-secondary border border-border px-2 py-0.5 text-[10px] font-semibold text-foreground">
                                         Anti-Fraud Active
                                     </span>
                                 </div>
@@ -622,7 +622,7 @@ export default function LandingLiveDemoSimulation() {
                                             <span className="font-mono text-muted-foreground">
                                                 TRANSFER SLIP #FT2409
                                             </span>
-                                            <span className="font-semibold text-emerald-600 flex items-center gap-1">
+                                            <span className="font-semibold text-foreground flex items-center gap-1">
                                                 <CheckCircle2 className="size-3" />{" "}
                                                 Telebirr / CBE Confirmed
                                             </span>
@@ -649,7 +649,7 @@ export default function LandingLiveDemoSimulation() {
                                                 <span className="text-muted-foreground">
                                                     Amount Paid:
                                                 </span>
-                                                <span className="font-bold text-emerald-600 font-mono">
+                                                <span className="font-bold text-foreground font-mono">
                                                     $136.95
                                                 </span>
                                             </div>
@@ -658,7 +658,7 @@ export default function LandingLiveDemoSimulation() {
                                         <button
                                             type="button"
                                             onClick={handleRunSimulation}
-                                            className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-orange-600 py-2 text-xs font-semibold text-white hover:bg-orange-700 transition"
+                                            className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-foreground py-2 text-xs font-semibold text-background hover:bg-foreground/90 transition"
                                         >
                                             <RefreshCw
                                                 className={cn(
@@ -696,7 +696,7 @@ export default function LandingLiveDemoSimulation() {
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between border-b border-border/50 pb-2.5">
                                     <div className="flex items-center gap-2">
-                                        <Receipt className="size-4 text-orange-600" />
+                                        <Receipt className="size-4 text-foreground" />
                                         <h3 className="font-bold text-foreground text-xs sm:text-sm">
                                             Cashier Financial Control Desk &
                                             Shift Close
@@ -726,7 +726,7 @@ export default function LandingLiveDemoSimulation() {
                                             </div>
                                             <div className="flex justify-between">
                                                 <span>Table 08</span>
-                                                <span className="font-mono text-emerald-600">
+                                                <span className="font-mono text-foreground">
                                                     $136.95 (Settled)
                                                 </span>
                                             </div>
@@ -738,7 +738,7 @@ export default function LandingLiveDemoSimulation() {
                                             Recorded Cash Drops
                                         </span>
                                         <div className="mt-1.5 flex items-baseline gap-1.5">
-                                            <span className="text-xl font-bold text-emerald-600 font-mono">
+                                            <span className="text-xl font-bold text-foreground font-mono">
                                                 $940.00
                                             </span>
                                         </div>
@@ -758,9 +758,9 @@ export default function LandingLiveDemoSimulation() {
                                         </div>
                                     </div>
 
-                                    <div className="rounded-xl border border-orange-500/30 bg-orange-500/5 p-3 flex flex-col justify-between">
+                                    <div className="rounded-xl border border-border bg-secondary/50 p-3 flex flex-col justify-between">
                                         <div>
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400">
+                                            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground">
                                                 Operational Close
                                             </span>
                                             <p className="mt-1 text-[11px] text-muted-foreground">
@@ -771,7 +771,7 @@ export default function LandingLiveDemoSimulation() {
                                         </div>
                                         <button
                                             type="button"
-                                            className="mt-2 w-full rounded-lg bg-orange-600 py-1.5 text-xs font-semibold text-white hover:bg-orange-700 transition"
+                                            className="mt-2 w-full rounded-lg bg-foreground py-1.5 text-xs font-semibold text-background hover:bg-foreground/90 transition"
                                         >
                                             Generate Shift Close Report
                                         </button>
@@ -783,7 +783,7 @@ export default function LandingLiveDemoSimulation() {
                         {/* Interactive Timeline Bar */}
                         <div className="mt-4 pt-3 border-t border-border/50 flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
                             <div className="flex items-center gap-1.5">
-                                <Flame className="size-3.5 text-orange-500" />
+                                <Flame className="size-3.5 text-foreground" />
                                 <span>Timeline:</span>
                                 <span className="font-medium text-foreground">
                                     Table Claimed ➔ Sub-second Routing ➔ Ready
@@ -799,7 +799,7 @@ export default function LandingLiveDemoSimulation() {
                                         className={cn(
                                             "size-2 rounded-full transition-all cursor-pointer",
                                             activeStation === s.id
-                                                ? "w-5 bg-orange-500"
+                                                ? "w-5 bg-foreground"
                                                 : "bg-muted-foreground/30 hover:bg-muted-foreground/60",
                                         )}
                                         aria-label={`Go to ${s.label}`}

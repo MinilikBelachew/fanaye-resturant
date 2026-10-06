@@ -168,8 +168,10 @@ export interface CreateTenantPayload {
     branchName: string;
     branchCode?: string;
     hours?: string;
+    serviceMode?: string;
     tableCount?: number;
     activeStations?: string[];
+    customStations?: { code: string; name: string }[];
 }
 
 export interface DeleteTenantResponse {
@@ -194,6 +196,19 @@ export interface UpdateTenantPayload {
     branchName?: string;
     branchCode?: string;
     hours?: string;
+}
+
+export interface SubscriptionPlan {
+    id: string;
+    code: string;
+    name: string;
+    status: string;
+    maxBranches: number;
+    tenantCount: number;
+}
+
+export interface SubscriptionPlanListResponse {
+    data: SubscriptionPlan[];
 }
 
 export interface PlatformAuditEvent {
@@ -317,6 +332,7 @@ export interface ResetPlatformStaffPinPayload {
 }
 
 export const superAdminApi = api.injectEndpoints({
+    overrideExisting: true,
     endpoints: builder => ({
         getSuperAdminDashboard: builder.query<
             SuperAdminDashboardResponse,
@@ -336,6 +352,52 @@ export const superAdminApi = api.injectEndpoints({
                 method: "GET",
             }),
             providesTags: ["Auth", "Floor"],
+        }),
+
+        getSuperAdminPlans: builder.query<SubscriptionPlanListResponse, void>({
+            query: () => ({
+                url: "/super-admin/plans",
+                method: "GET",
+            }),
+            providesTags: ["Auth"],
+        }),
+
+        createSuperAdminPlan: builder.mutation<
+            SubscriptionPlan,
+            { name: string; code: string; maxBranches: number }
+        >({
+            query: body => ({
+                url: "/super-admin/plans",
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: ["Auth"],
+        }),
+
+        updateSuperAdminPlan: builder.mutation<
+            SubscriptionPlan,
+            {
+                id: string;
+                body: { name?: string; code?: string; maxBranches?: number };
+            }
+        >({
+            query: ({ id, body }) => ({
+                url: `/super-admin/plans/${id}`,
+                method: "PATCH",
+                body,
+            }),
+            invalidatesTags: ["Auth"],
+        }),
+
+        deleteSuperAdminPlan: builder.mutation<
+            { ok: boolean; deletedPlanId: string },
+            string
+        >({
+            query: id => ({
+                url: `/super-admin/plans/${id}`,
+                method: "DELETE",
+            }),
+            invalidatesTags: ["Auth"],
         }),
 
         getSuperAdminTenantById: builder.query<TenantDetailResponse, string>({
@@ -463,6 +525,10 @@ export const superAdminApi = api.injectEndpoints({
 export const {
     useGetSuperAdminDashboardQuery,
     useGetSuperAdminTenantsQuery,
+    useGetSuperAdminPlansQuery,
+    useCreateSuperAdminPlanMutation,
+    useUpdateSuperAdminPlanMutation,
+    useDeleteSuperAdminPlanMutation,
     useGetSuperAdminTenantByIdQuery,
     useCreateSuperAdminTenantMutation,
     useUpdateSuperAdminTenantMutation,

@@ -107,7 +107,7 @@ function stationQueueNav(home: string): NavSection[] {
     ];
 }
 
-export function navForRole(role: Role): NavSection[] {
+function navSectionsForRole(role: Role): NavSection[] {
     switch (role) {
         case "super_admin":
             return [
@@ -133,6 +133,11 @@ export function navForRole(role: Role): NavSection[] {
                             href: "/super-admin/tenants",
                             label: "Tenants",
                             icon: Building2,
+                        },
+                        {
+                            href: "/super-admin/plans",
+                            label: "Plans",
+                            icon: CreditCard,
                         },
                         {
                             href: "/super-admin/staff",
@@ -463,3 +468,40 @@ export function navForRole(role: Role): NavSection[] {
             return [];
     }
 }
+
+const BAKERY_HIDDEN = new Set([
+    "/manager/live",
+    "/manager/stations",
+    "/manager/tables",
+    "/manager/waiters",
+    "/manager/inventory",
+    "/owner/live",
+    "/owner/inventory",
+    "/cashier/notifications",
+    "/cashier/bills",
+    "/cashier/cash-drops",
+]);
+
+function navForRole(role: Role, serviceMode?: string | null): NavSection[] {
+    const sections = navSectionsForRole(role);
+    if (serviceMode !== "BAKERY") return sections;
+    return sections
+        .map(section => ({
+            ...section,
+            items: section.items
+                .map(item => {
+                    if (item.href === "/cashier/bills") {
+                        return {
+                            ...item,
+                            href: "/cashier/sale",
+                            label: "New sale",
+                        };
+                    }
+                    return item;
+                })
+                .filter(item => !BAKERY_HIDDEN.has(item.href)),
+        }))
+        .filter(section => section.items.length > 0);
+}
+
+export { navForRole };

@@ -23,6 +23,7 @@ interface CashierReceiptModalProps {
     cashierName?: string;
     showSendToWaiter?: boolean;
     showPrintActions?: boolean;
+    hideTable?: boolean;
 }
 
 export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
@@ -36,6 +37,7 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
     cashierName,
     showSendToWaiter = true,
     showPrintActions = true,
+    hideTable = false,
 }) => {
     const tReceipt = useTranslations("receipt");
     const tCommon = useTranslations("common");
@@ -155,8 +157,9 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
                                 {tReceipt("receiptTitle")}
                             </h3>
                             <p className="text-[11px] text-slate-500">
-                                80mm Thermal POS · {tCommon("table")}{" "}
-                                {displayTable}
+                                {hideTable
+                                    ? "80mm Thermal POS"
+                                    : `80mm Thermal POS · ${tCommon("table")} ${displayTable}`}
                             </p>
                         </div>
                     </div>
@@ -271,20 +274,24 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
                                 </span>
                                 <span>{generatedTime}</span>
                             </div>
-                            <div className="flex justify-between">
-                                <span className="text-slate-500">
-                                    {tCommon("table")}:
-                                </span>
-                                <strong className="text-slate-900 font-bold uppercase">
-                                    {displayTable}
-                                </strong>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-slate-500">
-                                    {tReceipt("server")}:
-                                </span>
-                                <span>{displayWaiter}</span>
-                            </div>
+                            {hideTable ? null : (
+                                <>
+                                    <div className="flex justify-between">
+                                        <span className="text-slate-500">
+                                            {tCommon("table")}:
+                                        </span>
+                                        <strong className="text-slate-900 font-bold uppercase">
+                                            {displayTable}
+                                        </strong>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-slate-500">
+                                            {tReceipt("server")}:
+                                        </span>
+                                        <span>{displayWaiter}</span>
+                                    </div>
+                                </>
+                            )}
                             <div className="flex justify-between">
                                 <span className="text-slate-500">
                                     {tReceipt("cashier")}:

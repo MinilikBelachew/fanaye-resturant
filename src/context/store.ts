@@ -19,6 +19,7 @@ import "./services/staffApi";
 import "./services/waiterPerformanceApi";
 import "./services/siteApi";
 import "./services/superAdminApi";
+import "./services/platformPlansApi";
 import "./services/auditApi";
 import "./services/notificationsApi";
 import "./services/branchesApi";

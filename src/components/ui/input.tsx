@@ -8,10 +8,7 @@ function Input({
     value,
     ...props
 }: React.ComponentProps<"input">) {
-    // Prevent controlled-to-uncontrolled / uncontrolled-to-controlled React warnings
-    const isControlled =
-        value !== undefined ||
-        (props.onChange !== undefined && props.defaultValue === undefined);
+    const isControlled = value !== undefined;
     const controlledProps = isControlled ? { value: value ?? "" } : {};
 
     return (

@@ -75,13 +75,13 @@ export default function LandingLogoShowcase() {
         >
             <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                 <div className="text-center max-w-2xl mx-auto">
-                    <div className="inline-flex items-center gap-1.5 rounded-full border border-orange-500/20 bg-orange-500/10 px-3 py-0.5 text-[11px] font-medium text-orange-600 dark:text-orange-400">
+                    <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-3 py-0.5 text-[11px] font-medium text-muted-foreground">
                         <Sparkles className="size-3" />
                         <span>System Architecture Logos (5 Concepts)</span>
                     </div>
                     <h2 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                         Logos That Describe the{" "}
-                        <span className="bg-gradient-to-r from-orange-500 to-rose-500 bg-clip-text text-transparent">
+                        <span className="text-foreground">
                             Fanaye Operating System
                         </span>
                     </h2>
@@ -94,7 +94,7 @@ export default function LandingLogoShowcase() {
                 </div>
 
                 {/* Selected Logo Featured Deep Dive Card */}
-                <div className="mt-8 rounded-2xl border border-orange-500/50 bg-gradient-to-r from-orange-500/10 via-card/90 to-card/90 p-5 sm:p-7 backdrop-blur-xl">
+                <div className="mt-8 rounded-2xl border border-border bg-gradient-to-r from-card via-card to-card p-5 sm:p-7 backdrop-blur-xl">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
                         <div className="md:col-span-3 flex justify-center">
                             <div className="relative size-28 rounded-2xl border border-border bg-background p-3 flex items-center justify-center">
@@ -109,13 +109,13 @@ export default function LandingLogoShowcase() {
 
                         <div className="md:col-span-9 space-y-2">
                             <div className="flex flex-wrap items-center gap-2">
-                                <span className="font-mono text-xs font-bold text-orange-600 dark:text-orange-400">
+                                <span className="font-mono text-xs font-bold text-foreground">
                                     SYSTEM LOGO {current.num}
                                 </span>
                                 <span className="rounded-full bg-secondary px-2 py-0.2 text-[10px] font-semibold text-muted-foreground">
                                     {current.systemRole}
                                 </span>
-                                <span className="rounded-full bg-emerald-500/10 px-2 py-0.2 text-[10px] font-semibold text-emerald-600">
+                                <span className="rounded-full bg-secondary px-2 py-0.2 text-[10px] font-semibold text-foreground">
                                     Selected for Review
                                 </span>
                             </div>
@@ -141,7 +141,7 @@ export default function LandingLogoShowcase() {
                                     <span className="text-[10px] text-muted-foreground block">
                                         Palette
                                     </span>
-                                    <span className="font-semibold text-orange-600 dark:text-orange-400">
+                                    <span className="font-semibold text-foreground">
                                         {current.accent}
                                     </span>
                                 </div>
@@ -162,14 +162,14 @@ export default function LandingLogoShowcase() {
                                 className={cn(
                                     "flex flex-col items-center justify-between rounded-xl border p-3 backdrop-blur-md transition-all cursor-pointer text-center",
                                     isSelected
-                                        ? "border-orange-500 bg-orange-500/10 ring-1 ring-orange-500/40"
-                                        : "border-border/70 bg-card/70 hover:border-orange-500/40 hover:bg-secondary/60",
+                                        ? "border-foreground/30 bg-secondary ring-1 ring-foreground/15"
+                                        : "border-border/70 bg-card/70 hover:border-border hover:bg-secondary/60",
                                 )}
                             >
                                 <div className="flex w-full items-center justify-between text-[10px] font-mono text-muted-foreground">
                                     <span>{opt.num}</span>
                                     {isSelected && (
-                                        <Check className="size-3 text-orange-500" />
+                                        <Check className="size-3 text-foreground" />
                                     )}
                                 </div>
 

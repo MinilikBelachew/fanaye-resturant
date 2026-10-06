@@ -170,6 +170,10 @@ export default function BranchesPage() {
                                                 </h3>
                                                 <p className="mt-0.5 text-[12px] text-slate-gray">
                                                     {branch.displayCode || "—"}
+                                                    {branch.serviceMode ===
+                                                    "BAKERY"
+                                                        ? " · Bakery"
+                                                        : ""}
                                                 </p>
                                             </div>
                                         </div>

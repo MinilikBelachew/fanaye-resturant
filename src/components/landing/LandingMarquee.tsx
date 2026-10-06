@@ -37,7 +37,7 @@ export default function LandingMarquee() {
                 {/* Stats Summary Bar */}
                 <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-border/40 text-xs">
                     <div className="flex items-center gap-2">
-                        <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="size-2 rounded-full bg-foreground animate-pulse" />
                         <span className="text-muted-foreground">
                             {t("liveStream")}
                         </span>
@@ -53,7 +53,7 @@ export default function LandingMarquee() {
                         </span>
                         <span>•</span>
                         <span className="flex items-center gap-1.5">
-                            <ShieldCheck className="size-3 text-emerald-600 dark:text-emerald-400" />
+                            <ShieldCheck className="size-3 text-foreground" />
                             <span>{t("attributedCustody")}</span>
                         </span>
                     </div>

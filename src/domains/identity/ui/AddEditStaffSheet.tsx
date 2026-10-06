@@ -77,6 +77,9 @@ export default function AddEditStaffSheet() {
     const dispatch = useAppDispatch();
     const isOpen = useAppSelector(state => state.identity.isAddEditOpen);
     const editingStaff = useAppSelector(state => state.identity.editingStaff);
+    const serviceMode = useAppSelector(
+        state => state.identity.session?.serviceMode,
+    );
     const isEditMode = Boolean(editingStaff && editingStaff.name);
 
     const [targetBranchId, setTargetBranchId] = useState<string | undefined>();
@@ -107,6 +110,15 @@ export default function AddEditStaffSheet() {
     }, [dbStations]);
 
     const allRoles = useMemo(() => {
+        if (serviceMode === "BAKERY") {
+            return [
+                {
+                    id: "cashier",
+                    label: t("roleCashier"),
+                    description: t("roleCashierDesc"),
+                },
+            ];
+        }
         const baseRoles = [
             {
                 id: "waiter",
@@ -170,7 +182,7 @@ export default function AddEditStaffSheet() {
             ...baseRoles,
             ...(activeStations.length > 0 ? stationRoles : fallbackStations),
         ];
-    }, [activeStations, t]);
+    }, [activeStations, serviceMode, t]);
 
     const [saving, setSaving] = useState(false);
     const [setCoverage] = useSetWaiterTableCoverageMutation();

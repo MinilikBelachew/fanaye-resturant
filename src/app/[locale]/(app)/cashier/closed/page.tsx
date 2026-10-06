@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
 import { useCashierPaymentsQuery } from "@/context/services/billingApi";
+import { useAppSelector } from "@/context/hooks";
 import { useRouter } from "@/i18n/navigation";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,9 @@ export default function CashierClosedPage() {
     const t = useTranslations("cashier");
     const tCommon = useTranslations("common");
     const router = useRouter();
+    const isBakery =
+        useAppSelector(state => state.identity.session?.serviceMode) ===
+        "BAKERY";
     const [page, setPage] = useState(1);
     const { data, isLoading, isFetching, isError } = useCashierPaymentsQuery(
         undefined,
@@ -51,7 +55,11 @@ export default function CashierClosedPage() {
                 <PageHeader
                     eyebrow="Close"
                     title="Closed bills"
-                    description="Closed tables from waiter collections. Reopen needs manager approval."
+                    description={
+                        isBakery
+                            ? "Paid counter sales from this shift."
+                            : "Closed tables from waiter collections. Reopen needs manager approval."
+                    }
                     compact
                 />
                 <div
@@ -95,12 +103,20 @@ export default function CashierClosedPage() {
                             <table className="w-full min-w-[480px] text-left text-[12px]">
                                 <thead className="border-b border-hairline text-[10px] tracking-[0.08em] text-slate-gray uppercase">
                                     <tr>
-                                        <th className="px-4 py-2.5 font-medium sm:px-5">
-                                            {tCommon("table")}
-                                        </th>
-                                        <th className="px-4 py-2.5 font-medium sm:px-5">
-                                            {tCommon("waiter")}
-                                        </th>
+                                        {isBakery ? (
+                                            <th className="px-4 py-2.5 font-medium sm:px-5">
+                                                {tCommon("bill")}
+                                            </th>
+                                        ) : (
+                                            <>
+                                                <th className="px-4 py-2.5 font-medium sm:px-5">
+                                                    {tCommon("table")}
+                                                </th>
+                                                <th className="px-4 py-2.5 font-medium sm:px-5">
+                                                    {tCommon("waiter")}
+                                                </th>
+                                            </>
+                                        )}
                                         <th className="px-4 py-2.5 font-medium sm:px-5">
                                             {tCommon("total")}
                                         </th>
@@ -133,12 +149,22 @@ export default function CashierClosedPage() {
                                             }}
                                             className="cursor-pointer border-b border-hairline last:border-0 hover:bg-secondary/40"
                                         >
-                                            <td className="px-4 py-2.5 font-medium sm:px-5">
-                                                {payment.tableDisplayName}
-                                            </td>
-                                            <td className="px-4 py-2.5 text-slate-gray sm:px-5">
-                                                {payment.waiterName}
-                                            </td>
+                                            {isBakery ? (
+                                                <td className="px-4 py-2.5 font-medium sm:px-5">
+                                                    {payment.billNumber}
+                                                </td>
+                                            ) : (
+                                                <>
+                                                    <td className="px-4 py-2.5 font-medium sm:px-5">
+                                                        {
+                                                            payment.tableDisplayName
+                                                        }
+                                                    </td>
+                                                    <td className="px-4 py-2.5 text-slate-gray sm:px-5">
+                                                        {payment.waiterName}
+                                                    </td>
+                                                </>
+                                            )}
                                             <td className="px-4 py-2.5 tabular-nums sm:px-5">
                                                 {formatEtb(
                                                     Number(payment.amount),
