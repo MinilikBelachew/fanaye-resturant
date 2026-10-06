@@ -18,6 +18,10 @@ export interface KpiCardProps {
     } | null;
     icon?: ReactNode;
     tone?: "default" | "brand" | "emerald" | "amber" | "violet";
+    /** Enterprise-style filled primary card (first KPI). */
+    accent?: boolean;
+    /** Tighter padding and smaller value text for dense dashboards. */
+    compact?: boolean;
     className?: string;
 }
 
@@ -56,6 +60,8 @@ export default function KpiCard({
     sparkline = { color: "#e85d04", variant: "wave1" },
     icon,
     tone = "default",
+    accent = false,
+    compact = false,
     className,
 }: KpiCardProps) {
     const isUp =
@@ -79,68 +85,169 @@ export default function KpiCard({
     const pathConfig = SPARKLINE_PATHS[waveVariant] || SPARKLINE_PATHS.wave1;
     const gradId = `sparkGrad-${label.replace(/[^a-zA-Z0-9]/g, "")}-${waveVariant}`;
 
+    if (accent) {
+        return (
+            <div
+                className={cn(
+                    "relative overflow-hidden rounded-xl border border-primary bg-primary text-primary-foreground",
+                    compact ? "p-3" : "rounded-2xl p-5",
+                    className,
+                )}
+            >
+                <div className="flex items-start justify-between gap-2">
+                    <p
+                        className={cn(
+                            "font-medium text-primary-foreground/75",
+                            compact ? "text-[11px]" : "text-[12px]",
+                        )}
+                    >
+                        {label}
+                    </p>
+                    {icon ? (
+                        <span
+                            className={cn(
+                                "flex items-center justify-center rounded-full bg-primary-foreground/15",
+                                compact ? "size-6" : "size-8",
+                            )}
+                        >
+                            {icon}
+                        </span>
+                    ) : null}
+                </div>
+                <p
+                    className={cn(
+                        "leading-none font-semibold tracking-tight tabular-nums",
+                        compact ? "mt-2 text-[20px]" : "mt-4 text-[28px]",
+                    )}
+                >
+                    {value}
+                </p>
+                <div
+                    className={cn(
+                        "flex flex-wrap items-center gap-2",
+                        compact ? "mt-1.5" : "mt-3",
+                    )}
+                >
+                    {hint ? (
+                        <p
+                            className={cn(
+                                "text-primary-foreground/70",
+                                compact ? "text-[10px]" : "text-[12px]",
+                            )}
+                        >
+                            {hint}
+                        </p>
+                    ) : null}
+                    {trend ? (
+                        <span className="inline-flex items-center gap-0.5 rounded-full bg-primary-foreground/15 px-2 py-0.5 text-[10px] font-medium text-primary-foreground">
+                            {isDown ? (
+                                <ArrowDownRight className="size-3" />
+                            ) : (
+                                <ArrowUpRight className="size-3" />
+                            )}
+                            {trend.value}
+                            {trend.label ? ` ${trend.label}` : ""}
+                        </span>
+                    ) : null}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div
             className={cn(
-                "relative flex flex-col justify-between overflow-hidden rounded-[12px] border border-hairline bg-card px-3.5 py-3",
+                "relative flex flex-col justify-between overflow-hidden border border-border bg-background",
+                compact
+                    ? "rounded-[12px] px-2.5 py-2"
+                    : "rounded-2xl px-4 py-4 sm:p-5",
                 className,
             )}
         >
             <div className="flex items-center justify-between gap-2">
-                <p className="text-[11px] font-medium tracking-wide text-slate-gray">
+                <p
+                    className={cn(
+                        "font-medium text-muted-foreground",
+                        compact ? "text-[10px]" : "text-[12px]",
+                    )}
+                >
                     {label}
                 </p>
                 {icon ? (
-                    <div className="flex size-6 items-center justify-center rounded-full bg-secondary text-slate-gray">
+                    <div
+                        className={cn(
+                            "flex items-center justify-center rounded-full bg-primary/10 text-primary",
+                            compact ? "size-6" : "size-8",
+                        )}
+                    >
                         {icon}
                     </div>
                 ) : null}
             </div>
 
-            <div className="mt-1.5 flex items-end justify-between gap-2">
-                <div className="min-w-0">
+            <div
+                className={cn(
+                    "flex items-end justify-between gap-1.5",
+                    compact ? "mt-1.5" : "mt-4",
+                )}
+            >
+                <div className="min-w-0 flex-1">
                     <p
                         className={cn(
-                            "truncate text-[18px] font-semibold leading-none tracking-tight",
+                            "truncate font-semibold leading-none tracking-tight tabular-nums",
+                            compact
+                                ? "text-[14px] sm:text-[15px]"
+                                : "text-[28px]",
                             tone === "brand" ? "text-brand" : "text-foreground",
                         )}
+                        title={value}
                     >
                         {value}
                     </p>
-                    {trend ? (
-                        <div className="mt-1.5 flex items-center gap-1">
+                    <div
+                        className={cn(
+                            "flex flex-wrap items-center gap-2",
+                            compact ? "mt-1" : "mt-3",
+                        )}
+                    >
+                        {hint ? (
+                            <p
+                                className={cn(
+                                    "truncate text-muted-foreground",
+                                    compact ? "text-[10px]" : "text-[12px]",
+                                )}
+                            >
+                                {hint}
+                            </p>
+                        ) : null}
+                        {trend ? (
                             <span
                                 className={cn(
-                                    "inline-flex items-center gap-0.5 rounded-full px-1.5 py-px text-[10px] font-medium",
+                                    "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-medium",
                                     isDown
-                                        ? "bg-rose-50 text-rose-600"
-                                        : "bg-emerald-50 text-emerald-700",
+                                        ? "bg-destructive/10 text-destructive"
+                                        : "bg-primary/10 text-primary",
                                 )}
                             >
                                 {isDown ? (
-                                    <ArrowDownRight className="size-2.5" />
+                                    <ArrowDownRight className="size-3" />
                                 ) : (
-                                    <ArrowUpRight className="size-2.5" />
+                                    <ArrowUpRight className="size-3" />
                                 )}
                                 {trend.value}
+                                {trend.label ? ` ${trend.label}` : ""}
                             </span>
-                            {trend.label ? (
-                                <span className="text-[10px] text-slate-gray">
-                                    {trend.label}
-                                </span>
-                            ) : null}
-                        </div>
-                    ) : hint ? (
-                        <p className="mt-1 truncate text-[10px] text-slate-gray">
-                            {hint}
-                        </p>
-                    ) : null}
+                        ) : null}
+                    </div>
                 </div>
 
-                {sparkline ? (
+                {sparkline && !icon ? (
                     <div className="relative shrink-0">
                         <svg
-                            className="h-7 w-[4.5rem] overflow-visible"
+                            className={cn(
+                                "overflow-visible",
+                                compact ? "h-5 w-[3.25rem]" : "h-7 w-[4.5rem]",
+                            )}
                             viewBox="0 0 100 40"
                             fill="none"
                         >

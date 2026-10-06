@@ -81,4 +81,12 @@ export type CashierPaymentLogItem = PaymentSummary & {
     waiterName: string;
     sessionStatus: string;
     tableClosed: boolean;
+    hasTransferReceipt?: boolean;
+    receiptImagePath?: string | null;
+    receiptCapturedAt?: string | null;
+};
+
+export type CashierPaymentDetail = {
+    payment: CashierPaymentLogItem;
+    bill: Bill;
 };

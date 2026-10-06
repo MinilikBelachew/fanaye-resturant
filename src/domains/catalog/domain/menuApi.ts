@@ -86,6 +86,7 @@ export type CreateAdminMenuItemBody = {
     available?: boolean;
     imageKey?: string | null;
     imageFileId?: string | null;
+    badge?: string | null;
     modifierGroupIds?: string[];
     modifierGroups?: Array<{
         name: string;

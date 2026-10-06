@@ -30,62 +30,51 @@ export default function DesktopSidebar({ className }: { className?: string }) {
         router.push("/sign-in");
     }
 
-    if (collapsed) {
-        return (
-            <aside
-                className={cn(
-                    "flex h-svh w-16 shrink-0 flex-col border-r border-border/80 bg-card py-3",
-                    className,
-                )}
-            >
-                <div className="flex justify-center pb-3 border-b border-border/60">
-                    <RoleSwitcher compact />
+    return (
+        <aside
+            className={cn(
+                "flex h-svh shrink-0 flex-col bg-background p-3",
+                collapsed ? "w-[88px]" : "w-[270px]",
+                className,
+            )}
+        >
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-muted/50 shadow-sm dark:bg-card">
+                <div
+                    className={cn(
+                        "flex shrink-0 flex-col",
+                        collapsed ? "items-center px-2.5 pt-4" : "px-4 pt-4",
+                    )}
+                >
+                    <RoleSwitcher compact={collapsed} />
                 </div>
+
                 <SidebarNav
-                    collapsed
+                    collapsed={collapsed}
                     sections={sections}
                     badges={counts ?? undefined}
                 />
-                <div className="mt-auto flex justify-center border-t border-border/60 pt-3">
+
+                <div
+                    className={cn(
+                        "mt-auto shrink-0 border-t border-border",
+                        collapsed ? "flex justify-center p-2.5" : "p-3",
+                    )}
+                >
                     <button
                         type="button"
                         title={tTopBar("logOut")}
                         aria-label={tTopBar("logOut")}
-                        className="flex size-10 items-center justify-center rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border hover:border-destructive/20 transition-colors"
+                        className={cn(
+                            "flex items-center gap-3 rounded-full text-[13px] text-foreground/80 transition-colors",
+                            "hover:bg-background/70 hover:text-destructive",
+                            collapsed
+                                ? "size-10 justify-center"
+                                : "h-9 w-full px-3",
+                        )}
                         onClick={logOut}
                     >
-                        <LogOut className="size-4" />
-                    </button>
-                </div>
-            </aside>
-        );
-    }
-
-    return (
-        <aside
-            className={cn(
-                "flex h-svh w-[270px] shrink-0 flex-col p-3 bg-background",
-                className,
-            )}
-        >
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[22px] border border-border/80 bg-card shadow-sm">
-                {/* User & Role Capsule */}
-                <div className="shrink-0 p-3 border-b border-border/60">
-                    <RoleSwitcher />
-                </div>
-
-                {/* Navigation Tree */}
-                <SidebarNav sections={sections} badges={counts ?? undefined} />
-
-                {/* Footer Actions */}
-                <div className="shrink-0 border-t border-border/60 p-3">
-                    <button
-                        type="button"
-                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border hover:border-destructive/20 border border-transparent transition-all duration-150"
-                        onClick={logOut}
-                    >
-                        <LogOut className="size-4 shrink-0" />
-                        <span>{tTopBar("logOut")}</span>
+                        <LogOut className="size-4 shrink-0 text-muted-foreground" />
+                        {collapsed ? null : <span>{tTopBar("logOut")}</span>}
                     </button>
                 </div>
             </div>

@@ -40,6 +40,9 @@ export type TableSessionResponse = {
     displayNumber: string | null;
     locationName: string;
     status: string;
+    sessionKind?: string;
+    customerName?: string | null;
+    customerPhone?: string | null;
     primaryWaiterMembershipId: string;
     waiterName: string;
     guestCount: number | null;
@@ -48,6 +51,27 @@ export type TableSessionResponse = {
     businessDate: string;
     version: number;
     mine: boolean;
+};
+
+export type DispatcherCall = {
+    tableSessionId: string;
+    tableId: string;
+    slotName: string;
+    customerName: string;
+    customerPhone: string | null;
+    status: string;
+    boardColumn: string;
+    openedAt: string;
+    version: number;
+    cookingItemCount: number;
+    readyItemCount: number;
+    hasBill: boolean;
+    billStatus: string | null;
+    mine: boolean;
+};
+
+export type DispatcherBoardResponse = {
+    data: DispatcherCall[];
 };
 
 export type WaiterTableView = "my" | "available" | "attention" | "all";

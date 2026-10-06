@@ -77,8 +77,7 @@ export default function MenuItemDetailSheet({
         STATION_META[item.stationId]?.label ||
         item.category ||
         "Kitchen";
-    const StationIcon =
-        STATION_META[item.stationId]?.icon || CookingPot;
+    const StationIcon = STATION_META[item.stationId]?.icon || CookingPot;
     const stationColorClass =
         STATION_META[item.stationId]?.color ||
         "text-amber-600 bg-amber-500/10 border-amber-500/20";
@@ -144,7 +143,6 @@ export default function MenuItemDetailSheet({
                     {/* Image presentation */}
                     {item.image ? (
                         <div className="relative h-56 w-full overflow-hidden rounded-[14px] border border-hairline bg-secondary">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                                 src={item.image}
                                 alt={item.name}
@@ -313,7 +311,9 @@ export default function MenuItemDetailSheet({
                                 "bg-emerald-600 text-white hover:bg-emerald-700",
                         )}
                     >
-                        {item.available ? "Mark 86 (Sold out)" : "Mark Available"}
+                        {item.available
+                            ? "Mark 86 (Sold out)"
+                            : "Mark Available"}
                     </Button>
 
                     <Button

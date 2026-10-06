@@ -138,6 +138,7 @@ export interface AdminTableQrItem {
     displayName: string;
     displayNumber?: string | null;
     locationName?: string | null;
+    branchName?: string | null;
     status: string;
     qrRelativeUrl: string;
     qrFullUrl: string;
@@ -145,6 +146,8 @@ export interface AdminTableQrItem {
 
 export interface AdminTablesQrResponse {
     slug: string;
+    /** True when manager/owner can see tables across branches. */
+    managesAllBranches?: boolean;
     tables: AdminTableQrItem[];
 }
 

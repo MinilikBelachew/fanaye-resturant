@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useMemo, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { NavSection } from "@/domains/identity/application/nav";
 import { homePathForRole } from "@/domains/identity/application/homePath";
@@ -126,9 +126,6 @@ function SidebarNavInner({
     };
 
     const home = staff ? homePathForRole(staff.role) : "/";
-    const [open, setOpen] = useState<Record<string, boolean>>(() =>
-        Object.fromEntries(sections.map(section => [section.title, true])),
-    );
 
     const filter = parseQueueFilter(searchParams.get("status"));
     const view = parseQueueView(searchParams.get("view"));
@@ -155,7 +152,15 @@ function SidebarNavInner({
             for (const section of sections) {
                 for (const item of section.items) {
                     if (item.children && item.children.length > 0) {
-                        initial[item.href] = true;
+                        const childActive = item.children.some(child => {
+                            const pathOnly = child.href.split("?")[0];
+                            return (
+                                pathname === pathOnly ||
+                                (pathOnly !== home &&
+                                    pathname.startsWith(`${pathOnly}/`))
+                            );
+                        });
+                        initial[item.href] = childActive;
                     }
                 }
             }
@@ -165,9 +170,13 @@ function SidebarNavInner({
 
     if (collapsed) {
         return (
-            <nav className="sidebar-scroll flex min-h-0 flex-1 flex-col items-center gap-1.5 px-2 py-2">
+            <nav className="sidebar-scroll mt-5 flex min-h-0 flex-1 flex-col items-center gap-1 px-2 py-2">
                 {items.map(item => {
-                    const active = activeHref(item);
+                    const active =
+                        activeHref(item) ||
+                        Boolean(
+                            item.children?.some(child => activeHref(child)),
+                        );
                     const count =
                         (item.badgeKey
                             ? badges[item.badgeKey]
@@ -187,18 +196,18 @@ function SidebarNavInner({
                                 onClick={onNavigate}
                                 aria-label={translated}
                                 className={cn(
-                                    "relative flex size-10 items-center justify-center rounded-xl transition-all duration-150",
+                                    "relative flex size-10 items-center justify-center rounded-full border transition-colors",
                                     active
-                                        ? "bg-orange-500/15 text-orange-600 dark:text-orange-400 font-semibold shadow-xs border border-orange-500/30"
-                                        : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+                                        ? "border-border bg-background text-orange-600 dark:text-orange-400"
+                                        : "border-transparent text-muted-foreground hover:bg-background/70 hover:text-foreground",
                                 )}
                             >
                                 <item.icon className="size-4" />
                                 {count > 0 ? (
-                                    <span className="absolute top-1 right-1 size-2 rounded-full bg-orange-500 animate-pulse" />
+                                    <span className="absolute top-1 right-1 size-2 rounded-full bg-orange-500" />
                                 ) : null}
                             </Link>
-                            <span className="pointer-events-none absolute top-1/2 left-[calc(100%+12px)] z-50 -translate-y-1/2 rounded-lg border border-border/80 bg-popover px-2.5 py-1 text-[12px] font-semibold whitespace-nowrap text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100">
+                            <span className="pointer-events-none absolute top-1/2 left-[calc(100%+12px)] z-50 -translate-y-1/2 rounded-lg border border-border/80 bg-popover px-2.5 py-1 text-[12px] font-medium whitespace-nowrap text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100">
                                 {translated}
                                 {count > 0 ? ` · ${count}` : ""}
                             </span>
@@ -210,200 +219,172 @@ function SidebarNavInner({
     }
 
     return (
-        <nav className="sidebar-scroll min-h-0 flex-1 px-3 py-3 space-y-4">
-            {sections.map(section => {
-                const expanded = open[section.title] !== false;
-                return (
-                    <div key={section.title} className="space-y-1">
-                        <button
-                            type="button"
-                            className="flex w-full items-center justify-between rounded-lg px-2.5 py-1 text-[10px] font-bold tracking-widest text-muted-foreground/80 uppercase hover:text-foreground transition-colors"
-                            onClick={() =>
-                                setOpen(current => ({
-                                    ...current,
-                                    [section.title]: !expanded,
-                                }))
-                            }
-                        >
-                            <span>{translateTitle(section.title)}</span>
-                            <ChevronDown
-                                className={cn(
-                                    "size-3 text-muted-foreground/60 transition-transform duration-200",
-                                    expanded ? "rotate-0" : "-rotate-90",
-                                )}
-                            />
-                        </button>
-                        {expanded ? (
-                            <ul className="space-y-0.5">
-                                {section.items.map(item => {
-                                    if (
-                                        item.children &&
-                                        item.children.length > 0
-                                    ) {
-                                        const isAnyChildActive =
-                                            item.children.some(child =>
-                                                activeHref(child),
-                                            );
-                                        const isSubOpen =
-                                            submenusOpen[item.href] !== false;
+        <nav className="sidebar-scroll mt-4 min-h-0 flex-1 px-3 pb-3">
+            <ul className="flex flex-col gap-1">
+                {sections.map(section => (
+                    <li key={section.title} className="contents">
+                        {sections.length > 1 ? (
+                            <p className="mt-3 mb-1 px-3 text-[10px] font-medium tracking-wider text-muted-foreground uppercase first:mt-0">
+                                {translateTitle(section.title)}
+                            </p>
+                        ) : null}
+                        {section.items.map(item => {
+                            const hasChildren = Boolean(
+                                item.children && item.children.length > 0,
+                            );
+                            const isSubOpen = Boolean(submenusOpen[item.href]);
+                            const childActive = Boolean(
+                                item.children?.some(child => activeHref(child)),
+                            );
+                            const active = activeHref(item) || childActive;
+                            const count =
+                                (item.badgeKey
+                                    ? badges[item.badgeKey]
+                                    : extraBadges[item.href]) ?? 0;
+                            const href = item.filter
+                                ? stationQueueHref(home, {
+                                      status: item.filter,
+                                      q: query,
+                                      view,
+                                  })
+                                : item.href;
+                            const label = translateLabel(item.label);
 
-                                        return (
-                                            <li
-                                                key={item.href}
-                                                className="space-y-0.5"
-                                            >
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        setSubmenusOpen(
-                                                            prev => ({
-                                                                ...prev,
-                                                                [item.href]:
-                                                                    !isSubOpen,
-                                                            }),
-                                                        )
-                                                    }
-                                                    className={cn(
-                                                        "group flex w-full items-center justify-between gap-2.5 py-2 px-3 text-[13px] font-medium rounded-xl transition-all duration-150",
-                                                        isAnyChildActive
-                                                            ? "bg-orange-500/10 text-orange-600 dark:text-orange-400 font-semibold"
-                                                            : "text-muted-foreground hover:bg-secondary/70 hover:text-foreground",
-                                                    )}
-                                                >
-                                                    <div className="flex items-center gap-2.5 min-w-0">
-                                                        <item.icon
-                                                            className={cn(
-                                                                "size-4 shrink-0 transition-colors",
-                                                                isAnyChildActive
-                                                                    ? "text-orange-600 dark:text-orange-400"
-                                                                    : "text-muted-foreground/70 group-hover:text-foreground",
-                                                            )}
-                                                        />
-                                                        <span className="truncate">
-                                                            {translateLabel(
-                                                                item.label,
-                                                            )}
-                                                        </span>
-                                                    </div>
-                                                    <ChevronDown
-                                                        className={cn(
-                                                            "size-3.5 shrink-0 transition-transform duration-200",
-                                                            isSubOpen
-                                                                ? "rotate-0 text-orange-500"
-                                                                : "-rotate-90 text-muted-foreground/60",
-                                                        )}
-                                                    />
-                                                </button>
-
-                                                {isSubOpen ? (
-                                                    <div className="ml-5 pl-2.5 my-0.5 border-l-2 border-orange-500/25 space-y-0.5">
-                                                        {item.children.map(
-                                                            child => {
-                                                                const childActive =
-                                                                    activeHref(
-                                                                        child,
-                                                                    );
-                                                                return (
-                                                                    <Link
-                                                                        key={
-                                                                            child.href
-                                                                        }
-                                                                        href={
-                                                                            child.href
-                                                                        }
-                                                                        onClick={
-                                                                            onNavigate
-                                                                        }
-                                                                        className={cn(
-                                                                            "group flex items-center gap-2 py-1.5 px-2.5 rounded-lg text-xs font-medium transition-all duration-150",
-                                                                            childActive
-                                                                                ? "bg-orange-500/15 text-orange-600 dark:text-orange-400 font-semibold shadow-2xs border border-orange-500/20"
-                                                                                : "text-muted-foreground hover:bg-secondary hover:text-foreground",
-                                                                        )}
-                                                                    >
-                                                                        <child.icon
-                                                                            className={cn(
-                                                                                "size-3.5 shrink-0 transition-colors",
-                                                                                childActive
-                                                                                    ? "text-orange-600 dark:text-orange-400"
-                                                                                    : "text-muted-foreground/70 group-hover:text-foreground",
-                                                                            )}
-                                                                        />
-                                                                        <span className="truncate">
-                                                                            {translateLabel(
-                                                                                child.label,
-                                                                            )}
-                                                                        </span>
-                                                                    </Link>
-                                                                );
-                                                            },
-                                                        )}
-                                                    </div>
-                                                ) : null}
-                                            </li>
-                                        );
-                                    }
-
-                                    const active = activeHref(item);
-                                    const count =
-                                        (item.badgeKey
-                                            ? badges[item.badgeKey]
-                                            : extraBadges[item.href]) ?? 0;
-                                    return (
-                                        <li key={item.href}>
+                            if (hasChildren && item.children) {
+                                return (
+                                    <div key={item.href} className="space-y-1">
+                                        <div className="flex items-center gap-1.5">
                                             <Link
-                                                href={
-                                                    item.filter
-                                                        ? stationQueueHref(
-                                                              home,
-                                                              {
-                                                                  status: item.filter,
-                                                                  q: query,
-                                                                  view,
-                                                              },
-                                                          )
-                                                        : item.href
-                                                }
+                                                href={href}
                                                 onClick={onNavigate}
                                                 className={cn(
-                                                    "group flex items-center gap-2.5 py-2 text-[13px] font-medium transition-all duration-150",
+                                                    "flex min-w-0 flex-1 items-center gap-3 rounded-full border text-[13px] transition-colors h-9 px-3",
                                                     active
-                                                        ? "rounded-r-xl rounded-l-xs border-l-[3px] border-orange-500 bg-gradient-to-r from-orange-500/15 via-orange-500/8 to-transparent pl-3 pr-2.5 text-orange-600 dark:text-orange-400 font-semibold"
-                                                        : "rounded-xl px-3 text-muted-foreground hover:bg-secondary/70 hover:text-foreground",
+                                                        ? "border-border bg-background font-medium text-foreground"
+                                                        : "border-transparent text-foreground/80 hover:bg-background/70 hover:text-foreground",
                                                 )}
                                             >
                                                 <item.icon
                                                     className={cn(
-                                                        "size-4 shrink-0 transition-colors",
+                                                        "size-4 shrink-0",
                                                         active
                                                             ? "text-orange-600 dark:text-orange-400"
-                                                            : "text-muted-foreground/70 group-hover:text-foreground",
+                                                            : "text-muted-foreground",
                                                     )}
                                                 />
-                                                <span className="min-w-0 flex-1 truncate">
-                                                    {translateLabel(item.label)}
+                                                <span className="truncate">
+                                                    {label}
                                                 </span>
-                                                {item.badgeKey || count > 0 ? (
-                                                    <span
-                                                        className={cn(
-                                                            "rounded-full px-2 py-0.5 text-[10px] font-bold font-mono tracking-tight",
-                                                            count > 0
-                                                                ? "bg-orange-500 text-white"
-                                                                : "bg-secondary text-muted-foreground",
-                                                        )}
-                                                    >
-                                                        {count}
-                                                    </span>
-                                                ) : null}
                                             </Link>
-                                        </li>
-                                    );
-                                })}
-                            </ul>
-                        ) : null}
-                    </div>
-                );
-            })}
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setSubmenusOpen(prev => ({
+                                                        ...prev,
+                                                        [item.href]: !isSubOpen,
+                                                    }))
+                                                }
+                                                className={cn(
+                                                    "flex size-8 shrink-0 items-center justify-center rounded-full transition-colors",
+                                                    isSubOpen
+                                                        ? "border border-border bg-background text-foreground hover:bg-muted"
+                                                        : "text-muted-foreground hover:bg-background hover:text-foreground",
+                                                )}
+                                                aria-label={
+                                                    isSubOpen
+                                                        ? `Close ${label}`
+                                                        : `Open ${label}`
+                                                }
+                                            >
+                                                {isSubOpen ? (
+                                                    <X className="size-3.5" />
+                                                ) : (
+                                                    <Plus className="size-3.5" />
+                                                )}
+                                            </button>
+                                        </div>
+                                        {isSubOpen ? (
+                                            <ul className="ml-4 flex flex-col gap-0.5 border-l border-border/70 pl-2">
+                                                {item.children.map(child => {
+                                                    const childIsActive =
+                                                        activeHref(child);
+                                                    return (
+                                                        <li key={child.href}>
+                                                            <Link
+                                                                href={
+                                                                    child.href
+                                                                }
+                                                                onClick={
+                                                                    onNavigate
+                                                                }
+                                                                className={cn(
+                                                                    "flex h-8 items-center gap-2.5 rounded-full px-3 text-[12px] transition-colors",
+                                                                    childIsActive
+                                                                        ? "bg-background font-medium text-orange-600 dark:text-orange-400"
+                                                                        : "text-muted-foreground hover:bg-background/70 hover:text-foreground",
+                                                                )}
+                                                            >
+                                                                <child.icon className="size-3.5 shrink-0" />
+                                                                <span className="truncate">
+                                                                    {translateLabel(
+                                                                        child.label,
+                                                                    )}
+                                                                </span>
+                                                            </Link>
+                                                        </li>
+                                                    );
+                                                })}
+                                            </ul>
+                                        ) : null}
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <div
+                                    key={item.href}
+                                    className="flex items-center gap-1.5"
+                                >
+                                    <Link
+                                        href={href}
+                                        onClick={onNavigate}
+                                        className={cn(
+                                            "flex min-w-0 flex-1 items-center gap-3 rounded-full border text-[13px] transition-colors h-9 px-3",
+                                            active
+                                                ? "border-border bg-background font-medium text-foreground"
+                                                : "border-transparent text-foreground/80 hover:bg-background/70 hover:text-foreground",
+                                        )}
+                                    >
+                                        <item.icon
+                                            className={cn(
+                                                "size-4 shrink-0",
+                                                active
+                                                    ? "text-orange-600 dark:text-orange-400"
+                                                    : "text-muted-foreground",
+                                            )}
+                                        />
+                                        <span className="min-w-0 flex-1 truncate">
+                                            {label}
+                                        </span>
+                                        {item.badgeKey || count > 0 ? (
+                                            <span
+                                                className={cn(
+                                                    "rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
+                                                    count > 0
+                                                        ? "bg-orange-500 text-white"
+                                                        : "bg-background text-muted-foreground",
+                                                )}
+                                            >
+                                                {count}
+                                            </span>
+                                        ) : null}
+                                    </Link>
+                                </div>
+                            );
+                        })}
+                    </li>
+                ))}
+            </ul>
         </nav>
     );
 }

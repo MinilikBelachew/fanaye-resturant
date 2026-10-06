@@ -4,15 +4,16 @@ import { useMemo, useState } from "react";
 import { User } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useFloorTablesQuery } from "@/context/services/floorApi";
-import type { FloorTable } from "@/domains/floor/domain/floorApi";
 import { tableNumber } from "@/domains/floor/application/groupFloor";
 import FloorLocationSections from "@/domains/floor/ui/FloorLocationSections";
 import FloorTableCard from "@/domains/floor/ui/FloorTableCard";
+import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
-import TableInspectionSheet from "./TableInspectionSheet";
 
 export default function ManagerTablesBoard() {
     const t = useTranslations("managerTables");
+    const tDetail = useTranslations("managerTableDetail");
+    const router = useRouter();
     const { data, isLoading, isError } = useFloorTablesQuery();
     const tables = data?.data ?? [];
     const locations = data?.locations ?? [];
@@ -21,7 +22,6 @@ export default function ManagerTablesBoard() {
         "all" | "occupied" | "available"
     >("all");
     const [waiterFilter, setWaiterFilter] = useState("all");
-    const [selectedTable, setSelectedTable] = useState<FloorTable | null>(null);
 
     const stats = useMemo(() => {
         const occupied = tables.filter(table => table.tableSessionId);
@@ -226,17 +226,13 @@ export default function ManagerTablesBoard() {
                             }
                             total={null}
                             footerLeft={footerLeft}
-                            footerAction={t("inspect")}
-                            onClick={() => setSelectedTable(table)}
+                            footerAction={tDetail("viewDetail")}
+                            onClick={() =>
+                                router.push(`/manager/tables/${table.tableId}`)
+                            }
                         />
                     );
                 }}
-            />
-
-            <TableInspectionSheet
-                table={selectedTable}
-                isOpen={Boolean(selectedTable)}
-                onClose={() => setSelectedTable(null)}
             />
         </div>
     );

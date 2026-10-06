@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import {
     Clock,
     CookingPot,
@@ -42,9 +42,23 @@ import { useTranslations } from "next-intl";
 export default function ManagerMenuPage() {
     const t = useTranslations("manager");
     const { data: metaData } = useAdminMenuMetaQuery();
-    const { data, isLoading, isError } = useAdminMenuItemsQuery(undefined, {
-        pollingInterval: 15000,
-    });
+    const [viewMode, setViewMode] = useState<"grid" | "table">("table");
+    const [sheetOpen, setSheetOpen] = useState(false);
+    const [modifierSheetOpen, setModifierSheetOpen] = useState(false);
+    const [scanSheetOpen, setScanSheetOpen] = useState(false);
+    const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+    const [detailItem, setDetailItem] = useState<MenuItem | null>(null);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [selectedStation, setSelectedStation] = useState<string>("all");
+    const deferredSearch = useDeferredValue(searchQuery.trim());
+
+    const { data, isLoading, isError, isFetching } = useAdminMenuItemsQuery(
+        {
+            q: deferredSearch || undefined,
+            stationId: selectedStation === "all" ? undefined : selectedStation,
+        },
+        { pollingInterval: 15000 },
+    );
     const [markSoldOut] = useMarkMenuItemSoldOutMutation();
     const [clearSoldOut] = useClearMenuItemSoldOutMutation();
 
@@ -53,15 +67,6 @@ export default function ManagerMenuPage() {
         () => (data?.data ?? []).map(item => adminMenuItemToCatalog(item)),
         [data],
     );
-
-    const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
-    const [sheetOpen, setSheetOpen] = useState(false);
-    const [modifierSheetOpen, setModifierSheetOpen] = useState(false);
-    const [scanSheetOpen, setScanSheetOpen] = useState(false);
-    const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
-    const [detailItem, setDetailItem] = useState<MenuItem | null>(null);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [selectedStation, setSelectedStation] = useState<string>("all");
 
     const stationFilters = useMemo(
         () => [
@@ -73,21 +78,6 @@ export default function ManagerMenuPage() {
         ],
         [stations, t],
     );
-
-    const filteredItems = useMemo(() => {
-        return menuItems.filter(item => {
-            const matchesStation =
-                selectedStation === "all" || item.stationId === selectedStation;
-            const matchesQuery =
-                !searchQuery.trim() ||
-                item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.description
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase()) ||
-                item.category.toLowerCase().includes(searchQuery.toLowerCase());
-            return matchesStation && matchesQuery;
-        });
-    }, [menuItems, selectedStation, searchQuery]);
 
     const activeCount = menuItems.filter(i => i.available).length;
     const soldOutCount = menuItems.length - activeCount;
@@ -231,33 +221,41 @@ export default function ManagerMenuPage() {
                 title="Menu"
                 description="Add dishes, route them to stations, and 86 items when stock runs out."
                 action={
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
                         <Link href="/manager/qr-menu">
                             <Button
-                                variant="outline"
-                                className="gap-2 border-amber-500/40 text-amber-800 bg-amber-50/50 hover:bg-amber-100/50"
+                                variant="ghost"
+                                size="sm"
+                                className="gap-1.5 text-muted-foreground hover:text-foreground"
                             >
-                                <QrCode className="size-4 text-amber-600" />
+                                <QrCode className="size-3.5" />
                                 {t("qrBuilder")}
                             </Button>
                         </Link>
                         <Button
-                            variant="outline"
-                            className="gap-2 border-brand/30"
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1.5 text-muted-foreground hover:text-foreground"
                             onClick={() => setScanSheetOpen(true)}
                         >
-                            <ScanLine className="size-4 text-brand" />
+                            <ScanLine className="size-3.5" />
                             {t("scanMenuPhoto")}
                         </Button>
                         <Button
                             variant="outline"
+                            size="sm"
+                            className="gap-1.5"
                             onClick={() => setModifierSheetOpen(true)}
                         >
-                            <Plus className="size-4" />
+                            <Plus className="size-3.5" />
                             {t("addModifierGroup")}
                         </Button>
-                        <Button onClick={handleOpenAdd}>
-                            <Plus className="size-4" />
+                        <Button
+                            size="sm"
+                            className="gap-1.5 shadow-none"
+                            onClick={handleOpenAdd}
+                        >
+                            <Plus className="size-3.5" />
                             {t("addMenuItem")}
                         </Button>
                     </div>
@@ -266,7 +264,7 @@ export default function ManagerMenuPage() {
 
             <div className="mb-4 flex flex-wrap items-center gap-3">
                 <div className="relative min-w-[220px] flex-1">
-                    <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-gray" />
+                    <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         value={searchQuery}
                         onChange={event => setSearchQuery(event.target.value)}
@@ -274,41 +272,58 @@ export default function ManagerMenuPage() {
                         className="pl-9"
                     />
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                     {stationFilters.map(filter => (
                         <button
                             key={filter.id}
                             type="button"
                             onClick={() => setSelectedStation(filter.id)}
                             className={cn(
-                                "rounded-full border px-3 py-1.5 text-[13px]",
+                                "rounded-md border px-2.5 py-1 text-[12px] transition-colors",
                                 selectedStation === filter.id
-                                    ? "border-brand bg-brand/10 text-brand"
-                                    : "border-hairline text-slate-gray",
+                                    ? "border-foreground bg-foreground text-background"
+                                    : "border-border text-muted-foreground hover:text-foreground",
                             )}
                         >
                             {filter.label}
                         </button>
                     ))}
                 </div>
-                <div className="ml-auto flex items-center gap-2 text-[13px] text-slate-gray">
+                <div className="ml-auto flex items-center gap-2 text-[12px] text-muted-foreground">
                     <span>{t("activeCount", { count: activeCount })}</span>
                     <span>·</span>
                     <span>{t("soldOutCount", { count: soldOutCount })}</span>
-                    <button
-                        type="button"
-                        onClick={() =>
-                            setViewMode(viewMode === "grid" ? "table" : "grid")
-                        }
-                        className="ml-2 rounded-full border border-hairline p-2"
-                        aria-label={t("toggleView")}
-                    >
-                        {viewMode === "grid" ? (
-                            <TableIcon className="size-4" />
-                        ) : (
-                            <LayoutGrid className="size-4" />
-                        )}
-                    </button>
+                    {isFetching && !isLoading ? (
+                        <span className="text-[11px]">{t("searching")}</span>
+                    ) : null}
+                    <div className="ml-1 inline-flex rounded-md border border-border p-0.5">
+                        <button
+                            type="button"
+                            onClick={() => setViewMode("table")}
+                            className={cn(
+                                "rounded-[5px] p-1.5 transition-colors",
+                                viewMode === "table"
+                                    ? "bg-foreground text-background"
+                                    : "text-muted-foreground hover:text-foreground",
+                            )}
+                            aria-label={t("toggleView")}
+                        >
+                            <TableIcon className="size-3.5" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setViewMode("grid")}
+                            className={cn(
+                                "rounded-[5px] p-1.5 transition-colors",
+                                viewMode === "grid"
+                                    ? "bg-foreground text-background"
+                                    : "text-muted-foreground hover:text-foreground",
+                            )}
+                            aria-label={t("toggleView")}
+                        >
+                            <LayoutGrid className="size-3.5" />
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -320,17 +335,19 @@ export default function ManagerMenuPage() {
             {!isLoading && !isError && viewMode === "table" ? (
                 <DataTable
                     columns={tableColumns}
-                    data={filteredItems}
+                    data={menuItems}
                     rowKey={row => row.id}
+                    searchPlaceholder={null}
+                    serverSide
                 />
             ) : null}
 
             {!isLoading && !isError && viewMode === "grid" ? (
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                    {filteredItems.map(item => (
+                    {menuItems.map(item => (
                         <article
                             key={item.id}
-                            className="group overflow-hidden rounded-[16px] border border-hairline bg-card shadow-subtle"
+                            className="group overflow-hidden rounded-xl border border-border bg-background"
                         >
                             <div className="relative aspect-[4/3] bg-secondary">
                                 {item.image ? (
@@ -429,13 +446,13 @@ export default function ManagerMenuPage() {
                         </article>
                     ))}
 
-                    {filteredItems.length === 0 ? (
-                        <div className="col-span-full flex flex-col items-center justify-center rounded-[16px] border border-dashed border-hairline bg-surface-ivory py-16 text-center">
-                            <CookingPot className="size-10 text-slate-gray/60" />
-                            <h3 className="mt-3 text-[16px] font-semibold text-foreground">
+                    {menuItems.length === 0 ? (
+                        <div className="col-span-full flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16 text-center">
+                            <CookingPot className="size-10 text-muted-foreground/60" />
+                            <h3 className="mt-3 text-[15px] text-foreground">
                                 {t("noMenuItemsFound")}
                             </h3>
-                            <p className="mt-1 text-[13px] text-slate-gray">
+                            <p className="mt-1 text-[13px] text-muted-foreground">
                                 {searchQuery
                                     ? t("noDishesMatch", {
                                           query: searchQuery,
@@ -444,8 +461,9 @@ export default function ManagerMenuPage() {
                             </p>
                             <Button
                                 variant="outline"
+                                size="sm"
                                 onClick={handleOpenAdd}
-                                className="mt-4 rounded-full"
+                                className="mt-4"
                             >
                                 <Plus className="mr-1.5 size-4" />
                                 {t("addNewDish")}

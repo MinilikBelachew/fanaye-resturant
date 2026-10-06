@@ -1,7 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Clock3, RefreshCw, UserRound, Wallet, LayoutGrid } from "lucide-react";
+import {
+    ChevronRight,
+    Clock3,
+    RefreshCw,
+    UserRound,
+    Wallet,
+    LayoutGrid,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
@@ -11,11 +18,13 @@ import {
     useWaiterPerformanceQuery,
     type WaiterPeriod,
 } from "@/context/services/waiterPerformanceApi";
+import { Link } from "@/i18n/navigation";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
 export default function ManagerWaitersPage() {
     const t = useTranslations("managerWaiters");
+    const tDetail = useTranslations("managerWaiterDetail");
     const tCommon = useTranslations("common");
     const [period, setPeriod] = useState<WaiterPeriod>("day");
     const { data, isLoading, isFetching, isError, refetch } =
@@ -161,13 +170,16 @@ export default function ManagerWaitersPage() {
                                         <th className="px-5 py-3">
                                             {t("colUndropped")}
                                         </th>
+                                        <th className="px-5 py-3 text-right">
+                                            {tDetail("colActions")}
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-hairline">
                                     {sorted.length === 0 ? (
                                         <tr>
                                             <td
-                                                colSpan={7}
+                                                colSpan={8}
                                                 className="px-5 py-12 text-center text-slate-gray"
                                             >
                                                 {t("empty")}
@@ -187,9 +199,12 @@ export default function ManagerWaitersPage() {
                                                                 .toUpperCase()}
                                                         </span>
                                                         <div>
-                                                            <p className="font-semibold text-foreground">
+                                                            <Link
+                                                                href={`/manager/waiters/${row.waiterMembershipId}`}
+                                                                className="font-semibold text-foreground hover:underline"
+                                                            >
                                                                 {row.waiterName}
-                                                            </p>
+                                                            </Link>
                                                             <p className="text-[12px] text-slate-gray">
                                                                 {row.phone ||
                                                                     t(
@@ -315,6 +330,24 @@ export default function ManagerWaitersPage() {
                                                             ),
                                                         )}
                                                     </span>
+                                                </td>
+                                                <td className="px-5 py-4 text-right">
+                                                    <Button
+                                                        type="button"
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="h-8 rounded-full text-[12px]"
+                                                        asChild
+                                                    >
+                                                        <Link
+                                                            href={`/manager/waiters/${row.waiterMembershipId}`}
+                                                        >
+                                                            {tDetail(
+                                                                "viewDetail",
+                                                            )}
+                                                            <ChevronRight className="size-3.5" />
+                                                        </Link>
+                                                    </Button>
                                                 </td>
                                             </tr>
                                         ))

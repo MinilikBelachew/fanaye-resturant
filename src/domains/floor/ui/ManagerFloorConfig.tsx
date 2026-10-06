@@ -3,7 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { MapPin, Plus, Save, Trash2, UserRound, Utensils } from "lucide-react";
+import {
+    ChevronRight,
+    MapPin,
+    Plus,
+    Save,
+    Trash2,
+    UserRound,
+    Utensils,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
     useAdminFloorLayoutQuery,
@@ -16,6 +24,7 @@ import {
 import type { AdminDiningTable } from "@/domains/floor/domain/floorLayoutApi";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "@/i18n/navigation";
 import {
     Form,
     FormControl,
@@ -38,6 +47,7 @@ import { cn } from "@/lib/utils";
 
 export default function ManagerFloorConfig() {
     const t = useTranslations("managerTables");
+    const tDetail = useTranslations("managerTableDetail");
     const tCommon = useTranslations("common");
     const { data, isLoading, isError } = useAdminFloorLayoutQuery();
     const [createPlace, { isLoading: creatingPlace }] =
@@ -96,6 +106,7 @@ export default function ManagerFloorConfig() {
     const editForm = useForm<DiningTableEditValues>({
         resolver: zodResolver(diningTableEditSchema),
         defaultValues: {
+            displayNumber: "",
             displayName: "",
             locationId: "",
             assignedWaiterMembershipId: "",
@@ -119,11 +130,13 @@ export default function ManagerFloorConfig() {
     }
 
     async function onCreateTable(values: DiningTableCreateValues) {
+        const number = values.displayNumber.trim();
+        const label = values.displayName?.trim() || `Table ${number}`;
         try {
             await createTable({
                 locationId: values.locationId,
-                displayName: values.displayName,
-                displayNumber: values.displayNumber || undefined,
+                displayName: label,
+                displayNumber: number,
                 assignedWaiterMembershipId:
                     values.assignedWaiterMembershipId || null,
             }).unwrap();
@@ -133,7 +146,7 @@ export default function ManagerFloorConfig() {
                 locationId: values.locationId,
                 assignedWaiterMembershipId: "",
             });
-            toast.success(t("toastTableCreated"), values.displayName);
+            toast.success(t("toastTableCreated"), `#${number} · ${label}`);
         } catch (err) {
             toast.fromUnknown(err, t("toastTableCreateError"));
         }
@@ -143,6 +156,7 @@ export default function ManagerFloorConfig() {
         setEditingTable(table);
         setConfirmTableId(null);
         editForm.reset({
+            displayNumber: table.displayNumber ?? "",
             displayName: table.displayName,
             locationId: table.locationId,
             assignedWaiterMembershipId: table.assignedWaiterMembershipId ?? "",
@@ -155,14 +169,18 @@ export default function ManagerFloorConfig() {
             await updateTable({
                 id: editingTable.id,
                 body: {
-                    displayName: values.displayName,
+                    displayNumber: values.displayNumber.trim(),
+                    displayName: values.displayName.trim(),
                     locationId: values.locationId,
                     assignedWaiterMembershipId:
                         values.assignedWaiterMembershipId || null,
                 },
             }).unwrap();
             setEditingTable(null);
-            toast.success(t("toastTableUpdated"), values.displayName);
+            toast.success(
+                t("toastTableUpdated"),
+                `#${values.displayNumber.trim()} · ${values.displayName.trim()}`,
+            );
         } catch (err) {
             toast.fromUnknown(err, t("toastTableUpdateError"));
         }
@@ -327,13 +345,13 @@ export default function ManagerFloorConfig() {
                         <div className="grid gap-2 sm:grid-cols-2">
                             <FormField
                                 control={tableForm.control}
-                                name="displayName"
+                                name="displayNumber"
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormControl>
                                             <Input
                                                 placeholder={t(
-                                                    "tableNamePlaceholder",
+                                                    "tableNumberPlaceholder",
                                                 )}
                                                 className="h-10"
                                                 {...field}
@@ -345,13 +363,13 @@ export default function ManagerFloorConfig() {
                             />
                             <FormField
                                 control={tableForm.control}
-                                name="displayNumber"
+                                name="displayName"
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormControl>
                                             <Input
                                                 placeholder={t(
-                                                    "numberOptional",
+                                                    "tableLabelPlaceholder",
                                                 )}
                                                 className="h-10"
                                                 {...field}
@@ -362,6 +380,9 @@ export default function ManagerFloorConfig() {
                                 )}
                             />
                         </div>
+                        <p className="text-[11px] text-slate-gray">
+                            {t("tableIdentityHint")}
+                        </p>
                         <div className="grid gap-2 sm:grid-cols-2">
                             <FormField
                                 control={tableForm.control}
@@ -535,16 +556,15 @@ export default function ManagerFloorConfig() {
                                                 <div>
                                                     <div className="flex items-start justify-between gap-2">
                                                         <div>
-                                                            <p className="text-[14px] font-semibold">
-                                                                {
-                                                                    table.displayName
-                                                                }
+                                                            <p className="text-[14px] font-semibold tracking-tight">
+                                                                {table.displayNumber
+                                                                    ? `#${table.displayNumber}`
+                                                                    : table.displayName}
                                                             </p>
                                                             {table.displayNumber ? (
-                                                                <p className="text-[11px] text-slate-gray">
-                                                                    #
+                                                                <p className="text-[12px] text-slate-gray">
                                                                     {
-                                                                        table.displayNumber
+                                                                        table.displayName
                                                                     }
                                                                 </p>
                                                             ) : null}
@@ -584,6 +604,21 @@ export default function ManagerFloorConfig() {
                                                         size="sm"
                                                         variant="outline"
                                                         className="flex-1"
+                                                        asChild
+                                                    >
+                                                        <Link
+                                                            href={`/manager/tables/${table.id}`}
+                                                        >
+                                                            {tDetail(
+                                                                "viewDetail",
+                                                            )}
+                                                            <ChevronRight className="size-3.5" />
+                                                        </Link>
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        size="sm"
+                                                        variant="outline"
                                                         onClick={() =>
                                                             openEdit(table)
                                                         }
@@ -662,15 +697,18 @@ export default function ManagerFloorConfig() {
                             <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
                                 <FormField
                                     control={editForm.control}
-                                    name="displayName"
+                                    name="displayNumber"
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>
-                                                {t("tableName")}
+                                                {t("tableNumber")}
                                             </FormLabel>
                                             <FormControl>
                                                 <Input
                                                     className="h-10"
+                                                    placeholder={t(
+                                                        "tableNumberPlaceholder",
+                                                    )}
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -678,6 +716,30 @@ export default function ManagerFloorConfig() {
                                         </FormItem>
                                     )}
                                 />
+                                <FormField
+                                    control={editForm.control}
+                                    name="displayName"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>
+                                                {t("tableLabel")}
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    className="h-10"
+                                                    placeholder={t(
+                                                        "tableLabelPlaceholder",
+                                                    )}
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <p className="text-[11px] text-slate-gray">
+                                    {t("tableIdentityHint")}
+                                </p>
                                 <FormField
                                     control={editForm.control}
                                     name="locationId"

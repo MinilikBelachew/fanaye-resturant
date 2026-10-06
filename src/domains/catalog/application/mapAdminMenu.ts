@@ -33,6 +33,7 @@ export function adminMenuItemToCatalog(
             (item.imageKey ? IMAGE_KEY_TO_URL[item.imageKey] : undefined) ||
             imageForDish(item.name),
         imageFileId: item.imageFileId ?? undefined,
+        badge: item.badge ?? null,
         modifierGroups: item.modifierGroups.map(group => ({
             id: group.id,
             name: group.name,

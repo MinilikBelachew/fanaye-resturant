@@ -22,8 +22,16 @@ import {
     useUpdateAdminMenuItemMutation,
     useUploadMenuImageMutation,
 } from "@/context/services/menuApi";
+import {
+    useGetAdminQrMenuConfigQuery,
+    useUpdateAdminQrMenuConfigMutation,
+} from "@/context/services/qrMenuApi";
 import { useListInventoryIngredientsQuery } from "@/context/services/inventoryApi";
 import { useGetStationsQuery } from "@/context/services/stationsApi";
+import {
+    formatDietaryTagLabel,
+    normalizeDietaryTag,
+} from "@/domains/catalog/application/dietaryTags";
 import {
     catalogModifiersToApi,
     filePublicUrl,
@@ -139,6 +147,10 @@ export default function AddMenuItemSheet({
     const [markSoldOut] = useMarkMenuItemSoldOutMutation();
     const [uploadImage, { isLoading: uploading }] =
         useUploadMenuImageMutation();
+    const { data: qrConfig } = useGetAdminQrMenuConfigQuery(undefined, {
+        skip: !isOpen,
+    });
+    const [updateQrConfig] = useUpdateAdminQrMenuConfigMutation();
 
     const { data: inventoryIngredients } = useListInventoryIngredientsQuery(
         { page: 1, limit: 100, status: "ACTIVE" },
@@ -207,6 +219,9 @@ export default function AddMenuItemSheet({
         null,
     );
     const [available, setAvailable] = useState(true);
+    const [badge, setBadge] = useState<string | null>(null);
+    const [newDietaryTag, setNewDietaryTag] = useState("");
+    const [localDietaryTags, setLocalDietaryTags] = useState<string[]>([]);
     const [submitError, setSubmitError] = useState("");
 
     const [selectedLibraryIds, setSelectedLibraryIds] = useState<string[]>([]);
@@ -239,6 +254,7 @@ export default function AddMenuItemSheet({
             setImageFileId(initialItem.imageFileId ?? null);
             setUploadPreviewUrl(initialItem.image || null);
             setAvailable(initialItem.available);
+            setBadge(initialItem.badge ?? null);
             const attached = initialItem.modifierGroups || [];
             setSelectedLibraryIds(
                 attached.map(group => group.id).filter(isPersistedId),
@@ -262,16 +278,54 @@ export default function AddMenuItemSheet({
             setImageFileId(null);
             setUploadPreviewUrl(null);
             setAvailable(true);
+            setBadge(null);
             setSelectedLibraryIds([]);
             setModifierGroups([]);
             setRecipeLines([]);
         }
         setSubmitError("");
+        setNewDietaryTag("");
         setNewGroupName("");
         setOptionName("");
         setOptionDelta("0");
         setTargetGroupId(null);
     }, [initialItem, isOpen, stations, metaData]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        setLocalDietaryTags(qrConfig?.enabledDietaryTags || []);
+    }, [isOpen, qrConfig]);
+
+    const dietaryTags = useMemo(() => {
+        const tags = [...localDietaryTags];
+        if (badge && !tags.some(t => t.toLowerCase() === badge.toLowerCase())) {
+            tags.unshift(badge);
+        }
+        return tags;
+    }, [localDietaryTags, badge]);
+
+    async function addDietaryTagFromSheet() {
+        const tag = normalizeDietaryTag(newDietaryTag);
+        if (!tag) return;
+        const nextTags = localDietaryTags.some(
+            t => t.toLowerCase() === tag.toLowerCase(),
+        )
+            ? localDietaryTags
+            : [...localDietaryTags, tag];
+        setLocalDietaryTags(nextTags);
+        setBadge(tag);
+        setNewDietaryTag("");
+        if (qrConfig) {
+            try {
+                await updateQrConfig({
+                    ...qrConfig,
+                    enabledDietaryTags: nextTags,
+                }).unwrap();
+            } catch {
+                // Tag stays local for this save; QR settings can sync later.
+            }
+        }
+    }
 
     if (!isOpen) return null;
 
@@ -408,6 +462,7 @@ export default function AddMenuItemSheet({
                 "Kitchen",
             expectedPrepMinutes: values.expectedPrepMinutes,
             available: values.available,
+            badge: badge?.trim() ? badge.trim().slice(0, 40) : null,
             ...(imageFileId
                 ? { imageFileId }
                 : initialItem && !uploadPreviewUrl
@@ -601,6 +656,75 @@ export default function AddMenuItemSheet({
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <hr className="border-hairline" />
+
+                    {/* Dietary tag */}
+                    <div className="space-y-2.5">
+                        <div className="flex items-center justify-between gap-3">
+                            <label className="text-[13px] font-medium text-foreground">
+                                {t("dietaryTag")}
+                            </label>
+                            <span className="text-[11px] text-slate-gray">
+                                {t("dietaryTagHint")}
+                            </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                            <button
+                                type="button"
+                                onClick={() => setBadge(null)}
+                                className={cn(
+                                    "rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
+                                    !badge
+                                        ? "border-brand bg-brand text-white"
+                                        : "border-hairline bg-secondary text-slate-gray hover:text-foreground",
+                                )}
+                            >
+                                {t("dietaryTagNone")}
+                            </button>
+                            {dietaryTags.map(tag => (
+                                <button
+                                    key={tag}
+                                    type="button"
+                                    onClick={() => setBadge(tag)}
+                                    className={cn(
+                                        "rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
+                                        badge === tag
+                                            ? "border-brand bg-brand text-white"
+                                            : "border-hairline bg-secondary text-slate-gray hover:text-foreground",
+                                    )}
+                                >
+                                    {formatDietaryTagLabel(tag)}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="flex gap-2">
+                            <Input
+                                value={newDietaryTag}
+                                onChange={e => setNewDietaryTag(e.target.value)}
+                                onKeyDown={e => {
+                                    if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        void addDietaryTagFromSheet();
+                                    }
+                                }}
+                                placeholder={t("dietaryTagAddPlaceholder")}
+                                maxLength={40}
+                                className="h-9 flex-1 rounded-[10px] bg-card text-[12px]"
+                            />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={!normalizeDietaryTag(newDietaryTag)}
+                                onClick={() => void addDietaryTagFromSheet()}
+                                className="h-9 shrink-0 gap-1 shadow-none"
+                            >
+                                <Plus className="size-3.5" />
+                                {t("dietaryTagAdd")}
+                            </Button>
                         </div>
                     </div>
 

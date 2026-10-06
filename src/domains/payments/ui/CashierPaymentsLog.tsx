@@ -5,16 +5,17 @@ import {
     useCashierPaymentsQuery,
     useLazyGetBillQuery,
 } from "@/context/services/billingApi";
-import { Bill } from "@/domains/billing/domain/billingApi";
-import { CashierReceiptModal } from "@/domains/payments/ui/CashierReceiptModal";
+import type { Bill } from "@/domains/billing/domain/billingApi";
 import DataTable, {
     type DataTableColumn,
 } from "@/components/custom/organisms/DataTable";
+import { CashierReceiptModal } from "@/domains/payments/ui/CashierReceiptModal";
 import { Button } from "@/components/ui/button";
 import { formatEtb } from "@/lib/money";
-import { toast } from "@/lib/toast";
 import { exportElementToPdf } from "@/lib/pdfExport";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { useRouter } from "@/i18n/navigation";
 import { FileDown, LayoutGrid, Loader2, Receipt, Table2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { CashierPaymentsSkeleton } from "@/components/custom/molecules/Skeletons";
@@ -24,6 +25,7 @@ type ViewMode = "table" | "cards";
 export default function CashierPaymentsLog() {
     const tCashier = useTranslations("cashier");
     const tCommon = useTranslations("common");
+    const router = useRouter();
     const logRef = useRef<HTMLDivElement>(null);
     const [view, setView] = useState<ViewMode>("table");
     const [isExportingPdf, setIsExportingPdf] = useState(false);
@@ -31,12 +33,12 @@ export default function CashierPaymentsLog() {
         pollingInterval: 5000,
     });
     const [triggerGetBill] = useLazyGetBillQuery();
+    const [loadingBillId, setLoadingBillId] = useState<string | null>(null);
     const [activeReceipt, setActiveReceipt] = useState<{
         bill: Bill;
         tableDisplayName: string;
         waiterName: string;
     } | null>(null);
-    const [loadingBillId, setLoadingBillId] = useState<string | null>(null);
 
     const [page, setPage] = useState(1);
     const PAGE_SIZE = 10;
@@ -62,21 +64,15 @@ export default function CashierPaymentsLog() {
         return tCashier("transfer");
     }
 
-    async function handleExportPdf() {
-        if (!logRef.current) return;
-        setIsExportingPdf(true);
-        try {
-            await exportElementToPdf(logRef.current, {
-                filename: `cashier-payments-log-${new Date().toISOString().slice(0, 10)}.pdf`,
-                scale: 2.5,
-                orientation: "portrait",
-            });
-        } finally {
-            setIsExportingPdf(false);
-        }
+    function openDetail(paymentId: string) {
+        router.push(`/cashier/payments/${paymentId}`);
     }
 
-    async function viewReceipt(payment: (typeof payments)[number]) {
+    async function openBillReceipt(
+        payment: (typeof payments)[number],
+        event?: { stopPropagation: () => void },
+    ) {
+        event?.stopPropagation();
         setLoadingBillId(payment.billId);
         try {
             const bill = await triggerGetBill(payment.billId).unwrap();
@@ -89,6 +85,20 @@ export default function CashierPaymentsLog() {
             toast.error(tCashier("receiptLoadError"));
         } finally {
             setLoadingBillId(null);
+        }
+    }
+
+    async function handleExportPdf() {
+        if (!logRef.current) return;
+        setIsExportingPdf(true);
+        try {
+            await exportElementToPdf(logRef.current, {
+                filename: `cashier-payments-log-${new Date().toISOString().slice(0, 10)}.pdf`,
+                scale: 2.5,
+                orientation: "portrait",
+            });
+        } finally {
+            setIsExportingPdf(false);
         }
     }
 
@@ -139,13 +149,13 @@ export default function CashierPaymentsLog() {
                         : tCashier("tableOpen"),
             },
             {
-                id: "actions",
-                header: "",
+                id: "billReceipt",
+                header: tCashier("billReceipt"),
                 cell: row => (
                     <Button
                         size="sm"
-                        variant="ghost"
-                        onClick={() => void viewReceipt(row)}
+                        variant="outline"
+                        onClick={event => void openBillReceipt(row, event)}
                         disabled={loadingBillId === row.billId}
                         className="h-8 gap-1.5 px-2 text-[12px] font-normal"
                     >
@@ -156,6 +166,17 @@ export default function CashierPaymentsLog() {
                         )}
                         {tCashier("receipt")}
                     </Button>
+                ),
+            },
+            {
+                id: "detail",
+                header: tCashier("detail"),
+                cell: row => (
+                    <span className="text-[12px] text-slate-gray">
+                        {row.hasTransferReceipt
+                            ? tCashier("viewSlip")
+                            : tCashier("openDetail")}
+                    </span>
                 ),
             },
         ],
@@ -245,6 +266,7 @@ export default function CashierPaymentsLog() {
                         empty={tCashier("noPayments")}
                         searchPlaceholder={null}
                         showColumnToggle={false}
+                        onRowClick={row => openDetail(row.paymentId)}
                         pagination={{
                             page,
                             totalPages,
@@ -257,7 +279,19 @@ export default function CashierPaymentsLog() {
                         {pagePayments.map(payment => (
                             <li
                                 key={payment.paymentId}
-                                className="rounded-[14px] border border-hairline bg-card p-4"
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => openDetail(payment.paymentId)}
+                                onKeyDown={event => {
+                                    if (
+                                        event.key === "Enter" ||
+                                        event.key === " "
+                                    ) {
+                                        event.preventDefault();
+                                        openDetail(payment.paymentId);
+                                    }
+                                }}
+                                className="cursor-pointer rounded-[14px] border border-hairline bg-card p-4 transition-colors hover:bg-secondary/30"
                             >
                                 <p className="text-[12px] text-slate-gray">
                                     {tCommon("table")}{" "}
@@ -277,20 +311,29 @@ export default function CashierPaymentsLog() {
                                         ? ` · ${tCashier("tableClosed")}`
                                         : ` · ${tCashier("tableOpen")}`}
                                 </p>
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => void viewReceipt(payment)}
-                                    disabled={loadingBillId === payment.billId}
-                                    className="mt-3 h-8 gap-1.5 rounded-full text-[12px] font-normal"
-                                >
-                                    {loadingBillId === payment.billId ? (
-                                        <Loader2 className="size-3.5 animate-spin" />
-                                    ) : (
-                                        <Receipt className="size-3.5" />
-                                    )}
-                                    {tCashier("receipt")}
-                                </Button>
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={event =>
+                                            void openBillReceipt(payment, event)
+                                        }
+                                        disabled={
+                                            loadingBillId === payment.billId
+                                        }
+                                        className="h-8 gap-1.5 rounded-full text-[12px] font-normal"
+                                    >
+                                        {loadingBillId === payment.billId ? (
+                                            <Loader2 className="size-3.5 animate-spin" />
+                                        ) : (
+                                            <Receipt className="size-3.5" />
+                                        )}
+                                        {tCashier("billReceipt")}
+                                    </Button>
+                                    <span className="inline-flex h-8 items-center text-[12px] text-slate-gray">
+                                        {tCashier("openDetail")}
+                                    </span>
+                                </div>
                             </li>
                         ))}
                     </ul>

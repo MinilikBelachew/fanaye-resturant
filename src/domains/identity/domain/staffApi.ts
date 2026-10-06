@@ -35,6 +35,8 @@ export type AdminStaffMember = {
     hasPassword?: boolean;
     stationId?: string | null;
     stationName?: string | null;
+    branchId?: string | null;
+    branchName?: string | null;
     shiftCoverages: AdminStaffShiftCoverage[];
 };
 

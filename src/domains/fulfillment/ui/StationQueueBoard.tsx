@@ -112,7 +112,11 @@ function TicketCard({
             <div className="relative flex min-h-[200px] flex-col justify-between gap-2 p-3">
                 <div className="flex items-start justify-between gap-1.5">
                     <p className="rounded-full bg-black/35 px-2 py-0.5 text-[11px] font-medium text-white/90 backdrop-blur-sm">
-                        {tCommon("table")} {ticket.tableDisplayName}
+                        {ticket.tableDisplayName
+                            .toLowerCase()
+                            .startsWith("call")
+                            ? ticket.tableDisplayName
+                            : `${tCommon("table")} ${ticket.tableDisplayName}`}
                     </p>
                     <StatusPill ticket={ticket} overlay compact />
                 </div>
@@ -361,9 +365,23 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
             },
             {
                 id: "waiter",
-                header: tCommon("waiter"),
+                header: tCommon("staff"),
                 sortValue: row => row.ticket.waiter.displayName,
-                cell: row => row.ticket.waiter.displayName,
+                cell: row => {
+                    const isCall = row.ticket.tableDisplayName
+                        .toLowerCase()
+                        .startsWith("call");
+                    return (
+                        <span className="inline-flex flex-col leading-tight">
+                            <span>{row.ticket.waiter.displayName}</span>
+                            {isCall ? (
+                                <span className="text-[11px] font-medium text-slate-gray">
+                                    Dispatcher
+                                </span>
+                            ) : null}
+                        </span>
+                    );
+                },
             },
             {
                 id: "received",

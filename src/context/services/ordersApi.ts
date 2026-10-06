@@ -20,7 +20,70 @@ export type ServedOrderItemResponse = {
     version: number;
 };
 
+export type ApprovalRequestType = "CANCELLATION" | "CHANGE";
+export type ApprovalPeriod = "day" | "week" | "month";
+
+export type ApprovalQueueItem = {
+    type: ApprovalRequestType;
+    requestId: string;
+    orderItemId: string;
+    orderId: string;
+    tableId: string;
+    itemName: string;
+    quantity: number;
+    unitPrice: string;
+    lineTotal: string;
+    currencyCode: string;
+    tableDisplayName: string;
+    tableDisplayNumber?: string | null;
+    stationName: string;
+    stationId?: string | null;
+    itemState: string;
+    stateAtRequest: string;
+    itemVersion: number;
+    status: string;
+    reason: string | null;
+    specialInstruction?: string | null;
+    requestedChange?: Record<string, unknown> | null;
+    requestedByName: string;
+    requestedAt: string;
+    decidedByName?: string | null;
+    decidedAt?: string | null;
+    decisionReason?: string | null;
+};
+
+export type ApprovalQueueResponse = {
+    data: ApprovalQueueItem[];
+    summary?: {
+        pendingCount: number;
+        cancellationCount: number;
+        changeCount: number;
+    };
+};
+
+export type ApprovalHistoryParams = {
+    period?: ApprovalPeriod;
+    type?: ApprovalRequestType | "ALL";
+    q?: string;
+    page?: number;
+    limit?: number;
+};
+
+export type ApprovalHistoryResponse = {
+    period: string;
+    from: string;
+    to: string;
+    data: ApprovalQueueItem[];
+    pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+    };
+};
+
 export const ordersApi = api.injectEndpoints({
+    overrideExisting: true,
     endpoints: builder => ({
         waiterMenu: builder.query<
             WaiterMenuResponse,
@@ -174,28 +237,45 @@ export const ordersApi = api.injectEndpoints({
                 { type: "Order", id: arg.tableSessionId },
             ],
         }),
-        orderMutationApprovals: builder.query<
-            {
-                data: Array<{
-                    type: "CANCELLATION" | "CHANGE";
-                    requestId: string;
-                    orderItemId: string;
-                    itemName: string;
-                    tableDisplayName: string;
-                    stationName: string;
-                    itemState: string;
-                    itemVersion: number;
-                    reason: string | null;
-                    requestedChange?: Record<string, unknown> | null;
-                    requestedByName: string;
-                    requestedAt: string;
-                }>;
-            },
-            void
-        >({
+        orderMutationApprovals: builder.query<ApprovalQueueResponse, void>({
             query: () => ({
                 url: "/approvals/order-mutations",
                 method: "GET",
+            }),
+            providesTags: ["Approvals"],
+        }),
+        approvalDetail: builder.query<
+            { data: ApprovalQueueItem },
+            { type: ApprovalRequestType; requestId: string }
+        >({
+            query: ({ type, requestId }) => ({
+                url: `/approvals/order-mutations/${type.toLowerCase()}/${requestId}`,
+                method: "GET",
+            }),
+            providesTags: (_result, _error, arg) => [
+                "Approvals",
+                {
+                    type: "Approvals" as const,
+                    id: `${arg.type}-${arg.requestId}`,
+                },
+            ],
+        }),
+        approvalHistory: builder.query<
+            ApprovalHistoryResponse,
+            ApprovalHistoryParams | void
+        >({
+            query: (params = {}) => ({
+                url: "/approvals/order-mutations/history",
+                method: "GET",
+                params: {
+                    ...(params?.period ? { period: params.period } : {}),
+                    ...(params?.type && params.type !== "ALL"
+                        ? { type: params.type }
+                        : {}),
+                    ...(params?.q ? { q: params.q } : {}),
+                    ...(params?.page ? { page: params.page } : {}),
+                    ...(params?.limit ? { limit: params.limit } : {}),
+                },
             }),
             providesTags: ["Approvals"],
         }),
@@ -277,18 +357,32 @@ export const ordersApi = api.injectEndpoints({
     }),
 });
 
-export const {
-    useWaiterMenuQuery,
-    useTableSessionOrdersQuery,
-    useConfirmOrderMutation,
-    useMarkOrderItemServedMutation,
-    useCancelOrderItemMutation,
-    useRequestOrderCancellationMutation,
-    useRequestOrderChangeMutation,
-    useOrderMutationApprovalsQuery,
-    useApproveCancellationRequestMutation,
-    useRejectCancellationRequestMutation,
-    useApproveChangeRequestMutation,
-    useRejectChangeRequestMutation,
-    useSendToKitchenMutation,
-} = ordersApi;
+export const useWaiterMenuQuery = ordersApi.endpoints.waiterMenu.useQuery;
+export const useTableSessionOrdersQuery =
+    ordersApi.endpoints.tableSessionOrders.useQuery;
+export const useConfirmOrderMutation =
+    ordersApi.endpoints.confirmOrder.useMutation;
+export const useMarkOrderItemServedMutation =
+    ordersApi.endpoints.markOrderItemServed.useMutation;
+export const useCancelOrderItemMutation =
+    ordersApi.endpoints.cancelOrderItem.useMutation;
+export const useRequestOrderCancellationMutation =
+    ordersApi.endpoints.requestOrderCancellation.useMutation;
+export const useRequestOrderChangeMutation =
+    ordersApi.endpoints.requestOrderChange.useMutation;
+export const useOrderMutationApprovalsQuery =
+    ordersApi.endpoints.orderMutationApprovals.useQuery;
+export const useApprovalDetailQuery =
+    ordersApi.endpoints.approvalDetail.useQuery;
+export const useApprovalHistoryQuery =
+    ordersApi.endpoints.approvalHistory.useQuery;
+export const useApproveCancellationRequestMutation =
+    ordersApi.endpoints.approveCancellationRequest.useMutation;
+export const useRejectCancellationRequestMutation =
+    ordersApi.endpoints.rejectCancellationRequest.useMutation;
+export const useApproveChangeRequestMutation =
+    ordersApi.endpoints.approveChangeRequest.useMutation;
+export const useRejectChangeRequestMutation =
+    ordersApi.endpoints.rejectChangeRequest.useMutation;
+export const useSendToKitchenMutation =
+    ordersApi.endpoints.sendToKitchen.useMutation;

@@ -18,6 +18,13 @@ export type CreateAdminStaffBody = {
     preparationStationId?: string;
     shiftDefinitionId?: string;
     tableIds?: string[];
+    /** Owner: create into a specific branch */
+    branchId?: string;
+};
+
+export type AdminStaffQueryArg = {
+    scope?: "branch" | "all";
+    branchId?: string;
 };
 
 export type UpdateAdminStaffBody = {
@@ -32,14 +39,63 @@ export type UpdateAdminStaffBody = {
     preparationStationId?: string;
 };
 
+export type AdminStaffDetail = AdminStaffMember & {
+    joinedAt?: string | null;
+    createdAt?: string | null;
+    tablesCoveredCount?: number;
+    shiftsCoveredCount?: number;
+};
+
 export const staffApi = api.injectEndpoints({
+    overrideExisting: true,
     endpoints: builder => ({
-        adminStaff: builder.query<AdminStaffListResponse, void>({
-            query: () => ({
-                url: "/admin/staff",
+        listAdminStaff: builder.query<
+            AdminStaffListResponse,
+            AdminStaffQueryArg | void
+        >({
+            query: arg => {
+                const scope =
+                    arg && typeof arg === "object" ? arg.scope : undefined;
+                const branchId =
+                    arg && typeof arg === "object" ? arg.branchId : undefined;
+                return {
+                    url: "/admin/staff",
+                    method: "GET",
+                    params: {
+                        ...(scope ? { scope } : {}),
+                        ...(branchId ? { branchId } : {}),
+                        _sv: "2",
+                    },
+                };
+            },
+            serializeQueryArgs: ({ endpointName, queryArgs }) => {
+                const scope =
+                    queryArgs && typeof queryArgs === "object"
+                        ? (queryArgs.scope ?? "")
+                        : "";
+                const branchId =
+                    queryArgs && typeof queryArgs === "object"
+                        ? (queryArgs.branchId ?? "")
+                        : "";
+                return `${endpointName}|${scope}|${branchId}`;
+            },
+            forceRefetch({ currentArg, previousArg }) {
+                return (
+                    JSON.stringify(currentArg ?? null) !==
+                    JSON.stringify(previousArg ?? null)
+                );
+            },
+            providesTags: ["Floor"],
+        }),
+        adminStaffDetail: builder.query<{ data: AdminStaffDetail }, string>({
+            query: membershipId => ({
+                url: `/admin/staff/${membershipId}/detail`,
                 method: "GET",
             }),
-            providesTags: ["Floor"],
+            providesTags: (_result, _error, membershipId) => [
+                { type: "Floor", id: `staff-${membershipId}` },
+                "Floor",
+            ],
         }),
         adminShiftFloor: builder.query<AdminShiftFloorResponse, string>({
             query: shiftDefinitionId => ({
@@ -148,14 +204,19 @@ export const staffApi = api.injectEndpoints({
     }),
 });
 
-export const {
-    useAdminStaffQuery,
-    useAdminShiftFloorQuery,
-    useCreateAdminStaffMutation,
-    useUpdateAdminStaffMutation,
-    useCreateShiftDefinitionMutation,
-    useUpdateShiftDefinitionMutation,
-    useSetWaiterTableCoverageMutation,
-    useResetAdminStaffPinMutation,
-    useResetAdminStaffPasswordMutation,
-} = staffApi;
+export const useAdminStaffQuery = staffApi.useListAdminStaffQuery;
+export const useListAdminStaffQuery = staffApi.useListAdminStaffQuery;
+export const useAdminStaffDetailQuery = staffApi.useAdminStaffDetailQuery;
+export const useAdminShiftFloorQuery = staffApi.useAdminShiftFloorQuery;
+export const useCreateAdminStaffMutation = staffApi.useCreateAdminStaffMutation;
+export const useUpdateAdminStaffMutation = staffApi.useUpdateAdminStaffMutation;
+export const useCreateShiftDefinitionMutation =
+    staffApi.useCreateShiftDefinitionMutation;
+export const useUpdateShiftDefinitionMutation =
+    staffApi.useUpdateShiftDefinitionMutation;
+export const useSetWaiterTableCoverageMutation =
+    staffApi.useSetWaiterTableCoverageMutation;
+export const useResetAdminStaffPinMutation =
+    staffApi.useResetAdminStaffPinMutation;
+export const useResetAdminStaffPasswordMutation =
+    staffApi.useResetAdminStaffPasswordMutation;

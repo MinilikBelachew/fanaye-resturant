@@ -33,6 +33,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { formatDietaryTagLabel } from "@/domains/catalog/application/dietaryTags";
 import { formatEtb } from "@/lib/money";
 import { toast } from "@/lib/toast";
 
@@ -103,30 +104,14 @@ export default function GuestTableOrderingPage({
                         .toLowerCase()
                         .includes(search.toLowerCase()));
 
-            let matchesDiet = true;
-            if (selectedDiet === "FASTING") {
-                matchesDiet =
-                    item.badge === "FASTING" ||
-                    item.name.toLowerCase().includes("fasting") ||
-                    item.name.toLowerCase().includes("tsom") ||
-                    item.name.toLowerCase().includes("shiro");
-            } else if (selectedDiet === "VEGETARIAN") {
-                matchesDiet =
-                    item.badge === "VEGETARIAN" ||
-                    item.name.toLowerCase().includes("salad") ||
-                    item.name.toLowerCase().includes("veg");
-            } else if (selectedDiet === "SPICY") {
-                matchesDiet =
-                    item.badge === "SPICY" ||
-                    item.name.toLowerCase().includes("tibs") ||
-                    item.name.toLowerCase().includes("spicy");
-            } else if (selectedDiet === "CHEF_PICK") {
-                matchesDiet = item.badge === "CHEF_PICK";
-            }
+            const matchesDiet =
+                selectedDiet === "ALL" || item.badge === selectedDiet;
 
             return matchesCategory && matchesSearch && matchesDiet;
         });
     }, [items, activeCategory, search, selectedDiet]);
+
+    const dietaryTags = config?.enabledDietaryTags || [];
 
     function handleItemClick(item: PublicMenuItem) {
         if (!config?.allowGuestOrders) return;
@@ -458,28 +443,30 @@ export default function GuestTableOrderingPage({
                     </div>
                 </div>
 
-                {/* Dietary Filter Pills */}
-                <div className="flex gap-2 overflow-x-auto px-4 sm:px-0 pt-3 pb-1 scrollbar-none">
-                    {[
-                        { id: "ALL", label: "All Items" },
-                        { id: "FASTING", label: "ፆም Fasting" },
-                        { id: "VEGETARIAN", label: "🥗 Vegetarian" },
-                        { id: "SPICY", label: "🌶️ Spicy" },
-                        { id: "CHEF_PICK", label: "⭐ Chef's Picks" },
-                    ].map(filter => (
-                        <button
-                            key={filter.id}
-                            onClick={() => setSelectedDiet(filter.id)}
-                            className={`flex-shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${
-                                selectedDiet === filter.id
-                                    ? "bg-slate-900 text-white shadow-xs"
-                                    : "bg-white text-slate-600 border border-slate-200/70 hover:bg-slate-50"
-                            }`}
-                        >
-                            {filter.label}
-                        </button>
-                    ))}
-                </div>
+                {/* Dietary Filter Pills — restaurant-defined tags */}
+                {dietaryTags.length > 0 ? (
+                    <div className="flex gap-2 overflow-x-auto px-4 sm:px-0 pt-3 pb-1 scrollbar-none">
+                        {[
+                            { id: "ALL", label: "All Items" },
+                            ...dietaryTags.map(tag => ({
+                                id: tag,
+                                label: formatDietaryTagLabel(tag),
+                            })),
+                        ].map(filter => (
+                            <button
+                                key={filter.id}
+                                onClick={() => setSelectedDiet(filter.id)}
+                                className={`flex-shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${
+                                    selectedDiet === filter.id
+                                        ? "bg-slate-900 text-white shadow-xs"
+                                        : "bg-white text-slate-600 border border-slate-200/70 hover:bg-slate-50"
+                                }`}
+                            >
+                                {filter.label}
+                            </button>
+                        ))}
+                    </div>
+                ) : null}
 
                 {/* Featured / Chef's Highlights */}
                 {featured.length > 0 && !search && selectedDiet === "ALL" ? (

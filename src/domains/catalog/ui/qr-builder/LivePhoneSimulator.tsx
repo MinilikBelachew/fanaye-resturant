@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { QrMenuConfig } from "@/context/services/qrMenuApi";
+import { formatDietaryTagLabel } from "@/domains/catalog/application/dietaryTags";
 import { MenuItem } from "@/domains/catalog/domain/menu";
 import { formatEtb } from "@/lib/money";
 
@@ -43,6 +44,8 @@ export const LivePhoneSimulator: React.FC<LivePhoneSimulatorProps> = ({
         new Set(menuItems.map(i => i.category || "Main Menu")),
     );
 
+    const dietaryTags = config.enabledDietaryTags || [];
+
     const filteredItems = menuItems.filter(item => {
         const matchesCategory =
             activeTab === "all" || item.category === activeTab;
@@ -51,7 +54,9 @@ export const LivePhoneSimulator: React.FC<LivePhoneSimulatorProps> = ({
             item.name.toLowerCase().includes(search.toLowerCase()) ||
             (item.description &&
                 item.description.toLowerCase().includes(search.toLowerCase()));
-        return matchesCategory && matchesSearch;
+        const matchesDiet =
+            selectedDiet === "ALL" || item.badge === selectedDiet;
+        return matchesCategory && matchesSearch && matchesDiet;
     });
 
     return (
@@ -135,25 +140,25 @@ export const LivePhoneSimulator: React.FC<LivePhoneSimulatorProps> = ({
                 </div>
 
                 {/* Dietary Filters */}
-                <div className="flex gap-1.5 overflow-x-auto px-3 pt-2.5 scrollbar-none text-[11px]">
-                    {["ALL", "FASTING", "VEGETARIAN", "SPICY"].map(tag => (
-                        <button
-                            key={tag}
-                            onClick={() => setSelectedDiet(tag)}
-                            className={`flex-shrink-0 rounded-full px-2.5 py-1 font-medium transition-colors ${
-                                selectedDiet === tag
-                                    ? "bg-slate-900 text-white"
-                                    : "bg-slate-200/80 text-slate-600 hover:bg-slate-200"
-                            }`}
-                        >
-                            {tag === "ALL" && t("dietAll")}
-                            {tag === "FASTING" && t("dietFasting")}
-                            {tag === "VEGETARIAN" &&
-                                `🥗 ${t("dietVegetarian")}`}
-                            {tag === "SPICY" && `🌶️ ${t("dietSpicy")}`}
-                        </button>
-                    ))}
-                </div>
+                {dietaryTags.length > 0 ? (
+                    <div className="flex gap-1.5 overflow-x-auto px-3 pt-2.5 scrollbar-none text-[11px]">
+                        {["ALL", ...dietaryTags].map(tag => (
+                            <button
+                                key={tag}
+                                onClick={() => setSelectedDiet(tag)}
+                                className={`flex-shrink-0 rounded-full px-2.5 py-1 font-medium transition-colors ${
+                                    selectedDiet === tag
+                                        ? "bg-slate-900 text-white"
+                                        : "bg-slate-200/80 text-slate-600 hover:bg-slate-200"
+                                }`}
+                            >
+                                {tag === "ALL"
+                                    ? t("dietAll")
+                                    : formatDietaryTagLabel(tag)}
+                            </button>
+                        ))}
+                    </div>
+                ) : null}
 
                 {/* Chef's Recommendations Carousel */}
                 {displayFeatured.length > 0 ? (

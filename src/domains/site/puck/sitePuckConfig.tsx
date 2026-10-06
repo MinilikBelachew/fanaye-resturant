@@ -25,6 +25,8 @@ export type SiteSectionProps = {
         showPhone: boolean;
         linksLabel: string;
         navAlign: string;
+        ctaLabel: string;
+        ctaHref: string;
         size: string;
         sticky: boolean;
     } & WithTypography;
@@ -395,10 +397,22 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                             label: "Split (logo left, links right)",
                             value: "split",
                         },
+                        {
+                            label: "Logo · center links · CTA",
+                            value: "brandCenter",
+                        },
                         { label: "Left", value: "left" },
                         { label: "Center", value: "center" },
                         { label: "Right", value: "right" },
                     ],
+                },
+                ctaLabel: {
+                    type: "text",
+                    label: "Header CTA (e.g. Book a table)",
+                },
+                ctaHref: {
+                    type: "text",
+                    label: "Header CTA link",
                 },
                 size: {
                     type: "select",
@@ -419,11 +433,21 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                 showPhone: true,
                 linksLabel: "Menu,About,Contact",
                 navAlign: "split",
+                ctaLabel: "",
+                ctaHref: "#contact",
                 size: "md",
                 sticky: true,
             },
             render: props => {
-                const { showPhone, linksLabel, navAlign, size, sticky } = props;
+                const {
+                    showPhone,
+                    linksLabel,
+                    navAlign,
+                    ctaLabel,
+                    ctaHref,
+                    size,
+                    sticky,
+                } = props;
                 const ctx = getSiteRender();
                 const links = parseNavLabels(linksLabel);
                 const align = navAlign || "split";
@@ -434,10 +458,13 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                 src={resolveImage(ctx.theme.logoUrl)}
                                 alt={ctx.tenantName}
                                 className="h-10 w-10 rounded-full object-cover"
+                                style={{
+                                    boxShadow: `0 0 0 2px ${ctx.theme.primaryColor}55`,
+                                }}
                             />
                         ) : (
                             <div
-                                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white"
+                                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white shadow-sm"
                                 style={{ background: ctx.theme.primaryColor }}
                             >
                                 {ctx.tenantName.slice(0, 1)}
@@ -451,30 +478,44 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                         </span>
                     </div>
                 );
-                const nav = (
+                const navLinks = (
                     <nav
-                        className="flex flex-wrap items-center gap-4"
+                        className="flex flex-wrap items-center justify-center gap-5 text-[11px] font-semibold uppercase tracking-[0.16em]"
                         style={bodyStyle(props)}
                     >
                         {links.map(link => (
                             <a
                                 key={link.label}
                                 href={link.href}
-                                className="opacity-80 hover:opacity-100"
+                                className="opacity-70 transition-opacity hover:opacity-100"
                             >
                                 {link.label}
                             </a>
                         ))}
-                        {showPhone && ctx.phone ? (
-                            <a
-                                href={`tel:${ctx.phone}`}
-                                className="rounded-full px-3 py-1.5 text-white"
-                                style={{ background: ctx.theme.primaryColor }}
-                            >
-                                {ctx.phone}
-                            </a>
-                        ) : null}
                     </nav>
+                );
+                const headerCta = ctaLabel ? (
+                    <a
+                        href={ctaHref || "#contact"}
+                        className="inline-flex rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors"
+                        style={{
+                            borderColor: ctx.theme.primaryColor,
+                            color: ctx.theme.textColor,
+                            background: "transparent",
+                        }}
+                    >
+                        {ctaLabel}
+                    </a>
+                ) : showPhone && ctx.phone ? (
+                    <a
+                        href={`tel:${ctx.phone}`}
+                        className="rounded-full px-3 py-1.5 text-sm text-white"
+                        style={{ background: ctx.theme.primaryColor }}
+                    >
+                        {ctx.phone}
+                    </a>
+                ) : (
+                    <span className="w-24" />
                 );
 
                 return (
@@ -483,14 +524,42 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                             sticky ? "sticky top-0 z-20 backdrop-blur-md" : ""
                         }`}
                         style={{
-                            background: `${ctx.theme.backgroundColor}ee`,
-                            borderBottom: "1px solid rgba(0,0,0,.06)",
+                            background: `${ctx.theme.backgroundColor}f2`,
+                            borderBottom: "1px solid rgba(0,0,0,.05)",
                         }}
                     >
-                        {align === "split" ? (
+                        {align === "brandCenter" ? (
+                            <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-4">
+                                <div className="justify-self-start">{logo}</div>
+                                <div className="hidden justify-self-center md:block">
+                                    {navLinks}
+                                </div>
+                                <div className="justify-self-end">
+                                    {headerCta}
+                                </div>
+                                <div className="col-span-3 md:hidden">
+                                    {navLinks}
+                                </div>
+                            </div>
+                        ) : align === "split" ? (
                             <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
                                 {logo}
-                                {nav}
+                                <div className="flex items-center gap-4">
+                                    {navLinks}
+                                    {ctaLabel ? headerCta : null}
+                                    {!ctaLabel && showPhone && ctx.phone ? (
+                                        <a
+                                            href={`tel:${ctx.phone}`}
+                                            className="rounded-full px-3 py-1.5 text-sm text-white"
+                                            style={{
+                                                background:
+                                                    ctx.theme.primaryColor,
+                                            }}
+                                        >
+                                            {ctx.phone}
+                                        </a>
+                                    ) : null}
+                                </div>
                             </div>
                         ) : (
                             <div
@@ -503,7 +572,8 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                 }`}
                             >
                                 {logo}
-                                {nav}
+                                {navLinks}
+                                {ctaLabel ? headerCta : null}
                             </div>
                         )}
                     </header>
@@ -521,6 +591,10 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                         {
                             label: "Full-bleed image + overlay text",
                             value: "overlay",
+                        },
+                        {
+                            label: "Framed photo + centered title",
+                            value: "framed",
                         },
                         { label: "Image left, text right", value: "imageLeft" },
                         {
@@ -639,6 +713,98 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                         >
                             <div className="relative z-10 mx-auto w-full max-w-6xl">
                                 {copy}
+                            </div>
+                        </section>
+                    );
+                }
+
+                if (layout === "framed") {
+                    return (
+                        <section
+                            className="px-4 pb-6 pt-2 sm:px-6 lg:px-8"
+                            style={{ background: ctx.theme.backgroundColor }}
+                        >
+                            <div className="relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] shadow-[0_24px_60px_-28px_rgba(15,23,42,0.35)] sm:rounded-[2.5rem]">
+                                <div className="relative aspect-[16/10] w-full sm:aspect-[21/9]">
+                                    {bg ? (
+                                        <img
+                                            src={bg}
+                                            alt=""
+                                            className="absolute inset-0 size-full object-cover"
+                                        />
+                                    ) : (
+                                        <div
+                                            className="absolute inset-0"
+                                            style={{
+                                                background: `linear-gradient(135deg, ${ctx.theme.primaryColor}, ${ctx.theme.accentColor})`,
+                                            }}
+                                        />
+                                    )}
+                                    <div
+                                        className="absolute inset-0"
+                                        style={{
+                                            background: `linear-gradient(180deg, rgba(15,23,42,0.15) 0%, rgba(15,23,42,${0.35 + opacity * 0.35}) 100%)`,
+                                        }}
+                                    />
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center text-white">
+                                        <h1
+                                            className="max-w-3xl text-4xl font-medium leading-tight tracking-tight sm:text-5xl lg:text-6xl"
+                                            style={{
+                                                ...titleStyle(props),
+                                                color: "#fff",
+                                                fontFamily:
+                                                    "var(--site-font-display)",
+                                            }}
+                                        >
+                                            {props.headline}
+                                        </h1>
+                                        {props.subheadline ? (
+                                            <p
+                                                className="mt-4 max-w-xl text-sm opacity-90 sm:text-base"
+                                                style={{
+                                                    ...bodyStyle(props),
+                                                    color: "#fff",
+                                                }}
+                                            >
+                                                {props.subheadline}
+                                            </p>
+                                        ) : null}
+                                        {(props.ctaLabel ||
+                                            props.secondaryCtaLabel) && (
+                                            <div className="mt-7 flex flex-wrap justify-center gap-3">
+                                                {props.ctaLabel ? (
+                                                    <a
+                                                        href={
+                                                            props.ctaHref ||
+                                                            "#menu"
+                                                        }
+                                                        className="inline-flex rounded-full px-6 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] text-white"
+                                                        style={{
+                                                            background:
+                                                                ctx.theme
+                                                                    .primaryColor,
+                                                        }}
+                                                    >
+                                                        {props.ctaLabel}
+                                                    </a>
+                                                ) : null}
+                                                {props.secondaryCtaLabel ? (
+                                                    <a
+                                                        href={
+                                                            props.secondaryCtaHref ||
+                                                            "#contact"
+                                                        }
+                                                        className="inline-flex rounded-full border border-white/70 px-6 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] text-white"
+                                                    >
+                                                        {
+                                                            props.secondaryCtaLabel
+                                                        }
+                                                    </a>
+                                                ) : null}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </section>
                     );

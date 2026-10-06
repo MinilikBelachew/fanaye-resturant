@@ -12,6 +12,8 @@ export function homePathForRole(role: Role): string {
             return "/cashier";
         case "waiter":
             return "/waiter/tables";
+        case "dispatcher":
+            return "/dispatcher";
         case "kitchen":
             return "/kitchen";
         case "barista":
@@ -39,6 +41,9 @@ export function roleAllowsPath(role: Role, pathname: string): boolean {
     if (role === "waiter") {
         return rest.startsWith("/waiter");
     }
+    if (role === "dispatcher") {
+        return rest.startsWith("/dispatcher");
+    }
     if (role === "super_admin") {
         return rest.startsWith("/super-admin");
     }
@@ -53,6 +58,7 @@ export function stationOrderPath(role: Role, itemId: string): string {
 /** Full inbox page for the signed-in role. */
 export function notificationsPathForRole(role: Role): string {
     if (role === "waiter") return "/waiter/notifications";
+    if (role === "dispatcher") return "/dispatcher/notifications";
     if (role === "super_admin") return "/super-admin";
     return `${homePathForRole(role)}/notifications`;
 }

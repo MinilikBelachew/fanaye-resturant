@@ -1,10 +1,19 @@
 import { api } from "./index";
 
+export interface InventoryUnit {
+    id: string;
+    code: string;
+    name: string;
+    category: string;
+    sortOrder: number;
+}
+
 export interface InventoryIngredient {
     id: string;
     name: string;
     unit: string;
     unitCost: number;
+    stockValue?: number;
     parLevel: number;
     onHandQty: number;
     isLowStock: boolean;
@@ -18,6 +27,7 @@ export interface InventoryBalanceRow {
     name: string;
     unit: string;
     unitCost: number;
+    stockValue: number;
     parLevel: number;
     onHandQty: number;
     isLowStock: boolean;
@@ -25,11 +35,21 @@ export interface InventoryBalanceRow {
     updatedAt: string;
 }
 
+export interface InventoryMoneySummary {
+    currencyCode: string;
+    skuCount: number;
+    lowStockCount: number;
+    totalStockValue: number;
+    lowStockValue: number;
+}
+
 export interface InventoryLedgerRow {
     id: string;
     entryType: string;
     quantityDelta: number;
     unitCostSnapshot: number | null;
+    unitCost?: number;
+    lineValue?: number;
     note: string | null;
     supplierNote: string | null;
     invoiceRef: string | null;
@@ -83,6 +103,10 @@ export interface InventoryListParams {
 
 export const inventoryApi = api.injectEndpoints({
     endpoints: builder => ({
+        listInventoryUnits: builder.query<{ data: InventoryUnit[] }, void>({
+            query: () => ({ url: "/inventory/units" }),
+            providesTags: ["Inventory"],
+        }),
         listInventoryIngredients: builder.query<
             { data: InventoryIngredient[]; meta: InventoryPageMeta },
             InventoryListParams | void
@@ -131,7 +155,11 @@ export const inventoryApi = api.injectEndpoints({
             invalidatesTags: ["Inventory"],
         }),
         listInventoryBalances: builder.query<
-            { data: InventoryBalanceRow[]; meta: InventoryPageMeta },
+            {
+                data: InventoryBalanceRow[];
+                meta: InventoryPageMeta;
+                summary?: InventoryMoneySummary;
+            },
             InventoryListParams | void
         >({
             query: params => ({
@@ -235,6 +263,7 @@ export const inventoryApi = api.injectEndpoints({
 });
 
 export const {
+    useListInventoryUnitsQuery,
     useListInventoryIngredientsQuery,
     useCreateInventoryIngredientMutation,
     useUpdateInventoryIngredientMutation,

@@ -10,6 +10,8 @@ interface ExportPdfOptions {
     scale?: number;
     isReceipt?: boolean;
     format?: "a4" | "receipt";
+    /** Scale the capture to fit a single A4 page (no multi-page split). */
+    fitSinglePage?: boolean;
 }
 
 /**
@@ -29,6 +31,7 @@ export async function exportElementToPdf(
         scale = 2.5,
         isReceipt = false,
         format = "a4",
+        fitSinglePage = false,
     } = options;
 
     toast.info(
@@ -110,16 +113,18 @@ export async function exportElementToPdf(
             const imgWidth = pageWidth;
             const imgHeight = (img.height * imgWidth) / img.width;
 
-            // Single-page fit (with small tolerance for margins)
-            if (imgHeight <= pageHeight + 3) {
-                pdf.addImage(
-                    dataUrl,
-                    "PNG",
-                    0,
-                    0,
-                    imgWidth,
-                    Math.min(imgHeight, pageHeight),
+            if (fitSinglePage || imgHeight <= pageHeight + 3) {
+                // Always one page: scale down if needed to fit A4.
+                const scaleToFit = Math.min(
+                    1,
+                    pageWidth / imgWidth,
+                    pageHeight / imgHeight,
                 );
+                const drawW = imgWidth * scaleToFit;
+                const drawH = imgHeight * scaleToFit;
+                const offsetX = (pageWidth - drawW) / 2;
+                const offsetY = (pageHeight - drawH) / 2;
+                pdf.addImage(dataUrl, "PNG", offsetX, offsetY, drawW, drawH);
             } else {
                 // Multi-page slicing for longer menus
                 let heightLeft = imgHeight;

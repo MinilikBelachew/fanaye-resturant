@@ -21,6 +21,8 @@ export interface PreparationStation {
     sortOrder?: number;
     ticketCount?: number;
     menuItemCount?: number;
+    ownerNames?: string[];
+    ticketsToday?: number;
 }
 
 export const DEFAULT_STATIONS: PreparationStation[] = [

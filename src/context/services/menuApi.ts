@@ -18,10 +18,19 @@ export const menuApi = api.injectEndpoints({
             }),
             providesTags: ["Menu"],
         }),
-        adminMenuItems: builder.query<{ data: AdminMenuItem[] }, void>({
-            query: () => ({
+        adminMenuItems: builder.query<
+            { data: AdminMenuItem[] },
+            { q?: string; stationId?: string } | void
+        >({
+            query: params => ({
                 url: "/admin/menu-items",
                 method: "GET",
+                params: {
+                    ...(params?.q?.trim() ? { q: params.q.trim() } : {}),
+                    ...(params?.stationId && params.stationId !== "all"
+                        ? { stationId: params.stationId }
+                        : {}),
+                },
             }),
             providesTags: ["Menu"],
         }),

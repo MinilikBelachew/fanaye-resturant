@@ -29,7 +29,6 @@ export default function DishCard({
                     featured ? "h-[240px] md:h-[280px]" : "h-[160px]",
                 )}
             >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                     src={image}
                     alt={name}

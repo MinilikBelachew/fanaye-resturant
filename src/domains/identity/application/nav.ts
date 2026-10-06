@@ -15,6 +15,7 @@ import {
     LayoutDashboard,
     LayoutGrid,
     Package,
+    Phone,
     QrCode,
     Radio,
     ScrollText,
@@ -185,6 +186,11 @@ export function navForRole(role: Role): NavSection[] {
                             href: "/owner/branches",
                             label: "Branches",
                             icon: Building2,
+                        },
+                        {
+                            href: "/owner/staff",
+                            label: "Staff",
+                            icon: Users,
                         },
                         {
                             href: "/owner/inventory",
@@ -404,6 +410,44 @@ export function navForRole(role: Role): NavSection[] {
                         },
                         {
                             href: "/waiter/profile",
+                            label: "Profile",
+                            icon: UserRound,
+                        },
+                    ],
+                },
+            ];
+        case "dispatcher":
+            return [
+                {
+                    title: "Calls",
+                    items: [
+                        {
+                            href: "/dispatcher",
+                            label: "Board",
+                            icon: Phone,
+                        },
+                        {
+                            href: "/dispatcher/notifications",
+                            label: "Notifications",
+                            icon: Bell,
+                        },
+                    ],
+                },
+                {
+                    title: "Shift",
+                    items: [
+                        {
+                            href: "/dispatcher/shift",
+                            label: "Shift",
+                            icon: Clock3,
+                        },
+                        {
+                            href: "/dispatcher/cash",
+                            label: "Cash",
+                            icon: Wallet,
+                        },
+                        {
+                            href: "/dispatcher/profile",
                             label: "Profile",
                             icon: UserRound,
                         },

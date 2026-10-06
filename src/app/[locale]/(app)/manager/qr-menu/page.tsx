@@ -7,33 +7,6 @@ import { StudioSkeleton } from "@/components/custom/molecules/Skeletons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-
-function ToggleSwitch({
-    checked,
-    onCheckedChange,
-}: {
-    checked: boolean;
-    onCheckedChange: (val: boolean) => void;
-}) {
-    return (
-        <button
-            type="button"
-            role="switch"
-            aria-checked={checked}
-            onClick={() => onCheckedChange(!checked)}
-            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                checked ? "bg-amber-600" : "bg-slate-300"
-            }`}
-        >
-            <span
-                className={`pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                    checked ? "translate-x-5" : "translate-x-0"
-                }`}
-            />
-        </button>
-    );
-}
 import { toast } from "@/lib/toast";
 import {
     useGetAdminQrMenuConfigQuery,
@@ -53,19 +26,10 @@ import { LivePhoneSimulator } from "@/domains/catalog/ui/qr-builder/LivePhoneSim
 import { TableQrCardModal } from "@/domains/catalog/ui/qr-builder/TableQrCardModal";
 import {
     Check,
-    CheckCircle2,
     ExternalLink,
     FileDown,
-    Flame,
-    Globe,
-    ImageIcon,
-    Leaf,
     Loader2,
-    Printer,
-    QrCode,
     Save,
-    ShieldCheck,
-    Sparkles,
     Upload,
     Wifi,
     X,
@@ -73,6 +37,62 @@ import {
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
+
+function ToggleSwitch({
+    checked,
+    onCheckedChange,
+}: {
+    checked: boolean;
+    onCheckedChange: (val: boolean) => void;
+}) {
+    return (
+        <button
+            type="button"
+            role="switch"
+            aria-checked={checked}
+            onClick={() => onCheckedChange(!checked)}
+            className={cn(
+                "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border transition-colors",
+                checked
+                    ? "border-foreground bg-foreground"
+                    : "border-border bg-muted",
+            )}
+        >
+            <span
+                className={cn(
+                    "pointer-events-none inline-block size-4 translate-y-px rounded-full bg-background transition-transform",
+                    checked ? "translate-x-4" : "translate-x-0.5",
+                )}
+            />
+        </button>
+    );
+}
+
+function Section({
+    title,
+    icon,
+    children,
+    meta,
+}: {
+    title: string;
+    icon?: React.ReactNode;
+    children: React.ReactNode;
+    meta?: React.ReactNode;
+}) {
+    return (
+        <section className="rounded-xl border border-border bg-background p-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-[13px] text-foreground">
+                    {icon}
+                    {title}
+                </div>
+                {meta}
+            </div>
+            {children}
+        </section>
+    );
+}
 
 export default function ManagerQrMenuPage() {
     const tManager = useTranslations("manager");
@@ -102,10 +122,17 @@ export default function ManagerQrMenuPage() {
     });
 
     const [printModalOpen, setPrintModalOpen] = useState(false);
+    const [wifiEnabled, setWifiEnabled] = useState(false);
 
     useEffect(() => {
         if (configData) {
             setForm(configData);
+            setWifiEnabled(
+                Boolean(
+                    configData.wifiSsid?.trim() ||
+                        configData.wifiPassword?.trim(),
+                ),
+            );
         }
     }, [configData]);
 
@@ -138,10 +165,17 @@ export default function ManagerQrMenuPage() {
 
     const tables = tablesData?.tables || [];
     const slug = tablesData?.slug || "restaurant";
+    const managesAllBranches = tablesData?.managesAllBranches ?? false;
 
     async function handleSave() {
         try {
-            await updateConfig(form).unwrap();
+            const payload: QrMenuConfig = {
+                ...form,
+                wifiSsid: wifiEnabled ? form.wifiSsid || "" : "",
+                wifiPassword: wifiEnabled ? form.wifiPassword || "" : "",
+            };
+            await updateConfig(payload).unwrap();
+            setForm(payload);
             toast.success(
                 "QR Menu saved!",
                 "Your dining table menu settings have been updated.",
@@ -174,66 +208,64 @@ export default function ManagerQrMenuPage() {
 
     return (
         <DashboardFrame>
-            {/* Header */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <PageHeader
+                    compact
                     eyebrow={tNav("floor")}
                     title={tNav("qrMenu")}
                     description={tManager("qrMenuDescription")}
                 />
-                <div className="flex flex-wrap items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-1.5">
                     <Button
-                        variant="outline"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => setPrintModalOpen(true)}
-                        className="gap-2 border-slate-300 text-slate-700 hover:bg-slate-50 font-medium"
+                        className="gap-1.5 text-muted-foreground hover:text-foreground"
                     >
-                        <FileDown className="size-4 text-amber-600" />
+                        <FileDown className="size-3.5" />
                         {tManager("printCards")} ({tables.length})
                     </Button>
-
                     <Link href={sampleTableUrl} target="_blank">
                         <Button
-                            variant="outline"
-                            className="gap-2 border-slate-300 text-slate-700"
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1.5 text-muted-foreground hover:text-foreground"
                         >
-                            <ExternalLink className="size-4 text-slate-500" />
+                            <ExternalLink className="size-3.5" />
                             {tManager("previewLive")}
                         </Button>
                     </Link>
-
                     <Button
+                        size="sm"
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="gap-2 bg-amber-600 hover:bg-amber-700 text-white font-medium shadow-sm"
+                        className="gap-1.5 shadow-none"
                     >
                         {isSaving ? (
-                            <Loader2 className="size-4 animate-spin" />
+                            <Loader2 className="size-3.5 animate-spin" />
                         ) : (
-                            <Save className="size-4" />
+                            <Save className="size-3.5" />
                         )}
                         {tCommon("save")}
                     </Button>
                 </div>
             </div>
 
-            {/* Main 2-Column Studio: Left Config Panels / Right Phone Simulator */}
-            <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                {/* Left Form Controls (7 cols) */}
-                <div className="lg:col-span-7 space-y-6">
-                    {/* Ordering Policy & Operations */}
-                    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs">
-                        <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-                            <Zap className="size-4 text-amber-600" />
-                            {t("orderingRulesTitle")}
-                        </div>
-
-                        <div className="mt-4 space-y-4">
-                            <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-4 border border-slate-100">
-                                <div>
-                                    <h4 className="text-xs font-semibold text-slate-900">
+            <div className="mt-5 grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+                <div className="space-y-4 lg:col-span-7">
+                    <Section
+                        title={t("orderingRulesTitle")}
+                        icon={
+                            <Zap className="size-3.5 text-muted-foreground" />
+                        }
+                    >
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between gap-4 rounded-lg border border-border px-3.5 py-3">
+                                <div className="min-w-0">
+                                    <p className="text-[13px] text-foreground">
                                         {t("allowGuestOrders")}
-                                    </h4>
-                                    <p className="text-[11px] text-slate-500">
+                                    </p>
+                                    <p className="mt-0.5 text-[11px] text-muted-foreground">
                                         {t("allowGuestOrdersDesc")}
                                     </p>
                                 </div>
@@ -248,12 +280,12 @@ export default function ManagerQrMenuPage() {
                                 />
                             </div>
 
-                            <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-4 border border-slate-100">
-                                <div>
-                                    <h4 className="text-xs font-semibold text-slate-900">
+                            <div className="flex items-center justify-between gap-4 rounded-lg border border-border px-3.5 py-3">
+                                <div className="min-w-0">
+                                    <p className="text-[13px] text-foreground">
                                         {t("autoSendKds")}
-                                    </h4>
-                                    <p className="text-[11px] text-slate-500">
+                                    </p>
+                                    <p className="mt-0.5 text-[11px] text-muted-foreground">
                                         {form.autoSendToKitchen
                                             ? t("autoSendKdsOn")
                                             : t("autoSendKdsOff")}
@@ -270,18 +302,12 @@ export default function ManagerQrMenuPage() {
                                 />
                             </div>
                         </div>
-                    </div>
+                    </Section>
 
-                    {/* Header Branding & Welcome */}
-                    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
-                        <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-                            <Sparkles className="size-4 text-amber-600" />
-                            {t("headerBrandingTitle")}
-                        </div>
-
+                    <Section title={t("headerBrandingTitle")}>
                         <div className="space-y-3">
                             <div>
-                                <Label className="text-xs font-medium text-slate-700">
+                                <Label className="text-[12px] text-muted-foreground">
                                     {t("welcomeTitle")}
                                 </Label>
                                 <Input
@@ -293,12 +319,12 @@ export default function ManagerQrMenuPage() {
                                         }))
                                     }
                                     placeholder={t("welcomeTitlePlaceholder")}
-                                    className="mt-1 text-xs"
+                                    className="mt-1.5"
                                 />
                             </div>
 
                             <div>
-                                <Label className="text-xs font-medium text-slate-700">
+                                <Label className="text-[12px] text-muted-foreground">
                                     {t("subtitleLabel")}
                                 </Label>
                                 <Input
@@ -310,13 +336,13 @@ export default function ManagerQrMenuPage() {
                                         }))
                                     }
                                     placeholder={t("subtitlePlaceholder")}
-                                    className="mt-1 text-xs"
+                                    className="mt-1.5"
                                 />
                             </div>
 
                             <div>
                                 <div className="flex items-center justify-between">
-                                    <Label className="text-xs font-medium text-slate-700">
+                                    <Label className="text-[12px] text-muted-foreground">
                                         {t("coverPhotoBanner")}
                                     </Label>
                                     {form.coverImageUrl ? (
@@ -328,7 +354,7 @@ export default function ManagerQrMenuPage() {
                                                     coverImageUrl: "",
                                                 }))
                                             }
-                                            className="text-[11px] font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1"
+                                            className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
                                         >
                                             <X className="size-3" />
                                             {t("remove")}
@@ -336,15 +362,14 @@ export default function ManagerQrMenuPage() {
                                     ) : null}
                                 </div>
 
-                                {/* Banner Thumbnail Preview */}
                                 {form.coverImageUrl ? (
-                                    <div className="relative mt-2 h-28 w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-inner group">
+                                    <div className="relative mt-2 h-28 w-full overflow-hidden rounded-lg border border-border bg-muted">
                                         <img
                                             src={form.coverImageUrl}
                                             alt="Banner Preview"
                                             className="h-full w-full object-cover"
                                         />
-                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity hover:opacity-100">
                                             <Button
                                                 type="button"
                                                 size="sm"
@@ -352,7 +377,7 @@ export default function ManagerQrMenuPage() {
                                                 onClick={() =>
                                                     bannerFileInputRef.current?.click()
                                                 }
-                                                className="text-xs h-7 gap-1 bg-white/90 text-slate-900 hover:bg-white"
+                                                className="h-7 gap-1 text-[11px] shadow-none"
                                             >
                                                 <Upload className="size-3" />
                                                 {t("replaceFile")}
@@ -361,7 +386,6 @@ export default function ManagerQrMenuPage() {
                                     </div>
                                 ) : null}
 
-                                {/* Dual controls: URL input + Select from Files button */}
                                 <div className="mt-2 flex gap-2">
                                     <Input
                                         value={form.coverImageUrl || ""}
@@ -372,9 +396,8 @@ export default function ManagerQrMenuPage() {
                                             }))
                                         }
                                         placeholder={t("bannerUrlPlaceholder")}
-                                        className="text-xs flex-1"
+                                        className="flex-1"
                                     />
-
                                     <input
                                         type="file"
                                         ref={bannerFileInputRef}
@@ -382,20 +405,20 @@ export default function ManagerQrMenuPage() {
                                         onChange={handleBannerFileChange}
                                         className="hidden"
                                     />
-
                                     <Button
                                         type="button"
                                         variant="outline"
+                                        size="sm"
                                         disabled={isUploadingBanner}
                                         onClick={() =>
                                             bannerFileInputRef.current?.click()
                                         }
-                                        className="shrink-0 gap-1.5 border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                                        className="shrink-0 gap-1.5 shadow-none"
                                     >
                                         {isUploadingBanner ? (
-                                            <Loader2 className="size-3.5 animate-spin text-amber-600" />
+                                            <Loader2 className="size-3.5 animate-spin" />
                                         ) : (
-                                            <Upload className="size-3.5 text-amber-600" />
+                                            <Upload className="size-3.5" />
                                         )}
                                         {isUploadingBanner
                                             ? t("uploading")
@@ -403,16 +426,15 @@ export default function ManagerQrMenuPage() {
                                     </Button>
                                 </div>
 
-                                <p className="mt-1 text-[10px] text-slate-400">
+                                <p className="mt-1.5 text-[11px] text-muted-foreground">
                                     {t("bannerTip")}
                                 </p>
 
-                                {/* Quick Presets */}
-                                <div className="mt-2.5">
-                                    <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                                <div className="mt-3">
+                                    <span className="text-[11px] tracking-wide text-muted-foreground">
                                         {t("quickPresets")}
                                     </span>
-                                    <div className="mt-1 flex flex-wrap gap-1.5">
+                                    <div className="mt-1.5 flex flex-wrap gap-1.5">
                                         {(
                                             [
                                                 {
@@ -443,12 +465,13 @@ export default function ManagerQrMenuPage() {
                                                             preset.url,
                                                     }))
                                                 }
-                                                className={`rounded-lg border px-2 py-1 text-[10px] font-medium transition-colors ${
+                                                className={cn(
+                                                    "rounded-md border px-2 py-1 text-[11px] transition-colors",
                                                     form.coverImageUrl ===
-                                                    preset.url
-                                                        ? "border-amber-500 bg-amber-50 text-amber-900 font-semibold"
-                                                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
-                                                }`}
+                                                        preset.url
+                                                        ? "border-foreground bg-foreground text-background"
+                                                        : "border-border text-muted-foreground hover:text-foreground",
+                                                )}
                                             >
                                                 {t(preset.key)}
                                             </button>
@@ -457,73 +480,86 @@ export default function ManagerQrMenuPage() {
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </Section>
 
-                    {/* Table Wi-Fi Details */}
-                    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
-                        <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-                            <Wifi className="size-4 text-amber-600" />
-                            {t("wifiCredentialsTitle")}
-                        </div>
-                        <p className="text-xs text-slate-500">
-                            {t("wifiCredentialsDesc")}
+                    <Section
+                        title={t("wifiCredentialsTitle")}
+                        icon={
+                            <Wifi className="size-3.5 text-muted-foreground" />
+                        }
+                        meta={
+                            <ToggleSwitch
+                                checked={wifiEnabled}
+                                onCheckedChange={checked => {
+                                    setWifiEnabled(checked);
+                                    if (!checked) {
+                                        setForm(prev => ({
+                                            ...prev,
+                                            wifiSsid: "",
+                                            wifiPassword: "",
+                                        }));
+                                    }
+                                }}
+                            />
+                        }
+                    >
+                        <p className="mb-3 text-[12px] text-muted-foreground">
+                            {wifiEnabled
+                                ? t("wifiCredentialsDesc")
+                                : t("wifiCredentialsOptional")}
                         </p>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                                <Label className="text-xs font-medium text-slate-700">
-                                    {t("wifiName")}
-                                </Label>
-                                <Input
-                                    value={form.wifiSsid || ""}
-                                    onChange={e =>
-                                        setForm(prev => ({
-                                            ...prev,
-                                            wifiSsid: e.target.value,
-                                        }))
-                                    }
-                                    placeholder="Guest_Wifi"
-                                    className="mt-1 text-xs"
-                                />
+                        {wifiEnabled ? (
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <div>
+                                    <Label className="text-[12px] text-muted-foreground">
+                                        {t("wifiName")}
+                                    </Label>
+                                    <Input
+                                        value={form.wifiSsid || ""}
+                                        onChange={e =>
+                                            setForm(prev => ({
+                                                ...prev,
+                                                wifiSsid: e.target.value,
+                                            }))
+                                        }
+                                        placeholder="Guest_Wifi"
+                                        className="mt-1.5"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="text-[12px] text-muted-foreground">
+                                        {t("wifiPassword")}
+                                    </Label>
+                                    <Input
+                                        value={form.wifiPassword || ""}
+                                        onChange={e =>
+                                            setForm(prev => ({
+                                                ...prev,
+                                                wifiPassword: e.target.value,
+                                            }))
+                                        }
+                                        placeholder="buna2026"
+                                        className="mt-1.5 font-mono"
+                                    />
+                                </div>
                             </div>
+                        ) : null}
+                    </Section>
 
-                            <div>
-                                <Label className="text-xs font-medium text-slate-700">
-                                    {t("wifiPassword")}
-                                </Label>
-                                <Input
-                                    value={form.wifiPassword || ""}
-                                    onChange={e =>
-                                        setForm(prev => ({
-                                            ...prev,
-                                            wifiPassword: e.target.value,
-                                        }))
-                                    }
-                                    placeholder="buna2026"
-                                    className="mt-1 text-xs font-mono"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Featured Dishes / Chef's Highlights */}
-                    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-                                <Sparkles className="size-4 text-amber-600" />
-                                {t("chefsHighlightsTitle")}
-                            </div>
-                            <span className="text-xs font-medium text-amber-600">
+                    <Section
+                        title={t("chefsHighlightsTitle")}
+                        meta={
+                            <span className="text-[11px] text-muted-foreground">
                                 {t("selectedCount", {
                                     count: (form.featuredItemIds || []).length,
                                 })}
                             </span>
-                        </div>
-                        <p className="text-xs text-slate-500">
+                        }
+                    >
+                        <p className="mb-3 text-[12px] text-muted-foreground">
                             {t("chefsHighlightsDesc")}
                         </p>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[300px] overflow-y-auto pr-1">
+                        <div className="grid max-h-[300px] grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
                             {menuItems.map(item => {
                                 const isSelected = (
                                     form.featuredItemIds || []
@@ -535,13 +571,14 @@ export default function ManagerQrMenuPage() {
                                         onClick={() =>
                                             toggleFeaturedItem(item.id)
                                         }
-                                        className={`flex items-center gap-3 rounded-2xl border p-2.5 text-left transition-all ${
+                                        className={cn(
+                                            "flex items-center gap-3 rounded-lg border p-2.5 text-left transition-colors",
                                             isSelected
-                                                ? "border-amber-500 bg-amber-50/50 shadow-xs"
-                                                : "border-slate-200 bg-white hover:border-slate-300"
-                                        }`}
+                                                ? "border-foreground/30 bg-muted/40"
+                                                : "border-border hover:border-foreground/20",
+                                        )}
                                     >
-                                        <div className="relative size-10 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                                        <div className="relative size-10 shrink-0 overflow-hidden rounded-md bg-muted">
                                             {item.image ? (
                                                 <img
                                                     src={item.image}
@@ -549,48 +586,49 @@ export default function ManagerQrMenuPage() {
                                                     className="h-full w-full object-cover"
                                                 />
                                             ) : (
-                                                <div className="flex h-full w-full items-center justify-center text-xs">
-                                                    🍽️
+                                                <div className="flex h-full w-full items-center justify-center text-[11px] text-muted-foreground">
+                                                    —
                                                 </div>
                                             )}
                                         </div>
-
-                                        <div className="flex-1 min-w-0">
-                                            <h5 className="text-xs font-semibold text-slate-900 truncate">
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate text-[12px] text-foreground">
                                                 {item.name}
-                                            </h5>
-                                            <span className="text-[11px] font-bold text-slate-600">
+                                            </p>
+                                            <span className="text-[11px] text-muted-foreground">
                                                 {item.price} ETB
                                             </span>
                                         </div>
-
                                         <div
-                                            className={`flex size-5 items-center justify-center rounded-full border transition-colors ${
+                                            className={cn(
+                                                "flex size-5 items-center justify-center rounded-full border",
                                                 isSelected
-                                                    ? "border-amber-600 bg-amber-600 text-white"
-                                                    : "border-slate-300 bg-white"
-                                            }`}
+                                                    ? "border-foreground bg-foreground text-background"
+                                                    : "border-border bg-background",
+                                            )}
                                         >
                                             {isSelected ? (
-                                                <Check className="size-3 stroke-[3]" />
+                                                <Check className="size-3" />
                                             ) : null}
                                         </div>
                                     </button>
                                 );
                             })}
                         </div>
-                    </div>
+                    </Section>
                 </div>
 
-                {/* Right Live Phone Simulator (5 cols) */}
-                <div className="lg:col-span-5 lg:sticky lg:top-6 flex flex-col items-center">
-                    <div className="flex items-center gap-2 mb-3 text-xs font-semibold text-slate-500">
-                        <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                <div className="flex flex-col items-center lg:sticky lg:top-6 lg:col-span-5">
+                    <div className="mb-3 flex items-center gap-2 text-[11px] text-muted-foreground">
+                        <span className="size-1.5 rounded-full bg-emerald-500" />
                         {t("livePreview")}
                     </div>
-
                     <LivePhoneSimulator
-                        config={form}
+                        config={{
+                            ...form,
+                            wifiSsid: wifiEnabled ? form.wifiSsid : "",
+                            wifiPassword: wifiEnabled ? form.wifiPassword : "",
+                        }}
                         menuItems={menuItems}
                         tableName={
                             tables[0]?.displayName ||
@@ -603,7 +641,6 @@ export default function ManagerQrMenuPage() {
                 </div>
             </div>
 
-            {/* Table QR Card Modal */}
             <TableQrCardModal
                 open={printModalOpen}
                 onOpenChange={setPrintModalOpen}
@@ -611,6 +648,7 @@ export default function ManagerQrMenuPage() {
                 config={form}
                 restaurantName={form.welcomeMessage || t("restaurantFallback")}
                 slug={slug}
+                managesAllBranches={managesAllBranches}
             />
         </DashboardFrame>
     );

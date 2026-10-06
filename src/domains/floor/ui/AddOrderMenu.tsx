@@ -60,13 +60,17 @@ export default function AddOrderMenu({
     tableSessionId,
     expectedVersion,
     tableLabel = "Table",
+    variant = "waiter",
     onClose,
 }: {
     tableSessionId: string;
     expectedVersion: number;
     tableLabel?: string;
+    /** Waiter table flow vs dispatcher call-pickup flow (copy + accents). */
+    variant?: "waiter" | "dispatcher";
     onClose: () => void;
 }) {
+    const isDispatcher = variant === "dispatcher";
     const { data, isLoading, isError } = useWaiterMenuQuery({
         tableSessionId,
     });
@@ -278,15 +282,24 @@ export default function AddOrderMenu({
                         className="h-9 gap-1.5 rounded-full px-3 text-[13px] font-semibold text-slate-gray hover:bg-secondary hover:text-foreground"
                     >
                         <ArrowLeft className="size-4" />
-                        <span className="hidden sm:inline">Back to Table</span>
+                        <span className="hidden sm:inline">
+                            {isDispatcher ? "Back to call" : "Back to Table"}
+                        </span>
                     </Button>
                     <div className="h-5 w-px bg-hairline" />
                     <div className="flex items-center gap-2">
                         <span className="text-[15px] font-semibold tracking-tight text-foreground">
                             {tableLabel}
                         </span>
-                        <span className="hidden items-center rounded-full bg-brand/10 px-2.5 py-0.5 text-[11px] font-bold text-brand uppercase sm:inline-flex">
-                            Take Order
+                        <span
+                            className={cn(
+                                "hidden items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase sm:inline-flex",
+                                isDispatcher
+                                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                                    : "bg-brand/10 text-brand",
+                            )}
+                        >
+                            {isDispatcher ? "Call pickup" : "Take Order"}
                         </span>
                         {data?.activePeriod ? (
                             <span className="hidden rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-medium text-slate-gray md:inline-flex">
@@ -322,7 +335,12 @@ export default function AddOrderMenu({
                     <button
                         type="button"
                         onClick={() => setMobileTicketOpen(true)}
-                        className="flex items-center gap-1.5 rounded-full bg-brand px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-brand-deep md:hidden"
+                        className={cn(
+                            "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white shadow-sm md:hidden",
+                            isDispatcher
+                                ? "bg-emerald-600 hover:bg-emerald-700"
+                                : "bg-brand hover:bg-brand-deep",
+                        )}
                     >
                         <Receipt className="size-3.5" />
                         <span>{pieceCount}</span>
@@ -347,7 +365,9 @@ export default function AddOrderMenu({
                     className={cn(
                         "flex shrink-0 items-center gap-1.5 rounded-full px-4 py-1.5 text-[13px] font-semibold transition-all duration-150",
                         selectedCategory === "ALL"
-                            ? "bg-brand text-white shadow-sm"
+                            ? isDispatcher
+                                ? "bg-emerald-600 text-white shadow-sm"
+                                : "bg-brand text-white shadow-sm"
                             : "border border-hairline bg-card text-slate-gray hover:bg-secondary hover:text-foreground",
                     )}
                 >
@@ -381,7 +401,9 @@ export default function AddOrderMenu({
                             className={cn(
                                 "flex shrink-0 items-center gap-1.5 rounded-full px-4 py-1.5 text-[13px] font-semibold transition-all duration-150",
                                 isActive
-                                    ? "bg-brand text-white shadow-sm"
+                                    ? isDispatcher
+                                        ? "bg-emerald-600 text-white shadow-sm"
+                                        : "bg-brand text-white shadow-sm"
                                     : "border border-hairline bg-card text-slate-gray hover:bg-secondary hover:text-foreground",
                             )}
                         >
@@ -415,7 +437,9 @@ export default function AddOrderMenu({
                     ) : isError ? (
                         <div className="flex h-64 flex-col items-center justify-center gap-3 text-destructive">
                             <p className="font-semibold">
-                                Could not load the menu for this table.
+                                {isDispatcher
+                                    ? "Could not load the menu for this call."
+                                    : "Could not load the menu for this table."}
                             </p>
                             <Button
                                 variant="outline"
@@ -609,7 +633,12 @@ export default function AddOrderMenu({
                                                             onClick={() =>
                                                                 selectItem(item)
                                                             }
-                                                            className="flex h-8 items-center gap-1 rounded-full bg-brand/10 px-3 text-[13px] font-semibold text-brand transition-all hover:bg-brand hover:text-white"
+                                                            className={cn(
+                                                                "flex h-8 items-center gap-1 rounded-full px-3 text-[13px] font-semibold transition-all",
+                                                                isDispatcher
+                                                                    ? "bg-emerald-500/15 text-emerald-700 hover:bg-emerald-600 hover:text-white dark:text-emerald-300"
+                                                                    : "bg-brand/10 text-brand hover:bg-brand hover:text-white",
+                                                            )}
                                                         >
                                                             <Plus className="size-3.5" />
                                                             <span>Add</span>
@@ -629,6 +658,7 @@ export default function AddOrderMenu({
                 <aside className="hidden h-full w-[380px] shrink-0 flex-col border-l border-hairline bg-card shadow-subtle lg:w-[410px] md:flex">
                     <OrderTicketContent
                         tableLabel={tableLabel}
+                        variant={variant}
                         lines={lines}
                         menuItems={menuItems}
                         pieceCount={pieceCount}
@@ -660,7 +690,12 @@ export default function AddOrderMenu({
             {lines.length > 0 && !mobileTicketOpen ? (
                 <div className="fixed right-0 bottom-0 left-0 z-40 border-t border-hairline bg-card/95 p-3 backdrop-blur-md md:hidden">
                     <Button
-                        className="h-12 w-full justify-between rounded-[16px] bg-brand px-4 text-[14px] font-bold text-white shadow-md hover:bg-brand-deep"
+                        className={cn(
+                            "h-12 w-full justify-between rounded-[16px] px-4 text-[14px] font-bold text-white shadow-md",
+                            isDispatcher
+                                ? "bg-emerald-600 hover:bg-emerald-700"
+                                : "bg-brand hover:bg-brand-deep",
+                        )}
                         onClick={() => setMobileTicketOpen(true)}
                     >
                         <span className="flex items-center gap-2">
@@ -686,6 +721,7 @@ export default function AddOrderMenu({
                     >
                         <OrderTicketContent
                             tableLabel={tableLabel}
+                            variant={variant}
                             lines={lines}
                             menuItems={menuItems}
                             pieceCount={pieceCount}
@@ -767,6 +803,7 @@ export default function AddOrderMenu({
  */
 function OrderTicketContent({
     tableLabel,
+    variant = "waiter",
     lines,
     menuItems,
     pieceCount,
@@ -782,6 +819,7 @@ function OrderTicketContent({
     onSubmit,
 }: {
     tableLabel: string;
+    variant?: "waiter" | "dispatcher";
     lines: BasketLine[];
     menuItems: MenuItem[];
     pieceCount: number;
@@ -796,17 +834,34 @@ function OrderTicketContent({
     onCloseMobile?: () => void;
     onSubmit: () => void;
 }) {
+    const isDispatcher = variant === "dispatcher";
     return (
         <div className="flex h-full min-h-0 flex-1 flex-col">
             {/* Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-hairline bg-secondary/30 px-5 py-3.5">
                 <div className="flex items-center gap-2">
-                    <Receipt className="size-4 text-brand" />
+                    <Receipt
+                        className={cn(
+                            "size-4",
+                            isDispatcher
+                                ? "text-emerald-600 dark:text-emerald-300"
+                                : "text-brand",
+                        )}
+                    />
                     <h3 className="text-[14px] font-semibold text-foreground">
-                        {tableLabel} Ticket
+                        {isDispatcher
+                            ? `${tableLabel} order`
+                            : `${tableLabel} Ticket`}
                     </h3>
-                    <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-medium text-brand">
-                        {pieceCount} {pieceCount === 1 ? "dish" : "dishes"}
+                    <span
+                        className={cn(
+                            "rounded-full px-2 py-0.5 text-[11px] font-medium",
+                            isDispatcher
+                                ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                                : "bg-brand/10 text-brand",
+                        )}
+                    >
+                        {pieceCount} {pieceCount === 1 ? "item" : "items"}
                     </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -839,11 +894,14 @@ function OrderTicketContent({
                             <Receipt className="size-6 text-slate-gray/60" />
                         </div>
                         <p className="text-[15px] font-semibold text-foreground">
-                            Ticket is empty
+                            {isDispatcher
+                                ? "Order is empty"
+                                : "Ticket is empty"}
                         </p>
                         <p className="text-[13px] leading-relaxed text-slate-gray">
-                            Tap dishes from the catalog to build this
-                            table&apos;s order.
+                            {isDispatcher
+                                ? "Tap dishes from the catalog to build this call pickup order."
+                                : "Tap dishes from the catalog to build this table's order."}
                         </p>
                     </div>
                 ) : (
@@ -968,15 +1026,22 @@ function OrderTicketContent({
                 ) : null}
 
                 <Button
-                    className="h-11 w-full rounded-[14px] bg-brand text-[13.5px] font-medium text-white shadow-xs hover:bg-brand-deep disabled:opacity-50"
+                    className={cn(
+                        "h-11 w-full rounded-[14px] text-[13.5px] font-medium text-white shadow-xs disabled:opacity-50",
+                        isDispatcher
+                            ? "bg-emerald-600 hover:bg-emerald-700"
+                            : "bg-brand hover:bg-brand-deep",
+                    )}
                     disabled={lines.length === 0 || sending}
                     onClick={onSubmit}
                 >
                     {sending
                         ? "Sending to kitchen…"
                         : pieceCount === 0
-                          ? "Send Order"
-                          : `Send to Kitchen · ${pieceCount} · ${formatEtb(basketTotal)}`}
+                          ? "Send order"
+                          : isDispatcher
+                            ? `Confirm order · ${pieceCount} · ${formatEtb(basketTotal)}`
+                            : `Send to Kitchen · ${pieceCount} · ${formatEtb(basketTotal)}`}
                 </Button>
             </div>
         </div>
@@ -994,7 +1059,7 @@ function orderError(error: unknown) {
             }
         ).data;
         if (data?.errors?.version === "stale") {
-            return "This table changed. Close the menu and try again.";
+            return "This order changed. Close the menu and try again.";
         }
         if (data?.code === "MENU_ITEM_SOLD_OUT") {
             return "One dish is sold out.";

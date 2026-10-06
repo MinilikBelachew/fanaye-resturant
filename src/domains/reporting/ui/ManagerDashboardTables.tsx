@@ -7,6 +7,7 @@ import type {
     PaymentChannelBreakdownItem,
     RevenueVsCollectionsPoint,
     TopSellingDish,
+    WaiterPerformancePoint,
 } from "@/context/services/managerDashboardApi";
 import type { AuditEventRow } from "@/context/services/auditApi";
 import { cn } from "@/lib/utils";
@@ -329,6 +330,73 @@ export function RecentAuditTable({
                                     >
                                         {row.badgeLabel || row.category}
                                     </span>
+                                </td>
+                            </tr>
+                        ))
+                    )}
+                </tbody>
+            </table>
+        </Panel>
+    );
+}
+
+export function WaiterPerformanceTable({
+    rows = [],
+}: {
+    rows?: WaiterPerformancePoint[];
+}) {
+    const t = useTranslations("dashboardCharts");
+
+    return (
+        <Panel
+            title={t("waiterPerfTitle")}
+            subtitle={t("waiterPerfSubtitle")}
+            action={
+                <Link
+                    href="/manager/waiters"
+                    className="text-[12px] font-medium text-brand hover:underline"
+                >
+                    {t("waiterPerfLink")}
+                </Link>
+            }
+        >
+            <table className="w-full min-w-[420px] text-left text-[13px]">
+                <thead className="bg-secondary/40 text-[11px] uppercase tracking-wide text-slate-gray">
+                    <tr>
+                        <th className="px-5 py-2.5 font-medium">
+                            {t("colWaiter")}
+                        </th>
+                        <th className="px-3 py-2.5 font-medium">
+                            {t("colTables")}
+                        </th>
+                        <th className="px-3 py-2.5 font-medium">
+                            {t("colCovers")}
+                        </th>
+                        <th className="px-5 py-2.5 font-medium">
+                            {t("colRevenue")}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows.length === 0 ? (
+                        <EmptyRow colSpan={4} label={t("waiterPerfEmpty")} />
+                    ) : (
+                        rows.map(row => (
+                            <tr
+                                key={row.name}
+                                className="border-t border-hairline"
+                            >
+                                <td className="px-5 py-2.5 font-medium">
+                                    {row.name}
+                                </td>
+                                <td className="px-3 py-2.5 tabular-nums">
+                                    {row.tables}
+                                </td>
+                                <td className="px-3 py-2.5 tabular-nums">
+                                    {row.covers}
+                                </td>
+                                <td className="px-5 py-2.5 tabular-nums text-brand">
+                                    {row.revenueFormatted}
                                 </td>
                             </tr>
                         ))

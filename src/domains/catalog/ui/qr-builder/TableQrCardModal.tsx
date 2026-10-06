@@ -14,7 +14,6 @@ import {
     Layers,
     Loader2,
     Palette,
-    QrCode,
     Scissors,
     Sparkles,
     Wifi,
@@ -30,6 +29,8 @@ interface TableQrCardModalProps {
     config: QrMenuConfig;
     restaurantName?: string;
     slug: string;
+    /** When true, show branch in filters / screen-only labels (never on print). */
+    managesAllBranches?: boolean;
 }
 
 type CardLayout = "tent" | "compact" | "large";
@@ -50,13 +51,17 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
     config,
     restaurantName = "Your Restaurant",
     slug,
+    managesAllBranches = false,
 }) => {
     const t = useTranslations("qrMenuStudio");
     const [selectedLocation, setSelectedLocation] = useState<string>("all");
     const [layout, setLayout] = useState<CardLayout>("tent");
     const [theme, setTheme] = useState<ColorTheme>("amber");
-    const [showWifi, setShowWifi] = useState<boolean>(true);
+    const [showWifi, setShowWifi] = useState<boolean>(() =>
+        Boolean(config.wifiSsid?.trim()),
+    );
     const [showCutGuides, setShowCutGuides] = useState<boolean>(true);
+    const hasWifiCredentials = Boolean(config.wifiSsid?.trim());
     const [instructionHeadline, setInstructionHeadline] =
         useState<HeadlineId>("scan");
     const [activePrintingTableId, setActivePrintingTableId] = useState<
@@ -72,16 +77,27 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
             : "https://example.com";
     const origin = (customOrigin.trim() || defaultOrigin).replace(/\/+$/, "");
 
-    const locations = Array.from(
-        new Set(tables.map(t => t.locationName || "Main Hall")),
-    );
+    const showBranchInUi =
+        managesAllBranches ||
+        tables.some(table => Boolean(table.branchName?.trim()));
 
-    const filteredTables = tables.filter(
-        t =>
+    function floorKeyFor(table: AdminTableQrItem) {
+        const loc = table.locationName || "Main Hall";
+        if (showBranchInUi && table.branchName) {
+            return `${table.branchName} · ${loc}`;
+        }
+        return loc;
+    }
+
+    const locations = Array.from(new Set(tables.map(floorKeyFor)));
+
+    const filteredTables = tables.filter(t => {
+        return (
             (selectedLocation === "all" ||
-                (t.locationName || "Main Hall") === selectedLocation) &&
-            (!activePrintingTableId || t.id === activePrintingTableId),
-    );
+                floorKeyFor(t) === selectedLocation) &&
+            (!activePrintingTableId || t.id === activePrintingTableId)
+        );
+    });
 
     const cardsPerPage = layout === "large" ? 1 : layout === "compact" ? 4 : 2;
     const tablePages = React.useMemo(() => {
@@ -255,6 +271,12 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                     >
                         {table.locationName || t("diningFloor")}
                     </p>
+                    {/* Manager-only: branch label on screen, never in PDF/print */}
+                    {isInteractive && showBranchInUi && table.branchName ? (
+                        <p className="no-print mt-1 text-[10px] font-medium text-muted-foreground">
+                            {table.branchName}
+                        </p>
+                    ) : null}
                 </div>
 
                 {/* QR Code Container */}
@@ -379,38 +401,33 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
 
             <div
                 id="printable-qr-modal"
-                className="relative flex max-h-[94vh] w-full max-w-6xl flex-col rounded-3xl bg-white shadow-2xl overflow-hidden print:m-0 print:max-h-none print:w-full print:rounded-none print:shadow-none"
+                className="relative flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-xl print:m-0 print:max-h-none print:w-full print:rounded-none print:border-0 print:shadow-none"
             >
                 {/* Modal Toolbar (hidden when printing) */}
-                <div className="no-print border-b border-slate-100 bg-slate-50/80 p-5 space-y-4">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="flex size-11 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600">
-                                <QrCode className="size-6" />
-                            </div>
-                            <div>
-                                <h3 className="text-base font-bold text-slate-900">
-                                    {t("modalTitle")}
-                                </h3>
-                                <p className="text-xs text-slate-500">
-                                    {t("modalSubtitle", {
-                                        count: filteredTables.length,
-                                    })}
-                                </p>
-                            </div>
+                <div className="no-print space-y-4 border-b border-border p-4 sm:p-5">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <h3 className="text-[15px] font-semibold text-foreground">
+                                {t("modalTitle")}
+                            </h3>
+                            <p className="mt-0.5 text-[12px] text-muted-foreground">
+                                {t("modalSubtitle", {
+                                    count: filteredTables.length,
+                                })}
+                            </p>
                         </div>
 
-                        {/* Print, Export & Close Actions */}
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5">
                             <Button
+                                size="sm"
                                 onClick={handleExportPdf}
                                 disabled={isExportingPdf}
-                                className="gap-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shadow-xs"
+                                className="gap-1.5 shadow-none"
                             >
                                 {isExportingPdf ? (
-                                    <Loader2 className="size-4 animate-spin text-white" />
+                                    <Loader2 className="size-3.5 animate-spin" />
                                 ) : (
-                                    <FileDown className="size-4" />
+                                    <FileDown className="size-3.5" />
                                 )}
                                 {isExportingPdf
                                     ? t("generatingPdf")
@@ -418,210 +435,217 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                             </Button>
 
                             <Button
-                                onClick={downloadAllSvgs}
+                                size="sm"
                                 variant="outline"
-                                className="gap-1.5 border-slate-300 text-xs text-slate-700 hover:bg-slate-50"
-                                title={t("downloadSvgs")}
+                                onClick={downloadAllSvgs}
+                                className="gap-1.5 shadow-none"
                             >
-                                <Download className="size-3.5 text-amber-600" />
+                                <Download className="size-3.5" />
                                 {t("downloadSvgs")}
                             </Button>
 
                             <button
+                                type="button"
                                 onClick={() => onOpenChange(false)}
-                                className="flex size-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-600"
+                                className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                                aria-label="Close"
                             >
                                 <X className="size-4" />
                             </button>
                         </div>
                     </div>
 
-                    {/* Print Options & Customization Row */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/70 pt-3 text-xs">
-                        {/* Card Layout Selector */}
-                        <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="text-slate-500 text-[11px] font-semibold mr-1 flex items-center gap-1">
-                                <Layers className="size-3 text-slate-400" />{" "}
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="space-y-1.5">
+                            <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                                <Layers className="size-3" />
                                 {t("cardSize")}
-                            </span>
-                            {(
-                                [
-                                    { id: "tent", labelKey: "sizeTent" },
-                                    { id: "compact", labelKey: "sizeCompact" },
-                                    { id: "large", labelKey: "sizePlaque" },
-                                ] as const
-                            ).map(opt => (
-                                <button
-                                    key={opt.id}
-                                    onClick={() =>
-                                        setLayout(opt.id as CardLayout)
-                                    }
-                                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                                        layout === opt.id
-                                            ? "bg-amber-600 text-white"
-                                            : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
-                                    }`}
-                                >
-                                    {t(opt.labelKey)}
-                                </button>
-                            ))}
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                                {(
+                                    [
+                                        { id: "tent", labelKey: "sizeTent" },
+                                        {
+                                            id: "compact",
+                                            labelKey: "sizeCompact",
+                                        },
+                                        {
+                                            id: "large",
+                                            labelKey: "sizePlaque",
+                                        },
+                                    ] as const
+                                ).map(opt => (
+                                    <button
+                                        key={opt.id}
+                                        type="button"
+                                        onClick={() =>
+                                            setLayout(opt.id as CardLayout)
+                                        }
+                                        className={`rounded-md border px-2.5 py-1 text-[11px] transition-colors ${
+                                            layout === opt.id
+                                                ? "border-foreground bg-foreground text-background"
+                                                : "border-border text-muted-foreground hover:text-foreground"
+                                        }`}
+                                    >
+                                        {t(opt.labelKey)}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
-                        {/* Color Theme Selector */}
-                        <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="text-slate-500 text-[11px] font-semibold mr-1 flex items-center gap-1">
-                                <Palette className="size-3 text-slate-400" />{" "}
+                        <div className="space-y-1.5">
+                            <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                                <Palette className="size-3" />
                                 {t("colorTheme")}
-                            </span>
-                            {(
-                                [
-                                    { id: "amber", labelKey: "themeAmber" },
-                                    {
-                                        id: "monochrome",
-                                        labelKey: "themeMono",
-                                    },
-                                    { id: "dark", labelKey: "themeDark" },
-                                ] as const
-                            ).map(opt => (
-                                <button
-                                    key={opt.id}
-                                    onClick={() =>
-                                        setTheme(opt.id as ColorTheme)
-                                    }
-                                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                                        theme === opt.id
-                                            ? "bg-slate-900 text-white"
-                                            : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
-                                    }`}
-                                >
-                                    {t(opt.labelKey)}
-                                </button>
-                            ))}
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                                {(
+                                    [
+                                        { id: "amber", labelKey: "themeAmber" },
+                                        {
+                                            id: "monochrome",
+                                            labelKey: "themeMono",
+                                        },
+                                        { id: "dark", labelKey: "themeDark" },
+                                    ] as const
+                                ).map(opt => (
+                                    <button
+                                        key={opt.id}
+                                        type="button"
+                                        onClick={() =>
+                                            setTheme(opt.id as ColorTheme)
+                                        }
+                                        className={`rounded-md border px-2.5 py-1 text-[11px] transition-colors ${
+                                            theme === opt.id
+                                                ? "border-foreground bg-foreground text-background"
+                                                : "border-border text-muted-foreground hover:text-foreground"
+                                        }`}
+                                    >
+                                        {t(opt.labelKey)}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
-                        {/* Quick Toggles: Wi-Fi, Cut Guides */}
-                        <div className="flex flex-wrap items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={() => setShowWifi(!showWifi)}
-                                className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold border transition-colors ${
-                                    showWifi
-                                        ? "border-amber-500/50 bg-amber-50 text-amber-900"
-                                        : "border-slate-200 bg-white text-slate-400"
-                                }`}
-                            >
-                                <Wifi className="size-3" />
-                                {showWifi ? t("wifiOn") : t("wifiOff")}
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => setShowCutGuides(!showCutGuides)}
-                                className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold border transition-colors ${
-                                    showCutGuides
-                                        ? "border-slate-400 bg-slate-100 text-slate-800"
-                                        : "border-slate-200 bg-white text-slate-400"
-                                }`}
-                                title={t("cutLinesOn")}
-                            >
-                                <Scissors className="size-3" />
-                                {showCutGuides
-                                    ? t("cutLinesOn")
-                                    : t("cutLinesOff")}
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Floor filter & Custom instruction line */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/50 pt-2.5 text-xs">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="text-slate-400 text-[11px] font-medium mr-1">
+                        <div className="space-y-1.5">
+                            <p className="text-[11px] text-muted-foreground">
                                 {t("floor")}
-                            </span>
-                            <button
-                                onClick={() => setSelectedLocation("all")}
-                                className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-colors ${
-                                    selectedLocation === "all"
-                                        ? "bg-slate-900 text-white"
-                                        : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
-                                }`}
-                            >
-                                {t("allFloors", { count: tables.length })}
-                            </button>
-                            {locations.map(loc => (
+                            </p>
+                            <div className="flex flex-wrap gap-1">
                                 <button
-                                    key={loc}
-                                    onClick={() => setSelectedLocation(loc)}
-                                    className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-colors ${
-                                        selectedLocation === loc
-                                            ? "bg-slate-900 text-white"
-                                            : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
+                                    type="button"
+                                    onClick={() => setSelectedLocation("all")}
+                                    className={`rounded-md border px-2.5 py-1 text-[11px] transition-colors ${
+                                        selectedLocation === "all"
+                                            ? "border-foreground bg-foreground text-background"
+                                            : "border-border text-muted-foreground hover:text-foreground"
                                     }`}
                                 >
-                                    {loc}
+                                    {t("allFloors", { count: tables.length })}
                                 </button>
-                            ))}
+                                {locations.map(loc => (
+                                    <button
+                                        key={loc}
+                                        type="button"
+                                        onClick={() => setSelectedLocation(loc)}
+                                        className={`rounded-md border px-2.5 py-1 text-[11px] transition-colors ${
+                                            selectedLocation === loc
+                                                ? "border-foreground bg-foreground text-background"
+                                                : "border-border text-muted-foreground hover:text-foreground"
+                                        }`}
+                                    >
+                                        {loc}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
-                        {/* Instruction Preset & Target Host */}
-                        <div className="flex flex-wrap items-center gap-3">
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-[11px] text-slate-500 font-medium">
-                                    {t("qrLinkHost")}
-                                </span>
-                                <input
-                                    type="text"
-                                    value={customOrigin}
-                                    placeholder={defaultOrigin}
-                                    onChange={e =>
-                                        setCustomOrigin(e.target.value)
-                                    }
-                                    className="w-44 rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                                    title="To test from your phone on the same Wi-Fi, enter your computer IP (e.g. http://192.168.1.50:3000)"
-                                />
-                            </div>
+                        <div className="space-y-1.5">
+                            <p className="text-[11px] text-muted-foreground">
+                                {t("qrLinkHost")}
+                            </p>
+                            <input
+                                type="text"
+                                value={customOrigin}
+                                placeholder={defaultOrigin}
+                                onChange={e => setCustomOrigin(e.target.value)}
+                                className="h-8 w-full rounded-md border border-border bg-background px-2.5 text-[12px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground/20"
+                                title="For phone testing on the same Wi-Fi, use your computer IP (e.g. http://192.168.1.50:3000)"
+                            />
+                        </div>
 
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-[11px] text-slate-500 font-medium">
-                                    {t("headline")}
-                                </span>
-                                <select
-                                    value={instructionHeadline}
-                                    onChange={e =>
-                                        setInstructionHeadline(
-                                            e.target.value as HeadlineId,
-                                        )
+                        <div className="space-y-1.5">
+                            <p className="text-[11px] text-muted-foreground">
+                                {t("headline")}
+                            </p>
+                            <select
+                                value={instructionHeadline}
+                                onChange={e =>
+                                    setInstructionHeadline(
+                                        e.target.value as HeadlineId,
+                                    )
+                                }
+                                className="h-8 w-full rounded-md border border-border bg-background px-2.5 text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-foreground/20"
+                            >
+                                {(
+                                    Object.keys(HEADLINE_KEYS) as HeadlineId[]
+                                ).map(id => (
+                                    <option key={id} value={id}>
+                                        {t(HEADLINE_KEYS[id])}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <p className="text-[11px] text-muted-foreground">
+                                Options
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                                {hasWifiCredentials ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowWifi(!showWifi)}
+                                        className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] transition-colors ${
+                                            showWifi
+                                                ? "border-foreground bg-foreground text-background"
+                                                : "border-border text-muted-foreground hover:text-foreground"
+                                        }`}
+                                    >
+                                        <Wifi className="size-3" />
+                                        {showWifi ? t("wifiOn") : t("wifiOff")}
+                                    </button>
+                                ) : null}
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setShowCutGuides(!showCutGuides)
                                     }
-                                    className="rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-700 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                    className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] transition-colors ${
+                                        showCutGuides
+                                            ? "border-foreground bg-foreground text-background"
+                                            : "border-border text-muted-foreground hover:text-foreground"
+                                    }`}
                                 >
-                                    {(
-                                        Object.keys(
-                                            HEADLINE_KEYS,
-                                        ) as HeadlineId[]
-                                    ).map(id => (
-                                        <option key={id} value={id}>
-                                            {t(HEADLINE_KEYS[id])}
-                                        </option>
-                                    ))}
-                                </select>
+                                    <Scissors className="size-3" />
+                                    {showCutGuides
+                                        ? t("cutLinesOn")
+                                        : t("cutLinesOff")}
+                                </button>
+                                {activePrintingTableId ? (
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setActivePrintingTableId(null)
+                                        }
+                                        className="rounded-md border border-border px-2.5 py-1 text-[11px] text-muted-foreground hover:text-foreground"
+                                    >
+                                        {t("resetAllTables")}
+                                    </button>
+                                ) : null}
                             </div>
                         </div>
                     </div>
-                </div>
-
-                {/* Informative Tip banner for PDF export */}
-                <div className="no-print bg-amber-500/10 px-6 py-2 border-b border-amber-500/20 text-[11px] text-amber-900 flex flex-wrap items-center justify-between gap-2">
-                    <span>
-                        ⚡ <strong>{t("pdfTipLabel")}</strong> {t("pdfTipBody")}
-                    </span>
-                    {activePrintingTableId ? (
-                        <button
-                            onClick={() => setActivePrintingTableId(null)}
-                            className="text-amber-800 underline font-bold"
-                        >
-                            {t("resetAllTables")}
-                        </button>
-                    ) : null}
                 </div>
 
                 {/* Cards Grid (Interactive Screen Preview) */}

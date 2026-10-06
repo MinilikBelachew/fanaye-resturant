@@ -60,7 +60,7 @@ const LABEL_KEYS: Record<string, string> = {
 };
 
 const headerClass =
-    "flex h-12 w-full shrink-0 items-center gap-3 border-b border-black/[0.08] bg-white px-4 dark:border-white/[0.1] dark:bg-background md:px-6";
+    "flex h-14 w-full shrink-0 items-center gap-2 border-b border-black/[0.08] bg-white px-4 dark:border-white/[0.1] dark:bg-background md:gap-3 md:px-6";
 
 export default function AppTopBar({ className }: { className?: string }) {
     return (
@@ -76,6 +76,7 @@ function AppTopBarInner({ className }: { className?: string }) {
     const searchParams = useSearchParams();
     const tTopBar = useTranslations("topbar");
     const tNav = useTranslations("appNav");
+    const tRoles = useTranslations("roleLabels");
 
     const translateLabel = (label: string) => {
         const key = LABEL_KEYS[label];
@@ -107,6 +108,8 @@ function AppTopBarInner({ className }: { className?: string }) {
         : current
           ? translateLabel(current.label)
           : tTopBar("dashboard");
+    const roleContext =
+        staff && tRoles.has(staff.role) ? tRoles(staff.role) : staff?.role;
     const stationQueue =
         staff && isStationRole(staff.role) && pathname === home;
 
@@ -115,20 +118,35 @@ function AppTopBarInner({ className }: { className?: string }) {
             <button
                 type="button"
                 aria-label={tTopBar("toggleSidebar")}
-                className="flex size-8 shrink-0 items-center justify-center rounded-md text-foreground/80 hover:bg-secondary"
+                className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 onClick={toggle}
             >
                 <PanelLeft className="size-4" />
             </button>
-            <h1 className="min-w-0 truncate text-[15px] font-medium tracking-tight">
-                {title}
-            </h1>
+
+            <span className="inline-flex h-8 min-w-0 max-w-[min(100%,22rem)] items-center gap-1.5 rounded-full border border-border px-3 text-[12px]">
+                {roleContext ? (
+                    <>
+                        <span className="truncate text-muted-foreground">
+                            {roleContext}
+                        </span>
+                        <span className="shrink-0 text-muted-foreground/50">
+                            /
+                        </span>
+                    </>
+                ) : null}
+                <span className="truncate font-medium text-foreground">
+                    {title}
+                </span>
+            </span>
+
             {stationQueue ? (
                 <StationTopBarTools
                     notify={false}
                     className="hidden min-w-0 max-w-md flex-1 md:flex"
                 />
             ) : null}
+
             <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
                 <BranchSwitcher />
                 {stationQueue ? (

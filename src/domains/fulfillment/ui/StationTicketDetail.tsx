@@ -67,8 +67,17 @@ export default function StationTicketDetail({
             <div className="mt-3 flex items-start justify-between gap-3">
                 <div>
                     <p className="text-[13px] text-slate-gray">
-                        Table {ticket.tableDisplayName} ·{" "}
-                        {ticket.waiter.displayName}
+                        {ticket.tableDisplayName
+                            .toLowerCase()
+                            .startsWith("call")
+                            ? ticket.tableDisplayName
+                            : `Table ${ticket.tableDisplayName}`}{" "}
+                        · {ticket.waiter.displayName}
+                        {ticket.tableDisplayName
+                            .toLowerCase()
+                            .startsWith("call")
+                            ? " (Dispatcher)"
+                            : ""}
                     </p>
                     <h1 className="text-[32px] font-semibold">
                         {ticket.quantity}× {ticket.itemName}

@@ -55,10 +55,73 @@ function TemplateMock({
     reserveLabel: string;
 }) {
     const isDark = templateId === "ember-kitchen";
+    const isFineDining = templateId === "harbor-bistro";
     const isMono = templateId === "urban-plate";
-    const ink = isDark ? "#f8fafc" : isMono ? "#09090b" : "#0f172a";
-    const paper = isDark ? "#0b1120" : "#ffffff";
-    const mute = isDark ? "rgba(248,250,252,0.45)" : "rgba(15,23,42,0.35)";
+    const ink = isDark ? "#f8fafc" : isMono ? "#09090b" : "#1c1917";
+    const paper = isDark ? "#0b1120" : isFineDining ? "#f6f1e8" : "#ffffff";
+    const mute = isDark ? "rgba(248,250,252,0.45)" : "rgba(28,25,23,0.35)";
+
+    if (isFineDining) {
+        return (
+            <div
+                className="relative aspect-[16/11] overflow-hidden"
+                style={{ background: "#efe8dc" }}
+            >
+                <div className="absolute inset-3 flex flex-col overflow-hidden rounded-[16px] border border-black/5 bg-[#f6f1e8] shadow-[0_18px_40px_-24px_rgba(28,25,23,0.45)]">
+                    <div
+                        className="flex items-center justify-between px-3 py-2"
+                        style={{ color: ink }}
+                    >
+                        <span
+                            className="flex size-5 items-center justify-center rounded-full text-[8px] font-bold text-white"
+                            style={{ background: accent }}
+                        >
+                            F
+                        </span>
+                        <div className="hidden items-center gap-2 sm:flex">
+                            <span
+                                className="h-1 w-5 rounded-full"
+                                style={{ background: mute }}
+                            />
+                            <span
+                                className="h-1 w-5 rounded-full"
+                                style={{ background: mute }}
+                            />
+                            <span
+                                className="h-1 w-5 rounded-full"
+                                style={{ background: mute }}
+                            />
+                        </div>
+                        <span
+                            className="rounded-full border px-2 py-0.5 text-[7px] font-semibold uppercase tracking-wide"
+                            style={{ borderColor: accent, color: ink }}
+                        >
+                            {reserveLabel}
+                        </span>
+                    </div>
+                    <div className="relative mx-2 mb-2 min-h-0 flex-1 overflow-hidden rounded-[14px]">
+                        <img
+                            src={previewImage}
+                            alt=""
+                            className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/20 to-transparent" />
+                        <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
+                            <p className="font-serif text-[13px] font-medium leading-tight text-white sm:text-[15px]">
+                                Experience Fine Dining
+                            </p>
+                            <span
+                                className="mt-2 rounded-full px-2.5 py-0.5 text-[7px] font-semibold uppercase tracking-wide text-white"
+                                style={{ background: accent }}
+                            >
+                                {menuLabel}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div
@@ -119,7 +182,6 @@ function TemplateMock({
                         className="absolute inset-0"
                         style={{
                             background:
-                                templateId === "harbor-bistro" ||
                                 templateId === "ember-kitchen"
                                     ? "linear-gradient(90deg, rgba(2,6,23,0.72) 0%, rgba(2,6,23,0.15) 70%)"
                                     : "linear-gradient(180deg, rgba(15,23,42,0.15) 0%, rgba(15,23,42,0.55) 100%)",

@@ -57,6 +57,7 @@ export default function DataTable<T>({
     serverSide = false,
     showColumnToggle = true,
     rowClassName,
+    onRowClick,
 }: {
     columns: DataTableColumn<T>[];
     data: T[];
@@ -72,6 +73,7 @@ export default function DataTable<T>({
     serverSide?: boolean;
     showColumnToggle?: boolean;
     rowClassName?: (row: T) => string | undefined;
+    onRowClick?: (row: T) => void;
 }) {
     const [internalQuery, setInternalQuery] = useState("");
     const isControlledSearch = searchQuery !== undefined;
@@ -274,7 +276,16 @@ export default function DataTable<T>({
                             rows.map(row => (
                                 <TableRow
                                     key={rowKey(row)}
-                                    className={rowClassName?.(row)}
+                                    className={cn(
+                                        rowClassName?.(row),
+                                        onRowClick &&
+                                            "cursor-pointer hover:bg-secondary/40",
+                                    )}
+                                    onClick={
+                                        onRowClick
+                                            ? () => onRowClick(row)
+                                            : undefined
+                                    }
                                 >
                                     {visibleColumns.map(column => (
                                         <TableCell

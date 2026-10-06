@@ -14,6 +14,8 @@ export interface MenuItem {
     remainingQty?: number | null;
     image?: string;
     imageFileId?: string;
+    /** Tenant dietary / guest-filter tag (from QR menu tags). */
+    badge?: string | null;
     modifierGroups: ModifierGroup[];
     version?: number;
     recipeLines?: Array<{

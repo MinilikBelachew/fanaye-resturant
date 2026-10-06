@@ -27,6 +27,9 @@ export interface ManagerKpi {
     pendingActionsFormatted: string;
     pendingBillRequests: number;
     pendingCashDrops: number;
+    pendingCancellations?: number;
+    pendingOrderChanges?: number;
+    openProductionExceptions?: number;
     pendingActionsHint: string;
     billedFormatted: string;
     billedValue: number;
@@ -64,10 +67,22 @@ export interface PrepDurationBucket {
     label: string;
 }
 
+export interface StationPrepPoint {
+    station: string;
+    avgMinutes: number;
+    tickets: number;
+}
+
 export interface WeeklyCashMovementPoint {
     day: string;
     digitalInflow: number;
     cashDrop: number;
+}
+
+export interface PaymentMixPoint {
+    period: string;
+    cash: number;
+    digital: number;
 }
 
 export interface TopSellingDish {
@@ -101,6 +116,30 @@ export interface OrderVolumePoint {
     avgCheck: number;
 }
 
+export interface WaiterPerformancePoint {
+    name: string;
+    covers: number;
+    tables: number;
+    revenue: number;
+    revenueFormatted: string;
+    avgCheck: number;
+}
+
+export interface ActNowInsight {
+    readyTooLongCount: number;
+    readyTooLongHint: string;
+    latePrepCount: number;
+    latePrepHint: string;
+    staffOfflineCount: number;
+    staffOfflineHint: string;
+    lowStockCount: number;
+    lowStockHint: string;
+    unpaidBillsCount: number;
+    unpaidGapValue: number;
+    unpaidGapFormatted: string;
+    unpaidGapHint: string;
+}
+
 export type ManagerDashboardPeriod =
     | "today"
     | "week"
@@ -111,14 +150,18 @@ export type ManagerDashboardPeriod =
 
 export interface ManagerDashboardData {
     kpis: ManagerKpi;
+    actNow?: ActNowInsight;
     salesTrend: RevenueVsCollectionsPoint[];
     paymentChannels: PaymentChannelBreakdownItem[];
     prepBuckets: PrepDurationBucket[];
+    stationPrepAvg?: StationPrepPoint[];
     weeklyCashMovement: WeeklyCashMovementPoint[];
     topDishes: TopSellingDish[];
     hourlySales: HourlySalesPoint[];
     stationThroughput: StationThroughputPoint[];
     orderVolumeTrend: OrderVolumePoint[];
+    paymentMixTrend?: PaymentMixPoint[];
+    waiterPerformance?: WaiterPerformancePoint[];
     businessDate: string;
     fromDate?: string;
     toDate?: string;
@@ -168,6 +211,7 @@ export interface BranchRevenueResponse {
 }
 
 export const managerDashboardApi = api.injectEndpoints({
+    overrideExisting: true,
     endpoints: builder => ({
         getManagerDashboard: builder.query<
             ManagerDashboardResponse,
@@ -176,6 +220,8 @@ export const managerDashboardApi = api.injectEndpoints({
                 period?: ManagerDashboardPeriod;
                 fromDate?: string;
                 toDate?: string;
+                /** Owner: `all` totals every active branch */
+                scope?: "branch" | "all";
             } | void
         >({
             query: params => ({

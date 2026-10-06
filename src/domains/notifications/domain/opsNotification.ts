@@ -131,6 +131,12 @@ export function notificationHref(
                 if (tableId) return `/waiter/tables/${tableId}`;
                 return "/waiter/ready";
             }
+            if (role === "dispatcher") {
+                if (tableSessionId) {
+                    return `/dispatcher/calls/${tableSessionId}`;
+                }
+                return "/dispatcher";
+            }
             return null;
         case "ticket.queued":
             if (
@@ -150,23 +156,59 @@ export function notificationHref(
         case "cash_drop.pending":
             return role === "cashier" ? "/cashier/cash-drops" : null;
         case "cash_drop.resolved":
-            return role === "waiter" ? "/waiter/cash" : null;
-        case "approval.requested":
-            return role === "manager" || role === "owner"
-                ? "/manager/approvals"
-                : null;
+            if (role === "waiter") return "/waiter/cash";
+            if (role === "dispatcher") return "/dispatcher/cash";
+            return null;
+        case "approval.requested": {
+            if (role !== "manager" && role !== "owner") return null;
+            const requestType =
+                typeof payload.requestType === "string"
+                    ? payload.requestType.toUpperCase()
+                    : "";
+            const requestId =
+                typeof payload.requestId === "string"
+                    ? payload.requestId
+                    : note.relatedEntityId;
+            if (
+                requestId &&
+                (requestType === "CANCELLATION" || requestType === "CHANGE")
+            ) {
+                const kind =
+                    requestType === "CANCELLATION" ? "cancellation" : "change";
+                return `/manager/approvals/${kind}/${requestId}`;
+            }
+            if (
+                requestId &&
+                (note.relatedEntityType === "CancellationRequest" ||
+                    note.relatedEntityType === "OrderChangeRequest")
+            ) {
+                const kind =
+                    note.relatedEntityType === "CancellationRequest"
+                        ? "cancellation"
+                        : "change";
+                return `/manager/approvals/${kind}/${requestId}`;
+            }
+            return "/manager/approvals";
+        }
         case "approval.decided":
-            return role === "waiter"
-                ? tableId
-                    ? `/waiter/tables/${tableId}`
-                    : "/waiter/tables"
-                : null;
+            if (role === "waiter") {
+                return tableId ? `/waiter/tables/${tableId}` : "/waiter/tables";
+            }
+            if (role === "dispatcher") {
+                return tableSessionId
+                    ? `/dispatcher/calls/${tableSessionId}`
+                    : "/dispatcher";
+            }
+            return null;
         case "production.exception":
             if (role === "manager" || role === "owner") {
                 return "/manager/approvals";
             }
             if (role === "waiter" && tableId) {
                 return `/waiter/tables/${tableId}`;
+            }
+            if (role === "dispatcher" && tableSessionId) {
+                return `/dispatcher/calls/${tableSessionId}`;
             }
             return null;
         default:

@@ -28,6 +28,13 @@ import { toast } from "@/lib/toast";
 import { exportElementToPdf } from "@/lib/pdfExport";
 import { GoldenClocheLogo } from "@/components/common/GoldenClocheLogo";
 import {
+    AuroraMenuSheet,
+    BreakfastMenuSheet,
+    PRINT_MENU_TEMPLATES,
+    type PrintMenuTemplateId,
+} from "@/domains/catalog/ui/print-menu/PrintMenuTemplateSheets";
+import { cn } from "@/lib/utils";
+import {
     BookOpen,
     Check,
     CheckCircle2,
@@ -86,6 +93,7 @@ type ColorPalette = "amber" | "monochrome" | "charcoal";
 type QrMode = "universal" | "table_specific";
 
 interface PrintMenuSettings {
+    templateId: PrintMenuTemplateId;
     title: string;
     subtitle: string;
     showLogo: boolean;
@@ -155,6 +163,7 @@ export default function ManagerPrintMenuPage() {
 
     // Form Settings
     const [settings, setSettings] = useState<PrintMenuSettings>({
+        templateId: "classic",
         title: tenantName,
         subtitle: "Dine-In Food & Beverages Menu",
         showLogo: true,
@@ -356,6 +365,7 @@ export default function ManagerPrintMenuPage() {
                 filename,
                 scale: 2.5,
                 orientation: "portrait",
+                fitSinglePage: true,
             });
         } finally {
             if (prevZoom !== 100) {
@@ -466,6 +476,85 @@ export default function ManagerPrintMenuPage() {
             <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start no-print">
                 {/* Left Customization Controls (5 cols) */}
                 <div className="lg:col-span-5 space-y-5">
+                    {/* Template picker */}
+                    <div className="space-y-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-xs">
+                        <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
+                            <LayoutGrid className="size-4 text-amber-600" />
+                            {t("templatePickerTitle")}
+                        </div>
+                        <p className="text-[11px] text-slate-500">
+                            {t("templatePickerDesc")}
+                        </p>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                            {PRINT_MENU_TEMPLATES.map(tpl => (
+                                <button
+                                    key={tpl.id}
+                                    type="button"
+                                    onClick={() =>
+                                        setSettings(prev => ({
+                                            ...prev,
+                                            templateId: tpl.id,
+                                            ...(tpl.id === "aurora"
+                                                ? {
+                                                      backgroundType:
+                                                          "solid" as const,
+                                                      backgroundColor:
+                                                          "#F7F1E3",
+                                                      showImages: true,
+                                                  }
+                                                : tpl.id === "breakfast"
+                                                  ? {
+                                                        backgroundType:
+                                                            "solid" as const,
+                                                        backgroundColor:
+                                                            "#F2EFE9",
+                                                        showImages: true,
+                                                        showDescriptions: false,
+                                                    }
+                                                  : {}),
+                                        }))
+                                    }
+                                    className={cn(
+                                        "rounded-xl border p-2.5 text-left transition-colors",
+                                        settings.templateId === tpl.id
+                                            ? "border-slate-900 bg-slate-900 text-white"
+                                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
+                                    )}
+                                >
+                                    <div
+                                        className="mb-2 h-10 w-full rounded-lg border border-black/5"
+                                        style={{ background: tpl.swatch }}
+                                    />
+                                    <span className="block text-[12px] font-semibold">
+                                        {t(
+                                            tpl.id === "classic"
+                                                ? "templateClassic"
+                                                : tpl.id === "aurora"
+                                                  ? "templateAurora"
+                                                  : "templateBreakfast",
+                                        )}
+                                    </span>
+                                    <span
+                                        className={cn(
+                                            "mt-0.5 block text-[10px] leading-snug",
+                                            settings.templateId === tpl.id
+                                                ? "text-white/70"
+                                                : "text-slate-500",
+                                        )}
+                                    >
+                                        {t(
+                                            tpl.id === "classic"
+                                                ? "templateClassicDesc"
+                                                : tpl.id === "aurora"
+                                                  ? "templateAuroraDesc"
+                                                  : "templateBreakfastDesc",
+                                        )}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     {/* Section 1: Header & Branding */}
                     <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
                         <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
@@ -1355,310 +1444,394 @@ export default function ManagerPrintMenuPage() {
                         <div
                             id="print-menu-canvas"
                             ref={paperSheetRef}
-                            style={{ background: computedPaperBackground }}
-                            className={`w-[210mm] min-h-[297mm] p-[14mm] shadow-2xl rounded-xs border border-slate-300/80 transition-colors ${
-                                isDarkPaper
-                                    ? "text-slate-100"
-                                    : "text-slate-900"
+                            style={{
+                                background:
+                                    settings.templateId === "aurora"
+                                        ? "#F7F1E3"
+                                        : settings.templateId === "breakfast"
+                                          ? "#F2EFE9"
+                                          : computedPaperBackground,
+                                height:
+                                    settings.templateId === "classic"
+                                        ? undefined
+                                        : "297mm",
+                                maxHeight:
+                                    settings.templateId === "classic"
+                                        ? undefined
+                                        : "297mm",
+                                overflow:
+                                    settings.templateId === "classic"
+                                        ? undefined
+                                        : "hidden",
+                                boxSizing: "border-box",
+                            }}
+                            className={`w-[210mm] min-h-[297mm] shadow-2xl rounded-xs border border-slate-300/80 transition-colors ${
+                                settings.templateId !== "classic"
+                                    ? "p-[10mm] text-slate-900 font-sans"
+                                    : "p-[14mm]"
                             } ${
-                                settings.fontTheme === "serif"
-                                    ? "font-serif"
-                                    : settings.fontTheme === "bistro"
-                                      ? "font-sans font-medium"
-                                      : "font-sans"
+                                settings.templateId === "classic"
+                                    ? isDarkPaper
+                                        ? "text-slate-100"
+                                        : "text-slate-900"
+                                    : ""
+                            } ${
+                                settings.templateId === "classic"
+                                    ? settings.fontTheme === "serif"
+                                        ? "font-serif"
+                                        : settings.fontTheme === "bistro"
+                                          ? "font-sans font-medium"
+                                          : "font-sans"
+                                    : ""
                             }`}
                         >
-                            {/* Header with Cloche Logo & Restaurant Title */}
-                            <div
-                                className={`relative border-b-2 pb-5 text-center ${
-                                    isDarkPaper
-                                        ? "border-slate-700"
-                                        : "border-slate-900"
-                                }`}
-                            >
-                                {settings.showLogo ? (
-                                    <div className="mx-auto mb-2 flex size-12 items-center justify-center">
-                                        {effectiveLogoUrl ? (
-                                            <img
-                                                src={effectiveLogoUrl}
-                                                alt="Restaurant Logo"
-                                                className="size-11 object-contain rounded-xl"
-                                                crossOrigin="anonymous"
-                                            />
-                                        ) : (
-                                            <GoldenClocheLogo
-                                                className="size-11"
-                                                size={44}
-                                            />
-                                        )}
-                                    </div>
-                                ) : null}
-
-                                <h1
-                                    className={`text-2xl font-black uppercase tracking-widest ${
-                                        isDarkPaper
-                                            ? "text-amber-400"
-                                            : settings.colorPalette === "amber"
-                                              ? "text-slate-950"
-                                              : "text-black"
-                                    }`}
-                                >
-                                    {settings.title}
-                                </h1>
-                                <p
-                                    className={`mt-1 text-xs tracking-wider uppercase font-medium ${
-                                        isDarkPaper
-                                            ? "text-slate-300"
-                                            : "text-slate-600"
-                                    }`}
-                                >
-                                    {settings.subtitle}
-                                </p>
-
-                                {/* Hybrid QR Callout Box (Optional) */}
-                                {settings.showQrCode ? (
+                            {settings.templateId === "aurora" ? (
+                                <AuroraMenuSheet
+                                    title={settings.title}
+                                    subtitle={settings.subtitle}
+                                    showLogo={settings.showLogo}
+                                    logoUrl={effectiveLogoUrl}
+                                    categories={activeCategories}
+                                    showImages={settings.showImages}
+                                    showDescriptions={settings.showDescriptions}
+                                    showQrCode={settings.showQrCode}
+                                    qrUrl={previewQrUrl}
+                                    qrHeadline={settings.qrHeadline}
+                                    qrSubtext={settings.qrSubtext}
+                                    tableLabel={
+                                        settings.qrMode === "table_specific" &&
+                                        currentTable
+                                            ? currentTable.displayName
+                                            : null
+                                    }
+                                    footerNote={t("footerNote")}
+                                />
+                            ) : null}
+                            {settings.templateId === "breakfast" ? (
+                                <BreakfastMenuSheet
+                                    title={settings.title}
+                                    subtitle={settings.subtitle}
+                                    showLogo={settings.showLogo}
+                                    logoUrl={effectiveLogoUrl}
+                                    categories={activeCategories}
+                                    showImages={settings.showImages}
+                                    showDescriptions={settings.showDescriptions}
+                                    showQrCode={settings.showQrCode}
+                                    qrUrl={previewQrUrl}
+                                    qrHeadline={settings.qrHeadline}
+                                    qrSubtext={settings.qrSubtext}
+                                    tableLabel={
+                                        settings.qrMode === "table_specific" &&
+                                        currentTable
+                                            ? currentTable.displayName
+                                            : null
+                                    }
+                                    footerNote={t("footerNote")}
+                                />
+                            ) : null}
+                            {settings.templateId === "classic" ? (
+                                <>
+                                    {/* Header with Cloche Logo & Restaurant Title */}
                                     <div
-                                        className={`mt-4 mx-auto max-w-xl rounded-2xl border-2 p-3 flex items-center justify-between gap-4 ${
+                                        className={`relative border-b-2 pb-5 text-center ${
                                             isDarkPaper
-                                                ? "border-slate-700 bg-slate-800/80 text-white"
-                                                : settings.colorPalette ===
-                                                    "monochrome"
-                                                  ? "border-black bg-slate-50 text-black"
-                                                  : settings.colorPalette ===
-                                                      "charcoal"
-                                                    ? "border-slate-800 bg-slate-100 text-slate-900"
-                                                    : "border-amber-600/40 bg-gradient-to-r from-amber-50/60 via-amber-50/30 to-amber-100/40 text-amber-950"
+                                                ? "border-slate-700"
+                                                : "border-slate-900"
                                         }`}
                                     >
-                                        <div className="flex-1 text-left">
-                                            <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-600 px-2.5 py-0.5 text-[9px] font-black text-white uppercase tracking-wider">
-                                                📱 {t("instantMobileOrder")}
+                                        {settings.showLogo ? (
+                                            <div className="mx-auto mb-2 flex size-12 items-center justify-center">
+                                                {effectiveLogoUrl ? (
+                                                    <img
+                                                        src={effectiveLogoUrl}
+                                                        alt="Restaurant Logo"
+                                                        className="size-11 object-contain rounded-xl"
+                                                        crossOrigin="anonymous"
+                                                    />
+                                                ) : (
+                                                    <GoldenClocheLogo
+                                                        className="size-11"
+                                                        size={44}
+                                                    />
+                                                )}
                                             </div>
-                                            <h4 className="mt-1 text-xs font-bold leading-tight">
-                                                {settings.qrHeadline}
-                                            </h4>
-                                            <p
-                                                className={`mt-0.5 text-[10px] ${
-                                                    isDarkPaper
-                                                        ? "text-slate-300"
-                                                        : "text-slate-600"
-                                                }`}
-                                            >
-                                                {settings.qrSubtext}
-                                            </p>
-                                            {settings.qrMode ===
-                                                "table_specific" &&
-                                            currentTable ? (
-                                                <span
-                                                    className={`mt-1 inline-block text-[10px] font-bold ${
-                                                        isDarkPaper
-                                                            ? "text-amber-400"
-                                                            : "text-amber-800"
-                                                    }`}
-                                                >
-                                                    {t("seatedAt")}{" "}
-                                                    {currentTable.displayName}
-                                                </span>
-                                            ) : null}
-                                        </div>
+                                        ) : null}
 
-                                        <div className="flex flex-col items-center flex-shrink-0 bg-white p-1.5 rounded-xl border border-slate-200 shadow-xs">
-                                            <QrCodeSvg
-                                                value={previewQrUrl}
-                                                size={64}
-                                                fgColor="#000000"
-                                            />
-                                            <span className="mt-1 text-[7px] font-mono text-slate-500 uppercase tracking-tighter">
-                                                {t("scanWithCamera")}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ) : null}
-                            </div>
+                                        <h1
+                                            className={`text-2xl font-black uppercase tracking-widest ${
+                                                isDarkPaper
+                                                    ? "text-amber-400"
+                                                    : settings.colorPalette ===
+                                                        "amber"
+                                                      ? "text-slate-950"
+                                                      : "text-black"
+                                            }`}
+                                        >
+                                            {settings.title}
+                                        </h1>
+                                        <p
+                                            className={`mt-1 text-xs tracking-wider uppercase font-medium ${
+                                                isDarkPaper
+                                                    ? "text-slate-300"
+                                                    : "text-slate-600"
+                                            }`}
+                                        >
+                                            {settings.subtitle}
+                                        </p>
 
-                            {/* Menu Categories & Items Grid */}
-                            <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-6">
-                                {activeCategories.map(cat => (
-                                    <div
-                                        key={cat.name}
-                                        className="break-inside-avoid space-y-3"
-                                    >
-                                        {/* Category Title with Ornamental Line */}
-                                        <div className="flex items-center gap-2">
-                                            <h3
-                                                className={`text-sm font-black uppercase tracking-wider ${
-                                                    isDarkPaper
-                                                        ? "text-amber-400"
-                                                        : settings.colorPalette ===
-                                                            "amber"
-                                                          ? "text-amber-800"
-                                                          : "text-black"
-                                                }`}
-                                            >
-                                                {cat.name}
-                                            </h3>
+                                        {/* Hybrid QR Callout Box (Optional) */}
+                                        {settings.showQrCode ? (
                                             <div
-                                                className={`flex-1 border-b ${
+                                                className={`mt-4 mx-auto max-w-xl rounded-2xl border-2 p-3 flex items-center justify-between gap-4 ${
                                                     isDarkPaper
-                                                        ? "border-slate-700"
-                                                        : "border-slate-300"
+                                                        ? "border-slate-700 bg-slate-800/80 text-white"
+                                                        : settings.colorPalette ===
+                                                            "monochrome"
+                                                          ? "border-black bg-slate-50 text-black"
+                                                          : settings.colorPalette ===
+                                                              "charcoal"
+                                                            ? "border-slate-800 bg-slate-100 text-slate-900"
+                                                            : "border-amber-600/40 bg-gradient-to-r from-amber-50/60 via-amber-50/30 to-amber-100/40 text-amber-950"
                                                 }`}
-                                            />
-                                        </div>
-
-                                        {/* Dishes in Category */}
-                                        <div className="space-y-3">
-                                            {cat.items.map(item => {
-                                                const mappedItem =
-                                                    adminMenuItemToCatalog(
-                                                        item,
-                                                    );
-                                                const dishImage =
-                                                    mappedItem.image ||
-                                                    filePublicUrl(
-                                                        item.imageUrl,
-                                                    ) ||
-                                                    item.imageUrl;
-
-                                                return (
-                                                    <div
-                                                        key={item.id}
-                                                        className="group flex items-start gap-2.5"
+                                            >
+                                                <div className="flex-1 text-left">
+                                                    <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-600 px-2.5 py-0.5 text-[9px] font-black text-white uppercase tracking-wider">
+                                                        📱{" "}
+                                                        {t(
+                                                            "instantMobileOrder",
+                                                        )}
+                                                    </div>
+                                                    <h4 className="mt-1 text-xs font-bold leading-tight">
+                                                        {settings.qrHeadline}
+                                                    </h4>
+                                                    <p
+                                                        className={`mt-0.5 text-[10px] ${
+                                                            isDarkPaper
+                                                                ? "text-slate-300"
+                                                                : "text-slate-600"
+                                                        }`}
                                                     >
-                                                        {/* Food Photo Thumbnail */}
-                                                        {settings.showImages ? (
+                                                        {settings.qrSubtext}
+                                                    </p>
+                                                    {settings.qrMode ===
+                                                        "table_specific" &&
+                                                    currentTable ? (
+                                                        <span
+                                                            className={`mt-1 inline-block text-[10px] font-bold ${
+                                                                isDarkPaper
+                                                                    ? "text-amber-400"
+                                                                    : "text-amber-800"
+                                                            }`}
+                                                        >
+                                                            {t("seatedAt")}{" "}
+                                                            {
+                                                                currentTable.displayName
+                                                            }
+                                                        </span>
+                                                    ) : null}
+                                                </div>
+
+                                                <div className="flex flex-col items-center flex-shrink-0 bg-white p-1.5 rounded-xl border border-slate-200 shadow-xs">
+                                                    <QrCodeSvg
+                                                        value={previewQrUrl}
+                                                        size={64}
+                                                        fgColor="#000000"
+                                                    />
+                                                    <span className="mt-1 text-[7px] font-mono text-slate-500 uppercase tracking-tighter">
+                                                        {t("scanWithCamera")}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ) : null}
+                                    </div>
+
+                                    {/* Menu Categories & Items Grid */}
+                                    <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-6">
+                                        {activeCategories.map(cat => (
+                                            <div
+                                                key={cat.name}
+                                                className="break-inside-avoid space-y-3"
+                                            >
+                                                {/* Category Title with Ornamental Line */}
+                                                <div className="flex items-center gap-2">
+                                                    <h3
+                                                        className={`text-sm font-black uppercase tracking-wider ${
+                                                            isDarkPaper
+                                                                ? "text-amber-400"
+                                                                : settings.colorPalette ===
+                                                                    "amber"
+                                                                  ? "text-amber-800"
+                                                                  : "text-black"
+                                                        }`}
+                                                    >
+                                                        {cat.name}
+                                                    </h3>
+                                                    <div
+                                                        className={`flex-1 border-b ${
+                                                            isDarkPaper
+                                                                ? "border-slate-700"
+                                                                : "border-slate-300"
+                                                        }`}
+                                                    />
+                                                </div>
+
+                                                {/* Dishes in Category */}
+                                                <div className="space-y-3">
+                                                    {cat.items.map(item => {
+                                                        const mappedItem =
+                                                            adminMenuItemToCatalog(
+                                                                item,
+                                                            );
+                                                        const dishImage =
+                                                            mappedItem.image ||
+                                                            filePublicUrl(
+                                                                item.imageUrl,
+                                                            ) ||
+                                                            item.imageUrl;
+
+                                                        return (
                                                             <div
-                                                                className={`size-11 shrink-0 overflow-hidden rounded-xl border shadow-xs ${
-                                                                    isDarkPaper
-                                                                        ? "border-slate-700 bg-slate-800"
-                                                                        : "border-slate-200 bg-slate-100"
-                                                                }`}
+                                                                key={item.id}
+                                                                className="group flex items-start gap-2.5"
                                                             >
-                                                                {dishImage ? (
-                                                                    <img
-                                                                        src={
-                                                                            dishImage
-                                                                        }
-                                                                        alt={
-                                                                            item.name
-                                                                        }
-                                                                        className="size-full object-cover"
-                                                                        crossOrigin="anonymous"
-                                                                    />
-                                                                ) : (
-                                                                    <div className="flex size-full items-center justify-center text-xs">
-                                                                        🍽️
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        ) : null}
-
-                                                        <div className="flex-1 min-w-0">
-                                                            {/* Dish Name, Dots, Price */}
-                                                            <div className="flex items-baseline justify-between text-xs">
-                                                                <span
-                                                                    className={`font-bold shrink-0 ${
-                                                                        isDarkPaper
-                                                                            ? "text-white"
-                                                                            : "text-slate-950"
-                                                                    }`}
-                                                                >
-                                                                    {item.name}
-                                                                </span>
-                                                                {settings.showDotLeaders ? (
-                                                                    <span
-                                                                        className={`mx-1.5 flex-1 border-b border-dotted mb-1 ${
+                                                                {/* Food Photo Thumbnail */}
+                                                                {settings.showImages ? (
+                                                                    <div
+                                                                        className={`size-11 shrink-0 overflow-hidden rounded-xl border shadow-xs ${
                                                                             isDarkPaper
-                                                                                ? "border-slate-600"
-                                                                                : "border-slate-400"
+                                                                                ? "border-slate-700 bg-slate-800"
+                                                                                : "border-slate-200 bg-slate-100"
                                                                         }`}
-                                                                    />
+                                                                    >
+                                                                        {dishImage ? (
+                                                                            <img
+                                                                                src={
+                                                                                    dishImage
+                                                                                }
+                                                                                alt={
+                                                                                    item.name
+                                                                                }
+                                                                                className="size-full object-cover"
+                                                                                crossOrigin="anonymous"
+                                                                            />
+                                                                        ) : (
+                                                                            <div className="flex size-full items-center justify-center text-xs">
+                                                                                🍽️
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
                                                                 ) : null}
-                                                                <span
-                                                                    className={`font-extrabold shrink-0 ${
-                                                                        isDarkPaper
-                                                                            ? "text-amber-400"
-                                                                            : settings.colorPalette ===
-                                                                                "amber"
-                                                                              ? "text-amber-900"
-                                                                              : "text-black"
-                                                                    }`}
-                                                                >
-                                                                    {formatEtb(
-                                                                        Number(
-                                                                            item.price,
-                                                                        ),
-                                                                    )}
-                                                                </span>
-                                                            </div>
 
-                                                            {/* Description & Badges */}
-                                                            {settings.showDescriptions &&
-                                                            item.description ? (
-                                                                <p
-                                                                    className={`mt-0.5 text-[10px] leading-tight ${
-                                                                        isDarkPaper
-                                                                            ? "text-slate-400"
-                                                                            : "text-slate-600"
-                                                                    }`}
-                                                                >
-                                                                    {
-                                                                        item.description
-                                                                    }
-                                                                </p>
-                                                            ) : null}
-
-                                                            {/* Dietary Badges */}
-                                                            {settings.showBadges &&
-                                                            item.badge ? (
-                                                                <div className="mt-1 flex items-center gap-1 text-[9px] font-semibold text-slate-500">
-                                                                    {item.badge ===
-                                                                    "FASTING" ? (
-                                                                        <span className="inline-flex items-center gap-0.5 text-emerald-700">
-                                                                            <Leaf className="size-2.5" />{" "}
-                                                                            {t(
-                                                                                "badgeFasting",
-                                                                            )}
-                                                                        </span>
-                                                                    ) : item.badge ===
-                                                                      "VEGETARIAN" ? (
-                                                                        <span className="inline-flex items-center gap-0.5 text-emerald-700">
-                                                                            <Leaf className="size-2.5" />{" "}
-                                                                            {t(
-                                                                                "badgeVegetarian",
-                                                                            )}
-                                                                        </span>
-                                                                    ) : item.badge ===
-                                                                      "SPICY" ? (
-                                                                        <span className="inline-flex items-center gap-0.5 text-rose-700">
-                                                                            <Flame className="size-2.5" />{" "}
-                                                                            {t(
-                                                                                "badgeSpicy",
-                                                                            )}
-                                                                        </span>
-                                                                    ) : (
-                                                                        <span className="text-amber-700 font-bold">
-                                                                            ★{" "}
+                                                                <div className="flex-1 min-w-0">
+                                                                    {/* Dish Name, Dots, Price */}
+                                                                    <div className="flex items-baseline justify-between text-xs">
+                                                                        <span
+                                                                            className={`font-bold shrink-0 ${
+                                                                                isDarkPaper
+                                                                                    ? "text-white"
+                                                                                    : "text-slate-950"
+                                                                            }`}
+                                                                        >
                                                                             {
-                                                                                item.badge
+                                                                                item.name
                                                                             }
                                                                         </span>
-                                                                    )}
-                                                                </div>
-                                                            ) : null}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                                                                        {settings.showDotLeaders ? (
+                                                                            <span
+                                                                                className={`mx-1.5 flex-1 border-b border-dotted mb-1 ${
+                                                                                    isDarkPaper
+                                                                                        ? "border-slate-600"
+                                                                                        : "border-slate-400"
+                                                                                }`}
+                                                                            />
+                                                                        ) : null}
+                                                                        <span
+                                                                            className={`font-extrabold shrink-0 ${
+                                                                                isDarkPaper
+                                                                                    ? "text-amber-400"
+                                                                                    : settings.colorPalette ===
+                                                                                        "amber"
+                                                                                      ? "text-amber-900"
+                                                                                      : "text-black"
+                                                                            }`}
+                                                                        >
+                                                                            {formatEtb(
+                                                                                Number(
+                                                                                    item.price,
+                                                                                ),
+                                                                            )}
+                                                                        </span>
+                                                                    </div>
 
-                            {/* Bottom Footer Note */}
-                            <div className="mt-8 pt-4 border-t border-slate-200 text-center text-[9px] text-slate-500 font-medium tracking-wide">
-                                {t("footerNote")}
-                            </div>
+                                                                    {/* Description & Badges */}
+                                                                    {settings.showDescriptions &&
+                                                                    item.description ? (
+                                                                        <p
+                                                                            className={`mt-0.5 text-[10px] leading-tight ${
+                                                                                isDarkPaper
+                                                                                    ? "text-slate-400"
+                                                                                    : "text-slate-600"
+                                                                            }`}
+                                                                        >
+                                                                            {
+                                                                                item.description
+                                                                            }
+                                                                        </p>
+                                                                    ) : null}
+
+                                                                    {/* Dietary Badges */}
+                                                                    {settings.showBadges &&
+                                                                    item.badge ? (
+                                                                        <div className="mt-1 flex items-center gap-1 text-[9px] font-semibold text-slate-500">
+                                                                            {item.badge ===
+                                                                            "FASTING" ? (
+                                                                                <span className="inline-flex items-center gap-0.5 text-emerald-700">
+                                                                                    <Leaf className="size-2.5" />{" "}
+                                                                                    {t(
+                                                                                        "badgeFasting",
+                                                                                    )}
+                                                                                </span>
+                                                                            ) : item.badge ===
+                                                                              "VEGETARIAN" ? (
+                                                                                <span className="inline-flex items-center gap-0.5 text-emerald-700">
+                                                                                    <Leaf className="size-2.5" />{" "}
+                                                                                    {t(
+                                                                                        "badgeVegetarian",
+                                                                                    )}
+                                                                                </span>
+                                                                            ) : item.badge ===
+                                                                              "SPICY" ? (
+                                                                                <span className="inline-flex items-center gap-0.5 text-rose-700">
+                                                                                    <Flame className="size-2.5" />{" "}
+                                                                                    {t(
+                                                                                        "badgeSpicy",
+                                                                                    )}
+                                                                                </span>
+                                                                            ) : (
+                                                                                <span className="text-amber-700 font-bold">
+                                                                                    ★{" "}
+                                                                                    {
+                                                                                        item.badge
+                                                                                    }
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    ) : null}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Bottom Footer Note */}
+                                    <div className="mt-8 pt-4 border-t border-slate-200 text-center text-[9px] text-slate-500 font-medium tracking-wide">
+                                        {t("footerNote")}
+                                    </div>
+                                </>
+                            ) : null}
                         </div>
                     </div>
                 </div>

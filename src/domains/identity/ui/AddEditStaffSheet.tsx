@@ -79,9 +79,22 @@ export default function AddEditStaffSheet() {
     const editingStaff = useAppSelector(state => state.identity.editingStaff);
     const isEditMode = Boolean(editingStaff && editingStaff.name);
 
-    const { data: staffData } = useAdminStaffQuery(undefined, {
-        skip: !isOpen,
-    });
+    const [targetBranchId, setTargetBranchId] = useState<string | undefined>();
+    useEffect(() => {
+        if (!isOpen) return;
+        const stored =
+            typeof window !== "undefined"
+                ? sessionStorage.getItem("fanaye.staffTargetBranchId") ||
+                  undefined
+                : undefined;
+        setTargetBranchId(stored);
+    }, [isOpen]);
+    const { data: staffData } = useAdminStaffQuery(
+        targetBranchId ? { branchId: targetBranchId } : undefined,
+        {
+            skip: !isOpen,
+        },
+    );
     const { data: dbStations = [] } = useGetStationsQuery(undefined, {
         skip: !isOpen,
     });
@@ -99,6 +112,11 @@ export default function AddEditStaffSheet() {
                 id: "waiter",
                 label: t("roleWaiter"),
                 description: t("roleWaiterDesc"),
+            },
+            {
+                id: "dispatcher",
+                label: t("roleDispatcher"),
+                description: t("roleDispatcherDesc"),
             },
             {
                 id: "cashier",
@@ -410,6 +428,12 @@ export default function AddEditStaffSheet() {
                 toast.success(t("toastStaffUpdated"), values.name.trim());
                 dispatch(closeAddEditStaff());
             } else {
+                const targetBranchId =
+                    typeof window !== "undefined"
+                        ? sessionStorage.getItem(
+                              "fanaye.staffTargetBranchId",
+                          ) || undefined
+                        : undefined;
                 await createStaff({
                     name: values.name.trim(),
                     role: apiRole,
@@ -428,7 +452,11 @@ export default function AddEditStaffSheet() {
                         values.role === "waiter"
                             ? values.assignedTableIds
                             : undefined,
+                    ...(targetBranchId ? { branchId: targetBranchId } : {}),
                 }).unwrap();
+                if (typeof window !== "undefined") {
+                    sessionStorage.removeItem("fanaye.staffTargetBranchId");
+                }
                 toast.success(t("toastStaffRegistered"), values.name.trim());
                 dispatch(closeAddEditStaff());
             }

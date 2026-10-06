@@ -134,8 +134,9 @@ export default function CashierHomeStats() {
                 </p>
             ) : null}
 
-            <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                 <KpiCard
+                    compact
                     label={t("loggedToday")}
                     value={formatEtb(totals.total)}
                     hint={t("paymentCount", { count: totals.count })}
@@ -146,6 +147,7 @@ export default function CashierHomeStats() {
                     }}
                 />
                 <KpiCard
+                    compact
                     label={t("cash")}
                     value={formatEtb(totals.cash)}
                     hint={t("collectedAtTable")}
@@ -157,6 +159,7 @@ export default function CashierHomeStats() {
                     }}
                 />
                 <KpiCard
+                    compact
                     label={t("digital")}
                     value={formatEtb(totals.telebirr + totals.bank)}
                     hint={t("telebirrAndBank")}
@@ -168,6 +171,7 @@ export default function CashierHomeStats() {
                     }}
                 />
                 <KpiCard
+                    compact
                     label={t("needsDesk")}
                     value={String(bills.length + pendingDrops.length)}
                     hint={t("needsDeskHint", {
@@ -184,14 +188,16 @@ export default function CashierHomeStats() {
                 />
             </div>
 
-            <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                 <KpiCard
+                    compact
                     label={t("billQueueValue")}
                     value={formatEtb(pendingBillsAmount)}
                     hint={t("waitingToGenerateCount", { count: bills.length })}
                     sparkline={null}
                 />
                 <KpiCard
+                    compact
                     label={t("pendingCashDrops")}
                     value={formatEtb(pendingDropsAmount)}
                     hint={t("awaitingReceive", {
@@ -200,12 +206,14 @@ export default function CashierHomeStats() {
                     sparkline={null}
                 />
                 <KpiCard
+                    compact
                     label={t("telebirr")}
                     value={formatEtb(totals.telebirr)}
                     hint={t("verifiedDigital")}
                     sparkline={null}
                 />
                 <KpiCard
+                    compact
                     label={t("bankTransfer")}
                     value={formatEtb(totals.bank)}
                     hint={t("verifiedTransfer")}

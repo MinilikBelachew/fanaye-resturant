@@ -1,8 +1,6 @@
 import { z } from "zod";
 
-const timeLocal = z
-    .string()
-    .regex(/^\d{2}:\d{2}$/, "Use time like 07:00.");
+const timeLocal = z.string().regex(/^\d{2}:\d{2}$/, "Use time like 07:00.");
 
 export const shiftDefinitionSchema = z.object({
     name: z.string().trim().min(1, "Shift name is required."),
@@ -19,8 +17,12 @@ export const placeSchema = z.object({
 export type PlaceFormValues = z.infer<typeof placeSchema>;
 
 export const diningTableCreateSchema = z.object({
-    displayName: z.string().trim().min(1, "Table name is required."),
-    displayNumber: z.string().trim().optional().or(z.literal("")),
+    displayNumber: z
+        .string()
+        .trim()
+        .min(1, "Table number is required.")
+        .max(40, "Keep the number short (max 40 characters)."),
+    displayName: z.string().trim().max(100).optional().or(z.literal("")),
     locationId: z.string().min(1, "Select a place."),
     assignedWaiterMembershipId: z.string().optional().or(z.literal("")),
 });
@@ -28,7 +30,12 @@ export const diningTableCreateSchema = z.object({
 export type DiningTableCreateValues = z.infer<typeof diningTableCreateSchema>;
 
 export const diningTableEditSchema = z.object({
-    displayName: z.string().trim().min(1, "Table name is required."),
+    displayNumber: z
+        .string()
+        .trim()
+        .min(1, "Table number is required.")
+        .max(40, "Keep the number short (max 40 characters)."),
+    displayName: z.string().trim().min(1, "Table label is required."),
     locationId: z.string().min(1, "Select a place."),
     assignedWaiterMembershipId: z.string().optional().or(z.literal("")),
 });

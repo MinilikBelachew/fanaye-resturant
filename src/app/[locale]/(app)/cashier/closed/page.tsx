@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
 import { useCashierPaymentsQuery } from "@/context/services/billingApi";
+import { useRouter } from "@/i18n/navigation";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +18,7 @@ const POLL_MS = 5000;
 export default function CashierClosedPage() {
     const t = useTranslations("cashier");
     const tCommon = useTranslations("common");
+    const router = useRouter();
     const [page, setPage] = useState(1);
     const { data, isLoading, isFetching, isError } = useCashierPaymentsQuery(
         undefined,
@@ -111,7 +113,25 @@ export default function CashierClosedPage() {
                                     {pageRows.map(payment => (
                                         <tr
                                             key={payment.paymentId}
-                                            className="border-b border-hairline last:border-0"
+                                            role="link"
+                                            tabIndex={0}
+                                            onClick={() =>
+                                                router.push(
+                                                    `/cashier/closed/${payment.paymentId}`,
+                                                )
+                                            }
+                                            onKeyDown={event => {
+                                                if (
+                                                    event.key === "Enter" ||
+                                                    event.key === " "
+                                                ) {
+                                                    event.preventDefault();
+                                                    router.push(
+                                                        `/cashier/closed/${payment.paymentId}`,
+                                                    );
+                                                }
+                                            }}
+                                            className="cursor-pointer border-b border-hairline last:border-0 hover:bg-secondary/40"
                                         >
                                             <td className="px-4 py-2.5 font-medium sm:px-5">
                                                 {payment.tableDisplayName}

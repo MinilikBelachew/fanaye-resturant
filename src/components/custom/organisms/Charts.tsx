@@ -25,8 +25,10 @@ import type {
     HourlySalesPoint,
     OrderVolumePoint,
     PaymentChannelBreakdownItem,
+    PaymentMixPoint,
     PrepDurationBucket,
     RevenueVsCollectionsPoint,
+    StationPrepPoint,
     StationThroughputPoint,
     TopSellingDish,
     WeeklyCashMovementPoint,
@@ -340,38 +342,57 @@ export function PaymentChannelsBreakdown({
 
 export function PrepDurationBucketsChart({
     buckets = [],
+    stations = [],
     avgSpeed,
 }: {
     buckets?: PrepDurationBucket[];
+    stations?: StationPrepPoint[];
     avgSpeed?: string;
 }) {
     const t = useTranslations("dashboardCharts");
-    const totalTickets = buckets.reduce((sum, b) => sum + b.tickets, 0);
+    const useStations = stations.length > 0;
+    const chartData = useStations
+        ? stations.map(s => ({
+              label: s.station,
+              value: s.avgMinutes,
+              tickets: s.tickets,
+          }))
+        : buckets.map(b => ({
+              label: b.bucket,
+              value: b.tickets,
+              tickets: b.tickets,
+          }));
+    const totalTickets = chartData.reduce((sum, b) => sum + b.tickets, 0);
+    const barColors = ["#fed7aa", "#fdba74", "#fb923c", "#f97316", "#e85d04"];
 
     return (
         <div className="flex h-full flex-col justify-between rounded-[16px] border border-hairline bg-card p-6">
             <div>
                 <h3 className="text-[15px] font-semibold text-foreground">
-                    {t("prepTitle")}
+                    {useStations ? t("stationPrepTitle") : t("prepTitle")}
                 </h3>
                 <p className="mt-0.5 text-[12px] text-slate-gray">
-                    {t("prepSubtitle")}
+                    {useStations ? t("stationPrepSubtitle") : t("prepSubtitle")}
                 </p>
 
                 <div className="mt-6 h-[200px] w-full">
-                    {totalTickets === 0 ? (
+                    {totalTickets === 0 && !useStations ? (
                         <div className="flex h-full items-center justify-center text-[13px] text-slate-gray">
                             {t("prepEmpty")}
+                        </div>
+                    ) : useStations && chartData.every(d => d.tickets === 0) ? (
+                        <div className="flex h-full items-center justify-center text-[13px] text-slate-gray">
+                            {t("stationPrepEmpty")}
                         </div>
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart
-                                data={buckets}
+                                data={chartData}
                                 margin={{
                                     top: 10,
                                     right: 10,
                                     left: -25,
-                                    bottom: 0,
+                                    bottom: 4,
                                 }}
                             >
                                 <CartesianGrid
@@ -380,17 +401,33 @@ export function PrepDurationBucketsChart({
                                     stroke="#f0f0f2"
                                 />
                                 <XAxis
-                                    dataKey="bucket"
+                                    dataKey="label"
                                     tickLine={false}
                                     axisLine={false}
-                                    tick={{ fill: "#777c86", fontSize: 12 }}
+                                    tick={{ fill: "#777c86", fontSize: 11 }}
+                                    interval={0}
                                 />
                                 <YAxis
                                     tickLine={false}
                                     axisLine={false}
                                     tick={{ fill: "#777c86", fontSize: 12 }}
+                                    unit={useStations ? "m" : undefined}
                                 />
                                 <Tooltip
+                                    formatter={(value, _name, item) => {
+                                        if (useStations) {
+                                            const tickets =
+                                                item?.payload?.tickets ?? 0;
+                                            return [
+                                                `${Number(value ?? 0).toFixed(1)} min · ${tickets} ${t("tickets").toLowerCase()}`,
+                                                t("avgPrepMinutes"),
+                                            ];
+                                        }
+                                        return [
+                                            Number(value ?? 0),
+                                            t("tickets"),
+                                        ];
+                                    }}
                                     contentStyle={{
                                         backgroundColor: "#ffffff",
                                         borderRadius: "12px",
@@ -400,24 +437,22 @@ export function PrepDurationBucketsChart({
                                     }}
                                 />
                                 <Bar
-                                    dataKey="tickets"
-                                    name={t("tickets")}
+                                    dataKey="value"
+                                    name={
+                                        useStations
+                                            ? t("avgPrepMinutes")
+                                            : t("tickets")
+                                    }
                                     fill="#e85d04"
                                     radius={[6, 6, 0, 0]}
                                 >
-                                    {buckets.map((entry, idx) => (
+                                    {chartData.map((entry, idx) => (
                                         <Cell
-                                            key={`cell-${entry.bucket}`}
+                                            key={`cell-${entry.label}`}
                                             fill={
-                                                idx === 0
-                                                    ? "#fed7aa"
-                                                    : idx === 1
-                                                      ? "#fdba74"
-                                                      : idx === 2
-                                                        ? "#fb923c"
-                                                        : idx === 3
-                                                          ? "#f97316"
-                                                          : "#e85d04"
+                                                barColors[
+                                                    idx % barColors.length
+                                                ]
                                             }
                                         />
                                     ))}
@@ -619,7 +654,11 @@ export function HourlySalesChart({
     const t = useTranslations("dashboardCharts");
     const tCommon = useTranslations("common");
     const currency = tCommon("currency");
-    const hasData = data.some(d => d.billed > 0 || d.collected > 0);
+    const chartData = data.map(d => ({
+        hour: d.hour,
+        sales: d.collected > 0 ? d.collected : d.billed,
+    }));
+    const hasData = chartData.some(d => d.sales > 0);
     const tz = timezone || "Africa/Addis_Ababa";
 
     return (
@@ -641,8 +680,8 @@ export function HourlySalesChart({
                         </div>
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                                data={data}
+                            <AreaChart
+                                data={chartData}
                                 margin={{
                                     top: 10,
                                     right: 10,
@@ -650,6 +689,26 @@ export function HourlySalesChart({
                                     bottom: 0,
                                 }}
                             >
+                                <defs>
+                                    <linearGradient
+                                        id="hourlySalesFill"
+                                        x1="0"
+                                        y1="0"
+                                        x2="0"
+                                        y2="1"
+                                    >
+                                        <stop
+                                            offset="0%"
+                                            stopColor="#e85d04"
+                                            stopOpacity={0.35}
+                                        />
+                                        <stop
+                                            offset="100%"
+                                            stopColor="#e85d04"
+                                            stopOpacity={0.02}
+                                        />
+                                    </linearGradient>
+                                </defs>
                                 <CartesianGrid
                                     strokeDasharray="3 3"
                                     vertical={false}
@@ -679,31 +738,19 @@ export function HourlySalesChart({
                                         fontSize: "12px",
                                     }}
                                 />
-                                <Bar
-                                    dataKey="billed"
-                                    name={t("billed")}
-                                    fill="#fdba74"
-                                    radius={[4, 4, 0, 0]}
+                                <Area
+                                    type="monotone"
+                                    dataKey="sales"
+                                    name={t("sales")}
+                                    stroke="#e85d04"
+                                    strokeWidth={2}
+                                    fill="url(#hourlySalesFill)"
+                                    dot={false}
+                                    activeDot={{ r: 4, fill: "#e85d04" }}
                                 />
-                                <Bar
-                                    dataKey="collected"
-                                    name={t("collected")}
-                                    fill="#e85d04"
-                                    radius={[4, 4, 0, 0]}
-                                />
-                            </BarChart>
+                            </AreaChart>
                         </ResponsiveContainer>
                     )}
-                </div>
-            </div>
-            <div className="mt-3 flex items-center justify-center gap-6 text-[12px] font-medium text-slate-gray">
-                <div className="flex items-center gap-1.5">
-                    <span className="size-2.5 rounded-full bg-[#fdba74]" />
-                    <span>{t("billed")}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                    <span className="size-2.5 rounded-full bg-[#e85d04]" />
-                    <span>{t("collected")}</span>
                 </div>
             </div>
         </div>
@@ -909,6 +956,131 @@ export function OrderVolumeChart({ data = [] }: { data?: OrderVolumePoint[] }) {
                 <div className="flex items-center gap-1.5">
                     <span className="size-2.5 rounded-full bg-[#046645]" />
                     <span>{t("covers")}</span>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export function PaymentMixTrendChart({
+    data = [],
+}: {
+    data?: PaymentMixPoint[];
+}) {
+    const t = useTranslations("dashboardCharts");
+    const tCommon = useTranslations("common");
+    const currency = tCommon("currency");
+    const hasData = data.some(d => d.cash > 0 || d.digital > 0);
+    const chartData = withLocalizedDays(t, data, "period");
+
+    return (
+        <div className="flex h-full flex-col justify-between rounded-[16px] border border-hairline bg-card p-6">
+            <div>
+                <h3 className="text-[15px] font-semibold text-foreground">
+                    {t("paymentMixTrendTitle")}
+                </h3>
+                <p className="mt-0.5 text-[12px] text-slate-gray">
+                    {t("paymentMixTrendSubtitle", { currency })}
+                </p>
+
+                <div className="mt-6 h-[220px] w-full">
+                    {!hasData ? (
+                        <div className="flex h-full items-center justify-center text-[13px] text-slate-gray">
+                            {t("paymentMixTrendEmpty")}
+                        </div>
+                    ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart
+                                data={chartData}
+                                margin={{
+                                    top: 10,
+                                    right: 10,
+                                    left: -20,
+                                    bottom: 0,
+                                }}
+                            >
+                                <defs>
+                                    <linearGradient
+                                        id="cashMixGrad"
+                                        x1="0"
+                                        y1="0"
+                                        x2="0"
+                                        y2="1"
+                                    >
+                                        <stop
+                                            offset="0%"
+                                            stopColor="#e85d04"
+                                            stopOpacity="0.25"
+                                        />
+                                        <stop
+                                            offset="100%"
+                                            stopColor="#e85d04"
+                                            stopOpacity="0.0"
+                                        />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid
+                                    strokeDasharray="3 3"
+                                    vertical={false}
+                                    stroke="#f0f0f2"
+                                />
+                                <XAxis
+                                    dataKey="period"
+                                    tickLine={false}
+                                    axisLine={false}
+                                    tick={{ fill: "#777c86", fontSize: 12 }}
+                                />
+                                <YAxis
+                                    tickLine={false}
+                                    axisLine={false}
+                                    tick={{ fill: "#777c86", fontSize: 12 }}
+                                    tickFormatter={v =>
+                                        v >= 1000
+                                            ? `${Math.round(v / 1000)}k`
+                                            : String(v)
+                                    }
+                                />
+                                <Tooltip
+                                    formatter={value =>
+                                        formatEtb(Number(value ?? 0))
+                                    }
+                                    contentStyle={{
+                                        backgroundColor: "#ffffff",
+                                        borderRadius: "12px",
+                                        border: "1px solid #efefef",
+                                        boxShadow: "none",
+                                        fontSize: "12px",
+                                    }}
+                                />
+                                <Area
+                                    dataKey="cash"
+                                    name={t("cashCollections")}
+                                    type="monotone"
+                                    stroke="#e85d04"
+                                    strokeWidth={2.2}
+                                    fill="url(#cashMixGrad)"
+                                />
+                                <Area
+                                    dataKey="digital"
+                                    name={t("digitalCollections")}
+                                    type="monotone"
+                                    stroke="#046645"
+                                    strokeWidth={2}
+                                    fill="none"
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    )}
+                </div>
+            </div>
+            <div className="mt-3 flex items-center justify-center gap-6 text-[12px] font-medium text-slate-gray">
+                <div className="flex items-center gap-1.5">
+                    <span className="size-2.5 rounded-full bg-[#e85d04]" />
+                    <span>{t("cashCollections")}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <span className="size-2.5 rounded-full bg-[#046645]" />
+                    <span>{t("digitalCollections")}</span>
                 </div>
             </div>
         </div>

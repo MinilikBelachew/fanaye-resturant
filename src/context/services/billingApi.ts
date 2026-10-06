@@ -2,6 +2,7 @@ import type {
     Bill,
     BillRequestCreated,
     CashierBillRequest,
+    CashierPaymentDetail,
     CashierPaymentLogItem,
     SessionBillResponse,
 } from "@/domains/billing/domain/billingApi";
@@ -125,6 +126,8 @@ export const billingApi = api.injectEndpoints({
         payTransfer: builder.mutation<
             {
                 payment: { paymentId: string; status: string };
+                tipAmount?: string;
+                verifiedAmount?: string;
                 bill: { billId: string; status: string; version: number };
                 tableSession: { status: string; version: number };
             },
@@ -135,6 +138,10 @@ export const billingApi = api.injectEndpoints({
                 expectedBillVersion: number;
                 transferChannel: "TELEBIRR" | "BANK";
                 fileId: string;
+                reference?: string;
+                bankProvider?: string;
+                accountSuffix?: string;
+                phoneNumber?: string;
             }
         >({
             query: ({
@@ -143,6 +150,10 @@ export const billingApi = api.injectEndpoints({
                 expectedBillVersion,
                 transferChannel,
                 fileId,
+                reference,
+                bankProvider,
+                accountSuffix,
+                phoneNumber,
             }) => ({
                 url: `/bills/${billId}/payments/transfer`,
                 method: "POST",
@@ -151,6 +162,10 @@ export const billingApi = api.injectEndpoints({
                     expectedBillVersion,
                     transferChannel,
                     fileId,
+                    ...(reference ? { reference } : {}),
+                    ...(bankProvider ? { bankProvider } : {}),
+                    ...(accountSuffix ? { accountSuffix } : {}),
+                    ...(phoneNumber ? { phoneNumber } : {}),
                 },
                 headers: { "Idempotency-Key": idempotencyKey() },
             }),
@@ -170,6 +185,16 @@ export const billingApi = api.injectEndpoints({
                 providesTags: ["Bill"],
             },
         ),
+        cashierPaymentDetail: builder.query<CashierPaymentDetail, string>({
+            query: paymentId => ({
+                url: `/cashier/payments/${paymentId}`,
+                method: "GET",
+            }),
+            providesTags: (_result, _error, id) => [
+                { type: "Bill", id },
+                "Bill",
+            ],
+        }),
         uploadReceipt: builder.mutation<
             { file: { id: string; path: string } },
             File
@@ -181,6 +206,30 @@ export const billingApi = api.injectEndpoints({
                     url: "/files/upload",
                     method: "POST",
                     body,
+                };
+            },
+        }),
+        extractReceipt: builder.mutation<
+            {
+                reference: string | null;
+                bankProvider: string | null;
+                amount: string | null;
+                confidence: number;
+                source: string;
+                rawHint?: string | null;
+            },
+            { file: File; transferChannel?: "TELEBIRR" | "BANK" }
+        >({
+            query: ({ file, transferChannel }) => {
+                const body = new FormData();
+                body.append("file", file);
+                return {
+                    url: "/payments/receipt-extract",
+                    method: "POST",
+                    body,
+                    headers: transferChannel
+                        ? { "x-transfer-channel": transferChannel }
+                        : undefined,
                 };
             },
         }),
@@ -205,7 +254,9 @@ export const {
     usePayCashMutation,
     usePayTransferMutation,
     useCashierPaymentsQuery,
+    useCashierPaymentDetailQuery,
     useUploadReceiptMutation,
+    useExtractReceiptMutation,
     useSendBillToWaiterMutation,
     useGetBillQuery,
     useLazyGetBillQuery,

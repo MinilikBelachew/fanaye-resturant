@@ -97,7 +97,6 @@ export default function CameraCapture({
                 </div>
                 <div className="bg-black">
                     {preview ? (
-                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                             src={preview}
                             alt="Receipt"
@@ -189,9 +188,7 @@ export default function CameraCapture({
                         accept="image/*"
                         capture="environment"
                         className="hidden"
-                        onChange={event =>
-                            onFile(event.target.files?.[0])
-                        }
+                        onChange={event => onFile(event.target.files?.[0])}
                     />
                 </div>
             </div>

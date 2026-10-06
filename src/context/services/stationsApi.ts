@@ -85,6 +85,38 @@ export const stationsApi = api.injectEndpoints({
             }),
             invalidatesTags: ["Station", "Menu", "Order"],
         }),
+        stationDetail: builder.query<StationDetailResponse, string>({
+            query: stationId => ({
+                url: `/stations/${stationId}/detail`,
+                method: "GET",
+            }),
+            providesTags: (_result, _error, stationId) => [
+                { type: "Station", id: `${stationId}-detail` },
+                "Station",
+            ],
+        }),
+        stationHistory: builder.query<
+            StationHistoryResponse,
+            StationHistoryParams
+        >({
+            query: ({ stationId, ...params }) => ({
+                url: `/stations/${stationId}/history`,
+                method: "GET",
+                params: {
+                    ...(params.q ? { q: params.q } : {}),
+                    ...(params.state ? { state: params.state } : {}),
+                    ...(params.period ? { period: params.period } : {}),
+                    ...(params.fromDate ? { fromDate: params.fromDate } : {}),
+                    ...(params.toDate ? { toDate: params.toDate } : {}),
+                    ...(params.page ? { page: params.page } : {}),
+                    ...(params.limit ? { limit: params.limit } : {}),
+                },
+            }),
+            providesTags: (_result, _error, { stationId }) => [
+                { type: "Station", id: `${stationId}-history` },
+                "Station",
+            ],
+        }),
         stationQueue: builder.query<StationQueueResponse, string>({
             query: stationId => ({
                 url: `/stations/${stationId}/queue`,
@@ -237,11 +269,85 @@ export type StationMenuResponse = {
     data: StationMenuItem[];
 };
 
+export type StationOwner = {
+    membershipId: string;
+    displayName: string;
+    assignedAt?: string;
+};
+
+export type StationDetailResponse = {
+    id: string;
+    name: string;
+    code?: string | null;
+    status: string;
+    enabled: boolean;
+    defaultDelayThresholdMinutes?: number | null;
+    avgPrepMin?: number;
+    sortOrder: number;
+    owners: StationOwner[];
+    openTickets: number;
+    ticketsToday: number;
+    menuItemCount: number;
+    servedToday: number;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type StationHistoryPeriod =
+    | "today"
+    | "week"
+    | "month"
+    | "quarter"
+    | "year"
+    | "custom";
+
+export type StationHistoryParams = {
+    stationId: string;
+    q?: string;
+    state?: string;
+    period?: StationHistoryPeriod;
+    fromDate?: string;
+    toDate?: string;
+    page?: number;
+    limit?: number;
+};
+
+export type StationHistoryItem = {
+    id: string;
+    itemName: string;
+    quantity: number;
+    state: string;
+    tableDisplayName: string;
+    waiterName?: string | null;
+    specialInstruction?: string | null;
+    businessDate: string;
+    confirmedAt: string;
+    queuedAt?: string | null;
+    readyAt?: string | null;
+    servedAt?: string | null;
+    prepMinutes?: number | null;
+};
+
+export type StationHistoryResponse = {
+    stationId: string;
+    period: string;
+    periodLabel: string;
+    data: StationHistoryItem[];
+    pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+    };
+};
+
 export const {
     useGetStationsQuery,
     useCreateStationMutation,
     useUpdateStationMutation,
     useDeleteStationMutation,
+    useStationDetailQuery,
+    useStationHistoryQuery,
     useStationQueueQuery,
     useStationOrderItemQuery,
     useAcknowledgeOrderItemMutation,

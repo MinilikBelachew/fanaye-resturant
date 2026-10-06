@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import { Check, FileDown, Loader2, Printer, Send, X } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Bill } from "@/domains/billing/domain/billingApi";
 import { useSendBillToWaiterMutation } from "@/context/services/billingApi";
@@ -40,6 +40,7 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
     const tReceipt = useTranslations("receipt");
     const tCommon = useTranslations("common");
     const tCashier = useTranslations("cashier");
+    const locale = useLocale();
     const receiptRef = useRef<HTMLDivElement>(null);
     const [isExportingPdf, setIsExportingPdf] = useState(false);
     const [sentSuccess, setSentSuccess] = useState(false);
@@ -107,8 +108,8 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
 
     const receiptVerifyUrl =
         typeof window !== "undefined"
-            ? `${window.location.origin}/receipt/${bill.billId}`
-            : `https://example.com/receipt/${bill.billId}`;
+            ? `${window.location.origin}/${locale}/receipt/${bill.billId}`
+            : `https://example.com/${locale}/receipt/${bill.billId}`;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-xs p-3 sm:p-6 animate-in fade-in duration-200">

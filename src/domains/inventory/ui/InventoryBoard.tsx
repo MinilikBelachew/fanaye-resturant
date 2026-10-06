@@ -8,6 +8,7 @@ import {
     useListInventoryCountsQuery,
     useListInventoryIngredientsQuery,
     useListInventoryLedgerQuery,
+    useListInventoryUnitsQuery,
     usePostInventoryCountMutation,
     useReceiveInventoryStockMutation,
     useStartInventoryCountMutation,
@@ -15,6 +16,7 @@ import {
     useGetInventoryCountQuery,
     useWasteInventoryStockMutation,
 } from "@/context/services/inventoryApi";
+import { formatEtb } from "@/lib/money";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
@@ -38,6 +40,9 @@ export default function InventoryBoard() {
     const [ledgerType, setLedgerType] = useState("");
     const [activeCountId, setActiveCountId] = useState<string | null>(null);
 
+    const { data: unitsRes } = useListInventoryUnitsQuery();
+    const unitOptions = unitsRes?.data ?? [];
+
     const listParams = useMemo(
         () => ({
             page,
@@ -52,6 +57,10 @@ export default function InventoryBoard() {
     const balances = useListInventoryBalancesQuery(listParams, {
         skip: tab !== "stock",
     });
+    const moneySummary = useListInventoryBalancesQuery(
+        { page: 1, limit: 1 },
+        { pollingInterval: 15000 },
+    );
     const ingredients = useListInventoryIngredientsQuery(listParams, {
         skip: tab !== "ingredients" && tab !== "receive" && tab !== "waste",
     });
@@ -220,9 +229,78 @@ export default function InventoryBoard() {
                 : counts.data?.meta;
 
     const ingredientOptions = ingredients.data?.data ?? [];
+    const summary =
+        (tab === "stock" ? balances.data?.summary : undefined) ??
+        moneySummary.data?.summary;
+
+    const selectedReceive = ingredientOptions.find(
+        i => i.id === receiveForm.ingredientId,
+    );
+    const receiveQty = Number(receiveForm.quantity) || 0;
+    const receiveUnitCost =
+        receiveForm.unitCost !== ""
+            ? Number(receiveForm.unitCost) || 0
+            : (selectedReceive?.unitCost ?? 0);
+    const receiveTotal = receiveQty * receiveUnitCost;
+
+    const selectedWaste = ingredientOptions.find(
+        i => i.id === wasteForm.ingredientId,
+    );
+    const wasteQty = Number(wasteForm.quantity) || 0;
+    const wasteTotal = wasteQty * (selectedWaste?.unitCost ?? 0);
+
+    const openingQty = Number(ingForm.initialQty) || 0;
+    const openingCost = Number(ingForm.unitCost) || 0;
+    const openingValue = openingQty * openingCost;
 
     return (
         <div className="space-y-5">
+            {summary ? (
+                <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-hairline bg-hairline sm:grid-cols-4">
+                        {[
+                            {
+                                label: t("moneyStockValue"),
+                                value: formatEtb(summary.totalStockValue),
+                                tone: "text-foreground",
+                            },
+                            {
+                                label: t("moneyLowStockValue"),
+                                value: formatEtb(summary.lowStockValue),
+                                tone: "text-amber-700 dark:text-amber-400",
+                            },
+                            {
+                                label: t("moneySkuCount"),
+                                value: String(summary.skuCount),
+                                tone: "text-foreground",
+                            },
+                            {
+                                label: t("moneyLowStockCount"),
+                                value: String(summary.lowStockCount),
+                                tone: "text-amber-700 dark:text-amber-400",
+                            },
+                        ].map(stat => (
+                            <div key={stat.label} className="bg-card px-4 py-3">
+                                <p className="text-[10px] uppercase tracking-[0.1em] text-slate-gray">
+                                    {stat.label}
+                                </p>
+                                <p
+                                    className={cn(
+                                        "mt-1 text-[18px] font-medium tabular-nums tracking-tight",
+                                        stat.tone,
+                                    )}
+                                >
+                                    {stat.value}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                    <p className="text-[11px] text-slate-gray">
+                        {t("moneyHint")}
+                    </p>
+                </div>
+            ) : null}
+
             <div className="flex flex-wrap gap-2 border-b border-hairline pb-3">
                 {tabs.map(tabItem => (
                     <button
@@ -311,6 +389,12 @@ export default function InventoryBoard() {
                                         {t("colPar")}
                                     </th>
                                     <th className="px-4 py-3 font-medium">
+                                        {t("colCost")}
+                                    </th>
+                                    <th className="px-4 py-3 font-medium">
+                                        {t("colValue")}
+                                    </th>
+                                    <th className="px-4 py-3 font-medium">
                                         {t("colStatus")}
                                     </th>
                                 </tr>
@@ -324,11 +408,25 @@ export default function InventoryBoard() {
                                         <td className="px-4 py-3 font-medium">
                                             {row.name}
                                         </td>
-                                        <td className="px-4 py-3">
+                                        <td className="px-4 py-3 tabular-nums">
                                             {row.onHandQty} {row.unit}
                                         </td>
-                                        <td className="px-4 py-3">
+                                        <td className="px-4 py-3 tabular-nums">
                                             {row.parLevel} {row.unit}
+                                        </td>
+                                        <td className="px-4 py-3 tabular-nums text-slate-gray">
+                                            {formatEtb(row.unitCost)}
+                                            <span className="text-[11px]">
+                                                {" "}
+                                                / {row.unit}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 font-medium tabular-nums">
+                                            {formatEtb(
+                                                row.stockValue ??
+                                                    row.onHandQty *
+                                                        row.unitCost,
+                                            )}
                                         </td>
                                         <td className="px-4 py-3">
                                             {row.isLowStock ? (
@@ -344,7 +442,10 @@ export default function InventoryBoard() {
                                     </tr>
                                 ))}
                                 {(balances.data?.data ?? []).length === 0 ? (
-                                    <EmptyRow text={t("emptyStock")} />
+                                    <EmptyRow
+                                        text={t("emptyStock")}
+                                        colSpan={6}
+                                    />
                                 ) : null}
                             </tbody>
                         </table>
@@ -373,6 +474,9 @@ export default function InventoryBoard() {
                                         <th className="px-4 py-3 font-medium">
                                             {t("colCost")}
                                         </th>
+                                        <th className="px-4 py-3 font-medium">
+                                            {t("colValue")}
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -387,11 +491,18 @@ export default function InventoryBoard() {
                                             <td className="px-4 py-3">
                                                 {row.unit}
                                             </td>
-                                            <td className="px-4 py-3">
+                                            <td className="px-4 py-3 tabular-nums">
                                                 {row.onHandQty}
                                             </td>
-                                            <td className="px-4 py-3">
-                                                {row.unitCost}
+                                            <td className="px-4 py-3 tabular-nums text-slate-gray">
+                                                {formatEtb(row.unitCost)}
+                                            </td>
+                                            <td className="px-4 py-3 font-medium tabular-nums">
+                                                {formatEtb(
+                                                    row.stockValue ??
+                                                        row.onHandQty *
+                                                            row.unitCost,
+                                                )}
                                             </td>
                                         </tr>
                                     ))}
@@ -399,6 +510,7 @@ export default function InventoryBoard() {
                                     0 ? (
                                         <EmptyRow
                                             text={t("emptyIngredients")}
+                                            colSpan={5}
                                         />
                                     ) : null}
                                 </tbody>
@@ -418,12 +530,32 @@ export default function InventoryBoard() {
                             onChange={v => setIngForm(s => ({ ...s, name: v }))}
                             required
                         />
-                        <Field
-                            label={t("fieldUnit")}
-                            value={ingForm.unit}
-                            onChange={v => setIngForm(s => ({ ...s, unit: v }))}
-                            required
-                        />
+                        <label className="block space-y-1 text-[12px]">
+                            <span className="font-medium text-slate-gray">
+                                {t("fieldUnit")}
+                            </span>
+                            <select
+                                required
+                                value={ingForm.unit}
+                                onChange={e =>
+                                    setIngForm(s => ({
+                                        ...s,
+                                        unit: e.target.value,
+                                    }))
+                                }
+                                className="h-10 w-full rounded-xl border border-hairline bg-background px-3 text-[13px]"
+                            >
+                                {unitOptions.length === 0 ? (
+                                    <option value="kg">kg</option>
+                                ) : (
+                                    unitOptions.map(u => (
+                                        <option key={u.id} value={u.code}>
+                                            {u.name} ({u.code})
+                                        </option>
+                                    ))
+                                )}
+                            </select>
+                        </label>
                         <Field
                             label={t("fieldUnitCost")}
                             value={ingForm.unitCost}
@@ -450,6 +582,16 @@ export default function InventoryBoard() {
                             }
                             type="number"
                         />
+                        {openingQty > 0 ? (
+                            <div className="rounded-xl bg-secondary/60 px-3 py-2 text-[12px]">
+                                <span className="text-slate-gray">
+                                    {t("openingValue")}
+                                </span>
+                                <span className="ml-2 font-medium tabular-nums text-foreground">
+                                    {formatEtb(openingValue)}
+                                </span>
+                            </div>
+                        ) : null}
                         <button
                             type="submit"
                             disabled={creating.isLoading}
@@ -477,9 +619,20 @@ export default function InventoryBoard() {
                         placeholder={t("selectIngredient")}
                         value={receiveForm.ingredientId}
                         options={ingredientOptions}
-                        onChange={v =>
-                            setReceiveForm(s => ({ ...s, ingredientId: v }))
-                        }
+                        onChange={v => {
+                            const picked = ingredientOptions.find(
+                                i => i.id === v,
+                            );
+                            setReceiveForm(s => ({
+                                ...s,
+                                ingredientId: v,
+                                unitCost:
+                                    s.unitCost ||
+                                    (picked
+                                        ? String(picked.unitCost)
+                                        : s.unitCost),
+                            }));
+                        }}
                     />
                     <Field
                         label={t("fieldQuantity")}
@@ -512,6 +665,19 @@ export default function InventoryBoard() {
                             setReceiveForm(s => ({ ...s, invoiceRef: v }))
                         }
                     />
+                    {receiveQty > 0 ? (
+                        <div className="rounded-xl bg-secondary/60 px-3 py-2 text-[12px]">
+                            <span className="text-slate-gray">
+                                {t("receiveLineTotal")}
+                            </span>
+                            <span className="ml-2 font-medium tabular-nums text-foreground">
+                                {formatEtb(receiveTotal)}
+                            </span>
+                            <span className="ml-2 text-[11px] text-slate-gray">
+                                ({receiveQty} × {formatEtb(receiveUnitCost)})
+                            </span>
+                        </div>
+                    ) : null}
                     <button
                         type="submit"
                         disabled={receiving.isLoading}
@@ -556,6 +722,20 @@ export default function InventoryBoard() {
                         value={wasteForm.note}
                         onChange={v => setWasteForm(s => ({ ...s, note: v }))}
                     />
+                    {wasteQty > 0 && selectedWaste ? (
+                        <div className="rounded-xl bg-destructive/5 px-3 py-2 text-[12px]">
+                            <span className="text-slate-gray">
+                                {t("wasteLineTotal")}
+                            </span>
+                            <span className="ml-2 font-medium tabular-nums text-destructive">
+                                {formatEtb(wasteTotal)}
+                            </span>
+                            <span className="ml-2 text-[11px] text-slate-gray">
+                                ({wasteQty} ×{" "}
+                                {formatEtb(selectedWaste.unitCost)})
+                            </span>
+                        </div>
+                    ) : null}
                     <button
                         type="submit"
                         disabled={wasting.isLoading}
@@ -791,41 +971,72 @@ export default function InventoryBoard() {
                                         {t("colDelta")}
                                     </th>
                                     <th className="px-4 py-3 font-medium">
+                                        {t("colCost")}
+                                    </th>
+                                    <th className="px-4 py-3 font-medium">
+                                        {t("lineValue")}
+                                    </th>
+                                    <th className="px-4 py-3 font-medium">
                                         {t("colNote")}
                                     </th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {(ledger.data?.data ?? []).map(row => (
-                                    <tr
-                                        key={row.id}
-                                        className="border-t border-hairline"
-                                    >
-                                        <td className="px-4 py-3">
-                                            {new Date(
-                                                row.createdAt,
-                                            ).toLocaleString()}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            {row.entryType}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            {row.ingredient.name}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            {row.quantityDelta}{" "}
-                                            {row.ingredient.unit}
-                                        </td>
-                                        <td className="px-4 py-3 text-slate-gray">
-                                            {row.note ||
-                                                row.supplierNote ||
-                                                row.invoiceRef ||
-                                                "—"}
-                                        </td>
-                                    </tr>
-                                ))}
+                                {(ledger.data?.data ?? []).map(row => {
+                                    const unitCost =
+                                        row.unitCost ??
+                                        row.unitCostSnapshot ??
+                                        0;
+                                    const lineValue =
+                                        row.lineValue ??
+                                        row.quantityDelta * unitCost;
+                                    return (
+                                        <tr
+                                            key={row.id}
+                                            className="border-t border-hairline"
+                                        >
+                                            <td className="px-4 py-3">
+                                                {new Date(
+                                                    row.createdAt,
+                                                ).toLocaleString()}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {row.entryType}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {row.ingredient.name}
+                                            </td>
+                                            <td className="px-4 py-3 tabular-nums">
+                                                {row.quantityDelta}{" "}
+                                                {row.ingredient.unit}
+                                            </td>
+                                            <td className="px-4 py-3 tabular-nums text-slate-gray">
+                                                {formatEtb(unitCost)}
+                                            </td>
+                                            <td
+                                                className={cn(
+                                                    "px-4 py-3 font-medium tabular-nums",
+                                                    lineValue < 0
+                                                        ? "text-destructive"
+                                                        : "text-foreground",
+                                                )}
+                                            >
+                                                {formatEtb(lineValue)}
+                                            </td>
+                                            <td className="px-4 py-3 text-slate-gray">
+                                                {row.note ||
+                                                    row.supplierNote ||
+                                                    row.invoiceRef ||
+                                                    "—"}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                                 {(ledger.data?.data ?? []).length === 0 ? (
-                                    <EmptyRow text={t("emptyLedger")} />
+                                    <EmptyRow
+                                        text={t("emptyLedger")}
+                                        colSpan={7}
+                                    />
                                 ) : null}
                             </tbody>
                         </table>
@@ -944,10 +1155,13 @@ function LoadingRow() {
     );
 }
 
-function EmptyRow({ text }: { text: string }) {
+function EmptyRow({ text, colSpan = 5 }: { text: string; colSpan?: number }) {
     return (
         <tr>
-            <td colSpan={5} className="px-4 py-8 text-center text-slate-gray">
+            <td
+                colSpan={colSpan}
+                className="px-4 py-8 text-center text-slate-gray"
+            >
                 {text}
             </td>
         </tr>
