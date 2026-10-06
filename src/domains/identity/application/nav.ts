@@ -488,13 +488,15 @@ function navForRole(role: Role, serviceMode?: string | null): NavSection[] {
     return sections
         .map(section => ({
             ...section,
+            title: section.title === "Floor" ? "Counter POS" : section.title,
             items: section.items
                 .map(item => {
                     if (item.href === "/cashier/bills") {
                         return {
                             ...item,
                             href: "/cashier/sale",
-                            label: "New sale",
+                            label: "Bakery POS",
+                            icon: Store,
                         };
                     }
                     return item;

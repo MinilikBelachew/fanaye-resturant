@@ -78,12 +78,30 @@ export default function BakeryNewSale() {
     const [categoryId, setCategoryId] = useState("ALL");
 
     const items = menu?.items ?? [];
+    const EXCLUDED_STATION_CATEGORIES = useMemo(
+        () =>
+            new Set([
+                "kitchen",
+                "barista",
+                "cakes",
+                "soft drinks",
+                "soft_drinks",
+                "counter",
+            ]),
+        [],
+    );
     const categories = useMemo(
         () =>
             (menu?.categories ?? [])
+                .filter(
+                    c =>
+                        !EXCLUDED_STATION_CATEGORIES.has(
+                            c.name.trim().toLowerCase(),
+                        ),
+                )
                 .slice()
                 .sort((a, b) => a.sortOrder - b.sortOrder),
-        [menu],
+        [menu, EXCLUDED_STATION_CATEGORIES],
     );
 
     const visible = useMemo(() => {

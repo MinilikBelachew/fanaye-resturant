@@ -1018,19 +1018,7 @@ export const PRINT_MENU_TEMPLATES: Array<{
     {
         id: "classic",
         label: "Classic",
-        description: "Current two-column dining menu",
+        description: "Two-column dining menu",
         swatch: "linear-gradient(135deg,#fff,#fef3c7)",
-    },
-    {
-        id: "aurora",
-        label: "Aurora Café",
-        description: "Cream paper, green accents, café layout",
-        swatch: "linear-gradient(135deg,#F7F1E3,#1B4332)",
-    },
-    {
-        id: "breakfast",
-        label: "Plate",
-        description: "Elegant single-page dining menu",
-        swatch: "linear-gradient(135deg,#F2EFE9,#2C241B)",
     },
 ];

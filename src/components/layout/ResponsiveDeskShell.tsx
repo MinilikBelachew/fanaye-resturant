@@ -43,6 +43,7 @@ const NAV_LABEL_KEYS: Record<string, string> = {
     Payments: "payments",
     "Bill requests": "billRequests",
     "New sale": "newSale",
+    "Bakery POS": "bakeryPos",
     "Cash drops": "cashDrops",
     "Closed Bills": "closedBills",
     Reconciliation: "reconciliation",

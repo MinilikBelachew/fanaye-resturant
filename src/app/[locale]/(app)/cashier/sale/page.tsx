@@ -8,7 +8,7 @@ export default function CashierSalePage() {
             <PageHeader
                 compact
                 eyebrow="Bakery"
-                title="New sale"
+                title="Bakery POS"
                 description="Tap a photo to add. Use + / − or +5, then generate the bill."
             />
             <BakeryNewSale />

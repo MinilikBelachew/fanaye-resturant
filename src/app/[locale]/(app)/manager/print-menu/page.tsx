@@ -485,7 +485,7 @@ export default function ManagerPrintMenuPage() {
                         <p className="text-[11px] text-slate-500">
                             {t("templatePickerDesc")}
                         </p>
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-2 max-w-xs">
                             {PRINT_MENU_TEMPLATES.map(tpl => (
                                 <button
                                     key={tpl.id}
