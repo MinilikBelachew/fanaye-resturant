@@ -24,8 +24,11 @@ function invalidateForType(
 ) {
     if (
         type === "item.ready" ||
+        type === "item.delayed" ||
         type === "ticket.queued" ||
-        type === "ticket.updated"
+        type === "ticket.unacknowledged" ||
+        type === "ticket.updated" ||
+        type === "branch.rush_mode.toggled"
     ) {
         dispatch(
             api.util.invalidateTags([

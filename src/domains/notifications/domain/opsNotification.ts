@@ -2,8 +2,11 @@ export type OpsSeverity = "INFO" | "ATTENTION" | "URGENT";
 
 export type OpsNotificationType =
     | "item.ready"
+    | "item.delayed"
     | "ticket.queued"
+    | "ticket.unacknowledged"
     | "ticket.updated"
+    | "branch.rush_mode.toggled"
     | "station.status.changed"
     | "bill.request.created"
     | "bill.ready"
@@ -41,12 +44,15 @@ export function isNotificationVisibleForRole(
     const stationRoles = ["kitchen", "barista", "cakes", "soft_drinks"];
 
     if (stationRoles.includes(role)) {
-        // Stations only get new-ticket + exception alerts.
-        // ticket.updated / item.ready belong to board refresh / waiters.
+        // Stations get new-ticket, unacknowledged warning, delayed items, and exceptions.
         return (
             type === "ticket.queued" ||
+            type === "ticket.unacknowledged" ||
+            type === "item.delayed" ||
             type === "production.exception" ||
             normalized === "TICKET_QUEUED" ||
+            normalized === "TICKET_UNACKNOWLEDGED" ||
+            normalized === "ITEM_DELAYED" ||
             normalized === "PRODUCTION_EXCEPTION"
         );
     }
@@ -65,6 +71,7 @@ export function isNotificationVisibleForRole(
     if (role === "waiter") {
         return (
             type === "item.ready" ||
+            type === "item.delayed" ||
             type === "bill.ready" ||
             type === "guest.order_placed" ||
             type === "guest.service_request" ||
@@ -75,6 +82,7 @@ export function isNotificationVisibleForRole(
             normalized === "BILL_READY" ||
             normalized === "GUEST_ORDER_PLACED" ||
             normalized === "ITEM_READY" ||
+            normalized === "ITEM_DELAYED" ||
             normalized === "MENU_ITEM_AVAILABILITY" ||
             [
                 "CALL_WAITER",
@@ -100,6 +108,9 @@ export function isNotificationVisibleForRole(
             type === "cash_drop.pending" ||
             type === "bill.request.created" ||
             type === "ticket.queued" ||
+            type === "ticket.unacknowledged" ||
+            type === "item.delayed" ||
+            type === "branch.rush_mode.toggled" ||
             type === "menu.item.availability" ||
             type.startsWith("approval") ||
             type.startsWith("cash_drop") ||
@@ -139,6 +150,7 @@ export function notificationHref(
             }
             return null;
         case "ticket.queued":
+        case "ticket.unacknowledged":
             if (
                 role === "kitchen" ||
                 role === "barista" ||
@@ -148,6 +160,27 @@ export function notificationHref(
                 if (role === "soft_drinks") return "/soft-drinks";
                 return `/${role}`;
             }
+            if (role === "manager" || role === "owner") return "/manager/live";
+            return null;
+        case "item.delayed":
+            if (role === "waiter") {
+                if (tableId) return `/waiter/tables/${tableId}`;
+                return "/waiter/tables";
+            }
+            if (
+                role === "kitchen" ||
+                role === "barista" ||
+                role === "cakes" ||
+                role === "soft_drinks"
+            ) {
+                if (role === "soft_drinks") return "/soft-drinks";
+                return `/${role}`;
+            }
+            if (role === "manager" || role === "owner") return "/manager/live";
+            return null;
+        case "branch.rush_mode.toggled":
+            if (role === "manager" || role === "owner")
+                return "/owner/settings";
             return null;
         case "ticket.updated":
             return null;
