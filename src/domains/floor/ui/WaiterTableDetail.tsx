@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import {
+    AlertTriangle,
     ArrowLeft,
     BellRing,
     CheckCircle2,
@@ -49,7 +50,21 @@ import { TableDetailSkeleton } from "@/components/custom/molecules/Skeletons";
 const ORDERABLE = new Set(["OPEN", "ACTIVE_ORDER", "ATTENTION_REQUIRED"]);
 const REQUESTABLE = new Set(["OPEN", "ACTIVE_ORDER", "ATTENTION_REQUIRED"]);
 
-function itemStateInfo(state: string, tWaiter?: (key: string) => string) {
+function itemStateInfo(
+    state: string,
+    tWaiter?: (key: string) => string,
+    delayed?: boolean,
+) {
+    if (delayed && state !== "READY" && state !== "SERVED") {
+        return {
+            label: `Overdue · ${state === "QUEUED" ? (tWaiter ? tWaiter("queued") : "Queued") : tWaiter ? tWaiter("cooking") : "Cooking"}`,
+            icon: (
+                <AlertTriangle className="size-3 text-destructive animate-pulse" />
+            ),
+            badgeClass:
+                "bg-destructive/15 text-destructive border-destructive/40 font-bold",
+        };
+    }
     if (state === "CONFIRMED") {
         return {
             label: tWaiter
@@ -586,6 +601,7 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                                 const stateInfo = itemStateInfo(
                                                     item.state,
                                                     tWaiter,
+                                                    (item as any).delayed,
                                                 );
                                                 const extras = [
                                                     item.modifiers

@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import {
     ArrowLeft,
     CalendarDays,
@@ -14,15 +14,21 @@ import {
     UserRound,
     Wallet,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import DataTable, {
     type DataTableColumn,
     type DataTablePagination,
 } from "@/components/custom/organisms/DataTable";
 import PageHeader from "@/components/custom/organisms/PageHeader";
+import CalendarDateFilter from "@/components/custom/molecules/CalendarDateFilter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+    type CalendarMode,
+    formatDateRangeLabel,
+    getSavedCalendarMode,
+} from "@/lib/ethiopian-calendar";
 import {
     useWaiterDetailQuery,
     useWaiterOrderHistoryQuery,
@@ -41,19 +47,54 @@ export default function ManagerWaiterDetailPage({
     params: Promise<{ membershipId: string }>;
 }) {
     const { membershipId } = use(params);
+    const locale = useLocale();
+    const isAmharic = locale === "am";
     const t = useTranslations("managerWaiterDetail");
     const tList = useTranslations("managerWaiters");
+    const tManager = useTranslations("manager");
     const tCommon = useTranslations("common");
 
     const [period, setPeriod] = useState<WaiterPeriod>("day");
+    const [customRange, setCustomRange] = useState<{
+        from?: string;
+        to?: string;
+    }>({});
+    const [calendarMode, setCalendarMode] = useState<CalendarMode>("ETHIOPIAN");
     const [searchQuery, setSearchQuery] = useState("");
     const [page, setPage] = useState(1);
     const limit = 20;
+
+    useEffect(() => {
+        setCalendarMode(getSavedCalendarMode());
+        const handleModeChange = (e: Event) => {
+            const customEvent = e as CustomEvent<CalendarMode>;
+            if (customEvent.detail) setCalendarMode(customEvent.detail);
+        };
+        window.addEventListener("calendar_mode_changed", handleModeChange);
+        return () =>
+            window.removeEventListener(
+                "calendar_mode_changed",
+                handleModeChange,
+            );
+    }, []);
+
+    const queryParams = useMemo(() => {
+        if (period === "custom" && customRange.from) {
+            return {
+                membershipId,
+                period: "custom" as const,
+                from: customRange.from,
+                to: customRange.to || customRange.from,
+            };
+        }
+        return { membershipId, period };
+    }, [membershipId, period, customRange]);
 
     const periods: Array<{ id: WaiterPeriod; label: string }> = [
         { id: "day", label: tList("periodDay") },
         { id: "week", label: tList("periodWeek") },
         { id: "month", label: tList("periodMonth") },
+        { id: "custom", label: tManager("periodCustom") },
     ];
 
     const {
@@ -62,10 +103,7 @@ export default function ManagerWaiterDetailPage({
         isError,
         isFetching,
         refetch,
-    } = useWaiterDetailQuery(
-        { membershipId, period },
-        { pollingInterval: POLL_MS },
-    );
+    } = useWaiterDetailQuery(queryParams, { pollingInterval: POLL_MS });
 
     const {
         data: orders,
@@ -76,6 +114,11 @@ export default function ManagerWaiterDetailPage({
         {
             membershipId,
             period,
+            from: period === "custom" ? customRange.from : undefined,
+            to:
+                period === "custom"
+                    ? customRange.to || customRange.from
+                    : undefined,
             q: searchQuery.trim() || undefined,
             page,
             limit,
@@ -238,10 +281,12 @@ export default function ManagerWaiterDetailPage({
                             compact
                             eyebrow={t("eyebrow")}
                             title={detail.waiterName}
-                            description={tList("rangeDesc", {
-                                from: detail.from,
-                                to: detail.to,
-                            })}
+                            description={`${formatDateRangeLabel(
+                                detail.from,
+                                detail.to,
+                                calendarMode,
+                                isAmharic,
+                            )} · ${isAmharic ? "ሽፋን፣ ሰዓታት እና ገንዘብ" : "shift coverage, hours, and money"}`}
                         />
                     </div>
                     <div className="flex flex-wrap items-center gap-2 self-start">
@@ -252,6 +297,9 @@ export default function ManagerWaiterDetailPage({
                                     type="button"
                                     onClick={() => {
                                         setPeriod(entry.id);
+                                        if (entry.id !== "custom") {
+                                            setCustomRange({});
+                                        }
                                         setPage(1);
                                     }}
                                     className={cn(
@@ -265,6 +313,7 @@ export default function ManagerWaiterDetailPage({
                                 </button>
                             ))}
                         </div>
+
                         <Badge
                             variant={detail.clockedIn ? "success" : "secondary"}
                             className="rounded-full px-2.5 py-0.5 text-[10px] font-normal"
@@ -306,6 +355,25 @@ export default function ManagerWaiterDetailPage({
                     </div>
                 </div>
             </div>
+
+            {/* Inline Dashboard-style Date Selector when Custom is selected */}
+            {period === "custom" ? (
+                <div className="mt-2 mb-2">
+                    <CalendarDateFilter
+                        from={customRange.from}
+                        to={customRange.to}
+                        onApply={({ from, to }) => {
+                            setCustomRange({ from, to });
+                            setPage(1);
+                        }}
+                        onClear={() => {
+                            setCustomRange({});
+                            setPeriod("day");
+                            setPage(1);
+                        }}
+                    />
+                </div>
+            ) : null}
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <SummaryCard

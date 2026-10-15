@@ -26,6 +26,7 @@ export interface TenantSite {
     publishedData?: Record<string, unknown> | null;
     publishedAt?: string | null;
     publicPath: string;
+    calendarPreference?: "ETHIOPIAN" | "GREGORIAN" | string;
 }
 
 export interface SiteResponse {
@@ -66,9 +67,11 @@ export interface UpdateSitePayload {
     slug?: string;
     theme?: Partial<SiteTheme>;
     draftData?: Record<string, unknown>;
+    calendarPreference?: "ETHIOPIAN" | "GREGORIAN" | string;
 }
 
 export const siteApi = api.injectEndpoints({
+    overrideExisting: true,
     endpoints: builder => ({
         getTenantSite: builder.query<SiteResponse, void>({
             query: () => ({ url: "/site", method: "GET" }),

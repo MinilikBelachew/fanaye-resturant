@@ -37,6 +37,7 @@ export type UpdateAdminStaffBody = {
     workingDays?: string[];
     stationCode?: string;
     preparationStationId?: string;
+    shiftDefinitionId?: string;
 };
 
 export type AdminStaffDetail = AdminStaffMember & {

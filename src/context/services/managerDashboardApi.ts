@@ -125,19 +125,95 @@ export interface WaiterPerformancePoint {
     avgCheck: number;
 }
 
+export interface LatePrepItemDetail {
+    orderItemId: string;
+    itemName: string;
+    quantity: number;
+    tableDisplayName: string;
+    stationName: string;
+    waiterName: string;
+    elapsedMinutes: number;
+    targetMinutes: number;
+    overdueMinutes: number;
+    specialInstruction?: string | null;
+    modifiersSummary?: string | null;
+    state: string;
+    queuedAt: string;
+}
+
+export interface ReadyTooLongItemDetail {
+    orderItemId: string;
+    itemName: string;
+    quantity: number;
+    tableDisplayName: string;
+    stationName: string;
+    waiterName: string;
+    readyMinutes: number;
+    readyAt: string;
+}
+
+export interface PendingActionItemDetail {
+    id: string;
+    kind: string;
+    title: string;
+    description: string;
+    tableDisplayName?: string | null;
+    staffName?: string | null;
+    amountFormatted?: string | null;
+    createdAt: string;
+}
+
+export interface StaffOfflineItemDetail {
+    staffMembershipId: string;
+    staffName: string;
+    role: string;
+    shiftStartFormatted: string;
+    minutesLate: number;
+}
+
+export interface LowStockItemDetail {
+    ingredientId: string;
+    ingredientName: string;
+    onHandQty: number;
+    parLevel: number;
+    unit: string;
+}
+
+export interface UnpaidBillItemDetail {
+    billId: string;
+    tableDisplayName: string;
+    totalAmountFormatted: string;
+    unpaidAmountFormatted: string;
+    billedAt: string;
+}
+
+export interface StationBacklogItemDetail {
+    stationName: string;
+    queuedCount: number;
+    inPrepCount: number;
+    oldestWaitMinutes: number;
+}
+
 export interface ActNowInsight {
     readyTooLongCount: number;
     readyTooLongHint: string;
+    readyTooLongItems?: ReadyTooLongItemDetail[];
     latePrepCount: number;
     latePrepHint: string;
+    latePrepItems?: LatePrepItemDetail[];
+    pendingActionItems?: PendingActionItemDetail[];
     staffOfflineCount: number;
     staffOfflineHint: string;
+    staffOfflineItems?: StaffOfflineItemDetail[];
     lowStockCount: number;
     lowStockHint: string;
+    lowStockItems?: LowStockItemDetail[];
     unpaidBillsCount: number;
     unpaidGapValue: number;
     unpaidGapFormatted: string;
     unpaidGapHint: string;
+    unpaidBillItems?: UnpaidBillItemDetail[];
+    stationBacklogItems?: StationBacklogItemDetail[];
 }
 
 export type ManagerDashboardPeriod =

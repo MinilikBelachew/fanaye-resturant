@@ -428,12 +428,16 @@ export default function StaffDetailBoard({
                 <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                         <h3 className="text-[14px] font-medium text-foreground">
-                            {t("sectionCoverage")}
+                            {isWaiter
+                                ? t("sectionCoverage")
+                                : "Shift & Schedule"}
                         </h3>
                         <p className="text-[12px] text-slate-gray">
                             {isWaiter
                                 ? t("coverageWaiterDesc")
-                                : t("coverageOtherDesc")}
+                                : member.roleCode === "CASHIER"
+                                  ? "Assigned shift rotation and register schedule."
+                                  : t("coverageOtherDesc")}
                         </p>
                     </div>
                     {isWaiter ? (
@@ -449,7 +453,7 @@ export default function StaffDetailBoard({
                     ) : null}
                 </div>
 
-                {!isWaiter ? (
+                {!isWaiter && member.roleCode !== "CASHIER" ? (
                     <p className="mt-4 text-[13px] text-slate-gray">
                         {member.stationName
                             ? t("stationAssigned", {
@@ -466,28 +470,35 @@ export default function StaffDetailBoard({
                         {member.shiftCoverages.map(coverage => (
                             <div
                                 key={coverage.shiftDefinitionId}
-                                className="rounded-xl border border-hairline px-3.5 py-3"
+                                className="rounded-xl border border-hairline px-3.5 py-3 bg-secondary/20"
                             >
-                                <p className="text-[13px] font-medium text-foreground">
+                                <p className="text-[13px] font-semibold text-foreground">
                                     {coverage.shiftName}
                                 </p>
                                 <p className="text-[11px] text-slate-gray">
-                                    {coverage.startLocalTime}–
+                                    {coverage.startLocalTime} –{" "}
                                     {coverage.endLocalTime}
                                 </p>
-                                <div className="mt-2 flex flex-wrap gap-1.5">
-                                    {coverage.tables.map(table => (
-                                        <Link
-                                            key={table.tableId}
-                                            href={`/manager/tables/${table.tableId}`}
-                                            className="rounded-full border border-hairline bg-secondary/40 px-2.5 py-0.5 text-[11px] text-foreground hover:bg-secondary"
-                                        >
-                                            {table.displayNumber
-                                                ? `#${table.displayNumber}`
-                                                : table.displayName}
-                                        </Link>
-                                    ))}
-                                </div>
+                                {coverage.tables.length > 0 ? (
+                                    <div className="mt-2 flex flex-wrap gap-1.5">
+                                        {coverage.tables.map(table => (
+                                            <Link
+                                                key={table.tableId}
+                                                href={`/manager/tables`}
+                                                className="rounded-md border border-hairline bg-secondary px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-secondary/70 transition-colors"
+                                            >
+                                                {table.displayNumber ||
+                                                    table.displayName}
+                                            </Link>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="mt-2 text-[11px] text-slate-gray">
+                                        {member.roleCode === "CASHIER"
+                                            ? "Cash desk custody"
+                                            : "Scheduled shift rotation"}
+                                    </p>
+                                )}
                             </div>
                         ))}
                     </div>

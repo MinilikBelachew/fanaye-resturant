@@ -1,6 +1,6 @@
 import { api } from "./index";
 
-export type WaiterPeriod = "day" | "week" | "month";
+export type WaiterPeriod = "day" | "week" | "month" | "custom";
 
 export type WaiterShiftCoverage = {
     shiftDefinitionId: string;
@@ -91,6 +91,8 @@ export type WaiterDetailResponse = {
 export type WaiterOrderHistoryParams = {
     membershipId: string;
     period?: WaiterPeriod;
+    from?: string;
+    to?: string;
     q?: string;
     page?: number;
     limit?: number;
@@ -128,23 +130,36 @@ export const waiterPerformanceApi = api.injectEndpoints({
     endpoints: builder => ({
         waiterPerformance: builder.query<
             WaiterPerformanceResponse,
-            { period?: WaiterPeriod }
+            { period?: WaiterPeriod; from?: string; to?: string } | void
         >({
-            query: ({ period = "day" } = {}) => ({
+            query: params => ({
                 url: "/manager/waiters",
                 method: "GET",
-                params: { period },
+                params: {
+                    period: params?.period ?? "day",
+                    ...(params?.from ? { from: params.from } : {}),
+                    ...(params?.to ? { to: params.to } : {}),
+                },
             }),
             providesTags: ["Floor"],
         }),
         waiterDetail: builder.query<
             WaiterDetailResponse,
-            { membershipId: string; period?: WaiterPeriod }
+            {
+                membershipId: string;
+                period?: WaiterPeriod;
+                from?: string;
+                to?: string;
+            }
         >({
-            query: ({ membershipId, period = "day" }) => ({
+            query: ({ membershipId, period = "day", from, to }) => ({
                 url: `/manager/waiters/${membershipId}/detail`,
                 method: "GET",
-                params: { period },
+                params: {
+                    period,
+                    ...(from ? { from } : {}),
+                    ...(to ? { to } : {}),
+                },
             }),
             providesTags: (_result, _error, { membershipId }) => [
                 { type: "Floor", id: `waiter-${membershipId}` },
@@ -160,6 +175,8 @@ export const waiterPerformanceApi = api.injectEndpoints({
                 method: "GET",
                 params: {
                     ...(params.period ? { period: params.period } : {}),
+                    ...(params.from ? { from: params.from } : {}),
+                    ...(params.to ? { to: params.to } : {}),
                     ...(params.q ? { q: params.q } : {}),
                     ...(params.page ? { page: params.page } : {}),
                     ...(params.limit ? { limit: params.limit } : {}),

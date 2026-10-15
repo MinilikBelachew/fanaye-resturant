@@ -3,16 +3,19 @@
 import { useMemo, useState } from "react";
 import {
     Building2,
+    Calendar,
     ChevronRight,
     Edit3,
     Eye,
     EyeOff,
+    Clock3,
     KeyRound,
     Lock,
     MoreVertical,
     Plus,
     Search,
     UserPlus,
+    Users,
     UtensilsCrossed,
     X,
 } from "lucide-react";
@@ -324,6 +327,29 @@ export default function StaffDirectory({
                 </button>
             </div>
 
+            {!multiBranch && (
+                <div className="flex items-center gap-1.5 border-b border-hairline pb-3">
+                    <span className="inline-flex items-center gap-2 rounded-lg bg-primary/10 px-3.5 py-1.5 text-xs font-bold text-primary">
+                        <Users className="size-3.5" />
+                        Staff Directory
+                    </span>
+                    <Link
+                        href={`${basePath}/shifts`}
+                        className="inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                    >
+                        <Clock3 className="size-3.5" />
+                        Shift Templates & Hours
+                    </Link>
+                    <Link
+                        href={`${basePath}/schedule`}
+                        className="inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                    >
+                        <Calendar className="size-3.5" />
+                        Weekly Shift Roster
+                    </Link>
+                </div>
+            )}
+
             {multiBranch ? (
                 <div className="flex flex-col gap-2">
                     <div className="flex flex-wrap items-center gap-2">
@@ -608,7 +634,9 @@ export default function StaffDirectory({
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    {isWaiter ? (
+                                                    {isWaiter ||
+                                                    member.roleCode ===
+                                                        "CASHIER" ? (
                                                         <div className="max-w-md space-y-1.5">
                                                             {member
                                                                 .shiftCoverages
@@ -636,43 +664,53 @@ export default function StaffDirectory({
                                                                                 {
                                                                                     coverage.startLocalTime
                                                                                 }
-
-                                                                                –
+                                                                                {
+                                                                                    " – "
+                                                                                }
                                                                                 {
                                                                                     coverage.endLocalTime
                                                                                 }
                                                                                 ):
                                                                             </span>{" "}
                                                                             <span className="text-slate-gray">
-                                                                                {coverage.tables
-                                                                                    .map(
-                                                                                        tbl =>
-                                                                                            tbl.displayNumber ||
-                                                                                            tbl.displayName,
-                                                                                    )
-                                                                                    .join(
-                                                                                        ", ",
-                                                                                    ) ||
-                                                                                    "—"}
+                                                                                {coverage
+                                                                                    .tables
+                                                                                    .length >
+                                                                                0
+                                                                                    ? coverage.tables
+                                                                                          .map(
+                                                                                              tbl =>
+                                                                                                  tbl.displayNumber ||
+                                                                                                  tbl.displayName,
+                                                                                          )
+                                                                                          .join(
+                                                                                              ", ",
+                                                                                          )
+                                                                                    : member.roleCode ===
+                                                                                        "CASHIER"
+                                                                                      ? "Cash desk custody"
+                                                                                      : "Scheduled shift"}
                                                                             </span>
                                                                         </div>
                                                                     ),
                                                                 )
                                                             )}
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    openAssign(
-                                                                        member,
-                                                                    )
-                                                                }
-                                                                className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors"
-                                                            >
-                                                                <Plus className="size-3" />
-                                                                {t(
-                                                                    "assignByShift",
-                                                                )}
-                                                            </button>
+                                                            {isWaiter ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        openAssign(
+                                                                            member,
+                                                                        )
+                                                                    }
+                                                                    className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors"
+                                                                >
+                                                                    <Plus className="size-3" />
+                                                                    {t(
+                                                                        "assignByShift",
+                                                                    )}
+                                                                </button>
+                                                            ) : null}
                                                         </div>
                                                     ) : (
                                                         <span className="text-[12px] text-slate-gray">

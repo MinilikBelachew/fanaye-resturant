@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     ChevronRight,
     Clock3,
@@ -9,9 +9,10 @@ import {
     Wallet,
     LayoutGrid,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
+import CalendarDateFilter from "@/components/custom/molecules/CalendarDateFilter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,21 +20,62 @@ import {
     type WaiterPeriod,
 } from "@/context/services/waiterPerformanceApi";
 import { Link } from "@/i18n/navigation";
+import {
+    type CalendarMode,
+    formatDateRangeLabel,
+    getSavedCalendarMode,
+} from "@/lib/ethiopian-calendar";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
 export default function ManagerWaitersPage() {
+    const locale = useLocale();
+    const isAmharic = locale === "am";
     const t = useTranslations("managerWaiters");
     const tDetail = useTranslations("managerWaiterDetail");
+    const tManager = useTranslations("manager");
     const tCommon = useTranslations("common");
+
     const [period, setPeriod] = useState<WaiterPeriod>("day");
+    const [customRange, setCustomRange] = useState<{
+        from?: string;
+        to?: string;
+    }>({});
+    const [calendarMode, setCalendarMode] = useState<CalendarMode>("ETHIOPIAN");
+
+    useEffect(() => {
+        setCalendarMode(getSavedCalendarMode());
+        const handleModeChange = (e: Event) => {
+            const customEvent = e as CustomEvent<CalendarMode>;
+            if (customEvent.detail) setCalendarMode(customEvent.detail);
+        };
+        window.addEventListener("calendar_mode_changed", handleModeChange);
+        return () =>
+            window.removeEventListener(
+                "calendar_mode_changed",
+                handleModeChange,
+            );
+    }, []);
+
+    const queryParams = useMemo(() => {
+        if (period === "custom" && customRange.from) {
+            return {
+                period: "custom" as const,
+                from: customRange.from,
+                to: customRange.to || customRange.from,
+            };
+        }
+        return { period };
+    }, [period, customRange]);
+
     const { data, isLoading, isFetching, isError, refetch } =
-        useWaiterPerformanceQuery({ period }, { pollingInterval: 15000 });
+        useWaiterPerformanceQuery(queryParams, { pollingInterval: 15000 });
 
     const periods: Array<{ id: WaiterPeriod; label: string }> = [
         { id: "day", label: t("periodDay") },
         { id: "week", label: t("periodWeek") },
         { id: "month", label: t("periodMonth") },
+        { id: "custom", label: tManager("periodCustom") },
     ];
 
     const rows = data?.data ?? [];
@@ -49,6 +91,17 @@ export default function ManagerWaitersPage() {
         [rows],
     );
 
+    const headerDescription = useMemo(() => {
+        if (!data) return t("defaultDesc");
+        const rangeText = formatDateRangeLabel(
+            data.from,
+            data.to,
+            calendarMode,
+            isAmharic,
+        );
+        return `${rangeText} · ${isAmharic ? "የሽፍት ሽፋን፣ የሰዓት ስራ እና ገንዘብ" : "shift coverage, hours, and money"}`;
+    }, [data, calendarMode, isAmharic, t]);
+
     return (
         <DashboardFrame>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -56,14 +109,7 @@ export default function ManagerWaitersPage() {
                     compact
                     eyebrow="House"
                     title="Waiters"
-                    description={
-                        data
-                            ? t("rangeDesc", {
-                                  from: data.from,
-                                  to: data.to,
-                              })
-                            : t("defaultDesc")
-                    }
+                    description={headerDescription}
                 />
                 <div className="flex flex-wrap items-center gap-2">
                     <div className="flex rounded-[12px] border border-hairline bg-card p-1">
@@ -71,7 +117,12 @@ export default function ManagerWaitersPage() {
                             <button
                                 key={entry.id}
                                 type="button"
-                                onClick={() => setPeriod(entry.id)}
+                                onClick={() => {
+                                    setPeriod(entry.id);
+                                    if (entry.id !== "custom") {
+                                        setCustomRange({});
+                                    }
+                                }}
                                 className={cn(
                                     "rounded-[10px] px-3 py-1.5 text-[13px] font-medium transition-colors",
                                     period === entry.id
@@ -83,6 +134,7 @@ export default function ManagerWaitersPage() {
                             </button>
                         ))}
                     </div>
+
                     <Button
                         variant="outline"
                         size="sm"
@@ -99,6 +151,23 @@ export default function ManagerWaitersPage() {
                     </Button>
                 </div>
             </div>
+
+            {/* Inline Dashboard-style Date Selector when Custom is selected */}
+            {period === "custom" ? (
+                <div className="mt-4">
+                    <CalendarDateFilter
+                        from={customRange.from}
+                        to={customRange.to}
+                        onApply={({ from, to }) => {
+                            setCustomRange({ from, to });
+                        }}
+                        onClear={() => {
+                            setCustomRange({});
+                            setPeriod("day");
+                        }}
+                    />
+                </div>
+            ) : null}
 
             {isLoading ? (
                 <p className="mt-6 text-slate-gray">{t("loading")}</p>

@@ -271,6 +271,18 @@ function navSectionsForRole(role: Role): NavSection[] {
                             href: "/manager/staff",
                             label: "Staff",
                             icon: Users,
+                            children: [
+                                {
+                                    href: "/manager/staff",
+                                    label: "Directory",
+                                    icon: Users,
+                                },
+                                {
+                                    href: "/manager/staff/shifts",
+                                    label: "Shifts",
+                                    icon: Clock3,
+                                },
+                            ],
                         },
                         {
                             href: "/manager/waiters",
@@ -311,6 +323,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                             href: "/manager/notifications",
                             label: "Notifications",
                             icon: Bell,
+                        },
+                        {
+                            href: "/manager/settings",
+                            label: "Settings",
+                            icon: Store,
                         },
                     ],
                 },

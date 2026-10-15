@@ -9,6 +9,7 @@ import AppTopBar from "@/components/layout/AppTopBar";
 import WaiterBottomNav from "@/components/layout/WaiterBottomNav";
 import WaiterNavPanel from "@/components/layout/WaiterNavPanel";
 import { useSidebarUi } from "@/components/layout/SidebarUi";
+import ShiftTopBarPill from "@/components/layout/ShiftTopBarPill";
 import OpsNotificationsBell from "@/domains/notifications/ui/OpsNotificationsBell";
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { usePathname } from "@/i18n/navigation";
@@ -64,10 +65,10 @@ export default function WaiterShell({ children }: { children: ReactNode }) {
             ) : null}
 
             <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-white dark:bg-background lg:border-l lg:border-hairline">
-                <header className="sticky top-0 z-30 flex h-12 shrink-0 items-center gap-3 border-b border-black/[0.08] bg-white px-4 dark:border-white/[0.1] dark:bg-background lg:hidden">
+                <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-black/[0.08] bg-white px-2.5 sm:px-4 dark:border-white/[0.1] dark:bg-background lg:hidden">
                     <button
                         type="button"
-                        className="flex size-8 items-center justify-center rounded-md hover:bg-secondary"
+                        className="flex size-8 shrink-0 items-center justify-center rounded-md hover:bg-secondary"
                         onClick={() => setOpen(true)}
                         aria-label={t("openMenu")}
                     >
@@ -78,14 +79,17 @@ export default function WaiterShell({ children }: { children: ReactNode }) {
                         )}
                     </button>
                     <div className="min-w-0 flex-1">
-                        <p className="truncate text-[15px] font-medium tracking-tight">
+                        <p className="truncate text-[14px] font-semibold tracking-tight">
                             {title}
                         </p>
                         {staff ? (
-                            <p className="truncate text-[11px] text-slate-gray">
+                            <p className="truncate text-[10px] text-slate-gray">
                                 {staff.name}
                             </p>
                         ) : null}
+                    </div>
+                    <div className="shrink-0">
+                        <ShiftTopBarPill />
                     </div>
                     <OpsNotificationsBell />
                     <ThemeToggleButton />

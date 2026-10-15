@@ -14,7 +14,19 @@ import { Button } from "@/components/ui/button";
 import { formatEtb } from "@/lib/money";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
-import { LayoutGrid, Table2 } from "lucide-react";
+import {
+    AlertCircle,
+    AlertTriangle,
+    ArrowRight,
+    ArrowRightLeft,
+    LayoutGrid,
+    Lock,
+    LogIn,
+    Table2,
+} from "lucide-react";
+import { Link } from "@/i18n/navigation";
+import { useCurrentShiftQuery } from "@/context/services/shiftsApi";
+import { checkShiftExpiry } from "@/domains/identity/domain/shift";
 import { useTranslations } from "next-intl";
 import { CashierBillsSkeleton } from "@/components/custom/molecules/Skeletons";
 
@@ -29,6 +41,14 @@ export default function CashierBillRequests() {
     const { data, isLoading, isError } = useCashierBillRequestsQuery(
         undefined,
         { pollingInterval: 3000, refetchOnFocus: true },
+    );
+    const { data: currentShift } = useCurrentShiftQuery(undefined, {
+        pollingInterval: 5000,
+        refetchOnFocus: true,
+    });
+    const shiftExpiry = useMemo(
+        () => checkShiftExpiry(currentShift?.shiftSession),
+        [currentShift?.shiftSession],
     );
     const [generateBill, { isLoading: generating }] = useGenerateBillMutation();
     const [error, setError] = useState("");
@@ -59,6 +79,13 @@ export default function CashierBillRequests() {
     }, [page, totalPages]);
 
     async function generate(request: (typeof requests)[number]) {
+        if (currentShift && !currentShift.clockedIn) {
+            toast.error(
+                "Clock In Required",
+                "You must clock in to your shift before generating customer bills.",
+            );
+            return;
+        }
         setError("");
         setBusyId(request.billRequestId);
         try {
@@ -151,23 +178,39 @@ export default function CashierBillRequests() {
             {
                 id: "actions",
                 header: "",
-                cell: row => (
-                    <Button
-                        size="sm"
-                        className="h-8 rounded-full px-3 text-[12px] font-normal"
-                        disabled={
-                            busyId === row.billRequestId || Boolean(generating)
-                        }
-                        onClick={() => void generate(row)}
-                    >
-                        {busyId === row.billRequestId
-                            ? tCashier("generating")
-                            : tCashier("generateBill")}
-                    </Button>
-                ),
+                cell: row => {
+                    const isOff = currentShift && !currentShift.clockedIn;
+                    return (
+                        <Button
+                            size="sm"
+                            className={cn(
+                                "h-8 rounded-full px-3 text-[12px] font-normal",
+                                isOff &&
+                                    "opacity-80 border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100",
+                            )}
+                            disabled={
+                                Boolean(isOff) ||
+                                busyId === row.billRequestId ||
+                                Boolean(generating)
+                            }
+                            onClick={() => void generate(row)}
+                        >
+                            {busyId === row.billRequestId ? (
+                                tCashier("generating")
+                            ) : isOff ? (
+                                <span className="flex items-center gap-1.5">
+                                    <Lock className="size-3" />
+                                    Clock In to Bill
+                                </span>
+                            ) : (
+                                tCashier("generateBill")
+                            )}
+                        </Button>
+                    );
+                },
             },
         ],
-        [busyId, generating, tCashier, tCommon],
+        [busyId, currentShift, generating, tCashier, tCommon],
     );
 
     if (isLoading) {
@@ -181,6 +224,83 @@ export default function CashierBillRequests() {
     return (
         <div className="space-y-5">
             {error ? <p className="text-[12px] text-red-600">{error}</p> : null}
+
+            {currentShift && !currentShift.clockedIn ? (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 rounded-2xl border border-amber-300/80 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-card p-4 dark:border-amber-600/30">
+                    <div className="flex items-start gap-3">
+                        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                            <AlertCircle className="size-5" />
+                        </div>
+                        <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <p className="text-sm font-bold text-foreground">
+                                    Off The Clock — Bill Generation Locked
+                                </p>
+                                {currentShift.upcomingAssignment
+                                    ?.definitionName ? (
+                                    <span className="rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 px-2.5 py-0.5 text-[10px] font-semibold">
+                                        Scheduled:{" "}
+                                        {
+                                            currentShift.upcomingAssignment
+                                                .definitionName
+                                        }
+                                    </span>
+                                ) : null}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                                You are currently off the clock. Clock in to an
+                                open shift session to generate receipts and
+                                accept customer payments.
+                            </p>
+                        </div>
+                    </div>
+                    <Link
+                        href="/cashier/shift"
+                        className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-amber-600 dark:bg-amber-500 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-amber-700 dark:hover:bg-amber-600 transition-colors self-start sm:self-auto"
+                    >
+                        <LogIn className="size-3.5" />
+                        <span>Go to Shift Desk</span>
+                        <ArrowRight className="size-3.5" />
+                    </Link>
+                </div>
+            ) : null}
+
+            {currentShift?.clockedIn && shiftExpiry.isPast ? (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 rounded-2xl border border-rose-300/80 bg-gradient-to-r from-rose-500/10 via-amber-500/10 to-card p-4 dark:border-rose-700/40">
+                    <div className="flex items-start gap-3">
+                        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-rose-500/15 text-rose-600 dark:text-rose-400">
+                            <AlertTriangle className="size-5" />
+                        </div>
+                        <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <p className="text-sm font-bold text-foreground">
+                                    Scheduled Shift Ended (
+                                    {shiftExpiry.minutesOverdue}m Overtime)
+                                </p>
+                                <span className="rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 px-2.5 py-0.5 text-[10px] font-bold">
+                                    Wrapping Up Allowed
+                                </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                                You can finish remaining pending bills, but your
+                                scheduled shift has passed. Please complete
+                                transactions and hand over the cash drawer to
+                                the incoming cashier.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                        <Link
+                            href="/cashier/shift"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 dark:bg-rose-500 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-rose-700 dark:hover:bg-rose-600 transition-colors"
+                        >
+                            <ArrowRightLeft className="size-3.5" />
+                            <span>Go to Handover</span>
+                            <ArrowRight className="size-3.5" />
+                        </Link>
+                    </div>
+                </div>
+            ) : null}
 
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
@@ -264,18 +384,36 @@ export default function CashierBillRequests() {
                                           .replaceAll("_", " ")}`
                                     : ""}
                             </p>
-                            <Button
-                                className="mt-3 h-8 rounded-full text-[12px] font-normal"
-                                disabled={
-                                    busyId === request.billRequestId ||
-                                    Boolean(generating)
-                                }
-                                onClick={() => void generate(request)}
-                            >
-                                {busyId === request.billRequestId
-                                    ? tCashier("generating")
-                                    : tCashier("generateBill")}
-                            </Button>
+                            {(() => {
+                                const isOff =
+                                    currentShift && !currentShift.clockedIn;
+                                return (
+                                    <Button
+                                        className={cn(
+                                            "mt-3 h-8 rounded-full text-[12px] font-normal",
+                                            isOff &&
+                                                "opacity-80 border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100",
+                                        )}
+                                        disabled={
+                                            Boolean(isOff) ||
+                                            busyId === request.billRequestId ||
+                                            Boolean(generating)
+                                        }
+                                        onClick={() => void generate(request)}
+                                    >
+                                        {busyId === request.billRequestId ? (
+                                            tCashier("generating")
+                                        ) : isOff ? (
+                                            <span className="flex items-center gap-1.5">
+                                                <Lock className="size-3" />
+                                                Clock In to Bill
+                                            </span>
+                                        ) : (
+                                            tCashier("generateBill")
+                                        )}
+                                    </Button>
+                                );
+                            })()}
                         </article>
                     ))}
                 </div>

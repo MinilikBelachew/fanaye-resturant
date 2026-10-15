@@ -273,6 +273,12 @@ export default function AddEditStaffSheet() {
                 }
             }
 
+            const member = staffData?.data.find(
+                row => row.id === editingMembershipId,
+            );
+            const initialShiftId =
+                member?.shiftCoverages?.[0]?.shiftDefinitionId || "";
+
             form.reset({
                 name: editingStaff.name || "",
                 role: selectedRole,
@@ -283,13 +289,20 @@ export default function AddEditStaffSheet() {
                 workingDays: editingStaff.workingDays?.length
                     ? editingStaff.workingDays
                     : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-                shiftDefinitionId: "",
+                shiftDefinitionId: initialShiftId,
                 assignedTableIds: editingStaff.assignedTableIds || [],
             });
         } else {
             form.reset(staffFormDefaults);
         }
-    }, [editingStaff, isOpen, form, activeStations]);
+    }, [
+        editingStaff,
+        isOpen,
+        form,
+        activeStations,
+        staffData,
+        editingMembershipId,
+    ]);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -427,6 +440,8 @@ export default function AddEditStaffSheet() {
                         workingDays: values.workingDays,
                         stationCode,
                         preparationStationId,
+                        shiftDefinitionId:
+                            values.shiftDefinitionId || undefined,
                     },
                 }).unwrap();
 
@@ -456,10 +471,7 @@ export default function AddEditStaffSheet() {
                     workingDays: values.workingDays,
                     stationCode,
                     preparationStationId,
-                    shiftDefinitionId:
-                        values.role === "waiter"
-                            ? values.shiftDefinitionId || undefined
-                            : undefined,
+                    shiftDefinitionId: values.shiftDefinitionId || undefined,
                     tableIds:
                         values.role === "waiter"
                             ? values.assignedTableIds
@@ -761,16 +773,24 @@ export default function AddEditStaffSheet() {
                             />
                         </div>
 
-                        {role === "waiter" ? (
+                        {role === "waiter" || role === "cashier" ? (
                             <div className="space-y-3 rounded-[16px] border border-primary/20 bg-primary/5 p-4">
                                 <div className="flex items-center gap-2">
-                                    <UtensilsCrossed className="size-4 text-primary" />
+                                    {role === "waiter" ? (
+                                        <UtensilsCrossed className="size-4 text-primary" />
+                                    ) : (
+                                        <Clock3 className="size-4 text-primary" />
+                                    )}
                                     <h4 className="text-[13px] font-semibold">
-                                        {t("shiftCoverageTitle")}
+                                        {role === "waiter"
+                                            ? t("shiftCoverageTitle")
+                                            : "Shift Schedule Window"}
                                     </h4>
                                 </div>
                                 <p className="text-[12px] text-slate-gray">
-                                    {t("shiftCoverageDesc")}
+                                    {role === "waiter"
+                                        ? t("shiftCoverageDesc")
+                                        : "Assign this cashier to an operational shift rotation (e.g. Morning, Afternoon, or Night)."}
                                 </p>
 
                                 <FormField
@@ -985,7 +1005,7 @@ export default function AddEditStaffSheet() {
                                     </div>
                                 ) : null}
 
-                                {shiftDefinitionId ? (
+                                {role === "waiter" && shiftDefinitionId ? (
                                     <div className="flex flex-wrap gap-2 text-[11px]">
                                         <span className="rounded-full border border-hairline bg-card px-2.5 py-1">
                                             {t("statsTables", {
@@ -1010,18 +1030,18 @@ export default function AddEditStaffSheet() {
                                     </div>
                                 ) : null}
 
-                                {floorLoading ? (
+                                {role === "waiter" && floorLoading ? (
                                     <p className="text-[12px] text-slate-gray">
                                         {t("loadingFloor")}
                                     </p>
                                 ) : null}
-                                {floorError ? (
+                                {role === "waiter" && floorError ? (
                                     <p className="text-[12px] text-destructive">
                                         {t("floorLoadError")}
                                     </p>
                                 ) : null}
 
-                                {shiftFloor ? (
+                                {role === "waiter" && shiftFloor ? (
                                     <div className="space-y-3">
                                         {shiftFloor.locations.map(location => (
                                             <div key={location.id}>

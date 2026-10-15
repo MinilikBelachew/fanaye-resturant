@@ -1,6 +1,14 @@
 "use client";
 
-import { Bell, Flame, LayoutGrid, LogIn, LogOut, Wallet } from "lucide-react";
+import {
+    ArrowRightLeft,
+    Bell,
+    Flame,
+    LayoutGrid,
+    LogIn,
+    LogOut,
+    Wallet,
+} from "lucide-react";
 import { useState } from "react";
 import { useAppSelector } from "@/context/hooks";
 import { useWaiterCashSummaryQuery } from "@/context/services/cashApi";
@@ -14,6 +22,7 @@ import PageHeader from "@/components/custom/organisms/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
+import WaiterHandoverModal from "@/domains/ordering/ui/WaiterHandoverModal";
 import { Link } from "@/i18n/navigation";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
@@ -72,6 +81,7 @@ export default function WaiterShiftPage() {
     const [clockIn, { isLoading: clockingIn }] = useClockInMutation();
     const [clockOut, { isLoading: clockingOut }] = useClockOutMutation();
     const [actionError, setActionError] = useState("");
+    const [openHandover, setOpenHandover] = useState(false);
     const { data: floor } = useWaiterTablesQuery("my", {
         skip: !staff,
         pollingInterval: 5000,
@@ -254,20 +264,44 @@ export default function WaiterShiftPage() {
                 </div>
 
                 {actionError ? (
-                    <p className="text-[13px] text-red-600">{actionError}</p>
+                    <div className="flex flex-col gap-1 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-[13px] text-destructive">
+                        <p className="font-semibold">{actionError}</p>
+                        {tablesOpen && (
+                            <button
+                                type="button"
+                                onClick={() => setOpenHandover(true)}
+                                className="mt-1 self-start inline-flex items-center gap-1.5 text-xs font-bold underline hover:opacity-80 cursor-pointer"
+                            >
+                                <ArrowRightLeft className="size-3.5" />
+                                Hand over active tables & cash to next waiter
+                                instead
+                            </button>
+                        )}
+                    </div>
                 ) : null}
 
                 <div className="flex flex-wrap gap-2">
                     {clockedIn ? (
-                        <Button
-                            type="button"
-                            variant="outline"
-                            disabled={busy}
-                            onClick={handleClockOut}
-                        >
-                            <LogOut className="size-4" />
-                            {clockingOut ? t("clockingOut") : t("clockOut")}
-                        </Button>
+                        <>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                disabled={busy}
+                                onClick={handleClockOut}
+                            >
+                                <LogOut className="size-4" />
+                                {clockingOut ? t("clockingOut") : t("clockOut")}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="default"
+                                onClick={() => setOpenHandover(true)}
+                                className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+                            >
+                                <ArrowRightLeft className="size-4" />
+                                Handover Shift to Next Waiter
+                            </Button>
+                        </>
                     ) : (
                         <Button
                             type="button"
@@ -369,6 +403,20 @@ export default function WaiterShiftPage() {
                     </Link>
                 </div>
             </div>
+
+            {/* Handover Modal */}
+            <WaiterHandoverModal
+                isOpen={openHandover}
+                onClose={() => setOpenHandover(false)}
+                currentVersion={session?.version ?? 1}
+                openTablesCount={summary.openTables}
+                openTablesNames={myTables
+                    .filter(table => Boolean(table.tableSessionId))
+                    .map(
+                        table => table.displayName || `Table ${table.tableId}`,
+                    )}
+                cashOnHand={cashOnHand}
+            />
         </section>
     );
 }

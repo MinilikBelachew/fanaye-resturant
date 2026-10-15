@@ -2,6 +2,7 @@
 
 import {
     ArrowRight,
+    ArrowRightLeft,
     CheckCircle2,
     ClipboardCheck,
     CreditCard,
@@ -11,6 +12,7 @@ import {
     Warehouse,
 } from "lucide-react";
 import { useState } from "react";
+import CashierHandoverModal from "@/domains/payments/ui/CashierHandoverModal";
 import { useTranslations } from "next-intl";
 import { useAppSelector } from "@/context/hooks";
 import { useCashierCashDropsQuery } from "@/context/services/cashApi";
@@ -55,6 +57,7 @@ export default function CashierShiftPage() {
     const [clockIn, { isLoading: clockingIn }] = useClockInMutation();
     const [clockOut, { isLoading: clockingOut }] = useClockOutMutation();
     const [actionError, setActionError] = useState("");
+    const [openHandover, setOpenHandover] = useState(false);
     const clockedIn = Boolean(shift?.clockedIn && shift.shiftSession);
     const { data: recon } = useReconciliationPreviewQuery(undefined, {
         skip: !hasSession || !clockedIn,
@@ -353,6 +356,16 @@ export default function CashierShiftPage() {
                                             ? t("clockingOut")
                                             : t("clockOut")}
                                     </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="border-brand/40 text-brand hover:bg-brand/10 hover:text-brand"
+                                        disabled={busy}
+                                        onClick={() => setOpenHandover(true)}
+                                    >
+                                        <ArrowRightLeft className="size-4" />
+                                        Handover to Next Cashier
+                                    </Button>
                                     {phase !== "awaiting_drops" ? (
                                         <Button variant="outline" asChild>
                                             <Link href="/cashier/cash-drops">
@@ -489,6 +502,15 @@ export default function CashierShiftPage() {
                     </>
                 ) : null}
             </div>
+
+            {clockedIn ? (
+                <CashierHandoverModal
+                    isOpen={openHandover}
+                    onClose={() => setOpenHandover(false)}
+                    currentVersion={session?.version ?? 1}
+                    expectedCash={expected}
+                />
+            ) : null}
         </DashboardFrame>
     );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Camera, ChevronDown, ChevronUp } from "lucide-react";
 import {
     useExtractReceiptMutation,
     usePayCashMutation,
@@ -84,6 +85,7 @@ export default function WaiterPaymentPanel({
     const [cameraFor, setCameraFor] = useState<"TELEBIRR" | "BANK" | null>(
         null,
     );
+    const [showManual, setShowManual] = useState(false);
     const [error, setError] = useState("");
     const [payCash, { isLoading: payingCash }] = usePayCashMutation();
     const [payTransfer, { isLoading: payingTransfer }] =
@@ -130,44 +132,45 @@ export default function WaiterPaymentPanel({
                 `${channel.toLowerCase()}-receipt.jpg`,
             );
 
-            let resolvedReference = reference.trim();
+            let resolvedReference = "";
             let resolvedBank: BankProvider =
                 channel === "TELEBIRR" ? "telebirr" : bankProvider;
 
-            // Prefer OCR when empty; typed reference always wins if already filled.
-            if (resolvedReference.length < 4) {
-                toast.info(t("readingReceipt"));
-                try {
-                    const extracted = await extractReceipt({
-                        file: receiptFile,
-                        transferChannel: channel,
-                    }).unwrap();
-                    if (
-                        extracted.reference &&
-                        extracted.reference.length >= 4
-                    ) {
-                        resolvedReference = extracted.reference.trim();
-                        setReference(resolvedReference);
-                        const detected = asBankProvider(extracted.bankProvider);
-                        if (channel === "TELEBIRR") {
-                            resolvedBank = "telebirr";
-                        } else if (detected && detected !== "telebirr") {
-                            resolvedBank = detected;
-                            setBankProvider(detected);
-                        }
-                        toast.info(
-                            t("referenceExtracted", {
-                                reference: resolvedReference,
-                            }),
-                        );
+            // Automatically extract reference number from photo via OCR
+            toast.info(t("readingReceipt"));
+            try {
+                const extracted = await extractReceipt({
+                    file: receiptFile,
+                    transferChannel: channel,
+                }).unwrap();
+                if (extracted.reference && extracted.reference.length >= 4) {
+                    resolvedReference = extracted.reference.trim();
+                    setReference(resolvedReference);
+                    const detected = asBankProvider(extracted.bankProvider);
+                    if (channel === "TELEBIRR") {
+                        resolvedBank = "telebirr";
+                    } else if (detected && detected !== "telebirr") {
+                        resolvedBank = detected;
+                        setBankProvider(detected);
                     }
-                } catch (extractErr) {
-                    toast.fromUnknown(extractErr, t("couldNotReadReference"));
+                    toast.info(
+                        t("referenceExtracted", {
+                            reference: resolvedReference,
+                        }),
+                    );
                 }
+            } catch (extractErr) {
+                toast.fromUnknown(extractErr, t("couldNotReadReference"));
+            }
+
+            // Fallback to typed reference only if OCR couldn't read from photo
+            if (!resolvedReference && reference.trim().length >= 4) {
+                resolvedReference = reference.trim();
             }
 
             if (resolvedReference.length < 4) {
                 setError(t("referenceRequired"));
+                setShowManual(true);
                 setCameraFor(null);
                 return;
             }
@@ -227,6 +230,92 @@ export default function WaiterPaymentPanel({
         }
     }
 
+    async function collectManualTransfer() {
+        setError("");
+        const resolvedRef = reference.trim();
+        if (resolvedRef.length < 4) {
+            setError(t("referenceRequired"));
+            return;
+        }
+
+        try {
+            const channel = bankProvider === "telebirr" ? "TELEBIRR" : "BANK";
+            // Create a minimal synthetic slip for manual entry
+            const canvas = document.createElement("canvas");
+            canvas.width = 400;
+            canvas.height = 200;
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, 400, 200);
+                ctx.fillStyle = "#111827";
+                ctx.font = "16px sans-serif";
+                ctx.fillText(`Manual Reference: ${resolvedRef}`, 20, 50);
+                ctx.fillText(`Bank: ${bankProvider.toUpperCase()}`, 20, 80);
+                ctx.fillText(`Amount: ${due.toFixed(2)} ETB`, 20, 110);
+            }
+            const blob = await new Promise<Blob | null>(res =>
+                canvas.toBlob(res, "image/jpeg", 0.7),
+            );
+            const manualFile = new File(
+                [blob || new Uint8Array()],
+                "manual-entry.jpg",
+                { type: "image/jpeg" },
+            );
+            const uploaded = await uploadReceipt(manualFile).unwrap();
+
+            const result = await payTransfer({
+                billId: bill.billId,
+                tableSessionId,
+                amount: due.toFixed(2),
+                expectedBillVersion: bill.version,
+                transferChannel: channel,
+                fileId: uploaded.file.id,
+                reference: resolvedRef,
+                bankProvider,
+                accountSuffix:
+                    channel === "BANK" && bankProvider === "boa"
+                        ? accountSuffix.trim() || undefined
+                        : undefined,
+                phoneNumber:
+                    channel === "BANK" && bankProvider === "cbebirr"
+                        ? phoneNumber.trim() || undefined
+                        : undefined,
+            }).unwrap();
+
+            setReference("");
+            if (result.tipAmount && Number(result.tipAmount) > 0) {
+                toast.success(
+                    t("transferPaidWithTip", {
+                        tip: formatEtb(Number(result.tipAmount)),
+                    }),
+                    formatEtb(due),
+                );
+            } else {
+                toast.success(
+                    channel === "TELEBIRR"
+                        ? t("telebirrRecorded")
+                        : t("bankTransferRecorded"),
+                    formatEtb(due),
+                );
+            }
+        } catch (err) {
+            const under = readTransferUnderDue(err);
+            if (under) {
+                const message = t("transferUnderDue", {
+                    verified: formatEtb(under.verifiedAmount),
+                    remaining: formatEtb(under.remainingAmount),
+                });
+                setError(message);
+                toast.error(t("transferUnderDueTitle"), message);
+                return;
+            }
+            const message = t("couldNotSubmitTransfer");
+            setError(message);
+            toast.fromUnknown(err, message);
+        }
+    }
+
     if (paid) {
         return (
             <div className="rounded-[16px] border border-hairline bg-accent/50 p-4">
@@ -273,74 +362,137 @@ export default function WaiterPaymentPanel({
                     </Button>
                 </div>
 
-                <div className="space-y-2 border-t border-hairline pt-3">
-                    <label className="text-[13px] text-slate-gray">
-                        {t("transferReference")}
-                    </label>
-                    <Input
-                        value={reference}
-                        onChange={event => setReference(event.target.value)}
-                        placeholder={t("transferReferenceHint")}
-                        autoCapitalize="characters"
-                    />
-                    <label className="text-[13px] text-slate-gray">
-                        {t("bankProvider")}
-                    </label>
-                    <select
-                        className="flex h-11 w-full rounded-md border border-input bg-background px-3 text-[14px]"
-                        value={bankProvider}
-                        onChange={event =>
-                            setBankProvider(event.target.value as BankProvider)
-                        }
-                    >
-                        <option value="cbe">CBE</option>
-                        <option value="telebirr">Telebirr</option>
-                        <option value="dashen">Dashen</option>
-                        <option value="awash">Awash</option>
-                        <option value="boa">Bank of Abyssinia</option>
-                        <option value="cbebirr">CBE Birr</option>
-                    </select>
-                    {bankProvider === "boa" ? (
-                        <Input
-                            value={accountSuffix}
-                            onChange={event =>
-                                setAccountSuffix(event.target.value)
-                            }
-                            placeholder={t("accountSuffixHint")}
-                            inputMode="numeric"
-                        />
-                    ) : null}
-                    {bankProvider === "cbebirr" ? (
-                        <Input
-                            value={phoneNumber}
-                            onChange={event =>
-                                setPhoneNumber(event.target.value)
-                            }
-                            placeholder={t("phoneHint")}
-                            inputMode="tel"
-                        />
-                    ) : null}
-                    <p className="text-[12px] text-slate-gray">
+                <div className="space-y-3 border-t border-hairline pt-3">
+                    <p className="text-[12px] font-medium tracking-[0.08em] text-steel-gray uppercase">
+                        Digital / Transfer Verification
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                        <Button
+                            variant="outline"
+                            className="h-12 w-full gap-2 border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-medium text-[13px]"
+                            disabled={busy}
+                            onClick={() => openTransferCamera("TELEBIRR")}
+                        >
+                            <Camera className="h-4 w-4" />
+                            {extracting && cameraFor === "TELEBIRR"
+                                ? t("readingReceipt")
+                                : "Scan Telebirr"}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            className="h-12 w-full gap-2 border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 text-blue-700 dark:text-blue-400 font-medium text-[13px]"
+                            disabled={busy}
+                            onClick={() => openTransferCamera("BANK")}
+                        >
+                            <Camera className="h-4 w-4" />
+                            {extracting && cameraFor === "BANK"
+                                ? t("readingReceipt")
+                                : "Scan Bank Slip"}
+                        </Button>
+                    </div>
+
+                    {/* Manual Fallback Toggle */}
+                    <div className="pt-1">
+                        <button
+                            type="button"
+                            onClick={() => setShowManual(prev => !prev)}
+                            className="flex items-center gap-1.5 text-[12px] text-slate-gray hover:text-foreground"
+                        >
+                            {showManual ? (
+                                <>
+                                    <ChevronUp className="h-3.5 w-3.5" />
+                                    Hide manual entry
+                                </>
+                            ) : (
+                                <>
+                                    <ChevronDown className="h-3.5 w-3.5" />
+                                    Or enter reference manually
+                                </>
+                            )}
+                        </button>
+
+                        {showManual ? (
+                            <div className="mt-3 space-y-2.5 rounded-lg border border-hairline bg-accent/20 p-3">
+                                <div>
+                                    <label className="text-[12px] text-slate-gray">
+                                        {t("transferReference")}
+                                    </label>
+                                    <Input
+                                        value={reference}
+                                        onChange={event =>
+                                            setReference(event.target.value)
+                                        }
+                                        placeholder="e.g. DIU19ZFMTL or FT..."
+                                        autoCapitalize="characters"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[12px] text-slate-gray">
+                                        {t("bankProvider")}
+                                    </label>
+                                    <select
+                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-[13px]"
+                                        value={bankProvider}
+                                        onChange={event =>
+                                            setBankProvider(
+                                                event.target
+                                                    .value as BankProvider,
+                                            )
+                                        }
+                                    >
+                                        <option value="cbe">CBE</option>
+                                        <option value="telebirr">
+                                            Telebirr
+                                        </option>
+                                        <option value="dashen">Dashen</option>
+                                        <option value="awash">Awash</option>
+                                        <option value="boa">
+                                            Bank of Abyssinia
+                                        </option>
+                                        <option value="cbebirr">
+                                            CBE Birr
+                                        </option>
+                                    </select>
+                                </div>
+                                {bankProvider === "boa" ? (
+                                    <Input
+                                        value={accountSuffix}
+                                        onChange={event =>
+                                            setAccountSuffix(event.target.value)
+                                        }
+                                        placeholder={t("accountSuffixHint")}
+                                        inputMode="numeric"
+                                    />
+                                ) : null}
+                                {bankProvider === "cbebirr" ? (
+                                    <Input
+                                        value={phoneNumber}
+                                        onChange={event =>
+                                            setPhoneNumber(event.target.value)
+                                        }
+                                        placeholder={t("phoneHint")}
+                                        inputMode="tel"
+                                    />
+                                ) : null}
+                                <Button
+                                    className="h-10 w-full text-[13px]"
+                                    disabled={
+                                        busy || reference.trim().length < 4
+                                    }
+                                    onClick={() => void collectManualTransfer()}
+                                >
+                                    {payingTransfer
+                                        ? t("recording")
+                                        : "Verify & Settle Transfer"}
+                                </Button>
+                            </div>
+                        ) : null}
+                    </div>
+
+                    <p className="text-[11px] text-slate-gray">
                         {t("verifyBeforeSettle")}
                     </p>
                 </div>
-
-                <Button
-                    variant="outline"
-                    className="h-11 w-full"
-                    disabled={busy}
-                    onClick={() => openTransferCamera("BANK")}
-                >
-                    {extracting ? t("readingReceipt") : t("bankTransferCamera")}
-                </Button>
-                <Button
-                    variant="outline"
-                    className="h-11 w-full"
-                    disabled={busy}
-                    onClick={() => openTransferCamera("TELEBIRR")}
-                >
-                    {extracting ? t("readingReceipt") : t("telebirrCamera")}
-                </Button>
                 {error ? (
                     <p className="text-[13px] text-red-600">{error}</p>
                 ) : null}
@@ -352,6 +504,7 @@ export default function WaiterPaymentPanel({
                             ? t("telebirrReceipt")
                             : t("bankTransferReceipt")
                     }
+                    isProcessing={busy}
                     onCancel={() => setCameraFor(null)}
                     onCapture={dataUrl => {
                         void collectTransfer(cameraFor, dataUrl);
