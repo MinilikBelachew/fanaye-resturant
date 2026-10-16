@@ -114,12 +114,9 @@ export const LivePhoneSimulator: React.FC<LivePhoneSimulatorProps> = ({
                             {t("wifiPrefix")}{" "}
                             <span className="font-bold">{config.wifiSsid}</span>
                         </span>
-                        {config.wifiPassword ? (
+                        {config.wifiPassword || config.wifiRequiresPassword ? (
                             <span className="text-[10px] text-amber-700">
-                                {t("passPrefix")}{" "}
-                                <code className="font-mono">
-                                    {config.wifiPassword}
-                                </code>
+                                {t("passPrefix")} ask staff
                             </span>
                         ) : null}
                     </div>

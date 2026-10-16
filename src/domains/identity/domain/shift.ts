@@ -115,22 +115,44 @@ export function checkShiftExpiry(
     session: ShiftSession | null | undefined,
     currentTimeMs?: number,
 ): ShiftExpiryInfo {
-    if (!session || !session.scheduledEndAt) {
-        return { isPast: false, endTime: "", minutesOverdue: 0 };
-    }
-    const end = new Date(session.scheduledEndAt);
-    if (isNaN(end.getTime())) {
+    if (!session) {
         return { isPast: false, endTime: "", minutesOverdue: 0 };
     }
     const now = currentTimeMs ? new Date(currentTimeMs) : new Date();
-    const diffMs = now.getTime() - end.getTime();
-    if (diffMs > 0) {
-        const minutesOverdue = Math.floor(diffMs / 60000);
-        const endTime = end.toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-        return { isPast: true, endTime, minutesOverdue };
+
+    if (session.scheduledEndAt) {
+        const end = new Date(session.scheduledEndAt);
+        if (!isNaN(end.getTime())) {
+            const diffMs = now.getTime() - end.getTime();
+            if (diffMs > 0) {
+                const minutesOverdue = Math.floor(diffMs / 60000);
+                const endTime = end.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                });
+                return { isPast: true, endTime, minutesOverdue };
+            }
+        }
     }
+
+    // Safety guard: Any continuous shift open for more than 14 hours is overdue/stale
+    if (session.clockInAt) {
+        const clockIn = new Date(session.clockInAt);
+        if (!isNaN(clockIn.getTime())) {
+            const elapsedMs = now.getTime() - clockIn.getTime();
+            const MAX_SHIFT_MS = 14 * 60 * 60 * 1000;
+            if (elapsedMs > MAX_SHIFT_MS) {
+                const minutesOverdue = Math.floor(
+                    (elapsedMs - MAX_SHIFT_MS) / 60000,
+                );
+                return {
+                    isPast: true,
+                    endTime: ">14h",
+                    minutesOverdue,
+                };
+            }
+        }
+    }
+
     return { isPast: false, endTime: "", minutesOverdue: 0 };
 }

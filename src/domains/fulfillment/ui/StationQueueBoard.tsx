@@ -1,6 +1,13 @@
 "use client";
 
-import { LayoutGrid, Table2 } from "lucide-react";
+import {
+    AlertTriangle,
+    CheckCircle2,
+    Flame,
+    Inbox,
+    LayoutGrid,
+    Table2,
+} from "lucide-react";
 import DataTable, {
     type DataTableColumn,
 } from "@/components/custom/organisms/DataTable";
@@ -12,6 +19,7 @@ import {
     parseQueueView,
     QUEUE_FILTER_LABELS,
     stationQueueHref,
+    type QueueFilter,
 } from "@/domains/fulfillment/application/queueFilter";
 import StationStatusSelect from "@/domains/fulfillment/ui/StationStatusSelect";
 import StationTicketActions from "@/domains/fulfillment/ui/StationTicketActions";
@@ -66,6 +74,19 @@ function formatReceived(iso: string | null) {
         stamp: date.getTime(),
         label: `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`,
     };
+}
+
+function formatOverdueMinutes(minutes: number): string {
+    if (minutes <= 0) return "—";
+    if (minutes < 60) return `+${minutes}m`;
+    const hours = Math.floor(minutes / 60);
+    const remMinutes = minutes % 60;
+    if (hours < 24) {
+        return remMinutes > 0 ? `+${hours}h ${remMinutes}m` : `+${hours}h`;
+    }
+    const days = Math.floor(hours / 24);
+    const remHours = hours % 24;
+    return remHours > 0 ? `+${days}d ${remHours}h` : `+${days}d`;
 }
 
 function isFreshTicket(ticket: StationTicket) {
@@ -286,6 +307,13 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
         );
     }
 
+    function setFilter(next: QueueFilter) {
+        if (pathname !== home) return;
+        router.replace(
+            stationQueueHref(home, { status: next, q: query, view }),
+        );
+    }
+
     const columns: DataTableColumn<TicketRow>[] = useMemo(
         () => [
             {
@@ -396,7 +424,7 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                 header: tStations("prep"),
                 sortValue: row => row.ticket.expectedPrepMinutes,
                 defaultHidden: true,
-                cell: row => row.ticket.expectedPrepMinutes,
+                cell: row => `${row.ticket.expectedPrepMinutes}m`,
             },
             {
                 id: "overdue",
@@ -404,8 +432,8 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                 sortValue: row => row.overdueMinutes,
                 cell: row =>
                     row.overdueMinutes > 0 ? (
-                        <span className="font-semibold text-destructive">
-                            {row.overdueMinutes}
+                        <span className="font-normal text-destructive">
+                            {formatOverdueMinutes(row.overdueMinutes)}
                         </span>
                     ) : (
                         <span className="text-slate-gray">—</span>
@@ -488,6 +516,65 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
         );
     }
 
+    const filterTabs: Array<{
+        key: QueueFilter;
+        label: string;
+        count: number;
+        icon: typeof LayoutGrid;
+        badgeClass?: string;
+    }> = [
+        {
+            key: "all",
+            label: tStations.has("allTickets")
+                ? tStations("allTickets")
+                : "All tickets",
+            count: tickets.length,
+            icon: LayoutGrid,
+        },
+        {
+            key: "new",
+            label: tStations.has("new") ? tStations("new") : "New",
+            count: counts.new,
+            icon: Inbox,
+            badgeClass:
+                counts.new > 0 ? "bg-brand text-brand-foreground" : undefined,
+        },
+        {
+            key: "preparing",
+            label: tStations.has("preparing")
+                ? tStations("preparing")
+                : "In progress",
+            count: counts.preparing,
+            icon: Flame,
+            badgeClass:
+                counts.preparing > 0
+                    ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                    : undefined,
+        },
+        {
+            key: "ready",
+            label: tStations.has("ready") ? tStations("ready") : "Ready",
+            count: counts.ready,
+            icon: CheckCircle2,
+            badgeClass:
+                counts.ready > 0
+                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                    : undefined,
+        },
+        {
+            key: "exceptions",
+            label: tStations.has("exceptions")
+                ? tStations("exceptions")
+                : "Exceptions",
+            count: counts.exceptions,
+            icon: AlertTriangle,
+            badgeClass:
+                counts.exceptions > 0
+                    ? "bg-destructive/15 text-destructive"
+                    : undefined,
+        },
+    ];
+
     return (
         <div className="space-y-3 sm:space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
@@ -495,17 +582,19 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                     <p className="text-[11px] tracking-[0.08em] text-steel-gray uppercase sm:text-[12px]">
                         {stationName ?? "Queue"}
                     </p>
-                    <h1 className="truncate text-[18px] font-semibold sm:text-[22px]">
-                        {tStations.has(status)
-                            ? tStations(status)
-                            : QUEUE_FILTER_LABELS[status]}
+                    <h1 className="truncate text-[18px] font-normal sm:text-[22px]">
+                        {status === "all"
+                            ? "All tickets"
+                            : tStations.has(status)
+                              ? tStations(status)
+                              : QUEUE_FILTER_LABELS[status]}
                     </h1>
                 </div>
                 <div className="flex rounded-[10px] border border-hairline bg-card p-0.5 sm:rounded-[12px] sm:p-1">
                     <button
                         type="button"
                         className={cn(
-                            "flex items-center gap-1 rounded-[8px] px-2.5 py-1.5 text-[12px] font-medium sm:gap-1.5 sm:rounded-[10px] sm:px-3 sm:text-[13px]",
+                            "flex items-center gap-1 rounded-[8px] px-2.5 py-1.5 text-[12px] font-normal sm:gap-1.5 sm:rounded-[10px] sm:px-3 sm:text-[13px] cursor-pointer",
                             view === "cards"
                                 ? "bg-secondary text-foreground"
                                 : "text-slate-gray hover:bg-secondary/70",
@@ -518,7 +607,7 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                     <button
                         type="button"
                         className={cn(
-                            "flex items-center gap-1 rounded-[8px] px-2.5 py-1.5 text-[12px] font-medium sm:gap-1.5 sm:rounded-[10px] sm:px-3 sm:text-[13px]",
+                            "flex items-center gap-1 rounded-[8px] px-2.5 py-1.5 text-[12px] font-normal sm:gap-1.5 sm:rounded-[10px] sm:px-3 sm:text-[13px] cursor-pointer",
                             view === "table"
                                 ? "bg-secondary text-foreground"
                                 : "text-slate-gray hover:bg-secondary/70",
@@ -531,43 +620,49 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                 </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                <div
-                    className={cn(
-                        "rounded-[12px] border bg-card p-2.5 sm:rounded-[16px] sm:p-4",
-                        counts.new > 0
-                            ? "border-brand/50 bg-brand/5"
-                            : "border-hairline",
-                    )}
-                >
-                    <p className="truncate text-[11px] text-slate-gray sm:text-[12px]">
-                        {tStations("new")}
-                    </p>
-                    <p
-                        className={cn(
-                            "text-[18px] font-semibold sm:text-[24px]",
-                            counts.new > 0 && "text-brand",
-                        )}
-                    >
-                        {counts.new}
-                    </p>
-                </div>
-                <div className="rounded-[12px] border border-hairline bg-card p-2.5 sm:rounded-[16px] sm:p-4">
-                    <p className="truncate text-[11px] text-slate-gray sm:text-[12px]">
-                        {tStations("preparing")}
-                    </p>
-                    <p className="text-[18px] font-semibold sm:text-[24px]">
-                        {counts.preparing}
-                    </p>
-                </div>
-                <div className="rounded-[12px] border border-hairline bg-card p-2.5 sm:rounded-[16px] sm:p-4">
-                    <p className="truncate text-[11px] text-slate-gray sm:text-[12px]">
-                        {tStations("ready")}
-                    </p>
-                    <p className="text-[18px] font-semibold text-brand sm:text-[24px]">
-                        {counts.ready}
-                    </p>
-                </div>
+            {/* Interactive Top Status Filter */}
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-2.5">
+                {filterTabs.map(tab => {
+                    const isActive = status === tab.key;
+                    return (
+                        <button
+                            key={tab.key}
+                            type="button"
+                            onClick={() => setFilter(tab.key)}
+                            className={cn(
+                                "flex items-center justify-between rounded-[14px] border p-2.5 sm:p-3 text-left transition-all cursor-pointer",
+                                isActive
+                                    ? "border-brand/70 bg-brand/5 text-foreground ring-1 ring-brand/30"
+                                    : "border-hairline bg-card hover:bg-secondary/40 text-foreground",
+                            )}
+                        >
+                            <div className="flex items-center gap-2 min-w-0">
+                                <tab.icon
+                                    className={cn(
+                                        "size-4 shrink-0",
+                                        isActive
+                                            ? "text-brand"
+                                            : "text-slate-gray",
+                                    )}
+                                />
+                                <span className="truncate text-[12px] sm:text-[13px] font-normal text-foreground">
+                                    {tab.label}
+                                </span>
+                            </div>
+                            <span
+                                className={cn(
+                                    "rounded-full px-2 py-0.5 text-[11px] font-normal",
+                                    tab.badgeClass ??
+                                        (isActive
+                                            ? "bg-brand/15 text-brand"
+                                            : "bg-secondary text-slate-gray"),
+                                )}
+                            >
+                                {tab.count}
+                            </span>
+                        </button>
+                    );
+                })}
             </div>
 
             {view === "table" ? (

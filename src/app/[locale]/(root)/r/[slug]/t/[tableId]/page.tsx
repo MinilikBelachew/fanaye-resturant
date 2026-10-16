@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import {
     useGetPublicTableMenuQuery,
+    useGetPublicTableSessionQuery,
     useSubmitGuestOrderMutation,
     useSubmitServiceRequestMutation,
     PublicMenuItem,
@@ -53,10 +54,24 @@ export default function GuestTableOrderingPage({
 }) {
     const { slug, tableId } = use(params);
 
-    const { data, isLoading, error, refetch } = useGetPublicTableMenuQuery(
+    // Full menu once (cached ~30s server-side). Session status polls separately.
+    const {
+        data: menuData,
+        isLoading,
+        error,
+        refetch,
+    } = useGetPublicTableMenuQuery({ slug, tableId }, { pollingInterval: 0 });
+    const { data: sessionData } = useGetPublicTableSessionQuery(
         { slug, tableId },
-        { pollingInterval: 8000 },
+        { pollingInterval: 10_000 },
     );
+    const data = menuData
+        ? {
+              ...menuData,
+              activeSession:
+                  sessionData?.activeSession ?? menuData.activeSession,
+          }
+        : undefined;
 
     const [submitOrder, { isLoading: isSubmittingOrder }] =
         useSubmitGuestOrderMutation();
@@ -1046,14 +1061,15 @@ export default function GuestTableOrderingPage({
                                     {config?.wifiSsid}
                                 </span>
                             </div>
-                            {config?.wifiPassword ? (
+                            {config?.wifiRequiresPassword ||
+                            config?.wifiPassword ? (
                                 <div className="pt-1 border-t border-slate-200">
                                     <span className="text-slate-400 block text-[10px]">
                                         Password
                                     </span>
-                                    <code className="font-mono font-bold text-amber-700 text-sm">
-                                        {config.wifiPassword}
-                                    </code>
+                                    <span className="text-[11px] text-amber-700 font-semibold">
+                                        Ask staff for the Wi‑Fi password
+                                    </span>
                                 </div>
                             ) : (
                                 <span className="text-[11px] text-emerald-600 font-semibold">

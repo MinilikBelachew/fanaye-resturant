@@ -15,7 +15,11 @@ import {
     hydrateStations,
     STATIONS_STORAGE_KEY,
 } from "@/context/slices/stationSlice";
-import { clearLegacyAuthStorage } from "@/domains/identity/infrastructure/authSession";
+import {
+    clearAuthFlagCookie,
+    clearLegacyAuthStorage,
+    setAuthFlagCookie,
+} from "@/domains/identity/infrastructure/authSession";
 
 const DEMO_STORAGE_KEYS = [
     STAFF_LIST_STORAGE_KEY,
@@ -57,14 +61,16 @@ export default function SessionHydrator({
 
         dispatch(authApi.endpoints.refresh.initiate())
             .unwrap()
-            .then(() =>
-                dispatch(
+            .then(() => {
+                setAuthFlagCookie(true);
+                return dispatch(
                     authApi.endpoints.me.initiate(undefined, {
                         forceRefetch: true,
                     }),
-                ).unwrap(),
-            )
+                ).unwrap();
+            })
             .catch(() => {
+                clearAuthFlagCookie();
                 dispatch(clearSession());
             })
             .finally(() => {

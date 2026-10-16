@@ -53,11 +53,12 @@ import {
 } from "@/context/services/managerDashboardApi";
 import { useTranslations } from "next-intl";
 import { KpiStatsSkeleton } from "@/components/custom/molecules/Skeletons";
+import { useRealtimePollMs } from "@/domains/notifications/application/useRealtimePollMs";
 import { cn } from "@/lib/utils";
 
-const POLL_DASH = 10000;
-const POLL_FLOOR = 8000;
-const POLL_AUDIT = 15000;
+const POLL_DASH_FALLBACK = 20_000;
+const POLL_FLOOR_FALLBACK = 15_000;
+const POLL_AUDIT_FALLBACK = 30_000;
 
 const PERIODS: ManagerDashboardPeriod[] = [
     "today",
@@ -125,16 +126,19 @@ export default function ManagerPage() {
         return { period };
     }, [period, fromDate, toDate]);
 
+    const dashPoll = useRealtimePollMs(POLL_DASH_FALLBACK);
+    const floorPoll = useRealtimePollMs(POLL_FLOOR_FALLBACK);
+    const auditPoll = useRealtimePollMs(POLL_AUDIT_FALLBACK);
     const { data, isLoading, isFetching, error } = useGetManagerDashboardQuery(
         queryArg,
-        { pollingInterval: POLL_DASH },
+        { pollingInterval: dashPoll },
     );
     const { data: audit } = useListAuditEventsQuery(
         { page: 1, limit: 8 },
-        { pollingInterval: POLL_AUDIT },
+        { pollingInterval: auditPoll },
     );
     const { data: floor } = useFloorTablesQuery(undefined, {
-        pollingInterval: POLL_FLOOR,
+        pollingInterval: floorPoll,
     });
     const dash = data?.data;
     const kpis = dash?.kpis;
@@ -674,6 +678,7 @@ export default function ManagerPage() {
                                                                                 {
                                                                                     dish.quantity
                                                                                 }
+
                                                                                 ×{" "}
                                                                                 {
                                                                                     dish.itemName
@@ -692,6 +697,7 @@ export default function ManagerPage() {
                                                                                 {
                                                                                     dish.overdueMinutes
                                                                                 }
+
                                                                                 m
                                                                             </span>
                                                                             <ChevronRight className="size-3 text-muted-foreground group-hover/dish:text-foreground transition-transform group-hover/dish:translate-x-0.5" />
@@ -824,6 +830,7 @@ export default function ManagerPage() {
                                                                                 {
                                                                                     dish.quantity
                                                                                 }
+
                                                                                 ×{" "}
                                                                                 {
                                                                                     dish.itemName
@@ -842,6 +849,7 @@ export default function ManagerPage() {
                                                                                 {
                                                                                     dish.readyMinutes
                                                                                 }
+
                                                                                 m
                                                                             </span>
                                                                             <ChevronRight className="size-3 text-muted-foreground group-hover/dish:text-foreground transition-transform group-hover/dish:translate-x-0.5" />
@@ -1136,6 +1144,7 @@ export default function ManagerPage() {
                                                                                 {
                                                                                     st.oldestWaitMinutes
                                                                                 }
+
                                                                                 m
                                                                             </span>
                                                                             <ChevronRight className="size-3 text-muted-foreground group-hover/st:text-foreground transition-transform group-hover/st:translate-x-0.5" />
@@ -1247,6 +1256,7 @@ export default function ManagerPage() {
                                                                                 {
                                                                                     staff.minutesLate
                                                                                 }
+
                                                                                 m
                                                                                 late
                                                                             </span>
@@ -1361,6 +1371,7 @@ export default function ManagerPage() {
                                                                                 {
                                                                                     ing.onHandQty
                                                                                 }
+
                                                                                 /
                                                                                 {
                                                                                     ing.parLevel
@@ -1491,6 +1502,7 @@ export default function ManagerPage() {
                                                                                 {
                                                                                     b.totalAmountFormatted
                                                                                 }
+
                                                                                 )
                                                                             </span>
                                                                         </div>

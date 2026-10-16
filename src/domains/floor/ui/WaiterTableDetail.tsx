@@ -22,6 +22,7 @@ import {
     useRequestBillMutation,
     useSessionBillQuery,
 } from "@/context/services/billingApi";
+import { useRealtimePollMs } from "@/domains/notifications/application/useRealtimePollMs";
 import {
     useCloseTableSessionMutation,
     useStartTableSessionMutation,
@@ -124,8 +125,9 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
     const clockedIn = Boolean(
         useAppSelector(state => state.identity.session?.shiftSessionId),
     );
+    const pollMs = useRealtimePollMs(12_000);
     const { data, isLoading, isError } = useWaiterTablesQuery("all", {
-        pollingInterval: 5000,
+        pollingInterval: pollMs,
     });
     const [startSession, { isLoading: starting }] =
         useStartTableSessionMutation();
@@ -147,11 +149,11 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
     const sessionId = table?.tableSessionId ?? "";
     const { data: orders } = useTableSessionOrdersQuery(sessionId, {
         skip: !sessionId,
-        pollingInterval: 5000,
+        pollingInterval: pollMs,
     });
     const { data: billing } = useSessionBillQuery(sessionId, {
         skip: !sessionId,
-        pollingInterval: 5000,
+        pollingInterval: pollMs,
     });
     const tickets = useMemo(() => orders?.data ?? [], [orders?.data]);
     const itemCount = useMemo(

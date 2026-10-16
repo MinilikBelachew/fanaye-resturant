@@ -222,7 +222,7 @@ export default function StaffDirectory({
 
     async function handleSavePin() {
         if (!pinTarget) return;
-        if (!/^\d{4,6}$/.test(pinValue.trim())) {
+        if (!/^\d{4}$/.test(pinValue.trim())) {
             toast.error(t("listPinValidationError"));
             return;
         }
@@ -327,28 +327,26 @@ export default function StaffDirectory({
                 </button>
             </div>
 
-            {!multiBranch && (
-                <div className="flex items-center gap-1.5 border-b border-hairline pb-3">
-                    <span className="inline-flex items-center gap-2 rounded-lg bg-primary/10 px-3.5 py-1.5 text-xs font-bold text-primary">
-                        <Users className="size-3.5" />
-                        Staff Directory
-                    </span>
-                    <Link
-                        href={`${basePath}/shifts`}
-                        className="inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                    >
-                        <Clock3 className="size-3.5" />
-                        Shift Templates & Hours
-                    </Link>
-                    <Link
-                        href={`${basePath}/schedule`}
-                        className="inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                    >
-                        <Calendar className="size-3.5" />
-                        Weekly Shift Roster
-                    </Link>
-                </div>
-            )}
+            <div className="flex flex-wrap items-center gap-1.5 border-b border-hairline pb-3">
+                <span className="inline-flex items-center gap-2 rounded-full bg-brand/10 px-3.5 py-1.5 text-xs font-normal text-brand">
+                    <Users className="size-3.5" />
+                    Staff Directory
+                </span>
+                <Link
+                    href={`${basePath}/shifts`}
+                    className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-normal text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                >
+                    <Clock3 className="size-3.5" />
+                    Shift Templates & Hours
+                </Link>
+                <Link
+                    href={`${basePath}/schedule`}
+                    className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-normal text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                >
+                    <Calendar className="size-3.5" />
+                    Weekly Shift Roster
+                </Link>
+            </div>
 
             {multiBranch ? (
                 <div className="flex flex-col gap-2">

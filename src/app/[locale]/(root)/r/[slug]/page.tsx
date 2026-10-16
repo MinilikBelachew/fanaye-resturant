@@ -10,6 +10,7 @@ import {
     bindSiteRender,
     sitePuckConfig,
 } from "@/domains/site/puck/sitePuckConfig";
+import { SiteFontLoader } from "@/domains/site/puck/siteTypography";
 
 export default function PublicRestaurantSitePage({
     params,
@@ -31,7 +32,7 @@ export default function PublicRestaurantSitePage({
     if (error || !data?.data) {
         return (
             <div className="flex min-h-svh flex-col items-center justify-center gap-2 px-6 text-center">
-                <h1 className="text-2xl font-semibold">Site not found</h1>
+                <h1 className="text-2xl font-normal">Site not found</h1>
                 <p className="text-sm text-slate-600">
                     This restaurant has not published a public website yet.
                 </p>
@@ -67,17 +68,24 @@ export default function PublicRestaurantSitePage({
     const renderContext = {
         theme: site.theme,
         tenantName: site.tenantName,
-        phone: site.phone,
-        email: site.email,
-        city: site.city,
-        address: site.address,
-        hours: site.hours,
+        phone: site.phone ?? site.profile?.phone ?? null,
+        email: site.email ?? site.profile?.email ?? null,
+        city: site.city ?? site.profile?.city ?? null,
+        address: site.address ?? site.profile?.address ?? null,
+        hours: site.hours ?? site.profile?.hours ?? null,
+        tagline: site.profile?.tagline ?? null,
+        story: site.profile?.story ?? null,
+        instagram: site.profile?.instagram ?? null,
+        facebook: site.profile?.facebook ?? null,
+        tiktok: site.profile?.tiktok ?? null,
+        telegram: site.profile?.telegram ?? null,
         menuItems: site.menuItems,
     };
     bindSiteRender(renderContext);
 
     return (
         <SiteRenderContext.Provider value={renderContext}>
+            <SiteFontLoader />
             <main
                 style={
                     {

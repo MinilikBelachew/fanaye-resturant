@@ -30,6 +30,7 @@ import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { Link } from "@/i18n/navigation";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { getStaffAvatarUrl } from "@/lib/avatars";
 
 function formatClock(value?: string | null) {
     if (!value) return "—";
@@ -209,13 +210,7 @@ export default function CashierShiftPage() {
                     }
                 />
 
-                <article
-                    className={cn(
-                        "overflow-hidden rounded-[22px] border border-hairline bg-card shadow-subtle transition-[box-shadow,transform] duration-300",
-                        clockedIn &&
-                            "shadow-[0_12px_40px_-28px_rgba(15,23,42,0.35)]",
-                    )}
-                >
+                <article className="overflow-hidden rounded-[20px] border border-hairline bg-card">
                     <div
                         className={cn(
                             "border-b border-hairline px-5 py-4 sm:px-6",
@@ -226,30 +221,27 @@ export default function CashierShiftPage() {
                     >
                         <div className="flex flex-wrap items-start justify-between gap-3">
                             <div className="flex items-center gap-3.5">
-                                <span
-                                    className={cn(
-                                        "relative flex size-12 items-center justify-center rounded-full text-[18px] font-bold transition-colors duration-300",
-                                        clockedIn
-                                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
-                                            : "bg-secondary text-slate-gray",
-                                    )}
-                                >
-                                    {staff?.name?.charAt(0) ?? "C"}
+                                <div className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-hairline bg-secondary">
+                                    <img
+                                        src={getStaffAvatarUrl(staff?.name)}
+                                        alt={staff?.name || "Cashier"}
+                                        className="size-full object-cover"
+                                    />
                                     <span
                                         className={cn(
-                                            "absolute top-1 right-1 size-2.5 rounded-full ring-2 ring-card transition-colors duration-300",
+                                            "absolute top-0.5 right-0.5 size-3 rounded-full ring-2 ring-card",
                                             clockedIn
                                                 ? "bg-emerald-500"
                                                 : "bg-slate-400",
                                         )}
                                     />
-                                </span>
+                                </div>
                                 <div>
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <p className="text-[17px] font-semibold tracking-tight text-foreground">
+                                        <p className="text-[17px] font-normal tracking-tight text-foreground">
                                             {staff?.name ?? tCommon("cashier")}
                                         </p>
-                                        <span className="rounded-md bg-brand/10 px-2 py-0.5 text-[11px] font-semibold tracking-wide text-brand">
+                                        <span className="rounded-full bg-brand/10 px-2.5 py-0.5 text-[11px] font-normal text-brand">
                                             {tRoles.has("cashier")
                                                 ? tRoles("cashier")
                                                 : tCommon("cashier")}
@@ -260,7 +252,10 @@ export default function CashierShiftPage() {
                                     </p>
                                 </div>
                             </div>
-                            <Badge variant={phaseCopy[phase].badgeVariant}>
+                            <Badge
+                                variant={phaseCopy[phase].badgeVariant}
+                                className="font-normal"
+                            >
                                 {phaseCopy[phase].badge}
                             </Badge>
                         </div>
@@ -272,7 +267,7 @@ export default function CashierShiftPage() {
                                 <p className="text-[11px] font-medium tracking-[0.06em] text-slate-gray uppercase">
                                     {t("assignment")}
                                 </p>
-                                <p className="mt-1 font-semibold text-foreground">
+                                <p className="mt-1 font-normal text-foreground">
                                     {shiftLabel}
                                 </p>
                                 <p className="text-[12px] text-slate-gray">
@@ -291,7 +286,7 @@ export default function CashierShiftPage() {
                                 <p className="text-[11px] font-medium tracking-[0.06em] text-slate-gray uppercase">
                                     {t("clockIn")}
                                 </p>
-                                <p className="mt-1 font-semibold text-foreground">
+                                <p className="mt-1 font-normal text-foreground">
                                     {formatClock(session?.clockInAt)}
                                 </p>
                             </div>
@@ -299,7 +294,7 @@ export default function CashierShiftPage() {
                                 <p className="text-[11px] font-medium tracking-[0.06em] text-slate-gray uppercase">
                                     {t("clockOut")}
                                 </p>
-                                <p className="mt-1 font-semibold text-foreground">
+                                <p className="mt-1 font-normal text-foreground">
                                     {formatClock(session?.clockOutAt)}
                                 </p>
                             </div>
@@ -402,7 +397,7 @@ export default function CashierShiftPage() {
                 {clockedIn ? (
                     <>
                         <div className="grid gap-3 sm:grid-cols-3">
-                            <div className="rounded-[20px] border border-hairline bg-card p-4 shadow-subtle">
+                            <div className="rounded-[20px] border border-hairline bg-card p-4">
                                 <div className="flex items-center justify-between gap-3">
                                     <p className="text-[12px] font-medium tracking-[0.06em] text-slate-gray uppercase">
                                         {t("expectedInDrawer")}
@@ -411,7 +406,7 @@ export default function CashierShiftPage() {
                                         <Wallet className="size-4" />
                                     </span>
                                 </div>
-                                <p className="mt-2 text-[22px] font-semibold tracking-tight text-brand">
+                                <p className="mt-2 text-[22px] font-normal tracking-tight text-brand">
                                     {formatEtb(expected)}
                                 </p>
                                 <p className="mt-1 text-[12px] text-slate-gray">
@@ -422,11 +417,11 @@ export default function CashierShiftPage() {
                                 </p>
                             </div>
 
-                            <div className="rounded-[20px] border border-hairline bg-card p-4 shadow-subtle">
+                            <div className="rounded-[20px] border border-hairline bg-card p-4">
                                 <p className="text-[12px] text-slate-gray">
                                     {t("openingFloat")}
                                 </p>
-                                <p className="mt-2 text-[22px] font-semibold tracking-tight">
+                                <p className="mt-2 text-[22px] font-normal tracking-tight">
                                     {formatEtb(float)}
                                 </p>
                                 <p className="mt-1 text-[12px] text-slate-gray">
@@ -435,7 +430,7 @@ export default function CashierShiftPage() {
                             </div>
                             <div
                                 className={cn(
-                                    "rounded-[20px] border border-hairline bg-card p-4 shadow-subtle",
+                                    "rounded-[20px] border border-hairline bg-card p-4",
                                     pendingDrops > 0 &&
                                         "border-amber-300/70 bg-amber-50/50 dark:bg-amber-950/20",
                                 )}
@@ -443,7 +438,7 @@ export default function CashierShiftPage() {
                                 <p className="text-[12px] text-slate-gray">
                                     {t("pendingDrops")}
                                 </p>
-                                <p className="mt-2 text-[22px] font-semibold tracking-tight">
+                                <p className="mt-2 text-[22px] font-normal tracking-tight">
                                     {pendingDrops}
                                 </p>
                                 <p className="mt-1 text-[12px] text-slate-gray">
@@ -455,13 +450,13 @@ export default function CashierShiftPage() {
                         <div className="grid gap-3 sm:grid-cols-3">
                             <Link
                                 href="/cashier/cash-drops"
-                                className="group rounded-[18px] border border-hairline bg-card p-4 shadow-subtle transition-colors hover:bg-secondary/45"
+                                className="group rounded-[18px] border border-hairline bg-card p-4 transition-colors hover:bg-secondary/45"
                             >
                                 <div className="flex items-center justify-between">
                                     <Warehouse className="size-4 text-slate-gray" />
                                     <ArrowRight className="size-3.5 text-slate-gray opacity-0 transition-opacity group-hover:opacity-100" />
                                 </div>
-                                <p className="mt-3 text-[15px] font-semibold">
+                                <p className="mt-3 text-[15px] font-normal">
                                     {t("metricCashDrops")}
                                 </p>
                                 <p className="mt-1 text-[12px] text-slate-gray">
@@ -470,13 +465,13 @@ export default function CashierShiftPage() {
                             </Link>
                             <Link
                                 href="/cashier/reconciliation"
-                                className="group rounded-[18px] border border-hairline bg-card p-4 shadow-subtle transition-colors hover:bg-secondary/45"
+                                className="group rounded-[18px] border border-hairline bg-card p-4 transition-colors hover:bg-secondary/45"
                             >
                                 <div className="flex items-center justify-between">
                                     <CreditCard className="size-4 text-slate-gray" />
                                     <ArrowRight className="size-3.5 text-slate-gray opacity-0 transition-opacity group-hover:opacity-100" />
                                 </div>
-                                <p className="mt-3 text-[15px] font-semibold">
+                                <p className="mt-3 text-[15px] font-normal">
                                     {t("reconcile")}
                                 </p>
                                 <p className="mt-1 text-[12px] text-slate-gray">
@@ -485,13 +480,13 @@ export default function CashierShiftPage() {
                             </Link>
                             <Link
                                 href="/cashier/daily-close"
-                                className="group rounded-[18px] border border-hairline bg-card p-4 shadow-subtle transition-colors hover:bg-secondary/45"
+                                className="group rounded-[18px] border border-hairline bg-card p-4 transition-colors hover:bg-secondary/45"
                             >
                                 <div className="flex items-center justify-between">
                                     <ClipboardCheck className="size-4 text-slate-gray" />
                                     <ArrowRight className="size-3.5 text-slate-gray opacity-0 transition-opacity group-hover:opacity-100" />
                                 </div>
-                                <p className="mt-3 text-[15px] font-semibold">
+                                <p className="mt-3 text-[15px] font-normal">
                                     {t("dailyClose")}
                                 </p>
                                 <p className="mt-1 text-[12px] text-slate-gray">

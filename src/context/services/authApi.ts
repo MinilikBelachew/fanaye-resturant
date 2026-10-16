@@ -16,7 +16,7 @@ export interface TerminalStaffMember {
 
 export interface PinTenantMatch {
     userId: string;
-    email: string;
+    email?: string;
     displayName: string;
     tenantId: string;
     tenantName: string;
@@ -70,14 +70,16 @@ export const authApi = api.injectEndpoints({
                 };
             },
         }),
-        getTerminalStaff: builder.query<{ staff: TerminalStaffMember[] }, void>(
-            {
-                query: () => ({
-                    url: "/auth/terminal/staff",
-                    method: "GET",
-                }),
-            },
-        ),
+        getTerminalStaff: builder.query<
+            { staff: TerminalStaffMember[] },
+            { tenantId: string }
+        >({
+            query: ({ tenantId }) => ({
+                url: "/auth/terminal/staff",
+                method: "GET",
+                params: { tenantId },
+            }),
+        }),
         refresh: builder.mutation<
             { token: string; tokenExpires: number },
             void

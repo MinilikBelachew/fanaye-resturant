@@ -29,6 +29,7 @@ import { useCurrentShiftQuery } from "@/context/services/shiftsApi";
 import { checkShiftExpiry } from "@/domains/identity/domain/shift";
 import { useTranslations } from "next-intl";
 import { CashierBillsSkeleton } from "@/components/custom/molecules/Skeletons";
+import { useRealtimePollMs } from "@/domains/notifications/application/useRealtimePollMs";
 
 type ViewMode = "table" | "cards";
 
@@ -38,12 +39,13 @@ export default function CashierBillRequests() {
     const [view, setView] = useState<ViewMode>("table");
     const [page, setPage] = useState(1);
     const PAGE_SIZE = 10;
+    const pollMs = useRealtimePollMs(12_000);
     const { data, isLoading, isError } = useCashierBillRequestsQuery(
         undefined,
-        { pollingInterval: 3000, refetchOnFocus: true },
+        { pollingInterval: pollMs, refetchOnFocus: true },
     );
     const { data: currentShift } = useCurrentShiftQuery(undefined, {
-        pollingInterval: 5000,
+        pollingInterval: pollMs || 15_000,
         refetchOnFocus: true,
     });
     const shiftExpiry = useMemo(

@@ -16,6 +16,7 @@ import {
     useOpenCallPickupMutation,
 } from "@/context/services/floorApi";
 import { useAppSelector } from "@/context/hooks";
+import { useRealtimePollMs } from "@/domains/notifications/application/useRealtimePollMs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { DispatcherCall } from "@/domains/floor/domain/floorApi";
@@ -114,11 +115,12 @@ export default function DispatcherBoard() {
     const clockedIn = Boolean(
         useAppSelector(state => state.identity.session?.shiftSessionId),
     );
+    const pollMs = useRealtimePollMs(12_000);
     const { data, isLoading, isError, refetch } = useDispatcherCallsQuery(
         undefined,
         {
             skip: !hasSession,
-            pollingInterval: 4000,
+            pollingInterval: pollMs,
         },
     );
     const [openCall, { isLoading: opening }] = useOpenCallPickupMutation();

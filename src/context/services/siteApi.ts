@@ -15,6 +15,20 @@ export interface SiteTheme {
     borderRadius?: "none" | "md" | "xl" | "full" | null;
 }
 
+export interface TenantProfile {
+    phone?: string | null;
+    email?: string | null;
+    address?: string | null;
+    city?: string | null;
+    hours?: string | null;
+    tagline?: string | null;
+    story?: string | null;
+    instagram?: string | null;
+    facebook?: string | null;
+    tiktok?: string | null;
+    telegram?: string | null;
+}
+
 export interface TenantSite {
     id: string;
     tenantId: string;
@@ -22,6 +36,7 @@ export interface TenantSite {
     slug: string;
     status: string;
     theme: SiteTheme;
+    profile?: TenantProfile;
     draftData: Record<string, unknown>;
     publishedData?: Record<string, unknown> | null;
     publishedAt?: string | null;
@@ -49,6 +64,7 @@ export interface PublicSite {
     slug: string;
     tenantName: string;
     theme: SiteTheme;
+    profile?: TenantProfile;
     data: Record<string, unknown>;
     phone?: string | null;
     email?: string | null;
@@ -66,6 +82,7 @@ export interface UpdateSitePayload {
     tenantName?: string;
     slug?: string;
     theme?: Partial<SiteTheme>;
+    profile?: Partial<TenantProfile>;
     draftData?: Record<string, unknown>;
     calendarPreference?: "ETHIOPIAN" | "GREGORIAN" | string;
 }

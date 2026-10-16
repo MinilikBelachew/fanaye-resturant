@@ -359,22 +359,22 @@ export default function StaffScheduleMatrix({
                 </div>
 
                 {/* Sub-Navigation Tabs */}
-                <div className="flex items-center gap-1.5 border-b border-hairline pb-3">
+                <div className="flex flex-wrap items-center gap-1.5 border-b border-hairline pb-3">
                     <Link
                         href={basePath}
-                        className="inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                        className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-normal text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
                     >
                         <Users className="size-3.5" />
                         Staff Directory
                     </Link>
                     <Link
                         href={`${basePath}/shifts`}
-                        className="inline-flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                        className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-normal text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
                     >
                         <Clock3 className="size-3.5" />
                         Shift Templates & Hours
                     </Link>
-                    <span className="inline-flex items-center gap-2 rounded-lg bg-primary/10 px-3.5 py-1.5 text-xs font-bold text-primary">
+                    <span className="inline-flex items-center gap-2 rounded-full bg-brand/10 px-3.5 py-1.5 text-xs font-normal text-brand">
                         <Calendar className="size-3.5" />
                         Weekly Shift Roster
                     </span>
@@ -921,6 +921,7 @@ export default function StaffScheduleMatrix({
                                                                                     {
                                                                                         shiftCoverage.startLocalTime
                                                                                     }
+
                                                                                     –
                                                                                     {
                                                                                         shiftCoverage.endLocalTime

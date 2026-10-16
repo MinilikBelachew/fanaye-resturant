@@ -1,3 +1,4 @@
+import { createSelector } from "@reduxjs/toolkit";
 import type { RootState } from "@/context/store";
 import { mapAuthContextToStaff } from "@/domains/identity/application/mapAuthToStaff";
 import type { StationId } from "@/domains/fulfillment/domain/station";
@@ -11,10 +12,11 @@ export function selectStaffList(state: RootState) {
     return state.identity.staffMembers ?? [];
 }
 
-export function selectCurrentStaff(state: RootState) {
-    if (!state.identity.session) return null;
-    return mapAuthContextToStaff(state.identity.session);
-}
+/** Stable reference while session identity fields are unchanged. */
+export const selectCurrentStaff = createSelector(
+    [(state: RootState) => state.identity.session],
+    session => (session ? mapAuthContextToStaff(session) : null),
+);
 
 export function selectWaitersList(state: RootState) {
     const list = state.identity.staffMembers ?? [];

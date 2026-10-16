@@ -67,13 +67,13 @@ function TemplateMock({
                 className="relative aspect-[16/11] overflow-hidden"
                 style={{ background: "#efe8dc" }}
             >
-                <div className="absolute inset-3 flex flex-col overflow-hidden rounded-[16px] border border-black/5 bg-[#f6f1e8] shadow-[0_18px_40px_-24px_rgba(28,25,23,0.45)]">
+                <div className="absolute inset-3 flex flex-col overflow-hidden rounded-[16px] border border-black/10 bg-[#f6f1e8]">
                     <div
                         className="flex items-center justify-between px-3 py-2"
                         style={{ color: ink }}
                     >
                         <span
-                            className="flex size-5 items-center justify-center rounded-full text-[8px] font-bold text-white"
+                            className="flex size-5 items-center justify-center rounded-full text-[8px] font-normal text-white"
                             style={{ background: accent }}
                         >
                             F
@@ -93,13 +93,13 @@ function TemplateMock({
                             />
                         </div>
                         <span
-                            className="rounded-full border px-2 py-0.5 text-[7px] font-semibold uppercase tracking-wide"
+                            className="rounded-full border px-2 py-0.5 text-[7px] font-normal uppercase tracking-wide"
                             style={{ borderColor: accent, color: ink }}
                         >
                             {reserveLabel}
                         </span>
                     </div>
-                    <div className="relative mx-2 mb-2 min-h-0 flex-1 overflow-hidden rounded-[14px]">
+                    <div className="relative mx-2 mb-2 min-h-0 flex-1 overflow-hidden rounded-[14px] border border-black/10">
                         <img
                             src={previewImage}
                             alt=""
@@ -107,11 +107,11 @@ function TemplateMock({
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/20 to-transparent" />
                         <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
-                            <p className="font-serif text-[13px] font-medium leading-tight text-white sm:text-[15px]">
+                            <p className="font-serif text-[13px] font-normal leading-tight text-white sm:text-[15px]">
                                 Experience Fine Dining
                             </p>
                             <span
-                                className="mt-2 rounded-full px-2.5 py-0.5 text-[7px] font-semibold uppercase tracking-wide text-white"
+                                className="mt-2 rounded-full px-2.5 py-0.5 text-[7px] font-normal uppercase tracking-wide text-white"
                                 style={{ background: accent }}
                             >
                                 {menuLabel}
@@ -143,13 +143,13 @@ function TemplateMock({
             />
 
             {/* Mini site chrome */}
-            <div className="absolute inset-x-3 top-3 bottom-3 flex flex-col overflow-hidden rounded-[14px] border border-white/25 bg-white/10 shadow-[0_20px_40px_-24px_rgba(0,0,0,0.55)] backdrop-blur-[2px]">
+            <div className="absolute inset-x-3 top-3 bottom-3 flex flex-col overflow-hidden rounded-[14px] border border-white/25 bg-white/10 backdrop-blur-[2px]">
                 <div
                     className="flex items-center justify-between px-3 py-2"
                     style={{ background: paper, color: ink }}
                 >
                     <span
-                        className="text-[9px] font-semibold tracking-[0.14em] uppercase"
+                        className="text-[9px] font-normal tracking-[0.18em] uppercase"
                         style={{ opacity: 0.85 }}
                     >
                         Fanaye
@@ -164,7 +164,7 @@ function TemplateMock({
                             style={{ background: mute }}
                         />
                         <span
-                            className="rounded-full px-2 py-0.5 text-[8px] font-semibold text-white"
+                            className="rounded-full px-2 py-0.5 text-[8px] font-normal text-white"
                             style={{ background: accent }}
                         >
                             {menuLabel}
@@ -198,12 +198,12 @@ function TemplateMock({
                         <div className="h-1.5 w-[58%] rounded-full bg-white/55" />
                         <div className="flex gap-1.5 pt-1">
                             <span
-                                className="h-5 rounded-full px-2 text-[8px] font-semibold leading-5 text-white"
+                                className="h-5 rounded-full px-2 text-[8px] font-normal leading-5 text-white"
                                 style={{ background: accent }}
                             >
                                 {reserveLabel}
                             </span>
-                            <span className="h-5 rounded-full border border-white/40 px-2 text-[8px] font-semibold leading-5 text-white/90">
+                            <span className="h-5 rounded-full border border-white/40 px-2 text-[8px] font-normal leading-5 text-white/90">
                                 {menuLabel}
                             </span>
                         </div>
@@ -235,16 +235,16 @@ export default function WebsiteTemplatePicker({
     const activeKeys = TEMPLATE_I18N_KEYS[active.id];
 
     return (
-        <div className="mx-auto w-full max-w-6xl space-y-8 pb-10">
-            <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <div className="space-y-1.5">
-                    <p className="text-[11px] font-semibold tracking-[0.16em] text-slate-500 uppercase">
+        <div className="mx-auto w-full max-w-6xl space-y-6 pb-10">
+            <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div className="space-y-1">
+                    <p className="text-[11px] font-normal tracking-[0.16em] text-steel-gray uppercase">
                         {t("layoutTemplates")}
                     </p>
-                    <h1 className="text-[28px] font-semibold tracking-tight text-slate-900 sm:text-[32px]">
+                    <h1 className="text-[26px] font-normal tracking-tight text-foreground sm:text-[30px]">
                         {tenantName}
                     </h1>
-                    <p className="max-w-xl text-[14px] leading-relaxed text-slate-500">
+                    <p className="max-w-xl text-[13px] leading-relaxed text-slate-gray font-normal">
                         {t("pickLayoutDesc")}
                     </p>
                 </div>
@@ -253,7 +253,7 @@ export default function WebsiteTemplatePicker({
                         type="button"
                         onClick={onCancel}
                         disabled={busy}
-                        className="self-start text-[13px] font-medium text-slate-500 underline-offset-4 hover:text-slate-900 hover:underline disabled:opacity-50"
+                        className="self-start text-[13px] font-normal text-slate-gray underline-offset-4 hover:text-foreground hover:underline disabled:opacity-50 cursor-pointer"
                     >
                         {t("backToEditor")}
                     </button>
@@ -270,10 +270,10 @@ export default function WebsiteTemplatePicker({
                             type="button"
                             onClick={() => setSelected(template.id)}
                             className={cn(
-                                "group overflow-hidden rounded-[22px] border bg-white text-left shadow-[0_1px_0_rgba(15,23,42,0.04)] transition-all duration-200",
+                                "group overflow-hidden rounded-[20px] border bg-card text-left transition-all duration-200 cursor-pointer",
                                 isOn
-                                    ? "border-slate-900 ring-2 ring-slate-900/10"
-                                    : "border-slate-200/90 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_18px_40px_-28px_rgba(15,23,42,0.45)]",
+                                    ? "border-brand ring-1 ring-brand/30"
+                                    : "border-hairline hover:border-slate-gray/40 hover:-translate-y-0.5",
                             )}
                         >
                             <div className="relative">
@@ -285,19 +285,19 @@ export default function WebsiteTemplatePicker({
                                     reserveLabel={t("mockReserve")}
                                 />
                                 {isOn ? (
-                                    <span className="absolute top-3.5 right-3.5 z-10 flex size-7 items-center justify-center rounded-full bg-slate-900 text-white shadow-md">
-                                        <Check className="size-3.5 stroke-[2.5]" />
+                                    <span className="absolute top-3 right-3 z-10 flex size-6 items-center justify-center rounded-full bg-brand text-brand-foreground shadow-xs">
+                                        <Check className="size-3.5 stroke-[2]" />
                                     </span>
                                 ) : null}
                             </div>
 
-                            <div className="space-y-2.5 p-4">
+                            <div className="space-y-2 p-3.5 sm:p-4">
                                 <div className="flex items-start justify-between gap-2">
                                     <div>
-                                        <p className="text-[15px] font-semibold tracking-tight text-slate-900">
+                                        <p className="text-[14px] font-normal tracking-tight text-foreground">
                                             {t(keys.name)}
                                         </p>
-                                        <p className="mt-0.5 text-[12px] text-slate-500">
+                                        <p className="mt-0.5 text-[12px] text-slate-gray font-normal">
                                             {t(keys.tagline)}
                                         </p>
                                     </div>
@@ -306,7 +306,7 @@ export default function WebsiteTemplatePicker({
                                         style={{ background: template.accent }}
                                     />
                                 </div>
-                                <p className="line-clamp-2 text-[11px] leading-relaxed text-slate-400">
+                                <p className="line-clamp-2 text-[11px] leading-relaxed text-steel-gray font-normal">
                                     {t(keys.vibe)}
                                 </p>
                             </div>
@@ -318,34 +318,34 @@ export default function WebsiteTemplatePicker({
                     type="button"
                     disabled={busy}
                     onClick={onScratch}
-                    className="flex min-h-[220px] flex-col items-center justify-center gap-2.5 rounded-[22px] border border-dashed border-slate-300 bg-slate-50/80 text-center transition-all hover:border-slate-400 hover:bg-white disabled:opacity-50"
+                    className="flex min-h-[220px] flex-col items-center justify-center gap-2.5 rounded-[20px] border border-dashed border-hairline bg-surface-ivory/30 dark:bg-card/30 text-center transition-all hover:border-brand/40 hover:bg-card disabled:opacity-50 cursor-pointer"
                 >
-                    <span className="flex size-10 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm">
-                        <Sparkles className="size-4 text-slate-600" />
+                    <span className="flex size-10 items-center justify-center rounded-full border border-hairline bg-card">
+                        <Sparkles className="size-4 text-brand" />
                     </span>
-                    <span className="text-[14px] font-semibold text-slate-900">
+                    <span className="text-[13px] font-normal text-foreground">
                         {t("startFromScratch")}
                     </span>
-                    <span className="max-w-[180px] px-4 text-[12px] leading-relaxed text-slate-500">
+                    <span className="max-w-[200px] px-4 text-[11px] leading-relaxed text-slate-gray font-normal">
                         {t("startFromScratchDesc")}
                     </span>
                 </button>
             </div>
 
-            <div className="sticky bottom-3 z-10 overflow-hidden rounded-[20px] border border-slate-200/90 bg-white/95 shadow-[0_18px_50px_-28px_rgba(15,23,42,0.45)] backdrop-blur-md">
-                <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+            <div className="sticky bottom-3 z-10 overflow-hidden rounded-[18px] border border-hairline bg-card/95 backdrop-blur-md">
+                <div className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
                     <div className="flex min-w-0 items-center gap-3">
                         <span
-                            className="size-9 shrink-0 rounded-[10px] bg-cover bg-center shadow-inner ring-1 ring-black/5"
+                            className="size-9 shrink-0 rounded-[10px] bg-cover bg-center ring-1 ring-border/20"
                             style={{
                                 backgroundImage: `url(${active.previewImage})`,
                             }}
                         />
                         <div className="min-w-0">
-                            <p className="truncate text-[15px] font-semibold text-slate-900">
+                            <p className="truncate text-[14px] font-normal text-foreground">
                                 {t(activeKeys.name)}
                             </p>
-                            <p className="truncate text-[12px] text-slate-500">
+                            <p className="truncate text-[11px] text-slate-gray font-normal">
                                 {t(activeKeys.vibe)}
                             </p>
                         </div>
@@ -355,7 +355,7 @@ export default function WebsiteTemplatePicker({
                             type="button"
                             variant="outline"
                             disabled={busy}
-                            className="h-10 gap-2 rounded-full border-slate-200 px-4 text-[13px]"
+                            className="h-9 gap-2 rounded-xl border-hairline px-4 text-[12px] font-normal"
                             onClick={() => onApply(selected, "publish")}
                         >
                             {busy ? (
@@ -368,7 +368,7 @@ export default function WebsiteTemplatePicker({
                         <Button
                             type="button"
                             disabled={busy}
-                            className="h-10 gap-2 rounded-full bg-slate-900 px-5 text-[13px] text-white hover:bg-slate-800"
+                            className="h-9 gap-2 rounded-xl bg-brand hover:bg-brand/90 px-4 text-[12px] font-normal text-brand-foreground"
                             onClick={() => onApply(selected, "customize")}
                         >
                             {busy ? (

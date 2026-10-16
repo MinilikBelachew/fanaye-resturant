@@ -79,13 +79,16 @@ export function useOpsSocket() {
     const dispatch = useAppDispatch();
     const accessToken = useAppSelector(state => state.identity.accessToken);
     const staff = useAppSelector(selectCurrentStaff);
+    const staffKey = staff?.id ?? null;
     const role = staff?.role ?? "";
     const socketRef = useRef<Socket | null>(null);
     const seenRef = useRef<Set<string>>(new Set());
+    const staffRef = useRef(staff);
+    staffRef.current = staff;
 
     const { data: inbox } = useListNotificationsQuery(
         { page: 1, limit: 40 },
-        { skip: !accessToken || !staff },
+        { skip: !accessToken || !staffKey },
     );
 
     useEffect(() => {
@@ -100,7 +103,7 @@ export function useOpsSocket() {
     }, [dispatch, inbox?.data, role]);
 
     useEffect(() => {
-        if (!accessToken || !staff) {
+        if (!accessToken || !staffKey) {
             socketRef.current?.disconnect();
             socketRef.current = null;
             dispatch(setConnected(false));
@@ -134,10 +137,13 @@ export function useOpsSocket() {
                 seenRef.current = new Set([...seenRef.current].slice(-100));
             }
 
-            // Always refresh boards for relevant events, even if inbox hides them.
             invalidateForType(dispatch, raw.type);
 
-            if (!isNotificationVisibleForRole(raw.type, staff.role)) {
+            const current = staffRef.current;
+            if (
+                !current ||
+                !isNotificationVisibleForRole(raw.type, current.role)
+            ) {
                 return;
             }
 
@@ -154,5 +160,6 @@ export function useOpsSocket() {
             socketRef.current = null;
             dispatch(setConnected(false));
         };
-    }, [accessToken, dispatch, staff]);
+        // staffKey is stable; full staff object is read via staffRef for handlers.
+    }, [accessToken, dispatch, staffKey]);
 }

@@ -155,7 +155,7 @@ export function SiteCarousel({
                     />
                     {captions[index] ? (
                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent px-5 pb-5 pt-12 text-white">
-                            <p className="text-sm font-medium sm:text-base">
+                            <p className="text-sm font-normal sm:text-base">
                                 {captions[index]}
                             </p>
                         </div>
@@ -199,7 +199,7 @@ export function SiteCarousel({
                                 key={`${slides[slideIndex]}-${slot}`}
                                 type="button"
                                 onClick={() => setIndex(slideIndex)}
-                                className={`absolute overflow-hidden rounded-2xl shadow-lg transition-all duration-500 ${
+                                className={`absolute overflow-hidden rounded-2xl border border-white/10 transition-all duration-500 ${
                                     isCenter
                                         ? "z-20 h-[92%] w-[58%] scale-100"
                                         : slot === 0
@@ -243,7 +243,7 @@ export function SiteCarousel({
                             />
                             {captions[i] ? (
                                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent px-5 pb-10 pt-12 text-white">
-                                    <p className="text-sm font-medium sm:text-base">
+                                    <p className="text-sm font-normal sm:text-base">
                                         {captions[i]}
                                     </p>
                                 </div>
@@ -278,7 +278,7 @@ export function SiteCarousel({
                             : "inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-5 pb-10 pt-12"
                     }`}
                 >
-                    <p className="text-sm font-medium sm:text-base">
+                    <p className="text-sm font-normal sm:text-base">
                         {captions[index]}
                     </p>
                 </div>

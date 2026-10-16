@@ -44,8 +44,7 @@ import {
     sumPayments,
     todayYmd,
 } from "@/domains/payments/application/cashierMoney";
-
-const POLL = 8000;
+import { useRealtimePollMs } from "@/domains/notifications/application/useRealtimePollMs";
 
 export default function CashierHomeStats() {
     const t = useTranslations("cashier");
@@ -56,6 +55,7 @@ export default function CashierHomeStats() {
     const [selectedDate, setSelectedDate] = useState(todayYmd);
     const rangeFrom = shiftYmd(selectedDate, -6);
     const isToday = selectedDate === todayYmd();
+    const pollMs = useRealtimePollMs(15_000);
 
     const {
         data: paymentsRes,
@@ -64,20 +64,20 @@ export default function CashierHomeStats() {
         isError,
     } = useCashierPaymentsQuery(
         { from: rangeFrom, to: selectedDate },
-        { pollingInterval: POLL },
+        { pollingInterval: pollMs },
     );
     const { data: billsRes, isLoading: billsLoading } =
         useCashierBillRequestsQuery(undefined, {
-            pollingInterval: POLL,
+            pollingInterval: pollMs,
             skip: isBakery,
         });
     const { data: dropsRes, isLoading: dropsLoading } =
         useCashierCashDropsQuery(
             { status: "ALL" },
-            { pollingInterval: POLL, skip: isBakery },
+            { pollingInterval: pollMs, skip: isBakery },
         );
     const { data: currentShift } = useCurrentShiftQuery(undefined, {
-        pollingInterval: POLL,
+        pollingInterval: pollMs || 20_000,
     });
 
     const payments = paymentsRes?.data ?? [];

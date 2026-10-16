@@ -19,17 +19,21 @@ export interface WebsiteTemplate {
 }
 
 const IMG = {
-    harbor: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=1600&auto=format&fit=crop",
+    harbor: "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?q=80&w=1600&auto=format&fit=crop",
+    harborHero:
+        "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?q=80&w=1600&auto=format&fit=crop",
     harborFood:
         "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200&auto=format&fit=crop",
-    harborHero:
-        "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?q=80&w=1600&auto=format&fit=crop",
     harborChef:
         "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?q=80&w=1200&auto=format&fit=crop",
     harborBowls:
         "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1200&auto=format&fit=crop",
     harborPlate:
-        "https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?q=80&w=900&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=1200&auto=format&fit=crop",
+    harborWine:
+        "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=1200&auto=format&fit=crop",
+    harborDining:
+        "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=1200&auto=format&fit=crop",
     ember: "https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1600&auto=format&fit=crop",
     emberPlate:
         "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=1200&auto=format&fit=crop",
@@ -55,20 +59,20 @@ const IMG = {
 export const WEBSITE_TEMPLATES: WebsiteTemplate[] = [
     {
         id: "harbor-bistro",
-        name: "Fine Dining Cream",
-        tagline: "Elegant cream & gold",
-        vibe: "Rounded hero photo, centered serif headline, Book a table — luxury dining",
+        name: "Fine Dining",
+        tagline: "Timeless luxury & culinary poetry",
+        vibe: "Warm limestone, muted brass, tasting degustation & quiet hospitality — Michelin-tier luxury",
         previewImage: IMG.harborHero,
-        accent: "#c9a227",
+        accent: "#b89047",
         theme: {
-            primaryColor: "#c9a227",
+            primaryColor: "#b89047",
             accentColor: "#1c1917",
-            backgroundColor: "#f6f1e8",
+            backgroundColor: "#f7f4ee",
             textColor: "#1c1917",
             backgroundType: "solid",
-            fontDisplay: "Playfair Display, serif",
+            fontDisplay: "Playfair Display, Georgia, serif",
             fontBody: "DM Sans, sans-serif",
-            borderRadius: "xl",
+            borderRadius: "none",
         },
     },
     {
@@ -285,9 +289,10 @@ export function buildTemplateDraft(
                         props: {
                             id: uid("header"),
                             showPhone: false,
-                            linksLabel: "Menu,About,Gallery,Contact",
+                            linksLabel:
+                                "Philosophy,Tasting Menu,The Experience,Hours,Reservations",
                             navAlign: "brandCenter",
-                            ctaLabel: "Book a table",
+                            ctaLabel: "Reserve a Table",
                             ctaHref: "#contact",
                             size: "md",
                             sticky: true,
@@ -298,11 +303,11 @@ export function buildTemplateDraft(
                         props: {
                             id: uid("hero"),
                             layout: "framed",
-                            headline: "Experience Fine Dining",
-                            subheadline: `${name} — seasonal plates, warm service, and a table worth lingering at.`,
-                            ctaLabel: "View menu",
+                            headline: "An Ode to Seasonality & Terroir",
+                            subheadline: `${name} invites you to an unhurried multi-course gastronomic voyage guided by morning harvests, artisanal cellars, and silent hospitality.`,
+                            ctaLabel: "Explore Tasting Menu",
                             ctaHref: "#menu",
-                            secondaryCtaLabel: "Book a table",
+                            secondaryCtaLabel: "Reserve a Table",
                             secondaryCtaHref: "#contact",
                             imageUrl: IMG.harborHero,
                             size: "lg",
@@ -310,47 +315,40 @@ export function buildTemplateDraft(
                         },
                     },
                     {
-                        type: "Menu",
-                        props: {
-                            id: uid("menu"),
-                            title: "Our Menu",
-                            subtitle: "Signature plates from the kitchen",
-                            categoryFilter: "all",
-                            layout: "cards",
-                            columns: "3",
-                            showImages: true,
-                            imageSize: "lg",
-                            size: "md",
-                        },
-                    },
-                    {
                         type: "About",
                         props: {
                             id: uid("about"),
                             layout: "imageRight",
-                            title: "About Us",
-                            body: `At ${name}, every plate is prepared to order. Our chefs bring craft and hospitality together — never rushed, never anonymous.`,
+                            title: "The Culinary Philosophy",
+                            body: `At ${name}, every movement at the stove is guided by reverence for the earth and patient craftsmanship. We collaborate intimately with smallholder biodynamic growers, coastal day-boat fishermen, and heritage grain millers to present a pure dialogue between nature and memory.`,
                             imageUrl: IMG.harborChef,
-                            stats: "",
-                            size: "md",
+                            stats: "10|Courses nightly\n38|Artisan purveyors\n450+|Cellar labels",
+                            size: "lg",
                         },
                     },
                     {
-                        type: "Testimonials",
+                        type: "Menu",
                         props: {
-                            id: uid("testimonials"),
-                            title: "Customer Reviews",
-                            items: `A perfect evening — service and flavor in balance.|Marta\nWe celebrate every milestone here.|Daniel\nFresh, bright, and unforgettable.|Sara`,
-                            size: "md",
+                            id: uid("menu"),
+                            title: "The Tasting Journey",
+                            subtitle:
+                                "Autumn Degustation — Chef's seven-movement composition with sommelier pairings",
+                            categoryFilter: "all",
+                            layout: "editorial",
+                            columns: "2",
+                            showImages: false,
+                            imageSize: "md",
+                            size: "lg",
                         },
                     },
                     {
                         type: "Features",
                         props: {
                             id: uid("features"),
-                            title: "Why guests return",
-                            subtitle: "Hospitality, craft, and consistency",
-                            items: "Chef-led kitchen|Seasonal menus changed with the market.\nWarm service|Hosts who remember regulars and rituals.\nPrivate rooms|Quiet corners for celebrations and teams.",
+                            title: "The Dining Experience",
+                            subtitle:
+                                "Every sensory nuance orchestrated with quiet devotion",
+                            items: "The Grand Dining Salon|Linen-dressed tables bathed in natural aperture and gentle evening candlelight.\nThe Sommelier's Cellar|Rare biodynamic vintages, mature Grand Crus, and artisanal botanical infusions.\nPrivate Dining Sanctuary|An intimate salon for bespoke milestone celebrations and private culinary salons.",
                             columns: "3",
                             size: "md",
                         },
@@ -359,29 +357,38 @@ export function buildTemplateDraft(
                         type: "Gallery",
                         props: {
                             id: uid("gallery"),
-                            title: "Gallery",
+                            title: "Atmosphere & Artistry",
                             imageUrls: galleryUrls(
-                                IMG.harborBowls,
+                                IMG.harborHero,
                                 IMG.harborPlate,
-                                IMG.harborFood,
-                                IMG.harbor,
+                                IMG.harborWine,
+                                IMG.harborDining,
                             ),
                             columns: "4",
                             size: "md",
                         },
                     },
+                    {
+                        type: "Testimonials",
+                        props: {
+                            id: uid("testimonials"),
+                            title: "Gastronomic Acclaim",
+                            items: "“An indelible triumph of restraint, texture, and emotional depth.”|Le Guide Gastronomique\n“The wine pairings elevate an already extraordinary multi-course journey into pure poetry.”|The Epicurean Review\n“Hospitality stripped of pretense, delivering absolute culinary grace.”|Sommelier Herald",
+                            size: "md",
+                        },
+                    },
                     hoursBlock(
-                        "Hours",
-                        "Mon–Thu|11:00 – 22:00\nFri–Sat|11:00 – 23:30\nSun|12:00 – 21:00",
+                        "Service & Sittings",
+                        "Tuesday – Thursday|Dinner Sittings: 18:00 & 20:30\nFriday – Saturday|Dinner Sittings: 17:30, 19:45 & 21:30\nSunday Luncheon|Seasonal Matinée: 12:30 – 16:00\nMonday|Kitchen Dark & Vineyard Sourcing",
                     ),
-                    contactBlock("Find us"),
+                    contactBlock("Table Reservations & Concierge"),
                     {
                         type: "CtaBanner",
                         props: {
                             id: uid("cta"),
-                            title: "Ready for tonight?",
-                            body: "Reserve a table or walk in — we keep a few seats for last-minute cravings.",
-                            ctaLabel: "Book a table",
+                            title: "Reserve Your Table",
+                            body: "Reservations open at the first of each calendar month for the subsequent 60-day dining cycle. Dietary adaptations are welcomed with 48 hours advance notice.",
+                            ctaLabel: "Request a Reservation",
                             ctaHref: "#contact",
                             size: "md",
                         },
@@ -391,8 +398,8 @@ export function buildTemplateDraft(
                         props: {
                             id: uid("footer"),
                             layout: "brandLinks",
-                            note: `© ${year} ${name}. All rights reserved.`,
-                            links: "Menu|#menu\nAbout|#about\nHours|#hours\nContact|#contact",
+                            note: `© ${year} ${name}. Relais & Gastronomie Standards. Reservations strictly confirmed.`,
+                            links: "Tasting Menu|#menu\nPhilosophy|#about\nExperience|#features\nAccolades|#testimonials\nReservations|#contact",
                             columns: "3",
                             size: "md",
                             showSocial: true,

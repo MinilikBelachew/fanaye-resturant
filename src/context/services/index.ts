@@ -21,6 +21,7 @@ const rawBaseQuery = fetchBaseQuery({
         }
         if (
             endpoint !== "uploadReceipt" &&
+            endpoint !== "extractReceipt" &&
             endpoint !== "uploadMenuImage" &&
             endpoint !== "scanMenuFromImage"
         ) {

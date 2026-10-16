@@ -127,7 +127,7 @@ export default function StaffDetailBoard({
     const [assignOpen, setAssignOpen] = useState(false);
 
     async function onResetPin() {
-        if (!member || !/^\d{4,6}$/.test(pinValue.trim())) {
+        if (!member || !/^\d{4}$/.test(pinValue.trim())) {
             toast.error(tStaff("listPinValidationError"));
             return;
         }

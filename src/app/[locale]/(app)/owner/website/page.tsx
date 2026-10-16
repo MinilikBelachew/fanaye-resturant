@@ -17,6 +17,12 @@ import {
     Check,
     Sliders,
     ChevronDown,
+    Phone,
+    Mail,
+    MapPin,
+    Clock,
+    Send,
+    Store,
 } from "lucide-react";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
@@ -31,6 +37,7 @@ import {
     useUpdateTenantSiteMutation,
     type PublicMenuItem,
     type SiteTheme,
+    type TenantProfile,
 } from "@/context/services/siteApi";
 import { useAdminMenuItemsQuery } from "@/context/services/menuApi";
 import { adminMenuItemToCatalog } from "@/domains/catalog/application/mapAdminMenu";
@@ -40,6 +47,7 @@ import {
     bindSiteRender,
     sitePuckConfig,
 } from "@/domains/site/puck/sitePuckConfig";
+import { SiteFontLoader } from "@/domains/site/puck/siteTypography";
 import {
     buildScratchDraft,
     buildTemplateDraft,
@@ -273,7 +281,7 @@ const CURATED_WALLPAPERS = [
     },
 ];
 
-type CustomizerTab = "mood" | "background" | "branding" | "typography";
+type CustomizerTab = "info" | "mood" | "background" | "branding" | "typography";
 
 export default function WebsiteEditorPage() {
     const t = useTranslations("websiteStudio");
@@ -289,7 +297,20 @@ export default function WebsiteEditorPage() {
     const [slug, setSlug] = useState("");
     const [theme, setTheme] = useState<SiteTheme | null>(null);
     const [draftData, setDraftData] = useState<Data | null>(null);
-    const [activeTab, setActiveTab] = useState<CustomizerTab>("mood");
+    const [profile, setProfile] = useState<TenantProfile>({
+        phone: "",
+        email: "",
+        address: "",
+        city: "",
+        hours: "",
+        tagline: "",
+        story: "",
+        instagram: "",
+        facebook: "",
+        tiktok: "",
+        telegram: "",
+    });
+    const [activeTab, setActiveTab] = useState<CustomizerTab>("info");
     const [isCustomizerOpen, setIsCustomizerOpen] = useState(true);
     const [showTemplateGate, setShowTemplateGate] = useState(false);
     const [templateBusy, setTemplateBusy] = useState(false);
@@ -300,6 +321,21 @@ export default function WebsiteEditorPage() {
         setSlug(site.slug);
         setTheme(site.theme);
         setDraftData(site.draftData as Data);
+        if (site.profile) {
+            setProfile({
+                phone: site.profile.phone || "",
+                email: site.profile.email || "",
+                address: site.profile.address || "",
+                city: site.profile.city || "",
+                hours: site.profile.hours || "",
+                tagline: site.profile.tagline || "",
+                story: site.profile.story || "",
+                instagram: site.profile.instagram || "",
+                facebook: site.profile.facebook || "",
+                tiktok: site.profile.tiktok || "",
+                telegram: site.profile.telegram || "",
+            });
+        }
         if (!gateHydrated) {
             const key = `fanaye-site-template-gate:${site.id}`;
             const dismissed =
@@ -339,6 +375,7 @@ export default function WebsiteEditorPage() {
             const result = await updateSite({
                 slug: slug.trim() || undefined,
                 theme: mergedTheme,
+                profile,
                 draftData: nextDraft as unknown as Record<string, unknown>,
             }).unwrap();
             setSlug(result.data.slug);
@@ -372,6 +409,7 @@ export default function WebsiteEditorPage() {
             const result = await updateSite({
                 slug: slug.trim() || undefined,
                 theme,
+                profile,
                 draftData: nextDraft as unknown as Record<string, unknown>,
             }).unwrap();
             setSlug(result.data.slug);
@@ -418,14 +456,20 @@ export default function WebsiteEditorPage() {
                     backgroundType: "solid" as const,
                 },
             tenantName: site?.tenantName || "Restaurant",
-            phone: null as string | null,
-            email: null as string | null,
-            city: null as string | null,
-            address: null as string | null,
-            hours: null as string | null,
+            phone: profile.phone || null,
+            email: profile.email || null,
+            city: profile.city || null,
+            address: profile.address || null,
+            hours: profile.hours || null,
+            tagline: profile.tagline || null,
+            story: profile.story || null,
+            instagram: profile.instagram || null,
+            facebook: profile.facebook || null,
+            tiktok: profile.tiktok || null,
+            telegram: profile.telegram || null,
             menuItems: previewMenuItems,
         }),
-        [theme, site?.theme, site?.tenantName, previewMenuItems],
+        [theme, site?.theme, site?.tenantName, profile, previewMenuItems],
     );
 
     bindSiteRender(renderContext);
@@ -466,12 +510,28 @@ export default function WebsiteEditorPage() {
             const result = await updateSite({
                 slug: slug.trim() || undefined,
                 theme,
+                profile,
                 draftData: (nextData || draftData || undefined) as
                     | Record<string, unknown>
                     | undefined,
             }).unwrap();
             setSlug(result.data.slug);
             setTheme(result.data.theme);
+            if (result.data.profile) {
+                setProfile({
+                    phone: result.data.profile.phone || "",
+                    email: result.data.profile.email || "",
+                    address: result.data.profile.address || "",
+                    city: result.data.profile.city || "",
+                    hours: result.data.profile.hours || "",
+                    tagline: result.data.profile.tagline || "",
+                    story: result.data.profile.story || "",
+                    instagram: result.data.profile.instagram || "",
+                    facebook: result.data.profile.facebook || "",
+                    tiktok: result.data.profile.tiktok || "",
+                    telegram: result.data.profile.telegram || "",
+                });
+            }
             setDraftData(result.data.draftData as Data);
             toast.success(t("toastDraftSaved"));
             void refetch();
@@ -547,11 +607,7 @@ export default function WebsiteEditorPage() {
                     busy={templateBusy || saving || publishing}
                     onApply={(id, action) => void applyTemplate(id, action)}
                     onScratch={() => void startFromScratch()}
-                    onCancel={
-                        gateHydrated && !looksLikeStarterDraft(draftData)
-                            ? () => setShowTemplateGate(false)
-                            : undefined
-                    }
+                    onCancel={() => dismissTemplateGate()}
                 />
             </DashboardFrame>
         );
@@ -624,23 +680,36 @@ export default function WebsiteEditorPage() {
                     <div className="flex max-w-full items-center gap-1 overflow-x-auto">
                         {[
                             {
+                                id: "info",
+                                label: "Restaurant Info",
+                                icon: Store,
+                            },
+                            {
                                 id: "mood",
-                                labelKey: "tabMoodThemes",
+                                label: t.has("tabMoodThemes")
+                                    ? t("tabMoodThemes")
+                                    : "Mood Themes",
                                 icon: Sparkles,
                             },
                             {
                                 id: "background",
-                                labelKey: "tabBackgroundGradient",
+                                label: t.has("tabBackgroundGradient")
+                                    ? t("tabBackgroundGradient")
+                                    : "Background",
                                 icon: Layers,
                             },
                             {
                                 id: "branding",
-                                labelKey: "tabBrandColorsLogo",
+                                label: t.has("tabBrandColorsLogo")
+                                    ? t("tabBrandColorsLogo")
+                                    : "Colors & Logo",
                                 icon: Palette,
                             },
                             {
                                 id: "typography",
-                                labelKey: "tabTypographyShape",
+                                label: t.has("tabTypographyShape")
+                                    ? t("tabTypographyShape")
+                                    : "Typography & Shape",
                                 icon: Type,
                             },
                         ].map(tab => {
@@ -654,7 +723,7 @@ export default function WebsiteEditorPage() {
                                         setActiveTab(tab.id as CustomizerTab);
                                         setIsCustomizerOpen(true);
                                     }}
-                                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
+                                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-normal transition-all cursor-pointer ${
                                         isActive
                                             ? "bg-white text-slate-900 shadow-xs border border-hairline"
                                             : "text-slate-500 hover:text-slate-900 hover:bg-white/60"
@@ -663,7 +732,7 @@ export default function WebsiteEditorPage() {
                                     <Icon
                                         className={`size-3.5 ${isActive ? "text-brand" : "text-slate-400"}`}
                                     />
-                                    {t(tab.labelKey)}
+                                    {tab.label}
                                 </button>
                             );
                         })}
@@ -672,7 +741,7 @@ export default function WebsiteEditorPage() {
                     <button
                         type="button"
                         onClick={() => setIsCustomizerOpen(!isCustomizerOpen)}
-                        className="text-xs text-slate-500 hover:text-slate-900 font-medium inline-flex items-center gap-1"
+                        className="text-xs text-slate-500 hover:text-slate-900 font-normal inline-flex items-center gap-1 cursor-pointer"
                     >
                         {isCustomizerOpen ? t("collapse") : t("expand")}
                         <ChevronDown
@@ -684,6 +753,297 @@ export default function WebsiteEditorPage() {
                 {/* Tab Content Panels */}
                 {isCustomizerOpen ? (
                     <div className="p-4 sm:p-5">
+                        {/* TAB: Restaurant Info & Operations */}
+                        {activeTab === "info" ? (
+                            <div className="space-y-4">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-hairline/60 pb-3">
+                                    <div>
+                                        <h4 className="text-[13px] font-normal tracking-tight text-foreground flex items-center gap-2">
+                                            <Store className="size-4 text-brand" />
+                                            Restaurant Profile & Contact Info
+                                        </h4>
+                                        <p className="mt-0.5 text-[11px] text-slate-gray font-normal">
+                                            This information automatically syncs
+                                            into your website’s Header, Hours,
+                                            Contact, and Footer blocks in
+                                            real-time.
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-normal">
+                                            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                            Live synced to blocks
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                                    {/* Column 1: Contact & Hours */}
+                                    <div className="space-y-3 rounded-2xl border border-hairline bg-surface-ivory/40 dark:bg-card/40 p-3.5">
+                                        <div className="flex items-center gap-2 text-[12px] font-normal text-foreground">
+                                            <Phone className="size-3.5 text-brand" />
+                                            Contact & Hours
+                                        </div>
+
+                                        <div>
+                                            <Label className="text-[11px] font-normal text-slate-gray">
+                                                Phone Number
+                                            </Label>
+                                            <Input
+                                                value={profile.phone || ""}
+                                                onChange={e =>
+                                                    setProfile(p => ({
+                                                        ...p,
+                                                        phone: e.target.value,
+                                                    }))
+                                                }
+                                                placeholder="+251 911 234 567"
+                                                className="mt-1 h-9 rounded-xl text-xs font-normal bg-card border-hairline"
+                                            />
+                                            <p className="mt-1 text-[10px] text-steel-gray">
+                                                Displayed in Header, Call button
+                                                & Contact section
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <Label className="text-[11px] font-normal text-slate-gray">
+                                                Email Address
+                                            </Label>
+                                            <Input
+                                                value={profile.email || ""}
+                                                onChange={e =>
+                                                    setProfile(p => ({
+                                                        ...p,
+                                                        email: e.target.value,
+                                                    }))
+                                                }
+                                                placeholder="hello@restaurant.com"
+                                                className="mt-1 h-9 rounded-xl text-xs font-normal bg-card border-hairline"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <div className="flex items-center justify-between">
+                                                <Label className="text-[11px] font-normal text-slate-gray">
+                                                    Operating Hours
+                                                </Label>
+                                                <div className="flex items-center gap-1.5">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setProfile(p => ({
+                                                                ...p,
+                                                                hours: "Mon - Sun: 8:00 AM - 10:00 PM",
+                                                            }))
+                                                        }
+                                                        className="text-[10px] text-brand hover:underline cursor-pointer"
+                                                    >
+                                                        Standard
+                                                    </button>
+                                                    <span className="text-[10px] text-hairline">
+                                                        •
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setProfile(p => ({
+                                                                ...p,
+                                                                hours: "24/7 Open Daily",
+                                                            }))
+                                                        }
+                                                        className="text-[10px] text-brand hover:underline cursor-pointer"
+                                                    >
+                                                        24/7
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <Input
+                                                value={profile.hours || ""}
+                                                onChange={e =>
+                                                    setProfile(p => ({
+                                                        ...p,
+                                                        hours: e.target.value,
+                                                    }))
+                                                }
+                                                placeholder="Mon - Sun: 8:00 AM - 10:00 PM"
+                                                className="mt-1 h-9 rounded-xl text-xs font-normal bg-card border-hairline"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Column 2: Location & Address */}
+                                    <div className="space-y-3 rounded-2xl border border-hairline bg-surface-ivory/40 dark:bg-card/40 p-3.5">
+                                        <div className="flex items-center gap-2 text-[12px] font-normal text-foreground">
+                                            <MapPin className="size-3.5 text-brand" />
+                                            Location & Brand Slogan
+                                        </div>
+
+                                        <div>
+                                            <Label className="text-[11px] font-normal text-slate-gray">
+                                                Street Address
+                                            </Label>
+                                            <Input
+                                                value={profile.address || ""}
+                                                onChange={e =>
+                                                    setProfile(p => ({
+                                                        ...p,
+                                                        address: e.target.value,
+                                                    }))
+                                                }
+                                                placeholder="Bole Medhanialem, Street 4"
+                                                className="mt-1 h-9 rounded-xl text-xs font-normal bg-card border-hairline"
+                                            />
+                                            <p className="mt-1 text-[10px] text-steel-gray">
+                                                Used for the &quot;Open in
+                                                Maps&quot; link
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <Label className="text-[11px] font-normal text-slate-gray">
+                                                City / Region
+                                            </Label>
+                                            <Input
+                                                value={profile.city || ""}
+                                                onChange={e =>
+                                                    setProfile(p => ({
+                                                        ...p,
+                                                        city: e.target.value,
+                                                    }))
+                                                }
+                                                placeholder="Addis Ababa, Ethiopia"
+                                                className="mt-1 h-9 rounded-xl text-xs font-normal bg-card border-hairline"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <Label className="text-[11px] font-normal text-slate-gray">
+                                                Brand Tagline / Slogan
+                                            </Label>
+                                            <Input
+                                                value={profile.tagline || ""}
+                                                onChange={e =>
+                                                    setProfile(p => ({
+                                                        ...p,
+                                                        tagline: e.target.value,
+                                                    }))
+                                                }
+                                                placeholder="Authentic Ethiopian Flavors & Modern Hospitality"
+                                                className="mt-1 h-9 rounded-xl text-xs font-normal bg-card border-hairline"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Column 3: Social Links & Story */}
+                                    <div className="space-y-3 rounded-2xl border border-hairline bg-surface-ivory/40 dark:bg-card/40 p-3.5">
+                                        <div className="flex items-center gap-2 text-[12px] font-normal text-foreground">
+                                            <Send className="size-3.5 text-brand" />
+                                            Social Channels & Bio
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <Label className="text-[11px] font-normal text-slate-gray">
+                                                    Instagram
+                                                </Label>
+                                                <Input
+                                                    value={
+                                                        profile.instagram || ""
+                                                    }
+                                                    onChange={e =>
+                                                        setProfile(p => ({
+                                                            ...p,
+                                                            instagram:
+                                                                e.target.value,
+                                                        }))
+                                                    }
+                                                    placeholder="https://instagram.com/..."
+                                                    className="mt-1 h-9 rounded-xl text-xs font-normal bg-card border-hairline"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label className="text-[11px] font-normal text-slate-gray">
+                                                    Telegram
+                                                </Label>
+                                                <Input
+                                                    value={
+                                                        profile.telegram || ""
+                                                    }
+                                                    onChange={e =>
+                                                        setProfile(p => ({
+                                                            ...p,
+                                                            telegram:
+                                                                e.target.value,
+                                                        }))
+                                                    }
+                                                    placeholder="https://t.me/..."
+                                                    className="mt-1 h-9 rounded-xl text-xs font-normal bg-card border-hairline"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <Label className="text-[11px] font-normal text-slate-gray">
+                                                    TikTok
+                                                </Label>
+                                                <Input
+                                                    value={profile.tiktok || ""}
+                                                    onChange={e =>
+                                                        setProfile(p => ({
+                                                            ...p,
+                                                            tiktok: e.target
+                                                                .value,
+                                                        }))
+                                                    }
+                                                    placeholder="https://tiktok.com/@..."
+                                                    className="mt-1 h-9 rounded-xl text-xs font-normal bg-card border-hairline"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label className="text-[11px] font-normal text-slate-gray">
+                                                    Facebook
+                                                </Label>
+                                                <Input
+                                                    value={
+                                                        profile.facebook || ""
+                                                    }
+                                                    onChange={e =>
+                                                        setProfile(p => ({
+                                                            ...p,
+                                                            facebook:
+                                                                e.target.value,
+                                                        }))
+                                                    }
+                                                    placeholder="https://facebook.com/..."
+                                                    className="mt-1 h-9 rounded-xl text-xs font-normal bg-card border-hairline"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <Label className="text-[11px] font-normal text-slate-gray">
+                                                Story / Short Bio
+                                            </Label>
+                                            <textarea
+                                                value={profile.story || ""}
+                                                onChange={e =>
+                                                    setProfile(p => ({
+                                                        ...p,
+                                                        story: e.target.value,
+                                                    }))
+                                                }
+                                                rows={2}
+                                                placeholder="Crafted with passion, our kitchen celebrates heritage recipes with fresh, locally sourced ingredients."
+                                                className="mt-1 w-full rounded-xl border border-hairline bg-card p-2 text-xs font-normal text-foreground placeholder:text-steel-gray focus:outline-none focus:ring-1 focus:ring-brand resize-none"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : null}
+
                         {/* TAB 1: 1-Click Curated Mood Themes */}
                         {activeTab === "mood" ? (
                             <div className="space-y-3">
@@ -1385,7 +1745,8 @@ export default function WebsiteEditorPage() {
             </div>
 
             {/* Puck Visual Canvas with Live Computed Theme Background */}
-            <div className="overflow-hidden rounded-3xl border border-hairline bg-card shadow-lg">
+            <div className="overflow-hidden rounded-3xl border border-hairline bg-card">
+                <SiteFontLoader />
                 <SiteRenderContext.Provider value={renderContext}>
                     <div
                         style={

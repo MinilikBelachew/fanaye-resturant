@@ -5,15 +5,17 @@ import { useTableSessionOrdersQuery } from "@/context/services/ordersApi";
 import type { FloorTable } from "@/domains/floor/domain/floorApi";
 import { tableNumber } from "@/domains/floor/application/groupFloor";
 import WaiterMarkServedButton from "@/domains/floor/ui/WaiterMarkServedButton";
+import { useRealtimePollMs } from "@/domains/notifications/application/useRealtimePollMs";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 
 function ReadyTableBlock({ table }: { table: FloorTable }) {
     const t = useTranslations("waiter");
+    const pollMs = useRealtimePollMs(12_000);
     const sessionId = table.tableSessionId ?? "";
     const { data, isLoading, isError } = useTableSessionOrdersQuery(sessionId, {
         skip: !sessionId,
-        pollingInterval: 5000,
+        pollingInterval: pollMs,
     });
     const readyItems =
         data?.data.flatMap(order =>
@@ -80,8 +82,9 @@ function ReadyTableBlock({ table }: { table: FloorTable }) {
 
 export default function WaiterNotifications() {
     const t = useTranslations("waiter");
+    const pollMs = useRealtimePollMs(12_000);
     const { data, isLoading, isError } = useWaiterTablesQuery("my", {
-        pollingInterval: 5000,
+        pollingInterval: pollMs,
     });
     const readyTables =
         data?.data.filter(

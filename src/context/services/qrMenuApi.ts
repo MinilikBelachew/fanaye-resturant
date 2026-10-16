@@ -6,6 +6,8 @@ export interface QrMenuConfig {
     subtitle?: string;
     wifiSsid?: string;
     wifiPassword?: string;
+    /** Public guest API: password configured but never returned. */
+    wifiRequiresPassword?: boolean;
     featuredItemIds?: string[];
     allowGuestOrders?: boolean;
     autoSendToKitchen?: boolean;
@@ -163,6 +165,16 @@ export const qrMenuApi = api.injectEndpoints({
             }),
             providesTags: ["QrMenu", "Order", "Floor"],
         }),
+        getPublicTableSession: builder.query<
+            { activeSession: PublicActiveSession | null },
+            { slug: string; tableId: string }
+        >({
+            query: ({ slug, tableId }) => ({
+                url: `/public/r/${slug}/tables/${tableId}/session`,
+                method: "GET",
+            }),
+            providesTags: ["Order", "Floor"],
+        }),
         submitGuestOrder: builder.mutation<
             GuestOrderResponse,
             { slug: string; tableId: string; body: GuestOrderPayload }
@@ -212,6 +224,7 @@ export const qrMenuApi = api.injectEndpoints({
 
 export const {
     useGetPublicTableMenuQuery,
+    useGetPublicTableSessionQuery,
     useSubmitGuestOrderMutation,
     useSubmitServiceRequestMutation,
     useGetAdminQrMenuConfigQuery,

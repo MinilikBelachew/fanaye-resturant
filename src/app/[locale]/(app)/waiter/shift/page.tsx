@@ -19,6 +19,7 @@ import {
     useCurrentShiftQuery,
 } from "@/context/services/shiftsApi";
 import PageHeader from "@/components/custom/organisms/PageHeader";
+import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
@@ -26,6 +27,7 @@ import WaiterHandoverModal from "@/domains/ordering/ui/WaiterHandoverModal";
 import { Link } from "@/i18n/navigation";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { getStaffAvatarUrl } from "@/lib/avatars";
 import { useTranslations } from "next-intl";
 
 function MetricCard({
@@ -42,9 +44,9 @@ function MetricCard({
     accent?: boolean;
 }) {
     return (
-        <div className="rounded-[20px] border border-hairline bg-card p-5 shadow-subtle">
+        <div className="rounded-[20px] border border-hairline bg-card p-5">
             <div className="flex items-center justify-between gap-3">
-                <p className="text-[13px] font-medium text-slate-gray">
+                <p className="text-[13px] font-normal text-slate-gray">
                     {label}
                 </p>
                 <span className="flex size-8 items-center justify-center rounded-full bg-secondary text-slate-gray">
@@ -53,7 +55,7 @@ function MetricCard({
             </div>
             <p
                 className={cn(
-                    "mt-3 text-[28px] leading-none font-semibold tracking-tight",
+                    "mt-3 text-[28px] leading-none font-normal tracking-tight",
                     accent ? "text-brand" : "text-foreground",
                 )}
             >
@@ -160,263 +162,269 @@ export default function WaiterShiftPage() {
     }
 
     return (
-        <section className="mx-auto w-full max-w-3xl space-y-6">
-            <PageHeader
-                eyebrow="Shift"
-                title={clockedIn ? "On the floor" : "Off the clock"}
-                description={
-                    clockedIn
-                        ? t("clockedInDesc", { name: staffName })
-                        : t("notClockedInDesc", { name: staffName })
-                }
-            />
+        <DashboardFrame>
+            <div className="space-y-6 animate-in fade-in duration-200">
+                <PageHeader
+                    compact
+                    eyebrow="Shift"
+                    title={clockedIn ? "On the floor" : "Off the clock"}
+                    description={
+                        clockedIn
+                            ? t("clockedInDesc", { name: staffName })
+                            : t("notClockedInDesc", { name: staffName })
+                    }
+                />
 
-            <div className="flex flex-col gap-4 rounded-[20px] border border-hairline bg-card p-5 shadow-xs">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-3.5">
-                        <span
-                            className={cn(
-                                "relative flex size-12 items-center justify-center rounded-full font-bold text-[18px]",
-                                clockedIn
-                                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
-                                    : "bg-secondary text-slate-gray",
-                            )}
-                        >
-                            {staff?.name?.charAt(0) ?? "W"}
-                            <span
-                                className={cn(
-                                    "absolute top-1 right-1 size-2.5 rounded-full ring-2 ring-white dark:ring-card",
-                                    clockedIn
-                                        ? "bg-emerald-500"
-                                        : "bg-slate-400",
-                                )}
-                            />
-                        </span>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <p className="text-[17px] font-semibold text-foreground">
-                                    {staff?.name}
-                                </p>
-                                <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
-                                    {t("server")}
-                                </span>
+                <div className="flex flex-col gap-4 rounded-[20px] border border-hairline bg-card p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-3.5">
+                            <div className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-hairline bg-secondary">
+                                <img
+                                    src={getStaffAvatarUrl(staff?.name)}
+                                    alt={staff?.name || "Staff avatar"}
+                                    className="size-full object-cover"
+                                />
+                                <span
+                                    className={cn(
+                                        "absolute top-0.5 right-0.5 size-3 rounded-full ring-2 ring-card",
+                                        clockedIn
+                                            ? "bg-emerald-500"
+                                            : "bg-slate-400",
+                                    )}
+                                />
                             </div>
-                            <p className="text-[13px] text-slate-gray">
-                                {staff?.phone || t("floorStaff")}
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <p className="text-[17px] font-normal text-foreground">
+                                        {staff?.name}
+                                    </p>
+                                    <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-normal text-primary">
+                                        {t("server")}
+                                    </span>
+                                </div>
+                                <p className="text-[13px] text-slate-gray">
+                                    {staff?.phone || t("floorStaff")}
+                                </p>
+                            </div>
+                        </div>
+
+                        <Badge
+                            variant={
+                                clockedIn
+                                    ? tablesOpen
+                                        ? "warning"
+                                        : "success"
+                                    : "secondary"
+                            }
+                            className="font-normal"
+                        >
+                            {!clockedIn
+                                ? t("clockedOut")
+                                : tablesOpen
+                                  ? t("tablesActive", {
+                                        count: summary.openTables,
+                                    })
+                                  : t("readyToClockOut")}
+                        </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-hairline pt-3.5 text-[13px]">
+                        <div>
+                            <p className="font-normal text-foreground">
+                                {session?.definitionName ||
+                                    upcoming?.definitionName ||
+                                    t("navShift")}
+                            </p>
+                            <p className="text-[12px] text-slate-gray">
+                                {formatClock(
+                                    session?.scheduledStartAt ??
+                                        upcoming?.scheduledStartAt,
+                                )}
+                                {" – "}
+                                {formatClock(
+                                    session?.scheduledEndAt ??
+                                        upcoming?.scheduledEndAt,
+                                )}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="font-normal text-foreground">
+                                {t("clockIn")}
+                            </p>
+                            <p className="text-[12px] text-slate-gray">
+                                {formatClock(session?.clockInAt)}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="font-normal text-foreground">
+                                {t("clockOut")}
+                            </p>
+                            <p className="text-[12px] text-slate-gray">
+                                {formatClock(session?.clockOutAt)}
                             </p>
                         </div>
                     </div>
 
-                    <Badge
-                        variant={
-                            clockedIn
-                                ? tablesOpen
-                                    ? "warning"
-                                    : "success"
-                                : "secondary"
-                        }
-                    >
-                        {!clockedIn
-                            ? t("clockedOut")
-                            : tablesOpen
-                              ? t("tablesActive", {
-                                    count: summary.openTables,
-                                })
-                              : t("readyToClockOut")}
-                    </Badge>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-hairline pt-3.5 text-[13px]">
-                    <div>
-                        <p className="font-semibold text-foreground">
-                            {session?.definitionName ||
-                                upcoming?.definitionName ||
-                                t("navShift")}
-                        </p>
-                        <p className="text-[12px] text-slate-gray">
-                            {formatClock(
-                                session?.scheduledStartAt ??
-                                    upcoming?.scheduledStartAt,
+                    {actionError ? (
+                        <div className="flex flex-col gap-1 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-[13px] text-destructive">
+                            <p className="font-normal">{actionError}</p>
+                            {tablesOpen && (
+                                <button
+                                    type="button"
+                                    onClick={() => setOpenHandover(true)}
+                                    className="mt-1 self-start inline-flex items-center gap-1.5 text-xs font-normal underline hover:opacity-80 cursor-pointer"
+                                >
+                                    <ArrowRightLeft className="size-3.5" />
+                                    Hand over active tables & cash to next
+                                    waiter instead
+                                </button>
                             )}
-                            {" – "}
-                            {formatClock(
-                                session?.scheduledEndAt ??
-                                    upcoming?.scheduledEndAt,
-                            )}
-                        </p>
-                    </div>
-                    <div>
-                        <p className="font-semibold text-foreground">
-                            {t("clockIn")}
-                        </p>
-                        <p className="text-[12px] text-slate-gray">
-                            {formatClock(session?.clockInAt)}
-                        </p>
-                    </div>
-                    <div>
-                        <p className="font-semibold text-foreground">
-                            {t("clockOut")}
-                        </p>
-                        <p className="text-[12px] text-slate-gray">
-                            {formatClock(session?.clockOutAt)}
-                        </p>
-                    </div>
-                </div>
+                        </div>
+                    ) : null}
 
-                {actionError ? (
-                    <div className="flex flex-col gap-1 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-[13px] text-destructive">
-                        <p className="font-semibold">{actionError}</p>
-                        {tablesOpen && (
-                            <button
+                    <div className="flex flex-wrap gap-2">
+                        {clockedIn ? (
+                            <>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={busy}
+                                    onClick={handleClockOut}
+                                    className="font-normal"
+                                >
+                                    <LogOut className="size-4" />
+                                    {clockingOut
+                                        ? t("clockingOut")
+                                        : t("clockOut")}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="default"
+                                    onClick={() => setOpenHandover(true)}
+                                    className="gap-1.5 bg-brand text-brand-foreground hover:bg-brand/90 font-normal"
+                                >
+                                    <ArrowRightLeft className="size-4" />
+                                    Handover Shift to Next Waiter
+                                </Button>
+                            </>
+                        ) : (
+                            <Button
                                 type="button"
-                                onClick={() => setOpenHandover(true)}
-                                className="mt-1 self-start inline-flex items-center gap-1.5 text-xs font-bold underline hover:opacity-80 cursor-pointer"
+                                disabled={busy}
+                                onClick={handleClockIn}
+                                className="font-normal"
                             >
-                                <ArrowRightLeft className="size-3.5" />
-                                Hand over active tables & cash to next waiter
-                                instead
-                            </button>
+                                <LogIn className="size-4" />
+                                {clockingIn ? t("clockingIn") : t("clockIn")}
+                            </Button>
                         )}
                     </div>
-                ) : null}
-
-                <div className="flex flex-wrap gap-2">
-                    {clockedIn ? (
-                        <>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                disabled={busy}
-                                onClick={handleClockOut}
-                            >
-                                <LogOut className="size-4" />
-                                {clockingOut ? t("clockingOut") : t("clockOut")}
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="default"
-                                onClick={() => setOpenHandover(true)}
-                                className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
-                            >
-                                <ArrowRightLeft className="size-4" />
-                                Handover Shift to Next Waiter
-                            </Button>
-                        </>
-                    ) : (
-                        <Button
-                            type="button"
-                            disabled={busy}
-                            onClick={handleClockIn}
-                        >
-                            <LogIn className="size-4" />
-                            {clockingIn ? t("clockingIn") : t("clockIn")}
-                        </Button>
-                    )}
                 </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <MetricCard
-                    label={t("openTables")}
-                    value={String(summary.openTables)}
-                    hint={t("yourActiveCovers")}
-                    icon={LayoutGrid}
-                />
-                <MetricCard
-                    label={t("sales")}
-                    value={formatEtb(summary.sales)}
-                    hint={t("openTicketsHint")}
-                    icon={Wallet}
-                    accent
-                />
-                <MetricCard
-                    label={t("readyShort")}
-                    value={String(summary.readyCount)}
-                    hint={t("waitingToServe")}
-                    icon={Bell}
-                />
-                <MetricCard
-                    label={t("stillCooking")}
-                    value={String(summary.cookingCount)}
-                    hint={t("stillAtStation")}
-                    icon={Flame}
-                />
-            </div>
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    <MetricCard
+                        label={t("openTables")}
+                        value={String(summary.openTables)}
+                        hint={t("yourActiveCovers")}
+                        icon={LayoutGrid}
+                    />
+                    <MetricCard
+                        label={t("sales")}
+                        value={formatEtb(summary.sales)}
+                        hint={t("openTicketsHint")}
+                        icon={Wallet}
+                        accent
+                    />
+                    <MetricCard
+                        label={t("readyShort")}
+                        value={String(summary.readyCount)}
+                        hint={t("waitingToServe")}
+                        icon={Bell}
+                    />
+                    <MetricCard
+                        label={t("stillCooking")}
+                        value={String(summary.cookingCount)}
+                        hint={t("stillAtStation")}
+                        icon={Flame}
+                    />
+                </div>
 
-            <div className="grid gap-3 md:grid-cols-2">
-                <Link
-                    href="/waiter/tables"
-                    className="rounded-[20px] border border-hairline bg-card p-5 shadow-subtle transition-colors hover:bg-secondary/50"
-                >
-                    <p className="text-[13px] font-medium text-slate-gray">
-                        {t("floorLink")}
-                    </p>
-                    <p className="mt-1 text-[16px] font-semibold">
-                        {t("openTables")}
-                    </p>
-                    <p className="mt-1 text-[13px] text-slate-gray">
-                        {t("floorLinkDesc")}
-                    </p>
-                </Link>
-                <Link
-                    href="/waiter/ready"
-                    className="rounded-[20px] border border-hairline bg-card p-5 shadow-subtle transition-colors hover:bg-secondary/50"
-                >
-                    <p className="text-[13px] font-medium text-slate-gray">
-                        {t("serviceLink")}
-                    </p>
-                    <p className="mt-1 text-[16px] font-semibold">
-                        {t("readyTickets")}
-                    </p>
-                    <p className="mt-1 text-[13px] text-slate-gray">
-                        {summary.readyCount > 0
-                            ? summary.readyCount === 1
-                                ? t("dishReadyToRun", {
-                                      count: summary.readyCount,
-                                  })
-                                : t("dishesReadyToRun", {
-                                      count: summary.readyCount,
-                                  })
-                            : t("nothingWaiting")}
-                    </p>
-                </Link>
-            </div>
-
-            <div className="flex items-start gap-3 rounded-[20px] border border-hairline bg-card p-5 shadow-subtle">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground">
-                    <Wallet className="size-4" />
-                </span>
-                <div className="min-w-0 flex-1">
-                    <p className="text-[15px] font-semibold">
-                        {t("cashOnYou")}
-                    </p>
-                    <p className="mt-1 text-[14px] text-slate-gray">
-                        {t("cashOnYouHint", {
-                            amount: formatEtb(cashOnHand),
-                        })}
-                    </p>
+                <div className="grid gap-3 md:grid-cols-2">
                     <Link
-                        href="/waiter/cash"
-                        className="mt-3 inline-flex text-[14px] font-medium text-brand"
+                        href="/waiter/tables"
+                        className="rounded-[20px] border border-hairline bg-card p-5 transition-colors hover:bg-secondary/40"
                     >
-                        {t("dropCashLink")}
+                        <p className="text-[13px] font-normal text-slate-gray">
+                            {t("floorLink")}
+                        </p>
+                        <p className="mt-1 text-[16px] font-normal text-foreground">
+                            {t("openTables")}
+                        </p>
+                        <p className="mt-1 text-[13px] text-slate-gray">
+                            {t("floorLinkDesc")}
+                        </p>
+                    </Link>
+                    <Link
+                        href="/waiter/ready"
+                        className="rounded-[20px] border border-hairline bg-card p-5 transition-colors hover:bg-secondary/40"
+                    >
+                        <p className="text-[13px] font-normal text-slate-gray">
+                            {t("serviceLink")}
+                        </p>
+                        <p className="mt-1 text-[16px] font-normal text-foreground">
+                            {t("readyTickets")}
+                        </p>
+                        <p className="mt-1 text-[13px] text-slate-gray">
+                            {summary.readyCount > 0
+                                ? summary.readyCount === 1
+                                    ? t("dishReadyToRun", {
+                                          count: summary.readyCount,
+                                      })
+                                    : t("dishesReadyToRun", {
+                                          count: summary.readyCount,
+                                      })
+                                : t("nothingWaiting")}
+                        </p>
                     </Link>
                 </div>
-            </div>
 
-            {/* Handover Modal */}
-            <WaiterHandoverModal
-                isOpen={openHandover}
-                onClose={() => setOpenHandover(false)}
-                currentVersion={session?.version ?? 1}
-                openTablesCount={summary.openTables}
-                openTablesNames={myTables
-                    .filter(table => Boolean(table.tableSessionId))
-                    .map(
-                        table => table.displayName || `Table ${table.tableId}`,
-                    )}
-                cashOnHand={cashOnHand}
-            />
-        </section>
+                <div className="flex items-start gap-3 rounded-[20px] border border-hairline bg-card p-5">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-foreground">
+                        <Wallet className="size-4" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                        <p className="text-[15px] font-normal text-foreground">
+                            {t("cashOnYou")}
+                        </p>
+                        <p className="mt-1 text-[14px] text-slate-gray">
+                            {t("cashOnYouHint", {
+                                amount: formatEtb(cashOnHand),
+                            })}
+                        </p>
+                        <Link
+                            href="/waiter/cash"
+                            className="mt-3 inline-flex text-[14px] font-normal text-brand hover:underline"
+                        >
+                            {t("dropCashLink")}
+                        </Link>
+                    </div>
+                </div>
+
+                {/* Handover Modal */}
+                <WaiterHandoverModal
+                    isOpen={openHandover}
+                    onClose={() => setOpenHandover(false)}
+                    currentVersion={session?.version ?? 1}
+                    openTablesCount={summary.openTables}
+                    openTablesNames={myTables
+                        .filter(table => Boolean(table.tableSessionId))
+                        .map(
+                            table =>
+                                table.displayName || `Table ${table.tableId}`,
+                        )}
+                    cashOnHand={cashOnHand}
+                />
+            </div>
+        </DashboardFrame>
     );
 }

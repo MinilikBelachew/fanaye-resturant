@@ -20,6 +20,7 @@ import { FileDown, LayoutGrid, Loader2, Receipt, Table2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { CashierPaymentsSkeleton } from "@/components/custom/molecules/Skeletons";
 import { useAppSelector } from "@/context/hooks";
+import { useRealtimePollMs } from "@/domains/notifications/application/useRealtimePollMs";
 
 type ViewMode = "table" | "cards";
 
@@ -33,8 +34,9 @@ export default function CashierPaymentsLog() {
     const logRef = useRef<HTMLDivElement>(null);
     const [view, setView] = useState<ViewMode>("table");
     const [isExportingPdf, setIsExportingPdf] = useState(false);
+    const pollMs = useRealtimePollMs(12_000);
     const { data, isLoading, isError } = useCashierPaymentsQuery(undefined, {
-        pollingInterval: 5000,
+        pollingInterval: pollMs,
     });
     const [triggerGetBill] = useLazyGetBillQuery();
     const [loadingBillId, setLoadingBillId] = useState<string | null>(null);

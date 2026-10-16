@@ -1,8 +1,12 @@
 import type { AppDispatch } from "@/context/store";
+import { api } from "@/context/services";
 import { authApi } from "@/context/services/authApi";
 import { clearSession } from "@/context/slices/identitySlice";
 import { clearInbox } from "@/context/slices/notificationsSlice";
-import { clearLegacyAuthStorage } from "@/domains/identity/infrastructure/authSession";
+import {
+    clearAuthFlagCookie,
+    clearLegacyAuthStorage,
+} from "@/domains/identity/infrastructure/authSession";
 
 export async function performSignOut(dispatch: AppDispatch) {
     try {
@@ -11,6 +15,8 @@ export async function performSignOut(dispatch: AppDispatch) {
         // Token or cookie may already be invalid.
     }
     clearLegacyAuthStorage();
+    clearAuthFlagCookie();
     dispatch(clearInbox());
     dispatch(clearSession());
+    dispatch(api.util.resetApiState());
 }

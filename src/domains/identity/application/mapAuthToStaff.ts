@@ -32,8 +32,11 @@ export function mapRoleCodeToRole(
                 : undefined;
             return mapped ?? "kitchen";
         }
+        case "NONE":
+            return "none";
         default:
-            return "waiter";
+            // Unknown roles must not inherit waiter access.
+            return "none";
     }
 }
 

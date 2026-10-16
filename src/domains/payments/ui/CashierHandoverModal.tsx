@@ -19,6 +19,7 @@ import {
 } from "@/context/services/shiftsApi";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { getStaffAvatarUrl } from "@/lib/avatars";
 import type { ShiftHandoverResponse } from "@/domains/identity/domain/shift";
 
 interface CashierHandoverModalProps {
@@ -88,9 +89,7 @@ export default function CashierHandoverModal({
     const handleConfirmHandover = async () => {
         setError("");
         if (!incomingPin || incomingPin.trim().length < 4) {
-            setError(
-                "Incoming cashier must enter a 4 to 6 digit security PIN.",
-            );
+            setError("Incoming cashier must enter a 4 digit security PIN.");
             return;
         }
 
@@ -132,15 +131,15 @@ export default function CashierHandoverModal({
             aria-modal="true"
         >
             <div className="fixed inset-0" onClick={handleClose} />
-            <div className="relative z-10 w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+            <div className="relative z-10 w-full max-w-lg rounded-2xl border border-hairline bg-card p-6 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
                 {/* Header */}
-                <div className="flex items-start justify-between border-b border-border/60 pb-3">
+                <div className="flex items-start justify-between border-b border-hairline pb-3">
                     <div>
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-normal text-brand">
                             <ShieldCheck className="size-3.5" />
                             Shift Handover & Drawer Transfer
                         </span>
-                        <h3 className="mt-1.5 text-lg font-bold tracking-tight text-foreground">
+                        <h3 className="mt-1.5 text-base font-normal tracking-tight text-foreground">
                             {step === "complete"
                                 ? "Handover Completed"
                                 : "Transfer Cash Desk to Next Cashier"}
@@ -149,7 +148,7 @@ export default function CashierHandoverModal({
                     <button
                         type="button"
                         onClick={handleClose}
-                        className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                        className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors cursor-pointer"
                         aria-label="Close"
                     >
                         <X className="size-5" />
@@ -157,7 +156,7 @@ export default function CashierHandoverModal({
                 </div>
 
                 {error ? (
-                    <div className="mt-4 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-medium text-destructive">
+                    <div className="mt-4 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-normal text-destructive">
                         {error}
                     </div>
                 ) : null}
@@ -166,10 +165,10 @@ export default function CashierHandoverModal({
                 {step === "count" && (
                     <div className="mt-4 space-y-4">
                         {/* Expected Cash Tile */}
-                        <div className="rounded-xl border border-border bg-muted/30 p-3.5">
+                        <div className="rounded-xl border border-hairline bg-secondary/30 p-3.5">
                             <div className="flex items-center justify-between text-xs text-muted-foreground">
                                 <span>Expected Drawer Balance (Ledger)</span>
-                                <span className="font-semibold text-foreground text-sm">
+                                <span className="font-normal text-foreground text-sm font-mono">
                                     ETB {expectedCash.toFixed(2)}
                                 </span>
                             </div>
@@ -177,7 +176,7 @@ export default function CashierHandoverModal({
 
                         {/* Physical Cash Count */}
                         <div>
-                            <label className="block text-xs font-semibold text-foreground mb-1">
+                            <label className="block text-xs font-normal text-foreground mb-1">
                                 Physical Cash Counted in Drawer (ETB)
                             </label>
                             <div className="relative">
@@ -191,7 +190,7 @@ export default function CashierHandoverModal({
                                         setCountedInput(e.target.value)
                                     }
                                     placeholder="0.00"
-                                    className="w-full rounded-xl border border-border bg-background pl-9 pr-3 py-2 text-sm font-semibold text-foreground focus:border-primary focus:outline-none"
+                                    className="w-full rounded-xl border border-hairline bg-card pl-9 pr-3 py-2 text-sm font-normal text-foreground focus:border-brand focus:outline-none"
                                 />
                             </div>
                             <div className="mt-1.5 flex items-center justify-between text-[11px]">
@@ -200,7 +199,7 @@ export default function CashierHandoverModal({
                                 </span>
                                 <span
                                     className={cn(
-                                        "font-semibold",
+                                        "font-normal",
                                         variance === 0
                                             ? "text-emerald-600 dark:text-emerald-400"
                                             : variance > 0
@@ -218,8 +217,8 @@ export default function CashierHandoverModal({
                         </div>
 
                         {/* Allocation: Float vs Safe Drop */}
-                        <div className="rounded-xl border border-border/80 bg-muted/20 p-3.5 space-y-3">
-                            <p className="text-xs font-semibold text-foreground">
+                        <div className="rounded-xl border border-hairline bg-secondary/20 p-3.5 space-y-3">
+                            <p className="text-xs font-normal text-foreground">
                                 Drawer Allocation
                             </p>
                             <div>
@@ -236,16 +235,16 @@ export default function CashierHandoverModal({
                                     onChange={e =>
                                         setFloatInput(e.target.value)
                                     }
-                                    className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground focus:border-primary focus:outline-none"
+                                    className="w-full rounded-lg border border-hairline bg-card px-3 py-1.5 text-xs font-normal text-foreground focus:border-brand focus:outline-none"
                                 />
                             </div>
 
-                            <div className="flex items-center justify-between border-t border-border/60 pt-2 text-xs">
+                            <div className="flex items-center justify-between border-t border-hairline pt-2 text-xs">
                                 <span className="flex items-center gap-1.5 text-muted-foreground">
                                     <Vault className="size-3.5 text-amber-500" />
                                     Safe Drop to Office:
                                 </span>
-                                <span className="font-bold text-foreground">
+                                <span className="font-normal font-mono text-foreground">
                                     ETB {safeDrop.toFixed(2)}
                                 </span>
                             </div>
@@ -253,44 +252,78 @@ export default function CashierHandoverModal({
 
                         {/* Incoming Cashier Selection */}
                         <div>
-                            <label className="block text-xs font-semibold text-foreground mb-1">
-                                Incoming Cashier (Taking Over Desk)
+                            <label className="block text-xs font-normal text-foreground mb-1.5">
+                                Select Incoming Cashier
                             </label>
                             {candidatesLoading ? (
-                                <p className="text-xs text-muted-foreground">
+                                <div className="rounded-xl border border-hairline bg-secondary/20 p-3 text-center text-xs text-muted-foreground">
                                     Loading branch cashiers...
-                                </p>
+                                </div>
                             ) : candidates && candidates.length > 0 ? (
-                                <select
-                                    value={selectedCandidateId}
-                                    onChange={e =>
-                                        setSelectedCandidateId(e.target.value)
-                                    }
-                                    className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none cursor-pointer"
-                                >
-                                    <option value="">
-                                        -- Select Incoming Cashier --
-                                    </option>
-                                    {candidates.map(c => (
-                                        <option
-                                            key={c.membershipId}
-                                            value={c.membershipId}
-                                        >
-                                            {c.displayName} ({c.roleCode})
-                                        </option>
-                                    ))}
-                                </select>
+                                <div className="grid gap-2 max-h-48 overflow-y-auto pr-1">
+                                    {candidates.map(candidate => {
+                                        const isSelected =
+                                            selectedCandidateId ===
+                                            candidate.membershipId;
+                                        return (
+                                            <button
+                                                key={candidate.membershipId}
+                                                type="button"
+                                                onClick={() =>
+                                                    setSelectedCandidateId(
+                                                        candidate.membershipId,
+                                                    )
+                                                }
+                                                className={cn(
+                                                    "w-full flex items-center justify-between rounded-xl border p-2.5 text-left text-xs transition-colors cursor-pointer",
+                                                    isSelected
+                                                        ? "border-brand bg-brand/10 text-foreground"
+                                                        : "border-hairline bg-card hover:bg-secondary/40 text-foreground",
+                                                )}
+                                            >
+                                                <div className="flex items-center gap-2.5 min-w-0">
+                                                    <div className="relative size-8 shrink-0 overflow-hidden rounded-full border border-hairline bg-secondary">
+                                                        <img
+                                                            src={getStaffAvatarUrl(
+                                                                candidate.displayName,
+                                                                candidate.photoUrl,
+                                                            )}
+                                                            alt={
+                                                                candidate.displayName
+                                                            }
+                                                            className="size-full object-cover"
+                                                        />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="font-normal text-foreground truncate">
+                                                            {
+                                                                candidate.displayName
+                                                            }
+                                                        </p>
+                                                        <span className="inline-block rounded-md bg-secondary px-1.5 py-0.2 text-[10px] font-normal text-muted-foreground">
+                                                            Cashier
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                {isSelected && (
+                                                    <CheckCircle2 className="size-4 shrink-0 text-brand" />
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             ) : (
-                                <p className="text-xs text-amber-600 dark:text-amber-400">
+                                <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400">
                                     No other active cashiers found in this
-                                    branch. A manager can also take over.
-                                </p>
+                                    branch. Only staff with the Cashier role can
+                                    take over.
+                                </div>
                             )}
                         </div>
 
                         {/* Handover Note */}
                         <div>
-                            <label className="block text-[11px] font-medium text-muted-foreground mb-1">
+                            <label className="block text-[11px] font-normal text-muted-foreground mb-1">
                                 Notes (Optional)
                             </label>
                             <input
@@ -298,16 +331,16 @@ export default function CashierHandoverModal({
                                 value={notes}
                                 onChange={e => setNotes(e.target.value)}
                                 placeholder="e.g. Afternoon shift handover, verified 500 ETB bills"
-                                className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground focus:border-primary focus:outline-none"
+                                className="w-full rounded-lg border border-hairline bg-card px-3 py-1.5 text-xs text-foreground focus:border-brand focus:outline-none"
                             />
                         </div>
 
                         {/* Actions */}
-                        <div className="mt-5 flex items-center justify-end gap-2 border-t border-border/60 pt-4">
+                        <div className="mt-5 flex items-center justify-end gap-2 border-t border-hairline pt-4">
                             <button
                                 type="button"
                                 onClick={handleClose}
-                                className="rounded-xl border border-border px-4 py-2 text-xs font-medium text-muted-foreground hover:bg-muted cursor-pointer"
+                                className="rounded-xl border border-hairline px-4 py-2 text-xs font-normal text-muted-foreground hover:bg-secondary cursor-pointer"
                             >
                                 Cancel
                             </button>
@@ -315,7 +348,7 @@ export default function CashierHandoverModal({
                                 type="button"
                                 onClick={handleContinueToPin}
                                 disabled={!selectedCandidateId || counted <= 0}
-                                className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-4 py-2 text-xs font-normal text-brand-foreground hover:bg-brand/90 transition-colors disabled:opacity-50 cursor-pointer"
                             >
                                 Next: Verify Incoming Cashier
                                 <ArrowRight className="size-3.5" />
@@ -327,15 +360,25 @@ export default function CashierHandoverModal({
                 {/* Step 2: Incoming Cashier PIN Verification */}
                 {step === "incoming_pin" && (
                     <div className="mt-4 space-y-4">
-                        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-center">
-                            <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                                <Lock className="size-5" />
+                        <div className="rounded-xl border border-hairline bg-secondary/30 p-4 text-center space-y-2">
+                            <div className="relative mx-auto size-12 overflow-hidden rounded-full border border-hairline bg-secondary">
+                                <img
+                                    src={getStaffAvatarUrl(
+                                        selectedCandidate?.displayName,
+                                        selectedCandidate?.photoUrl,
+                                    )}
+                                    alt={
+                                        selectedCandidate?.displayName ||
+                                        "Cashier"
+                                    }
+                                    className="size-full object-cover"
+                                />
                             </div>
-                            <h4 className="mt-2 text-sm font-bold text-foreground">
+                            <h4 className="text-sm font-normal text-foreground">
                                 Incoming Cashier Verification
                             </h4>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                                <span className="font-semibold text-foreground">
+                            <p className="text-xs text-muted-foreground">
+                                <span className="font-normal text-foreground">
                                     {selectedCandidate?.displayName}
                                 </span>
                                 , please enter your security PIN to confirm
@@ -345,19 +388,19 @@ export default function CashierHandoverModal({
 
                         {/* Handover Recap */}
                         <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div className="rounded-lg border border-border bg-muted/30 p-2.5">
+                            <div className="rounded-lg border border-hairline bg-card p-2.5">
                                 <p className="text-[10px] text-muted-foreground">
                                     Counted Cash
                                 </p>
-                                <p className="font-semibold text-foreground">
+                                <p className="font-normal font-mono text-foreground">
                                     ETB {counted.toFixed(2)}
                                 </p>
                             </div>
-                            <div className="rounded-lg border border-border bg-muted/30 p-2.5">
+                            <div className="rounded-lg border border-hairline bg-card p-2.5">
                                 <p className="text-[10px] text-muted-foreground">
                                     Starting Float for You
                                 </p>
-                                <p className="font-semibold text-primary">
+                                <p className="font-normal font-mono text-brand">
                                     ETB {floatNext.toFixed(2)}
                                 </p>
                             </div>
@@ -365,12 +408,12 @@ export default function CashierHandoverModal({
 
                         {/* PIN Input */}
                         <div>
-                            <label className="block text-xs font-semibold text-foreground mb-1 text-center">
-                                Enter 4 to 6 Digit PIN
+                            <label className="block text-xs font-normal text-foreground mb-1 text-center">
+                                Enter 4 Digit PIN
                             </label>
                             <input
                                 type="password"
-                                maxLength={6}
+                                maxLength={4}
                                 autoFocus
                                 value={incomingPin}
                                 onChange={e =>
@@ -379,16 +422,16 @@ export default function CashierHandoverModal({
                                     )
                                 }
                                 placeholder="••••"
-                                className="w-48 mx-auto block rounded-xl border border-border bg-background px-4 py-2 text-center text-lg tracking-[0.3em] font-mono text-foreground focus:border-primary focus:outline-none"
+                                className="w-48 mx-auto block rounded-xl border border-hairline bg-card px-4 py-2 text-center text-lg tracking-[0.3em] font-mono text-foreground focus:border-brand focus:outline-none"
                             />
                         </div>
 
                         {/* Actions */}
-                        <div className="mt-5 flex items-center justify-between gap-2 border-t border-border/60 pt-4">
+                        <div className="mt-5 flex items-center justify-between gap-2 border-t border-hairline pt-4">
                             <button
                                 type="button"
                                 onClick={() => setStep("count")}
-                                className="rounded-xl border border-border px-4 py-2 text-xs font-medium text-muted-foreground hover:bg-muted cursor-pointer"
+                                className="rounded-xl border border-hairline px-4 py-2 text-xs font-normal text-muted-foreground hover:bg-secondary cursor-pointer"
                             >
                                 Back
                             </button>
@@ -396,7 +439,7 @@ export default function CashierHandoverModal({
                                 type="button"
                                 onClick={handleConfirmHandover}
                                 disabled={submitting || incomingPin.length < 4}
-                                className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-5 py-2 text-xs font-normal text-brand-foreground hover:bg-brand/90 transition-colors disabled:opacity-50 cursor-pointer"
                             >
                                 {submitting
                                     ? "Transferring Drawer..."
@@ -413,27 +456,27 @@ export default function CashierHandoverModal({
                         <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                             <CheckCircle2 className="size-7" />
                         </div>
-                        <h4 className="text-base font-bold text-foreground">
+                        <h4 className="text-base font-normal text-foreground">
                             Handover Complete
                         </h4>
                         <p className="text-xs text-muted-foreground">
                             Drawer custody transferred from{" "}
-                            <span className="font-semibold text-foreground">
+                            <span className="font-normal text-foreground">
                                 {completedSummary.outgoingCashierName}
                             </span>{" "}
                             to{" "}
-                            <span className="font-semibold text-foreground">
+                            <span className="font-normal text-foreground">
                                 {completedSummary.incomingCashierName}
                             </span>
                             .
                         </p>
 
-                        <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-2 text-left text-xs">
+                        <div className="rounded-xl border border-hairline bg-secondary/30 p-4 space-y-2 text-left text-xs">
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">
                                     Physical Cash Counted:
                                 </span>
-                                <span className="font-semibold text-foreground">
+                                <span className="font-normal font-mono text-foreground">
                                     {completedSummary.countedAmountFormatted}
                                 </span>
                             </div>
@@ -441,7 +484,7 @@ export default function CashierHandoverModal({
                                 <span className="text-muted-foreground">
                                     Opening Float Transferred:
                                 </span>
-                                <span className="font-semibold text-primary">
+                                <span className="font-normal font-mono text-brand">
                                     {completedSummary.floatTransferredFormatted}
                                 </span>
                             </div>
@@ -449,7 +492,7 @@ export default function CashierHandoverModal({
                                 <span className="text-muted-foreground">
                                     Safe Drop Deposited:
                                 </span>
-                                <span className="font-semibold text-foreground">
+                                <span className="font-normal font-mono text-foreground">
                                     {completedSummary.safeDropAmountFormatted}
                                 </span>
                             </div>
@@ -457,7 +500,7 @@ export default function CashierHandoverModal({
                                 <span className="text-muted-foreground">
                                     Reconciliation Variance:
                                 </span>
-                                <span className="font-semibold text-foreground">
+                                <span className="font-normal font-mono text-foreground">
                                     {completedSummary.varianceAmountFormatted}
                                 </span>
                             </div>
@@ -467,7 +510,7 @@ export default function CashierHandoverModal({
                             <button
                                 type="button"
                                 onClick={handleClose}
-                                className="rounded-xl bg-primary px-6 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-xs cursor-pointer"
+                                className="rounded-xl bg-brand px-6 py-2.5 text-xs font-normal text-brand-foreground hover:bg-brand/90 transition-colors cursor-pointer"
                             >
                                 Finish & Exit
                             </button>

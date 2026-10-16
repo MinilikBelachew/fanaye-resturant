@@ -30,6 +30,7 @@ import WaiterOrderItemActions from "@/domains/floor/ui/WaiterOrderItemActions";
 import { lineTotal } from "@/domains/ordering/application/mapWaiterMenu";
 import WaiterPaymentPanel from "@/domains/payments/ui/WaiterPaymentPanel";
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
+import { useRealtimePollMs } from "@/domains/notifications/application/useRealtimePollMs";
 import { Button } from "@/components/ui/button";
 import { Link, useRouter } from "@/i18n/navigation";
 import { formatEtb } from "@/lib/money";
@@ -68,18 +69,19 @@ export default function DispatcherCallDetail({
     const clockedIn = Boolean(
         useAppSelector(state => state.identity.session?.shiftSessionId),
     );
+    const pollMs = useRealtimePollMs(12_000);
     const {
         data: session,
         isLoading,
         isError,
-    } = useTableSessionQuery(tableSessionId, { pollingInterval: 4000 });
+    } = useTableSessionQuery(tableSessionId, { pollingInterval: pollMs });
     const { data: ordersData } = useTableSessionOrdersQuery(tableSessionId, {
         skip: !session,
-        pollingInterval: 3000,
+        pollingInterval: pollMs,
     });
     const { data: billData } = useSessionBillQuery(tableSessionId, {
         skip: !session,
-        pollingInterval: 3000,
+        pollingInterval: pollMs,
     });
     const [closeSession, { isLoading: closing }] =
         useCloseTableSessionMutation();

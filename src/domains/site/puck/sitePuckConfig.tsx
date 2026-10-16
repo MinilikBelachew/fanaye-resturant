@@ -128,6 +128,12 @@ export interface SiteRenderContextValue {
     city?: string | null;
     address?: string | null;
     hours?: string | null;
+    tagline?: string | null;
+    story?: string | null;
+    instagram?: string | null;
+    facebook?: string | null;
+    tiktok?: string | null;
+    telegram?: string | null;
     menuItems: PublicMenuItem[];
 }
 
@@ -340,6 +346,64 @@ function softPanelBorder(theme: {
         : "rgba(248, 250, 252, 0.16)";
 }
 
+const FINE_DINING_SAMPLE_ITEMS: PublicMenuItem[] = [
+    {
+        id: "sample-fd-1",
+        name: "Wild Morel & Sunchoke Velouté",
+        description:
+            "Foraged chanterelles, black winter truffle essence, toasted brioche crisp",
+        price: 850,
+        currencyCode: "ETB",
+        categoryId: "prelude",
+        categoryName: "First Course",
+        soldOut: false,
+    },
+    {
+        id: "sample-fd-2",
+        name: "Heirloom Beet & Goat Curd Tartare",
+        description:
+            "Pickled mustard pearls, candied walnut crumble, herb garden sorrel",
+        price: 720,
+        currencyCode: "ETB",
+        categoryId: "prelude",
+        categoryName: "First Course",
+        soldOut: false,
+    },
+    {
+        id: "sample-fd-3",
+        name: "Pan-Roasted Line-Caught Seabass",
+        description:
+            "Caramelized fennel purée, golden saffron emulsion, sea asparagus",
+        price: 1450,
+        currencyCode: "ETB",
+        categoryId: "main",
+        categoryName: "Principal Selection",
+        soldOut: false,
+    },
+    {
+        id: "sample-fd-4",
+        name: "Slow-Braised Prime Short Rib",
+        description:
+            "Smoked bone marrow reduction, pomme mousseline, charred baby leek",
+        price: 2100,
+        currencyCode: "ETB",
+        categoryId: "main",
+        categoryName: "Principal Selection",
+        soldOut: false,
+    },
+    {
+        id: "sample-fd-5",
+        name: "Dark Valrhona Chocolate Crémeux",
+        description:
+            "Single-origin espresso gelato, smoked salt caramel, cocoa nib tuile",
+        price: 680,
+        currencyCode: "ETB",
+        categoryId: "dessert",
+        categoryName: "Dessert & Infusions",
+        soldOut: false,
+    },
+];
+
 function groupMenuItems(items: PublicMenuItem[], categoryFilter: string) {
     const filter = String(categoryFilter || "all")
         .trim()
@@ -366,7 +430,7 @@ function MenuItemPrice({
     color: string;
 }) {
     return (
-        <p className="shrink-0 text-sm font-semibold" style={{ color }}>
+        <p className="shrink-0 text-sm font-normal" style={{ color }}>
             {formatEtb(item.price, item.currencyCode)}
         </p>
     );
@@ -457,21 +521,18 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                             <img
                                 src={resolveImage(ctx.theme.logoUrl)}
                                 alt={ctx.tenantName}
-                                className="h-10 w-10 rounded-full object-cover"
-                                style={{
-                                    boxShadow: `0 0 0 2px ${ctx.theme.primaryColor}55`,
-                                }}
+                                className="h-10 w-10 rounded-full border border-black/10 object-cover"
                             />
                         ) : (
                             <div
-                                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white shadow-sm"
+                                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-normal text-white"
                                 style={{ background: ctx.theme.primaryColor }}
                             >
                                 {ctx.tenantName.slice(0, 1)}
                             </div>
                         )}
                         <span
-                            className="font-semibold tracking-tight"
+                            className="font-normal tracking-tight"
                             style={titleStyle(props)}
                         >
                             {ctx.tenantName}
@@ -480,7 +541,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                 );
                 const navLinks = (
                     <nav
-                        className="flex flex-wrap items-center justify-center gap-5 text-[11px] font-semibold uppercase tracking-[0.16em]"
+                        className="flex flex-wrap items-center justify-center gap-6 text-[11px] font-normal uppercase tracking-[0.2em]"
                         style={bodyStyle(props)}
                     >
                         {links.map(link => (
@@ -497,7 +558,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                 const headerCta = ctaLabel ? (
                     <a
                         href={ctaHref || "#contact"}
-                        className="inline-flex rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors"
+                        className="inline-flex rounded-full border px-4 py-2 text-[11px] font-normal uppercase tracking-[0.18em] transition-colors hover:opacity-85"
                         style={{
                             borderColor: ctx.theme.primaryColor,
                             color: ctx.theme.textColor,
@@ -509,7 +570,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                 ) : showPhone && ctx.phone ? (
                     <a
                         href={`tel:${ctx.phone}`}
-                        className="rounded-full px-3 py-1.5 text-sm text-white"
+                        className="rounded-full px-3 py-1.5 text-xs font-normal uppercase tracking-[0.14em] text-white"
                         style={{ background: ctx.theme.primaryColor }}
                     >
                         {ctx.phone}
@@ -668,7 +729,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                         {props.ctaLabel ? (
                             <a
                                 href={props.ctaHref || "#menu"}
-                                className="inline-flex rounded-full px-5 py-2.5 text-sm font-semibold text-white"
+                                className="inline-flex rounded-full px-6 py-2.5 text-xs font-normal uppercase tracking-[0.18em] text-white transition-opacity hover:opacity-90"
                                 style={{ background: ctx.theme.primaryColor }}
                             >
                                 {props.ctaLabel}
@@ -677,7 +738,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                         {props.secondaryCtaLabel ? (
                             <a
                                 href={props.secondaryCtaHref || "#contact"}
-                                className="inline-flex rounded-full border border-current/20 px-5 py-2.5 text-sm font-semibold"
+                                className="inline-flex rounded-full border border-current/25 px-6 py-2.5 text-xs font-normal uppercase tracking-[0.18em] transition-opacity hover:opacity-90"
                             >
                                 {props.secondaryCtaLabel}
                             </a>
@@ -688,7 +749,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                 const copy = (
                     <div className="max-w-xl">
                         <h1
-                            className="font-semibold tracking-tight"
+                            className="font-normal tracking-tight"
                             style={titleStyle(props)}
                         >
                             {props.headline}
@@ -724,7 +785,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                             className="px-4 pb-6 pt-2 sm:px-6 lg:px-8"
                             style={{ background: ctx.theme.backgroundColor }}
                         >
-                            <div className="relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] shadow-[0_24px_60px_-28px_rgba(15,23,42,0.35)] sm:rounded-[2.5rem]">
+                            <div className="relative mx-auto max-w-6xl overflow-hidden rounded-2xl border border-black/10 sm:rounded-3xl">
                                 <div className="relative aspect-[16/10] w-full sm:aspect-[21/9]">
                                     {bg ? (
                                         <img
@@ -743,27 +804,32 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                     <div
                                         className="absolute inset-0"
                                         style={{
-                                            background: `linear-gradient(180deg, rgba(15,23,42,0.15) 0%, rgba(15,23,42,${0.35 + opacity * 0.35}) 100%)`,
+                                            background: `linear-gradient(180deg, rgba(15,23,42,0.2) 0%, rgba(15,23,42,${0.4 + opacity * 0.35}) 100%)`,
                                         }}
                                     />
                                     <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center text-white">
+                                        <span className="mb-3 text-[10px] font-normal uppercase tracking-[0.25em] opacity-80 sm:text-[11px]">
+                                            Cuisine & Hospitality
+                                        </span>
                                         <h1
-                                            className="max-w-3xl text-4xl font-medium leading-tight tracking-tight sm:text-5xl lg:text-6xl"
+                                            className="max-w-4xl text-3xl font-normal leading-[1.12] tracking-tight sm:text-5xl lg:text-6xl"
                                             style={{
                                                 ...titleStyle(props),
                                                 color: "#fff",
                                                 fontFamily:
                                                     "var(--site-font-display)",
+                                                fontWeight: 400,
                                             }}
                                         >
                                             {props.headline}
                                         </h1>
                                         {props.subheadline ? (
                                             <p
-                                                className="mt-4 max-w-xl text-sm opacity-90 sm:text-base"
+                                                className="mt-4 max-w-xl text-sm font-normal opacity-90 sm:text-base"
                                                 style={{
                                                     ...bodyStyle(props),
                                                     color: "#fff",
+                                                    fontWeight: 400,
                                                 }}
                                             >
                                                 {props.subheadline}
@@ -778,7 +844,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                                             props.ctaHref ||
                                                             "#menu"
                                                         }
-                                                        className="inline-flex rounded-full px-6 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] text-white"
+                                                        className="inline-flex rounded-full px-6 py-2.5 text-xs font-normal uppercase tracking-[0.18em] text-white transition-opacity hover:opacity-90"
                                                         style={{
                                                             background:
                                                                 ctx.theme
@@ -794,7 +860,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                                             props.secondaryCtaHref ||
                                                             "#contact"
                                                         }
-                                                        className="inline-flex rounded-full border border-white/70 px-6 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] text-white"
+                                                        className="inline-flex rounded-full border border-white/70 px-6 py-2.5 text-xs font-normal uppercase tracking-[0.18em] text-white transition-opacity hover:opacity-90"
                                                     >
                                                         {
                                                             props.secondaryCtaLabel
@@ -886,6 +952,10 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                     type: "select",
                     label: "Menu arrangement",
                     options: [
+                        {
+                            label: "Editorial tasting courses",
+                            value: "editorial",
+                        },
                         { label: "Image cards grid", value: "cards" },
                         { label: "Classic list", value: "list" },
                         { label: "Featured + grid", value: "featured" },
@@ -946,7 +1016,11 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                 size,
             }) => {
                 const ctx = getSiteRender();
-                const groups = groupMenuItems(ctx.menuItems, categoryFilter);
+                const rawItems =
+                    ctx.menuItems && ctx.menuItems.length > 0
+                        ? ctx.menuItems
+                        : FINE_DINING_SAMPLE_ITEMS;
+                const groups = groupMenuItems(rawItems, categoryFilter);
                 const allItems = [...groups.values()].flat();
                 const gridCols =
                     columns === "2"
@@ -959,7 +1033,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                     <section id="menu" className={sectionPadding(size)}>
                         <div className="mx-auto max-w-6xl">
                             <h2
-                                className="text-3xl font-semibold tracking-tight"
+                                className="text-3xl font-normal tracking-tight"
                                 style={{
                                     fontFamily: "var(--site-font-display)",
                                 }}
@@ -967,12 +1041,83 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                 {title}
                             </h2>
                             {subtitle ? (
-                                <p className="mt-2 opacity-70">{subtitle}</p>
+                                <p className="mt-2 text-sm opacity-70">
+                                    {subtitle}
+                                </p>
                             ) : null}
+
+                            {layout === "editorial" && (
+                                <div className="mt-12 space-y-16">
+                                    {[...groups.entries()].map(
+                                        ([category, rows], catIndex) => (
+                                            <div
+                                                key={category}
+                                                className="border-t border-black/10 pt-8"
+                                            >
+                                                <div className="mb-8 flex flex-col items-center text-center">
+                                                    <p className="text-[11px] font-normal uppercase tracking-[0.25em] opacity-50">
+                                                        {`Course ${String(catIndex + 1).padStart(2, "0")}`}
+                                                    </p>
+                                                    <h3
+                                                        className="mt-2 text-2xl font-normal tracking-tight"
+                                                        style={{
+                                                            fontFamily:
+                                                                "var(--site-font-display)",
+                                                        }}
+                                                    >
+                                                        {category}
+                                                    </h3>
+                                                </div>
+                                                <div className="mx-auto max-w-3xl divide-y divide-black/10">
+                                                    {rows.map(item => (
+                                                        <div
+                                                            key={item.id}
+                                                            className="py-6 transition-colors"
+                                                        >
+                                                            <div className="flex items-baseline justify-between gap-6">
+                                                                <h4
+                                                                    className="text-lg font-normal tracking-tight sm:text-xl"
+                                                                    style={{
+                                                                        fontFamily:
+                                                                            "var(--site-font-display)",
+                                                                    }}
+                                                                >
+                                                                    {item.name}
+                                                                </h4>
+                                                                <div className="h-px flex-1 border-b border-dotted border-black/20" />
+                                                                <span className="shrink-0 text-sm font-normal tracking-wider opacity-80">
+                                                                    {formatEtb(
+                                                                        item.price,
+                                                                        item.currencyCode,
+                                                                    )}
+                                                                </span>
+                                                            </div>
+                                                            {item.description ? (
+                                                                <p className="mt-2 text-sm font-normal italic leading-relaxed opacity-70">
+                                                                    {
+                                                                        item.description
+                                                                    }
+                                                                </p>
+                                                            ) : null}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ),
+                                    )}
+                                    <div className="border-t border-black/10 pt-8 text-center">
+                                        <p className="text-xs font-normal italic tracking-wide opacity-60">
+                                            Optional Sommelier Wine Pairing
+                                            available · Tasting progression
+                                            takes approximately 2.5 hours
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
 
                             {layout === "featured" && allItems[0] ? (
                                 <div className="mt-8 grid gap-4 lg:grid-cols-[1.2fr_1fr]">
-                                    <article className="overflow-hidden rounded-3xl border border-black/10">
+                                    <article className="overflow-hidden rounded-2xl border border-black/10">
                                         {showImages &&
                                         resolveImage(allItems[0].imageUrl) ? (
                                             <img
@@ -984,11 +1129,11 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                             />
                                         ) : null}
                                         <div className="p-5">
-                                            <p className="text-xs uppercase tracking-[0.14em] opacity-50">
+                                            <p className="text-xs font-normal uppercase tracking-[0.18em] opacity-50">
                                                 Featured
                                             </p>
                                             <div className="mt-2 flex items-start justify-between gap-3">
-                                                <h3 className="text-xl font-semibold">
+                                                <h3 className="text-xl font-normal">
                                                     {allItems[0].name}
                                                 </h3>
                                                 <MenuItemPrice
@@ -999,7 +1144,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                                 />
                                             </div>
                                             {allItems[0].description ? (
-                                                <p className="mt-2 text-sm opacity-70">
+                                                <p className="mt-2 text-sm font-normal opacity-70">
                                                     {allItems[0].description}
                                                 </p>
                                             ) : null}
@@ -1011,7 +1156,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                                 key={item.id}
                                                 className="flex items-center justify-between gap-3 rounded-2xl border border-black/10 px-4 py-3"
                                             >
-                                                <span className="font-medium">
+                                                <span className="font-normal">
                                                     {item.name}
                                                 </span>
                                                 <MenuItemPrice
@@ -1033,9 +1178,11 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                             key={item.id}
                                             className="inline-flex items-center gap-2 rounded-full border border-black/10 px-3 py-2 text-sm"
                                         >
-                                            <span>{item.name}</span>
+                                            <span className="font-normal">
+                                                {item.name}
+                                            </span>
                                             <span
-                                                className="font-semibold"
+                                                className="font-normal"
                                                 style={{
                                                     color: ctx.theme
                                                         .primaryColor,
@@ -1073,7 +1220,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                                 )}
                                                 <div>
                                                     <div className="flex items-start justify-between gap-3">
-                                                        <h3 className="font-semibold">
+                                                        <h3 className="font-normal">
                                                             {item.name}
                                                         </h3>
                                                         <MenuItemPrice
@@ -1085,11 +1232,11 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                                         />
                                                     </div>
                                                     {item.description ? (
-                                                        <p className="mt-2 text-sm opacity-70">
+                                                        <p className="mt-2 text-sm font-normal opacity-70">
                                                             {item.description}
                                                         </p>
                                                     ) : null}
-                                                    <p className="mt-2 text-xs uppercase tracking-[0.12em] opacity-50">
+                                                    <p className="mt-2 text-xs font-normal uppercase tracking-[0.16em] opacity-50">
                                                         {item.categoryName}
                                                     </p>
                                                 </div>
@@ -1104,7 +1251,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                     {[...groups.entries()].map(
                                         ([category, rows]) => (
                                             <div key={category}>
-                                                <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.14em] opacity-60">
+                                                <h3 className="mb-4 text-xs font-normal uppercase tracking-[0.2em] opacity-60">
                                                     {category}
                                                 </h3>
                                                 {layout === "cards" ? (
@@ -1138,7 +1285,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                                                     ) : null}
                                                                     <div className="p-4">
                                                                         <div className="flex items-start justify-between gap-3">
-                                                                            <p className="font-medium">
+                                                                            <p className="font-normal">
                                                                                 {
                                                                                     item.name
                                                                                 }
@@ -1155,7 +1302,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                                                             />
                                                                         </div>
                                                                         {item.description ? (
-                                                                            <p className="mt-1 text-sm opacity-65">
+                                                                            <p className="mt-1 text-sm font-normal opacity-65">
                                                                                 {
                                                                                     item.description
                                                                                 }
@@ -1195,7 +1342,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                                                     ) : null}
                                                                     <div className="min-w-0 flex-1">
                                                                         <div className="flex items-start justify-between gap-4">
-                                                                            <p className="font-medium">
+                                                                            <p className="font-normal">
                                                                                 {
                                                                                     item.name
                                                                                 }
@@ -1212,7 +1359,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                                                             />
                                                                         </div>
                                                                         {item.description ? (
-                                                                            <p className="mt-1 text-sm opacity-65">
+                                                                            <p className="mt-1 text-sm font-normal opacity-65">
                                                                                 {
                                                                                     item.description
                                                                                 }
@@ -1292,7 +1439,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                 const copy = (
                     <div>
                         <h2
-                            className="text-3xl font-semibold tracking-tight"
+                            className="text-3xl font-normal tracking-tight"
                             style={{ fontFamily: "var(--site-font-display)" }}
                         >
                             {title}
@@ -1304,10 +1451,10 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                             <div className="mt-8 grid grid-cols-3 gap-4">
                                 {rows.map(([label, value]) => (
                                     <div key={`${label}-${value}`}>
-                                        <p className="text-2xl font-semibold">
+                                        <p className="text-2xl font-normal">
                                             {value}
                                         </p>
-                                        <p className="text-xs uppercase tracking-[0.12em] opacity-55">
+                                        <p className="text-xs font-normal uppercase tracking-[0.16em] opacity-55">
                                             {label}
                                         </p>
                                     </div>
@@ -1336,7 +1483,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                 <img
                                     src={img}
                                     alt=""
-                                    className="aspect-[4/5] w-full rounded-3xl object-cover"
+                                    className="aspect-[4/5] w-full rounded-2xl border border-black/10 object-cover"
                                 />
                             </div>
                         </div>
@@ -1392,7 +1539,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                     <section className={sectionPadding(size)}>
                         <div className="mx-auto max-w-6xl">
                             <h2
-                                className="text-3xl font-semibold tracking-tight"
+                                className="text-3xl font-normal tracking-tight"
                                 style={{
                                     fontFamily: "var(--site-font-display)",
                                 }}
@@ -1405,7 +1552,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                         key={url}
                                         src={url}
                                         alt=""
-                                        className="aspect-[4/3] w-full rounded-2xl object-cover"
+                                        className="aspect-[4/3] w-full rounded-2xl border border-black/10 object-cover"
                                     />
                                 ))}
                             </div>
@@ -1523,7 +1670,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                         <div className="mx-auto max-w-6xl">
                             {title ? (
                                 <h2
-                                    className="mb-6 font-semibold tracking-tight"
+                                    className="mb-6 font-normal tracking-tight"
                                     style={titleStyle(props)}
                                 >
                                     {title}
@@ -1598,7 +1745,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                     <section className={sectionPadding(size)}>
                         <div className="mx-auto max-w-6xl">
                             <h2
-                                className="text-3xl font-semibold tracking-tight"
+                                className="text-3xl font-normal tracking-tight"
                                 style={{
                                     fontFamily: "var(--site-font-display)",
                                 }}
@@ -1606,7 +1753,9 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                 {title}
                             </h2>
                             {subtitle ? (
-                                <p className="mt-2 opacity-70">{subtitle}</p>
+                                <p className="mt-2 text-sm opacity-70">
+                                    {subtitle}
+                                </p>
                             ) : null}
                             <div className={`mt-8 grid gap-4 ${cols}`}>
                                 {rows.map(([heading, desc]) => (
@@ -1629,7 +1778,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                                     ctx.theme.primaryColor,
                                             }}
                                         />
-                                        <h3 className="font-semibold">
+                                        <h3 className="font-normal">
                                             {heading}
                                         </h3>
                                         <p className="mt-2 text-sm opacity-70">
@@ -1672,7 +1821,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                     <section className={sectionPadding(size)}>
                         <div className="mx-auto max-w-6xl">
                             <h2
-                                className="text-3xl font-semibold tracking-tight"
+                                className="text-3xl font-normal tracking-tight"
                                 style={{
                                     fontFamily: "var(--site-font-display)",
                                 }}
@@ -1693,10 +1842,10 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                                 : "rgba(255,255,255,0.06)",
                                         }}
                                     >
-                                        <p className="text-sm leading-relaxed opacity-85">
+                                        <p className="text-sm font-normal italic leading-relaxed opacity-85">
                                             “{cleanQuote(quote)}”
                                         </p>
-                                        <footer className="mt-4 text-xs font-semibold uppercase tracking-[0.12em] opacity-55">
+                                        <footer className="mt-4 text-xs font-normal uppercase tracking-[0.16em] opacity-55">
                                             {name}
                                         </footer>
                                     </blockquote>
@@ -1739,7 +1888,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                 return (
                     <section className={sectionPadding(size)}>
                         <div
-                            className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 rounded-3xl px-8 py-10 md:flex-row md:items-center"
+                            className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 rounded-2xl border border-black/10 px-8 py-10 md:flex-row md:items-center"
                             style={{
                                 background: surface.bg,
                                 color: surface.text,
@@ -1747,7 +1896,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                         >
                             <div>
                                 <h2
-                                    className="text-3xl font-semibold tracking-tight"
+                                    className="text-3xl font-normal tracking-tight"
                                     style={{
                                         fontFamily: "var(--site-font-display)",
                                         color: surface.text,
@@ -1756,7 +1905,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                     {title}
                                 </h2>
                                 <p
-                                    className="mt-2 max-w-xl opacity-90"
+                                    className="mt-2 max-w-xl text-sm font-normal opacity-90"
                                     style={{ color: surface.text }}
                                 >
                                     {body}
@@ -1765,7 +1914,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                             {ctaLabel ? (
                                 <a
                                     href={href}
-                                    className="inline-flex rounded-full px-5 py-2.5 text-sm font-semibold shadow-sm"
+                                    className="inline-flex rounded-full px-6 py-2.5 text-xs font-normal uppercase tracking-[0.18em] transition-opacity hover:opacity-90"
                                     style={{
                                         background: surface.buttonBg,
                                         color: surface.buttonText,
@@ -1806,7 +1955,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                     <section id="hours" className={sectionPadding(size)}>
                         <div className="mx-auto max-w-3xl">
                             <h2
-                                className="text-3xl font-semibold tracking-tight"
+                                className="text-3xl font-normal tracking-tight"
                                 style={{
                                     fontFamily: "var(--site-font-display)",
                                 }}
@@ -1819,7 +1968,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                         key={`${day}-${time}`}
                                         className="flex items-center justify-between gap-4 py-3 text-sm"
                                     >
-                                        <dt className="font-medium">{day}</dt>
+                                        <dt className="font-normal">{day}</dt>
                                         <dd className="opacity-70">{time}</dd>
                                     </div>
                                 ))}
@@ -1870,7 +2019,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                     <section id="contact" className={sectionPadding(size)}>
                         <div className="mx-auto max-w-3xl">
                             <h2
-                                className="text-3xl font-semibold tracking-tight"
+                                className="text-3xl font-normal tracking-tight"
                                 style={{
                                     fontFamily: "var(--site-font-display)",
                                 }}
@@ -1881,7 +2030,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                 {ctx.address ? (
                                     <div>
                                         <dt className="opacity-55">Address</dt>
-                                        <dd className="font-medium">
+                                        <dd className="font-normal">
                                             {ctx.address}
                                             {ctx.city ? `, ${ctx.city}` : ""}
                                         </dd>
@@ -1890,7 +2039,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                 {ctx.phone ? (
                                     <div>
                                         <dt className="opacity-55">Phone</dt>
-                                        <dd className="font-medium">
+                                        <dd className="font-normal">
                                             {ctx.phone}
                                         </dd>
                                     </div>
@@ -1898,7 +2047,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                 {ctx.email ? (
                                     <div>
                                         <dt className="opacity-55">Email</dt>
-                                        <dd className="font-medium">
+                                        <dd className="font-normal">
                                             {ctx.email}
                                         </dd>
                                     </div>
@@ -1906,7 +2055,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                 {showHours && ctx.hours ? (
                                     <div>
                                         <dt className="opacity-55">Hours</dt>
-                                        <dd className="font-medium">
+                                        <dd className="font-normal">
                                             {ctx.hours}
                                         </dd>
                                     </div>
@@ -1917,7 +2066,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                     href={`https://maps.google.com/?q=${mapQuery}`}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="mt-6 inline-flex rounded-full px-4 py-2 text-sm font-semibold text-white"
+                                    className="mt-6 inline-flex rounded-full px-5 py-2 text-xs font-normal uppercase tracking-[0.16em] text-white transition-opacity hover:opacity-90"
                                     style={{
                                         background: ctx.theme.primaryColor,
                                     }}
@@ -2014,10 +2163,16 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                             ? "grid-cols-1"
                             : "sm:grid-cols-2";
                 const social = [
-                    { label: "Instagram", href: instagram },
-                    { label: "Facebook", href: facebook },
-                    { label: "TikTok", href: tiktok },
-                ].filter(s => s.href);
+                    {
+                        label: "Instagram",
+                        href: instagram || ctx.instagram || "",
+                    },
+                    { label: "Facebook", href: facebook || ctx.facebook || "" },
+                    { label: "TikTok", href: tiktok || ctx.tiktok || "" },
+                    { label: "Telegram", href: ctx.telegram || "" },
+                ].filter((s): s is { label: string; href: string } =>
+                    Boolean(s.href),
+                );
 
                 if (layout === "centered") {
                     return (
@@ -2026,7 +2181,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                             className={`border-t border-black/10 ${sectionPadding(size)} text-center text-sm`}
                         >
                             <p
-                                className="text-lg font-semibold"
+                                className="text-lg font-normal"
                                 style={{
                                     fontFamily: "var(--site-font-display)",
                                 }}
@@ -2052,7 +2207,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                             href={item.href}
                                             target="_blank"
                                             rel="noreferrer"
-                                            className="rounded-full border border-black/10 px-3 py-1.5 text-[12px] font-medium"
+                                            className="rounded-full border border-black/10 px-3 py-1.5 text-[12px] font-normal hover:opacity-80"
                                         >
                                             {item.label}
                                         </a>
@@ -2078,7 +2233,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                         >
                             <div>
                                 <p
-                                    className="text-lg font-semibold"
+                                    className="text-lg font-normal"
                                     style={{
                                         fontFamily: "var(--site-font-display)",
                                     }}
@@ -2094,7 +2249,7 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                                                 href={item.href}
                                                 target="_blank"
                                                 rel="noreferrer"
-                                                className="rounded-full border border-black/10 px-3 py-1.5 text-[12px] font-medium hover:opacity-80"
+                                                className="rounded-full border border-black/10 px-3 py-1.5 text-[12px] font-normal hover:opacity-80"
                                             >
                                                 {item.label}
                                             </a>

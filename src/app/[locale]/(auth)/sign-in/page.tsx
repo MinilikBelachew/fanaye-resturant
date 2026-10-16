@@ -21,7 +21,7 @@ import {
     UserCheck,
     X,
 } from "lucide-react";
-import { useAppSelector } from "@/context/hooks";
+import { useAppDispatch, useAppSelector } from "@/context/hooks";
 import {
     useLoginMutation,
     usePinLoginMutation,
@@ -30,6 +30,8 @@ import {
 } from "@/context/services/authApi";
 import { homePathForRole } from "@/domains/identity/application/homePath";
 import { mapRoleCodeToRole } from "@/domains/identity/application/mapAuthToStaff";
+import { performSignOut } from "@/domains/identity/application/signOut";
+import { setAuthFlagCookie } from "@/domains/identity/infrastructure/authSession";
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +45,7 @@ type AuthMode = "pin" | "credentials";
 export default function SignInPage() {
     const t = useTranslations("auth.signIn");
     const router = useRouter();
+    const dispatch = useAppDispatch();
     const current = useAppSelector(selectCurrentStaff);
 
     const [mode, setMode] = useState<AuthMode>("pin");
@@ -170,15 +173,17 @@ export default function SignInPage() {
                     remember: rememberMe,
                 }).unwrap();
 
-                const role = mapRoleCodeToRole(
-                    session.context.roleCode,
-                    session.context.stationCode,
-                );
                 if (session.context.roleCode === "NONE") {
+                    await performSignOut(dispatch);
                     triggerPinError(t("noRestaurantHome"));
                     return;
                 }
 
+                setAuthFlagCookie(rememberMe);
+                const role = mapRoleCodeToRole(
+                    session.context.roleCode,
+                    session.context.stationCode,
+                );
                 router.push(homePathForRole(role));
             } catch (err: unknown) {
                 const errObj = err as {
@@ -210,7 +215,15 @@ export default function SignInPage() {
                 triggerPinError(message);
             }
         },
-        [pin, rememberMe, loginWithPin, router, t, configuredTenantId],
+        [
+            pin,
+            rememberMe,
+            loginWithPin,
+            router,
+            t,
+            configuredTenantId,
+            dispatch,
+        ],
     );
 
     const handleSelectTenantMatch = async (match: PinTenantMatch) => {
@@ -220,10 +233,18 @@ export default function SignInPage() {
         try {
             const session = await loginWithPin({
                 pin: pendingPin || pin,
+                staffId: match.userId,
                 tenantSlug: match.tenantId,
                 remember: rememberMe,
             }).unwrap();
 
+            if (session.context.roleCode === "NONE") {
+                await performSignOut(dispatch);
+                triggerPinError(t("noRestaurantHome"));
+                return;
+            }
+
+            setAuthFlagCookie(rememberMe);
             const role = mapRoleCodeToRole(
                 session.context.roleCode,
                 session.context.stationCode,
@@ -238,11 +259,10 @@ export default function SignInPage() {
 
     const handleKeypadPress = (digit: string) => {
         if (isPinLoading) return;
-        if (pin.length < 6) {
+        if (pin.length < 4) {
             const nextPin = pin + digit;
             setPin(nextPin);
             if (error) setError("");
-            // Auto submit if 4 digits entered
             if (nextPin.length === 4) {
                 void handlePinSubmit(nextPin);
             }
@@ -313,15 +333,17 @@ export default function SignInPage() {
                 remember: rememberMe,
             }).unwrap();
 
-            const role = mapRoleCodeToRole(
-                session.context.roleCode,
-                session.context.stationCode,
-            );
             if (session.context.roleCode === "NONE") {
+                await performSignOut(dispatch);
                 setError(t("noRestaurantHome"));
                 return;
             }
 
+            setAuthFlagCookie(rememberMe);
+            const role = mapRoleCodeToRole(
+                session.context.roleCode,
+                session.context.stationCode,
+            );
             router.push(homePathForRole(role));
         } catch (err: unknown) {
             const message =

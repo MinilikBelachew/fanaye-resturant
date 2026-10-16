@@ -167,6 +167,9 @@ export const identitySlice = createSlice({
         builder.addMatcher(
             authApi.endpoints.login.matchFulfilled,
             (state, action) => {
+                if (action.payload.context.roleCode === "NONE") {
+                    return;
+                }
                 state.session = action.payload.context;
                 state.accessToken = action.payload.token;
                 state.tokenExpires = action.payload.tokenExpires;
@@ -175,6 +178,9 @@ export const identitySlice = createSlice({
         builder.addMatcher(
             authApi.endpoints.pinLogin.matchFulfilled,
             (state, action) => {
+                if (action.payload.context.roleCode === "NONE") {
+                    return;
+                }
                 state.session = action.payload.context;
                 state.accessToken = action.payload.token;
                 state.tokenExpires = action.payload.tokenExpires;

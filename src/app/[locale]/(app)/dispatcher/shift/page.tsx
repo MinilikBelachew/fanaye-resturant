@@ -14,6 +14,7 @@ import PageHeader from "@/components/custom/organisms/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
+import { useRealtimePollMs } from "@/domains/notifications/application/useRealtimePollMs";
 import { Link } from "@/i18n/navigation";
 import { formatEtb } from "@/lib/money";
 
@@ -33,13 +34,14 @@ export default function DispatcherShiftPage() {
     const [clockIn, { isLoading: clockingIn }] = useClockInMutation();
     const [clockOut, { isLoading: clockingOut }] = useClockOutMutation();
     const [actionError, setActionError] = useState("");
+    const pollMs = useRealtimePollMs(12_000);
     const { data: board } = useDispatcherCallsQuery(undefined, {
         skip: !staff || !hasSession,
-        pollingInterval: 5000,
+        pollingInterval: pollMs,
     });
     const { data: cashSummary } = useWaiterCashSummaryQuery(undefined, {
         skip: !staff || !hasSession,
-        pollingInterval: 5000,
+        pollingInterval: pollMs,
     });
     const calls = board?.data ?? [];
     const openCalls = calls.filter(c => c.boardColumn !== "PAID").length;

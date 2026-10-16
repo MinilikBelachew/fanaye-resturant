@@ -20,6 +20,7 @@ import {
     useCurrentShiftQuery,
 } from "@/context/services/shiftsApi";
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
+import { useRealtimePollMs } from "@/domains/notifications/application/useRealtimePollMs";
 import CashierHandoverModal from "@/domains/payments/ui/CashierHandoverModal";
 import WaiterHandoverModal from "@/domains/ordering/ui/WaiterHandoverModal";
 import { checkShiftExpiry } from "@/domains/identity/domain/shift";
@@ -39,9 +40,10 @@ function formatElapsed(clockInAt: string): string {
 export default function ShiftTopBarPill() {
     const staff = useAppSelector(selectCurrentStaff);
     const hasSession = useAppSelector(state => Boolean(state.identity.session));
+    const pollMs = useRealtimePollMs(15_000);
     const { data: shift, isFetching } = useCurrentShiftQuery(undefined, {
         skip: !hasSession,
-        pollingInterval: 15000,
+        pollingInterval: pollMs || 30_000,
     });
     const [clockIn, { isLoading: clockingIn }] = useClockInMutation();
     const [clockOut, { isLoading: clockingOut }] = useClockOutMutation();
@@ -64,11 +66,11 @@ export default function ShiftTopBarPill() {
 
     const { data: floor } = useWaiterTablesQuery("my", {
         skip: !isWaiter || !clockedIn,
-        pollingInterval: 10000,
+        pollingInterval: pollMs || 20_000,
     });
     const { data: cashSummary } = useWaiterCashSummaryQuery(undefined, {
         skip: !isWaiter || !clockedIn,
-        pollingInterval: 10000,
+        pollingInterval: pollMs || 20_000,
     });
     const myTables = floor?.data ?? [];
     const activeTables = myTables.filter(t => Boolean(t.tableSessionId));
@@ -140,10 +142,10 @@ export default function ShiftTopBarPill() {
                         type="button"
                         onClick={() => setOpenMenu(prev => !prev)}
                         className={cn(
-                            "group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-all cursor-pointer",
+                            "group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-normal transition-all cursor-pointer",
                             shiftExpiry.isPast
-                                ? "border-rose-400/40 bg-rose-500/10 text-rose-700 dark:text-rose-400 hover:bg-rose-500/20 shadow-2xs"
-                                : "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 shadow-2xs",
+                                ? "border-rose-400/40 bg-rose-500/10 text-rose-700 dark:text-rose-400 hover:bg-rose-500/20"
+                                : "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20",
                         )}
                         aria-label="Shift details"
                     >
@@ -166,18 +168,20 @@ export default function ShiftTopBarPill() {
                             />
                         </span>
                         {/* Desktop label */}
-                        <span className="hidden sm:inline font-semibold">
+                        <span className="hidden sm:inline font-normal">
                             {session?.definitionName || "Shift"}
                         </span>
                         <span className="hidden sm:inline text-muted-foreground/60">
                             ·
                         </span>
                         {shiftExpiry.isPast ? (
-                            <span className="font-mono text-[11px] font-bold text-rose-600 dark:text-rose-400">
-                                Shift Ended ({shiftExpiry.minutesOverdue}m)
+                            <span className="font-mono text-[11px] font-normal text-rose-600 dark:text-rose-400">
+                                {shiftExpiry.endTime === ">14h"
+                                    ? `Overdue (${elapsed})`
+                                    : `Shift Ended (${shiftExpiry.minutesOverdue}m)`}
                             </span>
                         ) : (
-                            <span className="font-mono text-[11px] font-semibold tabular-nums">
+                            <span className="font-mono text-[11px] font-normal tabular-nums">
                                 {elapsed}
                             </span>
                         )}
@@ -235,14 +239,12 @@ export default function ShiftTopBarPill() {
                             {clockedIn ? (
                                 <div className="space-y-3">
                                     {shiftExpiry.isPast && (
-                                        <div className="rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/80 dark:bg-rose-950/40 p-2.5 text-[11px] text-rose-800 dark:text-rose-300 flex items-start gap-2 font-medium">
+                                        <div className="rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/80 dark:bg-rose-950/40 p-2.5 text-[11px] text-rose-800 dark:text-rose-300 flex items-start gap-2 font-normal">
                                             <AlertTriangle className="size-4 shrink-0 mt-0.5 text-rose-600 dark:text-rose-400" />
                                             <span>
-                                                Scheduled shift ended at{" "}
-                                                {shiftExpiry.endTime} (
-                                                {shiftExpiry.minutesOverdue}m
-                                                overdue). Please hand over the
-                                                cash drawer or clock out.
+                                                {shiftExpiry.endTime === ">14h"
+                                                    ? `This shift has been running for ${elapsed} (clocked in on ${new Date(session?.clockInAt || "").toLocaleDateString()}). Please clock out or complete a handover to close it.`
+                                                    : `Scheduled shift ended at ${shiftExpiry.endTime} (${shiftExpiry.minutesOverdue}m overdue). Please hand over or clock out.`}
                                             </span>
                                         </div>
                                     )}
@@ -251,7 +253,7 @@ export default function ShiftTopBarPill() {
                                             <span className="text-muted-foreground">
                                                 Started at:
                                             </span>
-                                            <span className="font-medium text-foreground">
+                                            <span className="font-normal text-foreground">
                                                 {session?.clockInAt
                                                     ? new Date(
                                                           session.clockInAt,
@@ -266,7 +268,14 @@ export default function ShiftTopBarPill() {
                                             <span className="text-muted-foreground">
                                                 Duration:
                                             </span>
-                                            <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                                            <span
+                                                className={cn(
+                                                    "font-normal",
+                                                    shiftExpiry.isPast
+                                                        ? "text-rose-600 dark:text-rose-400"
+                                                        : "text-emerald-600 dark:text-emerald-400",
+                                                )}
+                                            >
                                                 {elapsed}
                                             </span>
                                         </div>

@@ -127,7 +127,9 @@ function ColorField({
             <div className="flex items-center gap-2">
                 <input
                     type="color"
-                    value={/^#[0-9a-fA-F]{6}$/.test(swatch) ? swatch : "#0f172a"}
+                    value={
+                        /^#[0-9a-fA-F]{6}$/.test(swatch) ? swatch : "#0f172a"
+                    }
                     onChange={e => onChange(e.target.value)}
                     className="h-9 w-12 cursor-pointer rounded border border-black/10 bg-white p-0.5"
                 />
@@ -172,6 +174,7 @@ export function titleStyle(typo: SectionTypography): React.CSSProperties {
     return {
         fontFamily: resolveFont(typo.titleFont, "--site-font-display"),
         fontSize,
+        fontWeight: 400,
         lineHeight: 1.15,
         letterSpacing: "-0.02em",
         ...(typo.titleColor ? { color: typo.titleColor } : {}),
@@ -185,13 +188,14 @@ export function bodyStyle(typo: SectionTypography): React.CSSProperties {
     return {
         fontFamily: resolveFont(typo.bodyFont, "--site-font-body"),
         fontSize,
+        fontWeight: 400,
         lineHeight: 1.6,
         ...(typo.bodyColor ? { color: typo.bodyColor } : {}),
     };
 }
 
 const GOOGLE_FONTS_HREF =
-    "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Libre+Baskerville:wght@400;700&family=Manrope:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap";
+    "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:ital,wght@0,400;0,500;1,400&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=Libre+Baskerville:ital,wght@0,400;1,400&family=Manrope:wght@400;500&family=Outfit:wght@400;500&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Source+Sans+3:wght@400;500&family=Space+Grotesk:wght@400;500&display=swap";
 
 /** Loads curated Google fonts once for the site editor / public page. */
 export function SiteFontLoader() {

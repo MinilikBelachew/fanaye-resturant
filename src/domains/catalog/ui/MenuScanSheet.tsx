@@ -66,7 +66,10 @@ export default function MenuScanSheet({
         if (!isOpen) {
             stopCamera();
             setStep("capture");
-            setPreviewUrl(null);
+            setPreviewUrl(prev => {
+                if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+                return null;
+            });
             setItems([]);
             setCameraError("");
             return;
@@ -150,8 +153,10 @@ export default function MenuScanSheet({
     function onFile(file: File | undefined) {
         if (!file) return;
         stopCamera();
-        const url = URL.createObjectURL(file);
-        setPreviewUrl(url);
+        setPreviewUrl(prev => {
+            if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+            return URL.createObjectURL(file);
+        });
         void runScan(file);
     }
 

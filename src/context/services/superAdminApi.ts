@@ -331,6 +331,37 @@ export interface ResetPlatformStaffPinPayload {
     pin: string;
 }
 
+export interface RestaurantRole {
+    id: number;
+    code: string;
+    name: string;
+    isSystem: boolean;
+    editable: boolean;
+}
+
+export interface RestaurantRoleListResponse {
+    data: RestaurantRole[];
+}
+
+export interface PermissionItem {
+    id: number;
+    code: string;
+    domain: string;
+    description: string | null;
+}
+
+export interface PermissionListResponse {
+    data: PermissionItem[];
+}
+
+export interface RolePermissionsResponse {
+    roleId: number;
+    roleCode: string;
+    editable: boolean;
+    permissionIds: number[];
+    permissionCodes: string[];
+}
+
 export const superAdminApi = api.injectEndpoints({
     overrideExisting: true,
     endpoints: builder => ({
@@ -519,6 +550,50 @@ export const superAdminApi = api.injectEndpoints({
             }),
             invalidatesTags: ["Auth"],
         }),
+
+        getSuperAdminRoles: builder.query<RestaurantRoleListResponse, void>({
+            query: () => ({
+                url: "/super-admin/roles",
+                method: "GET",
+            }),
+            providesTags: ["Auth"],
+        }),
+
+        getSuperAdminPermissions: builder.query<PermissionListResponse, void>({
+            query: () => ({
+                url: "/super-admin/permissions",
+                method: "GET",
+            }),
+            providesTags: ["Auth"],
+        }),
+
+        getSuperAdminRolePermissions: builder.query<
+            RolePermissionsResponse,
+            number
+        >({
+            query: roleId => ({
+                url: `/super-admin/roles/${roleId}/permissions`,
+                method: "GET",
+            }),
+            providesTags: (_result, _error, roleId) => [
+                { type: "Auth", id: `role-perms-${roleId}` },
+            ],
+        }),
+
+        setSuperAdminRolePermissions: builder.mutation<
+            RolePermissionsResponse,
+            { roleId: number; permissionIds: number[] }
+        >({
+            query: ({ roleId, permissionIds }) => ({
+                url: `/super-admin/roles/${roleId}/permissions`,
+                method: "PUT",
+                body: { permissionIds },
+            }),
+            invalidatesTags: (_result, _error, { roleId }) => [
+                { type: "Auth", id: `role-perms-${roleId}` },
+                "Auth",
+            ],
+        }),
     }),
 });
 
@@ -540,4 +615,8 @@ export const {
     useResetSuperAdminStaffPinMutation,
     useSuspendSuperAdminStaffMutation,
     useResetSuperAdminStaffPasswordMutation,
+    useGetSuperAdminRolesQuery,
+    useGetSuperAdminPermissionsQuery,
+    useGetSuperAdminRolePermissionsQuery,
+    useSetSuperAdminRolePermissionsMutation,
 } = superAdminApi;

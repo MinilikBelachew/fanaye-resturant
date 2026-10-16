@@ -8,9 +8,6 @@ const nextConfig: NextConfig = {
     devIndicators: false,
 
     productionBrowserSourceMaps: false,
-    typescript: {
-        ignoreBuildErrors: true,
-    },
     images: {
         remotePatterns: [
             {
@@ -20,6 +17,10 @@ const nextConfig: NextConfig = {
             {
                 protocol: "https",
                 hostname: "images.unsplash.com",
+            },
+            {
+                protocol: "https",
+                hostname: "api.dicebear.com",
             },
         ],
     },

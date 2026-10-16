@@ -20,6 +20,7 @@ import {
 } from "@/context/services/shiftsApi";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { getStaffAvatarUrl } from "@/lib/avatars";
 import type { WaiterShiftHandoverResponse } from "@/domains/identity/domain/shift";
 
 interface WaiterHandoverModalProps {
@@ -84,9 +85,7 @@ export default function WaiterHandoverModal({
     const handleConfirmHandover = async () => {
         setError("");
         if (!incomingPin || incomingPin.trim().length < 4) {
-            setError(
-                "Incoming waiter must enter their 4 to 6 digit security PIN.",
-            );
+            setError("Incoming waiter must enter their 4 digit security PIN.");
             return;
         }
 
@@ -143,15 +142,15 @@ export default function WaiterHandoverModal({
             aria-modal="true"
         >
             <div className="fixed inset-0" onClick={handleClose} />
-            <div className="relative z-10 w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto">
+            <div className="relative z-10 w-full max-w-lg rounded-2xl border border-hairline bg-card p-6 animate-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto">
                 {/* Header */}
-                <div className="flex items-start justify-between border-b border-border/60 pb-3">
+                <div className="flex items-start justify-between border-b border-hairline pb-3">
                     <div>
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-normal text-brand">
                             <ShieldCheck className="size-3.5" />
                             Shift Handover & Custody Transfer
                         </span>
-                        <h3 className="mt-1.5 text-lg font-bold tracking-tight text-foreground">
+                        <h3 className="mt-1.5 text-base font-normal tracking-tight text-foreground">
                             {step === "complete"
                                 ? "Handover Completed"
                                 : step === "incoming_pin"
@@ -162,7 +161,7 @@ export default function WaiterHandoverModal({
                     <button
                         type="button"
                         onClick={handleClose}
-                        className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                        className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors cursor-pointer"
                         aria-label="Close"
                     >
                         <X className="size-5" />
@@ -170,7 +169,7 @@ export default function WaiterHandoverModal({
                 </div>
 
                 {error ? (
-                    <div className="mt-4 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-medium text-destructive">
+                    <div className="mt-4 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-normal text-destructive">
                         {error}
                     </div>
                 ) : null}
@@ -179,13 +178,13 @@ export default function WaiterHandoverModal({
                 {step === "details" && (
                     <div className="mt-4 space-y-4">
                         {/* Open Tables Section */}
-                        <div className="rounded-xl border border-border bg-muted/30 p-3.5 space-y-2">
+                        <div className="rounded-xl border border-hairline bg-secondary/30 p-3.5 space-y-2">
                             <div className="flex items-center justify-between">
-                                <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-                                    <UtensilsCrossed className="size-4 text-primary" />
+                                <span className="flex items-center gap-1.5 text-xs font-normal text-foreground">
+                                    <UtensilsCrossed className="size-4 text-brand" />
                                     Active Tables
                                 </span>
-                                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
+                                <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs font-normal text-brand">
                                     {openTablesCount}{" "}
                                     {openTablesCount === 1 ? "Table" : "Tables"}
                                 </span>
@@ -200,7 +199,7 @@ export default function WaiterHandoverModal({
                                         {openTablesNames.map((name, i) => (
                                             <span
                                                 key={i}
-                                                className="inline-flex items-center rounded-lg border border-border bg-background px-2.5 py-1 text-xs font-semibold text-foreground"
+                                                className="inline-flex items-center rounded-lg border border-hairline bg-card px-2.5 py-1 text-xs font-normal text-foreground"
                                             >
                                                 {name}
                                             </span>
@@ -216,13 +215,13 @@ export default function WaiterHandoverModal({
                         </div>
 
                         {/* Physical Cash Handover */}
-                        <div className="rounded-xl border border-border/80 bg-muted/20 p-3.5 space-y-2">
+                        <div className="rounded-xl border border-hairline bg-secondary/20 p-3.5 space-y-2">
                             <div className="flex items-center justify-between">
-                                <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                                <label className="text-xs font-normal text-foreground flex items-center gap-1.5">
                                     <DollarSign className="size-4 text-emerald-600 dark:text-emerald-400" />
                                     Physical Cash Handed Over (ETB)
                                 </label>
-                                <span className="text-[11px] font-semibold text-muted-foreground">
+                                <span className="text-[11px] font-normal text-muted-foreground">
                                     Pouch: ETB {cashOnHand.toFixed(2)}
                                 </span>
                             </div>
@@ -235,7 +234,7 @@ export default function WaiterHandoverModal({
                                     value={cashInput}
                                     onChange={e => setCashInput(e.target.value)}
                                     placeholder="0.00"
-                                    className="w-full rounded-xl border border-border bg-background pl-4 pr-3 py-2 text-sm font-semibold text-foreground focus:border-primary focus:outline-none"
+                                    className="w-full rounded-xl border border-hairline bg-card pl-4 pr-3 py-2 text-sm font-normal text-foreground focus:border-brand focus:outline-none"
                                 />
                             </div>
                             <p className="text-[11px] text-muted-foreground">
@@ -247,18 +246,18 @@ export default function WaiterHandoverModal({
 
                         {/* Incoming Waiter Selector */}
                         <div>
-                            <label className="block text-xs font-semibold text-foreground mb-1.5">
+                            <label className="block text-xs font-normal text-foreground mb-1.5">
                                 Select Incoming Waiter
                             </label>
                             {candidatesLoading ? (
-                                <div className="rounded-xl border border-border bg-muted/20 p-3 text-center text-xs text-muted-foreground">
+                                <div className="rounded-xl border border-hairline bg-secondary/20 p-3 text-center text-xs text-muted-foreground">
                                     Loading active servers...
                                 </div>
                             ) : !candidates || candidates.length === 0 ? (
                                 <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400">
-                                    No other active staff available in this
-                                    branch. Please ensure the incoming waiter is
-                                    assigned to this branch.
+                                    No other active servers available in this
+                                    branch. Only staff with the Waiter role can
+                                    take over.
                                 </div>
                             ) : (
                                 <div className="grid gap-2 max-h-48 overflow-y-auto pr-1">
@@ -276,30 +275,38 @@ export default function WaiterHandoverModal({
                                                     )
                                                 }
                                                 className={cn(
-                                                    "w-full flex items-center justify-between rounded-xl border p-2.5 text-left text-xs transition-all cursor-pointer",
+                                                    "w-full flex items-center justify-between rounded-xl border p-2.5 text-left text-xs transition-colors cursor-pointer",
                                                     isSelected
-                                                        ? "border-primary bg-primary/10 shadow-xs"
-                                                        : "border-border bg-card hover:bg-muted/40",
+                                                        ? "border-brand bg-brand/10 text-foreground"
+                                                        : "border-hairline bg-card hover:bg-secondary/40 text-foreground",
                                                 )}
                                             >
                                                 <div className="flex items-center gap-2.5 min-w-0">
-                                                    <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/15 font-bold text-primary text-xs">
-                                                        {candidate.displayName[0]?.toUpperCase() ??
-                                                            "W"}
+                                                    <div className="relative size-8 shrink-0 overflow-hidden rounded-full border border-hairline bg-secondary">
+                                                        <img
+                                                            src={getStaffAvatarUrl(
+                                                                candidate.displayName,
+                                                                candidate.photoUrl,
+                                                            )}
+                                                            alt={
+                                                                candidate.displayName
+                                                            }
+                                                            className="size-full object-cover"
+                                                        />
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <p className="font-semibold text-foreground truncate">
+                                                        <p className="font-normal text-foreground truncate">
                                                             {
                                                                 candidate.displayName
                                                             }
                                                         </p>
-                                                        <span className="inline-block rounded-md bg-muted px-1.5 py-0.2 text-[10px] font-medium text-muted-foreground uppercase">
-                                                            {candidate.roleCode}
+                                                        <span className="inline-block rounded-md bg-secondary px-1.5 py-0.2 text-[10px] font-normal text-muted-foreground">
+                                                            Waiter
                                                         </span>
                                                     </div>
                                                 </div>
                                                 {isSelected && (
-                                                    <CheckCircle2 className="size-4 shrink-0 text-primary" />
+                                                    <CheckCircle2 className="size-4 shrink-0 text-brand" />
                                                 )}
                                             </button>
                                         );
@@ -310,7 +317,7 @@ export default function WaiterHandoverModal({
 
                         {/* Optional Notes */}
                         <div>
-                            <label className="block text-xs font-semibold text-foreground mb-1">
+                            <label className="block text-xs font-normal text-foreground mb-1">
                                 Handover Notes (Optional)
                             </label>
                             <input
@@ -318,7 +325,7 @@ export default function WaiterHandoverModal({
                                 value={notes}
                                 onChange={e => setNotes(e.target.value)}
                                 placeholder="e.g., Table 4 requested separate checks when ready"
-                                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
+                                className="w-full rounded-xl border border-hairline bg-card px-3 py-2 text-xs text-foreground focus:border-brand focus:outline-none"
                             />
                         </div>
 
@@ -328,7 +335,7 @@ export default function WaiterHandoverModal({
                                 type="button"
                                 onClick={handleContinueToPin}
                                 disabled={!selectedCandidateId}
-                                className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+                                className="w-full flex items-center justify-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-xs font-normal text-brand-foreground hover:bg-brand/90 transition-colors cursor-pointer disabled:opacity-50"
                             >
                                 Continue to Waiter PIN Confirmation
                                 <ArrowRight className="size-4" />
@@ -340,40 +347,52 @@ export default function WaiterHandoverModal({
                 {/* Step 2: Incoming Waiter PIN Confirmation */}
                 {step === "incoming_pin" && (
                     <div className="mt-4 space-y-4">
-                        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-center space-y-1">
-                            <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary mb-2">
-                                <Lock className="size-5" />
+                        <div className="rounded-xl border border-hairline bg-secondary/30 p-4 text-center space-y-2">
+                            <div className="relative mx-auto size-12 overflow-hidden rounded-full border border-hairline bg-secondary">
+                                <img
+                                    src={getStaffAvatarUrl(
+                                        selectedCandidate?.displayName,
+                                        selectedCandidate?.photoUrl,
+                                    )}
+                                    alt={
+                                        selectedCandidate?.displayName ||
+                                        "Waiter"
+                                    }
+                                    className="size-full object-cover"
+                                />
                             </div>
-                            <h4 className="font-bold text-foreground text-sm">
+                            <h4 className="font-normal text-foreground text-sm">
                                 {selectedCandidate?.displayName}
                             </h4>
                             <p className="text-xs text-muted-foreground">
-                                Please enter your 4 to 6 digit security PIN to
+                                Please enter your 4 digit security PIN to
                                 confirm acceptance of:
                             </p>
-                            <div className="mt-2 flex items-center justify-center gap-4 text-xs font-semibold text-foreground">
-                                <span>
-                                    🍽️ {openTablesCount} Active Table
+                            <div className="mt-2 flex items-center justify-center gap-4 text-xs font-normal text-foreground">
+                                <span className="rounded-md border border-hairline bg-card px-2.5 py-1">
+                                    {openTablesCount} Active Table
                                     {openTablesCount === 1 ? "" : "s"}
                                 </span>
-                                <span>💵 ETB {cashAmount.toFixed(2)} Cash</span>
+                                <span className="rounded-md border border-hairline bg-card px-2.5 py-1">
+                                    ETB {cashAmount.toFixed(2)} Cash
+                                </span>
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-foreground mb-1 text-center">
+                            <label className="block text-xs font-normal text-foreground mb-1 text-center">
                                 Incoming Waiter PIN
                             </label>
                             <input
                                 type="password"
                                 inputMode="numeric"
                                 pattern="[0-9]*"
-                                maxLength={6}
+                                maxLength={4}
                                 autoFocus
                                 value={incomingPin}
                                 onChange={e => setIncomingPin(e.target.value)}
                                 placeholder="••••"
-                                className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-center text-xl tracking-widest font-mono font-bold text-foreground focus:border-primary focus:outline-none"
+                                className="w-full rounded-xl border border-hairline bg-card px-4 py-2.5 text-center text-xl tracking-widest font-mono font-normal text-foreground focus:border-brand focus:outline-none"
                             />
                             <p className="mt-1 text-center text-[11px] text-muted-foreground">
                                 By entering your PIN, you confirm receiving the
@@ -387,7 +406,7 @@ export default function WaiterHandoverModal({
                                 type="button"
                                 onClick={() => setStep("details")}
                                 disabled={submitting}
-                                className="flex-1 rounded-xl border border-border px-4 py-2.5 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer"
+                                className="flex-1 rounded-xl border border-hairline px-4 py-2.5 text-xs font-normal text-foreground hover:bg-secondary transition-colors cursor-pointer"
                             >
                                 Back
                             </button>
@@ -395,7 +414,7 @@ export default function WaiterHandoverModal({
                                 type="button"
                                 onClick={handleConfirmHandover}
                                 disabled={submitting || incomingPin.length < 4}
-                                className="flex-2 flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+                                className="flex-2 flex items-center justify-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-xs font-normal text-brand-foreground hover:bg-brand/90 transition-colors cursor-pointer disabled:opacity-50"
                             >
                                 {submitting
                                     ? "Confirming Handover..."
@@ -412,7 +431,7 @@ export default function WaiterHandoverModal({
                             <CheckCircle2 className="size-7" />
                         </div>
                         <div>
-                            <h4 className="text-base font-bold text-foreground">
+                            <h4 className="text-base font-normal text-foreground">
                                 Handover Completed Successfully!
                             </h4>
                             <p className="text-xs text-muted-foreground mt-0.5">
@@ -421,12 +440,12 @@ export default function WaiterHandoverModal({
                             </p>
                         </div>
 
-                        <div className="rounded-xl border border-border bg-muted/30 p-3.5 space-y-2 text-left text-xs">
+                        <div className="rounded-xl border border-hairline bg-secondary/30 p-3.5 space-y-2 text-left text-xs">
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">
                                     Outgoing Server:
                                 </span>
-                                <span className="font-semibold text-foreground">
+                                <span className="font-normal text-foreground">
                                     {completedSummary.outgoingWaiterName}
                                 </span>
                             </div>
@@ -434,7 +453,7 @@ export default function WaiterHandoverModal({
                                 <span className="text-muted-foreground">
                                     Incoming Server:
                                 </span>
-                                <span className="font-semibold text-foreground">
+                                <span className="font-normal text-foreground">
                                     {completedSummary.incomingWaiterName}
                                 </span>
                             </div>
@@ -442,7 +461,7 @@ export default function WaiterHandoverModal({
                                 <span className="text-muted-foreground">
                                     Tables Transferred:
                                 </span>
-                                <span className="font-bold text-primary">
+                                <span className="font-normal text-brand">
                                     {completedSummary.tablesTransferredCount}{" "}
                                     {completedSummary.tablesTransferredCount ===
                                     1
@@ -458,11 +477,11 @@ export default function WaiterHandoverModal({
                                     )}
                                 </div>
                             )}
-                            <div className="flex justify-between border-t border-border/50 pt-1.5">
+                            <div className="flex justify-between border-t border-hairline pt-1.5">
                                 <span className="text-muted-foreground">
                                     Cash Transferred:
                                 </span>
-                                <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                                <span className="font-normal text-emerald-600 dark:text-emerald-400">
                                     {completedSummary.cashTransferredFormatted}
                                 </span>
                             </div>
@@ -471,7 +490,7 @@ export default function WaiterHandoverModal({
                         <button
                             type="button"
                             onClick={handleClose}
-                            className="w-full rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
+                            className="w-full rounded-xl bg-brand px-4 py-2.5 text-xs font-normal text-brand-foreground hover:bg-brand/90 transition-colors cursor-pointer"
                         >
                             Done
                         </button>

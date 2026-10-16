@@ -332,18 +332,10 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                                 <Wifi className="size-3 text-amber-500" />
                                 {t("wifiPrefix")} {config.wifiSsid}
                             </span>
-                            {config.wifiPassword ? (
-                                <span className="font-mono text-slate-600 dark:text-slate-300">
-                                    {t("passPrefix")}{" "}
-                                    <strong
-                                        className={
-                                            theme === "dark"
-                                                ? "text-white"
-                                                : "text-slate-900"
-                                        }
-                                    >
-                                        {config.wifiPassword}
-                                    </strong>
+                            {config.wifiPassword ||
+                            config.wifiRequiresPassword ? (
+                                <span className="text-slate-600 dark:text-slate-300">
+                                    {t("passPrefix")} ask staff
                                 </span>
                             ) : null}
                         </div>
