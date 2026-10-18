@@ -31,6 +31,7 @@ import { Input } from "@/components/ui/input";
 import { createId } from "@/lib/ids";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 type BasketLine = {
     id: string;
@@ -852,6 +853,8 @@ function OrderTicketContent({
     onCloseMobile?: () => void;
     onSubmit: () => void;
 }) {
+    const t = useTranslations("waiter");
+    const tCommon = useTranslations("common");
     const isDispatcher = variant === "dispatcher";
     return (
         <div className="flex h-full min-h-0 flex-1 flex-col">
@@ -966,7 +969,7 @@ function OrderTicketContent({
                                             e.target.value,
                                         )
                                     }
-                                    placeholder="Note for kitchen (e.g. less salt)"
+                                    placeholder={t("stationNotePlaceholder")}
                                     maxLength={240}
                                     className="h-8 rounded-lg border-hairline bg-secondary/30 px-2.5 text-[12px] placeholder:text-slate-gray/70"
                                 />
@@ -1029,16 +1032,16 @@ function OrderTicketContent({
                 )}
             </div>
 
-            {/* Summary & Send to Kitchen Button */}
+            {/* Summary & send to stations */}
             <div className="shrink-0 border-t border-hairline bg-secondary/20 p-4 sm:p-5 space-y-3">
                 <div className="flex items-center justify-between text-[13px] text-slate-gray">
-                    <span>Subtotal</span>
+                    <span>{tCommon("subtotal")}</span>
                     <span className="font-semibold text-foreground">
                         {formatEtb(basketTotal)}
                     </span>
                 </div>
                 <div className="flex items-center justify-between text-[14.5px] font-semibold text-foreground">
-                    <span>Total Due</span>
+                    <span>{t("totalTab")}</span>
                     <span>{formatEtb(basketTotal)}</span>
                 </div>
 
@@ -1059,12 +1062,15 @@ function OrderTicketContent({
                     onClick={onSubmit}
                 >
                     {sending
-                        ? "Sending to kitchen…"
+                        ? t("sendingToStations")
                         : pieceCount === 0
-                          ? "Send order"
+                          ? t("sendOrder")
                           : isDispatcher
-                            ? `Confirm order · ${pieceCount} · ${formatEtb(basketTotal)}`
-                            : `Send to Kitchen · ${pieceCount} · ${formatEtb(basketTotal)}`}
+                            ? `${t("sendOrder")} · ${pieceCount} · ${formatEtb(basketTotal)}`
+                            : t("sendToStationsDetail", {
+                                  count: pieceCount,
+                                  amount: formatEtb(basketTotal),
+                              })}
                 </Button>
             </div>
         </div>

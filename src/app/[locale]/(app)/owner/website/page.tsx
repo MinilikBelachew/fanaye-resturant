@@ -371,6 +371,7 @@ export default function WebsiteEditorPage() {
             const nextDraft = buildTemplateDraft(
                 templateId,
                 site.tenantName || "Restaurant",
+                profile,
             );
             const result = await updateSite({
                 slug: slug.trim() || undefined,

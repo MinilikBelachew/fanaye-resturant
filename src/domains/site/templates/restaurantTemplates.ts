@@ -1,5 +1,5 @@
 import type { Data } from "@puckeditor/core";
-import type { SiteTheme } from "@/context/services/siteApi";
+import type { SiteTheme, TenantProfile } from "@/context/services/siteApi";
 
 export type WebsiteTemplateId =
     | "harbor-bistro"
@@ -60,18 +60,18 @@ export const WEBSITE_TEMPLATES: WebsiteTemplate[] = [
     {
         id: "harbor-bistro",
         name: "Fine Dining",
-        tagline: "Timeless luxury & culinary poetry",
-        vibe: "Warm limestone, muted brass, tasting degustation & quiet hospitality — Michelin-tier luxury",
-        previewImage: IMG.harborHero,
-        accent: "#b89047",
+        tagline: "Modern elegance & quiet luxury",
+        vibe: "Full-bleed hero, brand-first serif, cool stone & champagne gold — calm fine dining",
+        previewImage: IMG.harborDining,
+        accent: "#8c7355",
         theme: {
-            primaryColor: "#b89047",
-            accentColor: "#1c1917",
-            backgroundColor: "#f7f4ee",
-            textColor: "#1c1917",
+            primaryColor: "#8c7355",
+            accentColor: "#12100e",
+            backgroundColor: "#f8f7f5",
+            textColor: "#12100e",
             backgroundType: "solid",
-            fontDisplay: "Playfair Display, Georgia, serif",
-            fontBody: "DM Sans, sans-serif",
+            fontDisplay: "Cormorant Garamond, Georgia, serif",
+            fontBody: "Source Sans 3, sans-serif",
             borderRadius: "none",
         },
     },
@@ -256,12 +256,38 @@ export function buildScratchDraft(tenantName: string): Data {
     } as Data;
 }
 
+export type TemplateDraftProfile = Pick<
+    TenantProfile,
+    | "tagline"
+    | "story"
+    | "hours"
+    | "phone"
+    | "address"
+    | "city"
+    | "instagram"
+    | "facebook"
+    | "tiktok"
+>;
+
 export function buildTemplateDraft(
     templateId: WebsiteTemplateId,
     tenantName: string,
+    profile?: TemplateDraftProfile | null,
 ): Data {
     const year = new Date().getFullYear();
     const name = tenantName || "Restaurant";
+    const tagline =
+        profile?.tagline?.trim() ||
+        "Seasonal plates, quiet hospitality, and a table worth lingering at.";
+    const story =
+        profile?.story?.trim() ||
+        `${name} cooks with restraint — local harvests, careful fire, and service that never crowds the room.`;
+    const hoursRows =
+        profile?.hours?.trim() ||
+        "Tue – Thu|18:00 – 22:00\nFri – Sat|17:30 – 23:00\nSun|12:30 – 16:00\nMon|Closed";
+    const placeLine = [profile?.address, profile?.city]
+        .filter(Boolean)
+        .join(", ");
 
     const commonFooter = {
         type: "Footer" as const,
@@ -273,9 +299,9 @@ export function buildTemplateDraft(
             columns: "3",
             size: "md",
             showSocial: true,
-            instagram: "",
-            facebook: "",
-            tiktok: "",
+            instagram: profile?.instagram || "",
+            facebook: profile?.facebook || "",
+            tiktok: profile?.tiktok || "",
         },
     };
 
@@ -288,11 +314,10 @@ export function buildTemplateDraft(
                         type: "Header",
                         props: {
                             id: uid("header"),
-                            showPhone: false,
-                            linksLabel:
-                                "Philosophy,Tasting Menu,The Experience,Hours,Reservations",
-                            navAlign: "brandCenter",
-                            ctaLabel: "Reserve a Table",
+                            showPhone: Boolean(profile?.phone?.trim()),
+                            linksLabel: "Menu,About,Hours,Contact",
+                            navAlign: "split",
+                            ctaLabel: "Reserve",
                             ctaHref: "#contact",
                             size: "md",
                             sticky: true,
@@ -302,16 +327,16 @@ export function buildTemplateDraft(
                         type: "Hero",
                         props: {
                             id: uid("hero"),
-                            layout: "framed",
-                            headline: "An Ode to Seasonality & Terroir",
-                            subheadline: `${name} invites you to an unhurried multi-course gastronomic voyage guided by morning harvests, artisanal cellars, and silent hospitality.`,
-                            ctaLabel: "Explore Tasting Menu",
+                            layout: "overlay",
+                            headline: name,
+                            subheadline: tagline,
+                            ctaLabel: "View menu",
                             ctaHref: "#menu",
-                            secondaryCtaLabel: "Reserve a Table",
+                            secondaryCtaLabel: "Reserve a table",
                             secondaryCtaHref: "#contact",
-                            imageUrl: IMG.harborHero,
+                            imageUrl: IMG.harborDining,
                             size: "lg",
-                            overlay: "soft",
+                            overlay: "medium",
                         },
                     },
                     {
@@ -319,10 +344,12 @@ export function buildTemplateDraft(
                         props: {
                             id: uid("about"),
                             layout: "imageRight",
-                            title: "The Culinary Philosophy",
-                            body: `At ${name}, every movement at the stove is guided by reverence for the earth and patient craftsmanship. We collaborate intimately with smallholder biodynamic growers, coastal day-boat fishermen, and heritage grain millers to present a pure dialogue between nature and memory.`,
+                            title: "Our kitchen",
+                            body: story,
                             imageUrl: IMG.harborChef,
-                            stats: "10|Courses nightly\n38|Artisan purveyors\n450+|Cellar labels",
+                            stats: placeLine
+                                ? `Location|${placeLine}\nService|Dinner & weekend lunch\nReservations|Recommended`
+                                : "Service|Dinner & weekend lunch\nReservations|Recommended\nDress|Smart casual",
                             size: "lg",
                         },
                     },
@@ -330,9 +357,9 @@ export function buildTemplateDraft(
                         type: "Menu",
                         props: {
                             id: uid("menu"),
-                            title: "The Tasting Journey",
+                            title: "Menu",
                             subtitle:
-                                "Autumn Degustation — Chef's seven-movement composition with sommelier pairings",
+                                "Seasonal dishes from the kitchen — ask your server for tonight’s specials.",
                             categoryFilter: "all",
                             layout: "editorial",
                             columns: "2",
@@ -342,70 +369,36 @@ export function buildTemplateDraft(
                         },
                     },
                     {
-                        type: "Features",
+                        type: "Gallery",
                         props: {
-                            id: uid("features"),
-                            title: "The Dining Experience",
-                            subtitle:
-                                "Every sensory nuance orchestrated with quiet devotion",
-                            items: "The Grand Dining Salon|Linen-dressed tables bathed in natural aperture and gentle evening candlelight.\nThe Sommelier's Cellar|Rare biodynamic vintages, mature Grand Crus, and artisanal botanical infusions.\nPrivate Dining Sanctuary|An intimate salon for bespoke milestone celebrations and private culinary salons.",
+                            id: uid("gallery"),
+                            title: "The room",
+                            imageUrls: galleryUrls(
+                                IMG.harborDining,
+                                IMG.harborPlate,
+                                IMG.harborWine,
+                            ),
                             columns: "3",
                             size: "md",
                         },
                     },
-                    {
-                        type: "Gallery",
-                        props: {
-                            id: uid("gallery"),
-                            title: "Atmosphere & Artistry",
-                            imageUrls: galleryUrls(
-                                IMG.harborHero,
-                                IMG.harborPlate,
-                                IMG.harborWine,
-                                IMG.harborDining,
-                            ),
-                            columns: "4",
-                            size: "md",
-                        },
-                    },
-                    {
-                        type: "Testimonials",
-                        props: {
-                            id: uid("testimonials"),
-                            title: "Gastronomic Acclaim",
-                            items: "“An indelible triumph of restraint, texture, and emotional depth.”|Le Guide Gastronomique\n“The wine pairings elevate an already extraordinary multi-course journey into pure poetry.”|The Epicurean Review\n“Hospitality stripped of pretense, delivering absolute culinary grace.”|Sommelier Herald",
-                            size: "md",
-                        },
-                    },
-                    hoursBlock(
-                        "Service & Sittings",
-                        "Tuesday – Thursday|Dinner Sittings: 18:00 & 20:30\nFriday – Saturday|Dinner Sittings: 17:30, 19:45 & 21:30\nSunday Luncheon|Seasonal Matinée: 12:30 – 16:00\nMonday|Kitchen Dark & Vineyard Sourcing",
+                    hoursBlock("Hours", hoursRows),
+                    contactBlock(
+                        placeLine ? `Visit ${name}` : "Reservations & contact",
                     ),
-                    contactBlock("Table Reservations & Concierge"),
-                    {
-                        type: "CtaBanner",
-                        props: {
-                            id: uid("cta"),
-                            title: "Reserve Your Table",
-                            body: "Reservations open at the first of each calendar month for the subsequent 60-day dining cycle. Dietary adaptations are welcomed with 48 hours advance notice.",
-                            ctaLabel: "Request a Reservation",
-                            ctaHref: "#contact",
-                            size: "md",
-                        },
-                    },
                     {
                         type: "Footer",
                         props: {
                             id: uid("footer"),
                             layout: "brandLinks",
-                            note: `© ${year} ${name}. Relais & Gastronomie Standards. Reservations strictly confirmed.`,
-                            links: "Tasting Menu|#menu\nPhilosophy|#about\nExperience|#features\nAccolades|#testimonials\nReservations|#contact",
+                            note: `© ${year} ${name}${placeLine ? ` · ${placeLine}` : ""}.`,
+                            links: "Menu|#menu\nAbout|#about\nHours|#hours\nContact|#contact",
                             columns: "3",
                             size: "md",
                             showSocial: true,
-                            instagram: "",
-                            facebook: "",
-                            tiktok: "",
+                            instagram: profile?.instagram || "",
+                            facebook: profile?.facebook || "",
+                            tiktok: profile?.tiktok || "",
                         },
                     },
                 ],

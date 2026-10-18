@@ -887,40 +887,67 @@ export default function StaffDetailBoard({
                     </p>
                 ) : (
                     <div className="mt-4 grid gap-3 md:grid-cols-2">
-                        {member.shiftCoverages.map(coverage => (
-                            <div
-                                key={coverage.shiftDefinitionId}
-                                className="rounded-xl border border-hairline px-3.5 py-3 bg-secondary/20"
-                            >
-                                <p className="text-[13px] font-semibold text-foreground">
-                                    {coverage.shiftName}
-                                </p>
-                                <p className="text-[11px] text-slate-gray">
-                                    {coverage.startLocalTime} –{" "}
-                                    {coverage.endLocalTime}
-                                </p>
-                                {coverage.tables.length > 0 ? (
-                                    <div className="mt-2 flex flex-wrap gap-1.5">
-                                        {coverage.tables.map(table => (
-                                            <Link
-                                                key={table.tableId}
-                                                href={`/manager/tables`}
-                                                className="rounded-md border border-hairline bg-secondary px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-secondary/70 transition-colors"
-                                            >
-                                                {table.displayNumber ||
-                                                    table.displayName}
-                                            </Link>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="mt-2 text-[11px] text-slate-gray">
-                                        {member.roleCode === "CASHIER"
-                                            ? "Cash desk custody"
-                                            : "Scheduled shift rotation"}
+                        {member.shiftCoverages.map(coverage => {
+                            const daysForShift = (member.dayShifts ?? [])
+                                .filter(
+                                    row =>
+                                        row.shiftDefinitionId ===
+                                        coverage.shiftDefinitionId,
+                                )
+                                .map(row => row.dayCode);
+                            const daysLabel = [
+                                "Mon",
+                                "Tue",
+                                "Wed",
+                                "Thu",
+                                "Fri",
+                                "Sat",
+                                "Sun",
+                            ]
+                                .filter(day =>
+                                    daysForShift.some(code =>
+                                        code
+                                            .toLowerCase()
+                                            .startsWith(day.toLowerCase()),
+                                    ),
+                                )
+                                .join(", ");
+                            return (
+                                <div
+                                    key={coverage.shiftDefinitionId}
+                                    className="rounded-xl border border-hairline px-3.5 py-3 bg-secondary/20"
+                                >
+                                    <p className="text-[13px] font-semibold text-foreground">
+                                        {coverage.shiftName}
                                     </p>
-                                )}
-                            </div>
-                        ))}
+                                    <p className="text-[11px] text-slate-gray">
+                                        {daysLabel
+                                            ? `${daysLabel} · ${coverage.startLocalTime} – ${coverage.endLocalTime}`
+                                            : `${coverage.startLocalTime} – ${coverage.endLocalTime}`}
+                                    </p>
+                                    {coverage.tables.length > 0 ? (
+                                        <div className="mt-2 flex flex-wrap gap-1.5">
+                                            {coverage.tables.map(table => (
+                                                <Link
+                                                    key={table.tableId}
+                                                    href={`/manager/tables`}
+                                                    className="rounded-md border border-hairline bg-secondary px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-secondary/70 transition-colors"
+                                                >
+                                                    {table.displayNumber ||
+                                                        table.displayName}
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="mt-2 text-[11px] text-slate-gray">
+                                            {member.roleCode === "CASHIER"
+                                                ? "Cash desk custody"
+                                                : "Scheduled shift rotation"}
+                                        </p>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
             </section>

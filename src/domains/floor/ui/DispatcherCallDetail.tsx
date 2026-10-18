@@ -36,6 +36,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { formatEtb } from "@/lib/money";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 const ORDERABLE = new Set(["OPEN", "ACTIVE_ORDER", "ATTENTION_REQUIRED"]);
 
@@ -66,6 +67,7 @@ export default function DispatcherCallDetail({
 }) {
     const router = useRouter();
     const staff = useAppSelector(selectCurrentStaff);
+    const t = useTranslations("waiter");
     const clockedIn = Boolean(
         useAppSelector(state => state.identity.session?.shiftSessionId),
     );
@@ -144,9 +146,9 @@ export default function DispatcherCallDetail({
         setError("");
         try {
             await sendToKitchen({ tableSessionId, orderId }).unwrap();
-            toast.success("Sent to kitchen");
+            toast.success(t("sentToKitchenToast"));
         } catch (err) {
-            const message = "Could not send to kitchen";
+            const message = t("couldNotSendKitchen");
             setError(message);
             toast.fromUnknown(err, message);
         }
@@ -305,7 +307,7 @@ export default function DispatcherCallDetail({
                         onClick={() => onSendToKitchen()}
                     >
                         <ChefHat className="size-4" />
-                        Send kitchen ({pendingKitchenCount})
+                        {`${t("sendToKitchen")} (${pendingKitchenCount})`}
                     </Button>
                 ) : null}
                 {!bill && allItems.length > 0 && session.mine ? (
@@ -338,7 +340,7 @@ export default function DispatcherCallDetail({
                                 No items yet
                             </p>
                             <p className="mt-1 text-[13px] text-slate-gray">
-                                Add the guest’s order, then send to kitchen.
+                                {t("openMenuToOrder")}
                             </p>
                             {canOrder ? (
                                 <Button

@@ -12,6 +12,7 @@ import {
     useGetAdminQrMenuConfigQuery,
     useGetAdminTablesQrQuery,
     useUpdateAdminQrMenuConfigMutation,
+    useUpdateAdminQrSlugMutation,
     QrMenuConfig,
 } from "@/context/services/qrMenuApi";
 import {
@@ -26,8 +27,10 @@ import { LivePhoneSimulator } from "@/domains/catalog/ui/qr-builder/LivePhoneSim
 import { TableQrCardModal } from "@/domains/catalog/ui/qr-builder/TableQrCardModal";
 import {
     Check,
+    Copy,
     ExternalLink,
     FileDown,
+    Link2,
     Loader2,
     Save,
     Upload,
@@ -101,10 +104,13 @@ export default function ManagerQrMenuPage() {
     const t = useTranslations("qrMenuStudio");
     const { data: configData, isLoading: configLoading } =
         useGetAdminQrMenuConfigQuery();
-    const { data: tablesData } = useGetAdminTablesQrQuery();
+    const { data: tablesData, isLoading: tablesLoading } =
+        useGetAdminTablesQrQuery();
     const { data: menuData } = useAdminMenuItemsQuery();
     const [updateConfig, { isLoading: isSaving }] =
         useUpdateAdminQrMenuConfigMutation();
+    const [updateSlug, { isLoading: isSavingSlug }] =
+        useUpdateAdminQrSlugMutation();
     const [uploadImage, { isLoading: isUploadingBanner }] =
         useUploadMenuImageMutation();
     const bannerFileInputRef = React.useRef<HTMLInputElement>(null);
@@ -123,6 +129,8 @@ export default function ManagerQrMenuPage() {
 
     const [printModalOpen, setPrintModalOpen] = useState(false);
     const [wifiEnabled, setWifiEnabled] = useState(false);
+    const [editingSlug, setEditingSlug] = useState(false);
+    const [slugDraft, setSlugDraft] = useState("");
 
     useEffect(() => {
         if (configData) {
@@ -164,8 +172,20 @@ export default function ManagerQrMenuPage() {
     );
 
     const tables = tablesData?.tables || [];
-    const slug = tablesData?.slug || "restaurant";
+    const slug = tablesData?.slug?.trim() || "";
     const managesAllBranches = tablesData?.managesAllBranches ?? false;
+    const publicBasePath = slug ? `/r/${slug}` : "";
+    const sampleTableUrl = slug
+        ? tables.length > 0
+            ? `/r/${slug}/t/${tables[0].id}`
+            : `/r/${slug}`
+        : "#";
+
+    useEffect(() => {
+        if (tablesData?.slug) {
+            setSlugDraft(tablesData.slug);
+        }
+    }, [tablesData?.slug]);
 
     async function handleSave() {
         try {
@@ -195,10 +215,32 @@ export default function ManagerQrMenuPage() {
         });
     }
 
-    const sampleTableUrl =
-        tables.length > 0 ? `/r/${slug}/t/${tables[0].id}` : `/r/${slug}`;
+    async function handleCopyPublicLink() {
+        if (!publicBasePath || typeof window === "undefined") return;
+        try {
+            await navigator.clipboard.writeText(
+                `${window.location.origin}${publicBasePath}`,
+            );
+            toast.success(t("linkCopied"));
+        } catch {
+            toast.error(t("slugSaveFailed"));
+        }
+    }
 
-    if (configLoading) {
+    async function handleSaveSlug() {
+        const next = slugDraft.trim();
+        if (!next || next.length < 2) return;
+        try {
+            const res = await updateSlug({ slug: next }).unwrap();
+            setSlugDraft(res.slug);
+            setEditingSlug(false);
+            toast.success(t("slugSaved"));
+        } catch {
+            toast.error(t("slugSaveFailed"));
+        }
+    }
+
+    if (configLoading || tablesLoading) {
         return (
             <DashboardFrame>
                 <StudioSkeleton />
@@ -220,21 +262,24 @@ export default function ManagerQrMenuPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => setPrintModalOpen(true)}
+                        disabled={!slug || tables.length === 0}
                         className="gap-1.5 text-muted-foreground hover:text-foreground"
                     >
                         <FileDown className="size-3.5" />
                         {tManager("printCards")} ({tables.length})
                     </Button>
-                    <Link href={sampleTableUrl} target="_blank">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="gap-1.5 text-muted-foreground hover:text-foreground"
-                        >
-                            <ExternalLink className="size-3.5" />
-                            {tManager("previewLive")}
-                        </Button>
-                    </Link>
+                    {slug ? (
+                        <Link href={sampleTableUrl} target="_blank">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="gap-1.5 text-muted-foreground hover:text-foreground"
+                            >
+                                <ExternalLink className="size-3.5" />
+                                {tManager("previewLive")}
+                            </Button>
+                        </Link>
+                    ) : null}
                     <Button
                         size="sm"
                         onClick={handleSave}
@@ -253,6 +298,101 @@ export default function ManagerQrMenuPage() {
 
             <div className="mt-5 grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
                 <div className="space-y-4 lg:col-span-7">
+                    <Section
+                        title={t("publicLinkTitle")}
+                        icon={
+                            <Link2 className="size-3.5 text-muted-foreground" />
+                        }
+                    >
+                        <p className="mb-3 text-[12px] text-muted-foreground">
+                            {t("publicLinkDesc")}
+                        </p>
+                        {!slug ? (
+                            <p className="text-[13px] text-muted-foreground">
+                                {t("slugMissing")}
+                            </p>
+                        ) : editingSlug ? (
+                            <div className="space-y-3">
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="qr-slug">
+                                        {t("publicSlugLabel")}
+                                    </Label>
+                                    <div className="flex flex-wrap gap-2">
+                                        <span className="flex h-9 items-center rounded-md border border-border bg-muted px-2.5 text-[12px] text-muted-foreground">
+                                            /r/
+                                        </span>
+                                        <Input
+                                            id="qr-slug"
+                                            value={slugDraft}
+                                            onChange={e =>
+                                                setSlugDraft(e.target.value)
+                                            }
+                                            placeholder={t(
+                                                "publicSlugPlaceholder",
+                                            )}
+                                            className="h-9 max-w-xs"
+                                        />
+                                    </div>
+                                </div>
+                                <p className="text-[11px] text-amber-700 dark:text-amber-400">
+                                    {t("slugWarning")}
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                    <Button
+                                        size="sm"
+                                        onClick={handleSaveSlug}
+                                        disabled={
+                                            isSavingSlug ||
+                                            slugDraft.trim().length < 2
+                                        }
+                                    >
+                                        {isSavingSlug ? (
+                                            <Loader2 className="size-3.5 animate-spin" />
+                                        ) : null}
+                                        {t("saveSlug")}
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => {
+                                            setSlugDraft(slug);
+                                            setEditingSlug(false);
+                                        }}
+                                    >
+                                        {tCommon("cancel")}
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <code className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-[13px] text-foreground">
+                                    {publicBasePath}
+                                </code>
+                                <div className="flex flex-wrap gap-1.5">
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="gap-1.5"
+                                        onClick={handleCopyPublicLink}
+                                    >
+                                        <Copy className="size-3.5" />
+                                        {t("copyLink")}
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => {
+                                            setSlugDraft(slug);
+                                            setEditingSlug(true);
+                                        }}
+                                    >
+                                        {t("editSlug")}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </Section>
+
                     <Section
                         title={t("orderingRulesTitle")}
                         icon={

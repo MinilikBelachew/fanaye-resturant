@@ -48,7 +48,7 @@ function statusTone(column: string) {
 function statusLabel(column: string) {
     switch (column) {
         case "IN_KITCHEN":
-            return "In kitchen";
+            return "In stations";
         case "READY_TO_PAY":
             return "Ready to pay";
         case "PAID":
@@ -188,7 +188,7 @@ export default function DispatcherBoard() {
                         Live board
                     </h1>
                     <p className="mt-1 max-w-xl text-[14px] text-slate-gray">
-                        Take phone orders, send to kitchen, collect payment,
+                        Take phone orders, send to stations, collect payment,
                         drop cash.
                     </p>
                 </div>

@@ -135,7 +135,7 @@ export default function ManagerPrintMenuPage() {
     const logoFileInputRef = useRef<HTMLInputElement>(null);
 
     const tables = tablesData?.tables || [];
-    const slug = tablesData?.slug || "restaurant";
+    const slug = tablesData?.slug?.trim() || "";
     const origin =
         typeof window !== "undefined"
             ? window.location.origin
@@ -343,7 +343,7 @@ export default function ManagerPrintMenuPage() {
 
     // Direct Export to PDF using html-to-image + jsPDF (Option 1) - No direct print
     async function handleExportPdf() {
-        if (!paperSheetRef.current) return;
+        if (!paperSheetRef.current || !slug) return;
         setIsExportingPdf(true);
 
         const prevZoom = zoomLevel;

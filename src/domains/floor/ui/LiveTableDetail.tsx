@@ -137,11 +137,14 @@ export default function LiveTableDetail({
 
     const runningTotal = useMemo(() => {
         if (bill?.total) return Number(bill.total);
-        return items.reduce(
-            (sum, item) =>
-                sum + lineTotal(item.unitPrice, item.quantity, item.modifiers),
-            0,
-        );
+        return items.reduce((sum, item) => {
+            if (item.state === "CANCELLED" || item.state === "VOIDED") {
+                return sum;
+            }
+            return (
+                sum + lineTotal(item.unitPrice, item.quantity, item.modifiers)
+            );
+        }, 0);
     }, [bill, items]);
 
     if (isLoading) {

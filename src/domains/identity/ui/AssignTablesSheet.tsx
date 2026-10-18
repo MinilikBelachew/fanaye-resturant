@@ -27,6 +27,35 @@ import {
 } from "@/lib/validators/floor";
 import { cn } from "@/lib/utils";
 
+const DAY_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+
+const DAY_FULL: Record<(typeof DAY_ORDER)[number], string> = {
+    Mon: "Monday",
+    Tue: "Tuesday",
+    Wed: "Wednesday",
+    Thu: "Thursday",
+    Fri: "Friday",
+    Sat: "Saturday",
+    Sun: "Sunday",
+};
+
+function normalizeDayCode(raw: string): (typeof DAY_ORDER)[number] | null {
+    const key = raw.trim().slice(0, 3);
+    const match = DAY_ORDER.find(
+        day => day.toLowerCase() === key.toLowerCase(),
+    );
+    return match ?? null;
+}
+
+function formatDays(dayCodes: string[]): string {
+    const ordered = DAY_ORDER.filter(day =>
+        dayCodes.some(code => normalizeDayCode(code) === day),
+    );
+    if (ordered.length === 0) return "";
+    if (ordered.length === 1) return DAY_FULL[ordered[0]];
+    return ordered.map(day => DAY_FULL[day]).join(", ");
+}
+
 interface AssignTablesSheetProps {
     isOpen: boolean;
     waiterMembershipId: string | null;
@@ -40,7 +69,9 @@ export default function AssignTablesSheet({
     waiterName,
     onClose,
 }: AssignTablesSheetProps) {
-    const { data: staffData } = useAdminStaffQuery(undefined, { skip: !isOpen });
+    const { data: staffData } = useAdminStaffQuery(undefined, {
+        skip: !isOpen,
+    });
     const { data: layoutData } = useAdminFloorLayoutQuery(undefined, {
         skip: !isOpen,
     });
@@ -65,6 +96,49 @@ export default function AssignTablesSheet({
         [staffData, waiterMembershipId],
     );
 
+    const shiftOptions = useMemo(() => {
+        const dayShifts = waiter?.dayShifts ?? [];
+        if (dayShifts.length > 0) {
+            const byShift = new Map<
+                string,
+                {
+                    shiftDefinitionId: string;
+                    shiftName: string;
+                    startLocalTime: string;
+                    endLocalTime: string;
+                    dayCodes: string[];
+                }
+            >();
+            for (const row of dayShifts) {
+                const existing = byShift.get(row.shiftDefinitionId);
+                if (existing) {
+                    existing.dayCodes.push(row.dayCode);
+                    continue;
+                }
+                byShift.set(row.shiftDefinitionId, {
+                    shiftDefinitionId: row.shiftDefinitionId,
+                    shiftName: row.shiftName,
+                    startLocalTime: row.startLocalTime,
+                    endLocalTime: row.endLocalTime,
+                    dayCodes: [row.dayCode],
+                });
+            }
+            return [...byShift.values()].map(entry => ({
+                ...entry,
+                daysLabel: formatDays(entry.dayCodes),
+            }));
+        }
+
+        return shifts.map(shift => ({
+            shiftDefinitionId: shift.id,
+            shiftName: shift.name,
+            startLocalTime: shift.startLocalTime,
+            endLocalTime: shift.endLocalTime,
+            dayCodes: [] as string[],
+            daysLabel: "",
+        }));
+    }, [waiter?.dayShifts, shifts]);
+
     const [shiftId, setShiftId] = useState("");
     const [selectedTableIds, setSelectedTableIds] = useState<string[]>([]);
     const [showNewShift, setShowNewShift] = useState(false);
@@ -80,14 +154,14 @@ export default function AssignTablesSheet({
 
     useEffect(() => {
         if (!isOpen) return;
-        setShiftId(shifts[0]?.id ?? "");
+        setShiftId(shiftOptions[0]?.shiftDefinitionId ?? "");
         setShowNewShift(false);
         shiftForm.reset({
             name: "",
             startLocalTime: "07:00",
             endLocalTime: "15:00",
         });
-    }, [isOpen, shifts, shiftForm]);
+    }, [isOpen, shiftOptions, shiftForm]);
 
     useEffect(() => {
         if (!isOpen || !waiter || !shiftId) {
@@ -102,7 +176,9 @@ export default function AssignTablesSheet({
 
     if (!isOpen || !waiterMembershipId) return null;
 
-    const selectedShift = shifts.find(shift => shift.id === shiftId);
+    const selectedShift = shiftOptions.find(
+        shift => shift.shiftDefinitionId === shiftId,
+    );
 
     function toggleTable(tableId: string) {
         setSelectedTableIds(prev =>
@@ -125,7 +201,9 @@ export default function AssignTablesSheet({
             }).unwrap();
             toast.success(
                 "Tables saved",
-                `${selectedTableIds.length} table(s) for this shift.`,
+                selectedShift?.daysLabel
+                    ? `${selectedTableIds.length} table(s) for ${selectedShift.shiftName} (${selectedShift.daysLabel}).`
+                    : `${selectedTableIds.length} table(s) for this shift.`,
             );
             onClose();
         } catch (err) {
@@ -145,10 +223,13 @@ export default function AssignTablesSheet({
             });
             toast.success(
                 "Shift created",
-                `${created.data.name} (${created.data.startLocalTime}–${created.data.endLocalTime}).`,
+                `${created.data.name} (${created.data.startLocalTime}–${created.data.endLocalTime}). Assign days on Edit staff if needed.`,
             );
         } catch (err) {
-            toast.fromUnknown(err, "Could not create shift. Use times like 07:00.");
+            toast.fromUnknown(
+                err,
+                "Could not create shift. Use times like 07:00.",
+            );
         }
     }
 
@@ -167,7 +248,7 @@ export default function AssignTablesSheet({
                             </h2>
                             <p className="text-[13px] text-slate-gray">
                                 {waiterName || waiter?.name || "Waiter"} — pick
-                                a shift window, then tables
+                                a day/shift window, then tables
                             </p>
                         </div>
                     </div>
@@ -184,7 +265,7 @@ export default function AssignTablesSheet({
                     <div className="space-y-2">
                         <div className="flex items-center justify-between gap-2">
                             <label className="text-[13px] font-medium">
-                                Shift (custom times)
+                                Shift & working days
                             </label>
                             <button
                                 type="button"
@@ -200,22 +281,30 @@ export default function AssignTablesSheet({
                             onChange={e => setShiftId(e.target.value)}
                             className="h-10 w-full rounded-[10px] border border-input bg-card px-3 text-[13px]"
                         >
-                            {shifts.length === 0 ? (
-                                <option value="">Create a shift first</option>
+                            {shiftOptions.length === 0 ? (
+                                <option value="">
+                                    Schedule days on Edit staff first
+                                </option>
                             ) : null}
-                            {shifts.map(shift => (
-                                <option key={shift.id} value={shift.id}>
-                                    {shift.name} · {shift.startLocalTime}–
-                                    {shift.endLocalTime}
+                            {shiftOptions.map(shift => (
+                                <option
+                                    key={shift.shiftDefinitionId}
+                                    value={shift.shiftDefinitionId}
+                                >
+                                    {shift.daysLabel
+                                        ? `${shift.daysLabel} · ${shift.shiftName} · ${shift.startLocalTime}–${shift.endLocalTime}`
+                                        : `${shift.shiftName} · ${shift.startLocalTime}–${shift.endLocalTime}`}
                                 </option>
                             ))}
                         </select>
                         {selectedShift ? (
-                            <p className="flex items-center gap-1.5 text-[12px] text-slate-gray">
-                                <Clock3 className="size-3.5" />
-                                Only this waiter covers these tables during{" "}
-                                {selectedShift.startLocalTime}–
-                                {selectedShift.endLocalTime}
+                            <p className="flex items-start gap-1.5 text-[12px] text-slate-gray">
+                                <Clock3 className="mt-0.5 size-3.5 shrink-0" />
+                                <span>
+                                    {selectedShift.daysLabel
+                                        ? `Covers these tables on ${selectedShift.daysLabel} during ${selectedShift.startLocalTime}–${selectedShift.endLocalTime}.`
+                                        : `Only this waiter covers these tables during ${selectedShift.startLocalTime}–${selectedShift.endLocalTime}. Set working days on Edit staff.`}
+                                </span>
                             </p>
                         ) : null}
                     </div>
@@ -223,8 +312,8 @@ export default function AssignTablesSheet({
                     {showNewShift ? (
                         <Form {...shiftForm}>
                             <form
-                                onSubmit={shiftForm.handleSubmit(values =>
-                                    void onCreateShift(values),
+                                onSubmit={shiftForm.handleSubmit(
+                                    values => void onCreateShift(values),
                                 )}
                                 className="space-y-2 rounded-[12px] border border-dashed border-hairline bg-surface-ivory p-3"
                             >

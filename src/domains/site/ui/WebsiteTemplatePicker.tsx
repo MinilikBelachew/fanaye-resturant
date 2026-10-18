@@ -65,58 +65,46 @@ function TemplateMock({
         return (
             <div
                 className="relative aspect-[16/11] overflow-hidden"
-                style={{ background: "#efe8dc" }}
+                style={{ background: "#12100e" }}
             >
-                <div className="absolute inset-3 flex flex-col overflow-hidden rounded-[16px] border border-black/10 bg-[#f6f1e8]">
-                    <div
-                        className="flex items-center justify-between px-3 py-2"
-                        style={{ color: ink }}
+                <img
+                    src={previewImage}
+                    alt=""
+                    className="absolute inset-0 size-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-[1.03]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/15" />
+                <div className="absolute inset-x-0 top-0 flex items-center justify-between px-3 py-2.5">
+                    <span
+                        className="font-serif text-[10px] tracking-[0.14em] text-white/90"
+                        style={{ fontFamily: "Georgia, serif" }}
                     >
+                        FINE
+                    </span>
+                    <span
+                        className="border px-2 py-0.5 text-[7px] uppercase tracking-[0.16em] text-white/90"
+                        style={{ borderColor: `${accent}99` }}
+                    >
+                        {reserveLabel}
+                    </span>
+                </div>
+                <div className="absolute inset-x-0 bottom-0 px-4 pb-4 pt-10">
+                    <p
+                        className="max-w-[12rem] font-serif text-[15px] font-normal leading-[1.15] text-white sm:text-[17px]"
+                        style={{ fontFamily: "Georgia, serif" }}
+                    >
+                        Modern elegance
+                    </p>
+                    <div className="mt-2.5 flex items-center gap-2">
                         <span
-                            className="flex size-5 items-center justify-center rounded-full text-[8px] font-normal text-white"
+                            className="px-2.5 py-1 text-[7px] uppercase tracking-[0.16em] text-white"
                             style={{ background: accent }}
                         >
-                            F
+                            {menuLabel}
                         </span>
-                        <div className="hidden items-center gap-2 sm:flex">
-                            <span
-                                className="h-1 w-5 rounded-full"
-                                style={{ background: mute }}
-                            />
-                            <span
-                                className="h-1 w-5 rounded-full"
-                                style={{ background: mute }}
-                            />
-                            <span
-                                className="h-1 w-5 rounded-full"
-                                style={{ background: mute }}
-                            />
-                        </div>
                         <span
-                            className="rounded-full border px-2 py-0.5 text-[7px] font-normal uppercase tracking-wide"
-                            style={{ borderColor: accent, color: ink }}
-                        >
-                            {reserveLabel}
-                        </span>
-                    </div>
-                    <div className="relative mx-2 mb-2 min-h-0 flex-1 overflow-hidden rounded-[14px] border border-black/10">
-                        <img
-                            src={previewImage}
-                            alt=""
-                            className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                            className="h-px flex-1 max-w-[3rem]"
+                            style={{ background: mute }}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/20 to-transparent" />
-                        <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
-                            <p className="font-serif text-[13px] font-normal leading-tight text-white sm:text-[15px]">
-                                Experience Fine Dining
-                            </p>
-                            <span
-                                className="mt-2 rounded-full px-2.5 py-0.5 text-[7px] font-normal uppercase tracking-wide text-white"
-                                style={{ background: accent }}
-                            >
-                                {menuLabel}
-                            </span>
-                        </div>
                     </div>
                 </div>
             </div>

@@ -70,7 +70,7 @@ function itemStateInfo(
         return {
             label: tWaiter
                 ? tWaiter("needsSendToKitchen")
-                : "Needs Send to Kitchen",
+                : "Needs send to stations",
             icon: <ChefHat className="size-3 text-amber-500 animate-pulse" />,
             badgeClass:
                 "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/40 font-bold",
@@ -156,10 +156,21 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
         pollingInterval: pollMs,
     });
     const tickets = useMemo(() => orders?.data ?? [], [orders?.data]);
-    const itemCount = useMemo(
+    const allItemCount = useMemo(
         () => tickets.reduce((sum, order) => sum + order.items.length, 0),
         [tickets],
     );
+    const chargeableItems = useMemo(
+        () =>
+            tickets.flatMap(order =>
+                order.items.filter(
+                    item =>
+                        item.state !== "CANCELLED" && item.state !== "VOIDED",
+                ),
+            ),
+        [tickets],
+    );
+    const itemCount = chargeableItems.length;
     const sessionStatus =
         billing?.tableSession.status ?? table?.sessionStatus ?? null;
     const sessionVersion = billing?.tableSession.version ?? table?.version ?? 1;
@@ -167,25 +178,15 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
     const pendingRequest =
         billing?.billRequest?.status === "PENDING" ? billing.billRequest : null;
 
-    // Running tab calculation
+    // Running tab: exclude cancelled/voided; bill total wins once generated
     const runningTotal = useMemo(() => {
         if (bill?.total) return Number(bill.total);
-        return tickets.reduce((sum, order) => {
-            return (
-                sum +
-                order.items.reduce(
-                    (itemSum, item) =>
-                        itemSum +
-                        lineTotal(
-                            item.unitPrice,
-                            item.quantity,
-                            item.modifiers,
-                        ),
-                    0,
-                )
-            );
-        }, 0);
-    }, [bill, tickets]);
+        return chargeableItems.reduce(
+            (sum, item) =>
+                sum + lineTotal(item.unitPrice, item.quantity, item.modifiers),
+            0,
+        );
+    }, [bill, chargeableItems]);
 
     const pendingKitchenCount = useMemo(() => {
         return tickets.reduce(
@@ -524,7 +525,7 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                     {tWaiter("kitchenTickets")}
                                 </h2>
                                 <p className="text-[12.5px] text-slate-gray">
-                                    {itemCount} {tCommon("items")}
+                                    {allItemCount} {tCommon("items")}
                                 </p>
                             </div>
                             {canOrder ? (

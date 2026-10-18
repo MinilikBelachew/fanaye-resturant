@@ -219,6 +219,17 @@ export const qrMenuApi = api.injectEndpoints({
             }),
             providesTags: ["Floor", "QrMenu"],
         }),
+        updateAdminQrSlug: builder.mutation<
+            { slug: string; publicPath: string },
+            { slug: string }
+        >({
+            query: body => ({
+                url: "/admin/qr-menu/slug",
+                method: "PUT",
+                body,
+            }),
+            invalidatesTags: ["Floor", "QrMenu"],
+        }),
     }),
 });
 
@@ -230,4 +241,5 @@ export const {
     useGetAdminQrMenuConfigQuery,
     useUpdateAdminQrMenuConfigMutation,
     useGetAdminTablesQrQuery,
+    useUpdateAdminQrSlugMutation,
 } = qrMenuApi;
