@@ -113,7 +113,8 @@ export function useOpsSocket() {
             return;
         }
 
-        const socket = io(`${SOCKET_BASE_URL}/ops`, {
+        const base = (SOCKET_BASE_URL || "").replace(/\/+$/, "");
+        const socket = io(`${base}/ops`, {
             auth: { token: accessToken },
             transports: ["websocket", "polling"],
             reconnection: true,
