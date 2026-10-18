@@ -56,54 +56,100 @@ function TemplateMock({
 }) {
     const isDark = templateId === "ember-kitchen";
     const isFineDining = templateId === "harbor-bistro";
+    const isGarden = templateId === "garden-table";
     const isMono = templateId === "urban-plate";
     const ink = isDark ? "#f8fafc" : isMono ? "#09090b" : "#1c1917";
     const paper = isDark ? "#0b1120" : isFineDining ? "#f6f1e8" : "#ffffff";
     const mute = isDark ? "rgba(248,250,252,0.45)" : "rgba(28,25,23,0.35)";
 
+    if (isGarden) {
+        return (
+            <div
+                className="relative aspect-[16/11] overflow-hidden"
+                style={{ background: "#f7f3ee" }}
+            >
+                <div className="absolute inset-x-3 top-3 bottom-3 grid grid-cols-5 gap-1.5">
+                    <div className="col-span-2 flex flex-col justify-center pr-1">
+                        <p className="text-[10px] font-bold uppercase leading-tight text-neutral-900 sm:text-[12px]">
+                            Fresh & delicious
+                        </p>
+                        <div className="mt-2 flex gap-1">
+                            <span className="rounded-full bg-neutral-900 px-2 py-0.5 text-[6px] text-white">
+                                {menuLabel}
+                            </span>
+                            <span className="rounded-full border border-neutral-300 px-2 py-0.5 text-[6px]">
+                                {reserveLabel}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="relative col-span-3 overflow-hidden rounded-[18px]">
+                        <img
+                            src={previewImage}
+                            alt=""
+                            className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                        />
+                        <div
+                            className="absolute inset-0 opacity-30"
+                            style={{ background: accent }}
+                        />
+                    </div>
+                    <div
+                        className="col-span-5 mt-0.5 flex h-7 items-center gap-2 rounded-full px-2"
+                        style={{
+                            background: `linear-gradient(90deg,#171717,${accent})`,
+                        }}
+                    >
+                        <span className="size-4 rounded-full bg-white/30" />
+                        <span className="h-1 flex-1 rounded-full bg-white/25" />
+                        <span className="size-4 rounded-full bg-white/30" />
+                        <span className="h-1 flex-1 rounded-full bg-white/25" />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     if (isFineDining) {
         return (
             <div
                 className="relative aspect-[16/11] overflow-hidden"
-                style={{ background: "#12100e" }}
+                style={{ background: "#fdfcf9" }}
             >
-                <img
-                    src={previewImage}
-                    alt=""
-                    className="absolute inset-0 size-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-[1.03]"
+                <div
+                    className="absolute -right-6 top-2 size-28 rounded-full opacity-40 blur-2xl"
+                    style={{ background: accent }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/15" />
-                <div className="absolute inset-x-0 top-0 flex items-center justify-between px-3 py-2.5">
-                    <span
-                        className="font-serif text-[10px] tracking-[0.14em] text-white/90"
-                        style={{ fontFamily: "Georgia, serif" }}
-                    >
-                        FINE
+                <div className="absolute inset-x-0 top-0 flex items-center justify-between px-3 py-2">
+                    <span className="text-[9px] font-semibold tracking-tight text-neutral-800">
+                        Taste
                     </span>
                     <span
-                        className="border px-2 py-0.5 text-[7px] uppercase tracking-[0.16em] text-white/90"
-                        style={{ borderColor: `${accent}99` }}
+                        className="rounded-full px-2 py-0.5 text-[7px] font-medium text-white"
+                        style={{ background: accent }}
                     >
                         {reserveLabel}
                     </span>
                 </div>
-                <div className="absolute inset-x-0 bottom-0 px-4 pb-4 pt-10">
-                    <p
-                        className="max-w-[12rem] font-serif text-[15px] font-normal leading-[1.15] text-white sm:text-[17px]"
-                        style={{ fontFamily: "Georgia, serif" }}
-                    >
-                        Modern elegance
-                    </p>
-                    <div className="mt-2.5 flex items-center gap-2">
+                <div className="absolute inset-x-3 bottom-3 top-9 grid grid-cols-2 gap-2">
+                    <div className="flex flex-col justify-center pr-1">
+                        <p className="text-[6px] font-semibold uppercase tracking-[0.14em] text-orange-500">
+                            Good food
+                        </p>
+                        <p className="mt-1 text-[11px] font-semibold leading-tight text-neutral-900 sm:text-[13px]">
+                            Delicious food served fresh
+                        </p>
                         <span
-                            className="px-2.5 py-1 text-[7px] uppercase tracking-[0.16em] text-white"
+                            className="mt-2 w-fit rounded-full px-2 py-0.5 text-[6px] font-medium text-white"
                             style={{ background: accent }}
                         >
                             {menuLabel}
                         </span>
-                        <span
-                            className="h-px flex-1 max-w-[3rem]"
-                            style={{ background: mute }}
+                    </div>
+                    <div className="relative overflow-hidden rounded-2xl shadow-sm">
+                        <img
+                            src={previewImage}
+                            alt=""
+                            className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                         />
                     </div>
                 </div>

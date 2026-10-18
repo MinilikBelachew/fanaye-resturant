@@ -60,19 +60,19 @@ export const WEBSITE_TEMPLATES: WebsiteTemplate[] = [
     {
         id: "harbor-bistro",
         name: "Fine Dining",
-        tagline: "Modern elegance & quiet luxury",
-        vibe: "Full-bleed hero, brand-first serif, cool stone & champagne gold — calm fine dining",
-        previewImage: IMG.harborDining,
-        accent: "#8c7355",
+        tagline: "Modern food house — clean & bright",
+        vibe: "White space, warm orange, split hero, cuisine cards & popular dishes — TasteHouse energy",
+        previewImage: IMG.harborFood,
+        accent: "#ff6a00",
         theme: {
-            primaryColor: "#8c7355",
-            accentColor: "#12100e",
-            backgroundColor: "#f8f7f5",
-            textColor: "#12100e",
+            primaryColor: "#ff6a00",
+            accentColor: "#171717",
+            backgroundColor: "#fdfcf9",
+            textColor: "#171717",
             backgroundType: "solid",
-            fontDisplay: "Cormorant Garamond, Georgia, serif",
-            fontBody: "Source Sans 3, sans-serif",
-            borderRadius: "none",
+            fontDisplay: "Outfit, system-ui, sans-serif",
+            fontBody: "DM Sans, system-ui, sans-serif",
+            borderRadius: "xl",
         },
     },
     {
@@ -98,21 +98,19 @@ export const WEBSITE_TEMPLATES: WebsiteTemplate[] = [
     {
         id: "garden-table",
         name: "Garden Quiet",
-        tagline: "Fresh & botanical",
-        vibe: "Split hero, soft sage gradients, airy type — farm-to-table calm",
-        previewImage: IMG.garden,
-        accent: "#059669",
+        tagline: "Soft cards & fresh plates",
+        vibe: "Cream canvas, coral accents, no rigid header — pebble cards that stand alone",
+        previewImage: IMG.gardenSalad,
+        accent: "#e85d04",
         theme: {
-            primaryColor: "#059669",
-            accentColor: "#022c22",
-            backgroundColor: "#f4fbf7",
-            textColor: "#052e16",
-            backgroundType: "gradient",
-            backgroundGradient:
-                "linear-gradient(160deg, #f4fbf7 0%, #ecfdf5 50%, #d1fae5 100%)",
-            fontDisplay: "Playfair Display, serif",
-            fontBody: "Plus Jakarta Sans, sans-serif",
-            borderRadius: "xl",
+            primaryColor: "#e85d04",
+            accentColor: "#171717",
+            backgroundColor: "#f7f3ee",
+            textColor: "#171717",
+            backgroundType: "solid",
+            fontDisplay: "Outfit, system-ui, sans-serif",
+            fontBody: "DM Sans, system-ui, sans-serif",
+            borderRadius: "full",
         },
     },
     {
@@ -276,12 +274,10 @@ export function buildTemplateDraft(
 ): Data {
     const year = new Date().getFullYear();
     const name = tenantName || "Restaurant";
-    const tagline =
-        profile?.tagline?.trim() ||
-        "Seasonal plates, quiet hospitality, and a table worth lingering at.";
+    const tagline = profile?.tagline?.trim() || "Good food, good mood.";
     const story =
         profile?.story?.trim() ||
-        `${name} cooks with restraint — local harvests, careful fire, and service that never crowds the room.`;
+        `Discover ${name} — fresh plates, warm hospitality, and offers worth sharing. Order at the table or reserve ahead.`;
     const hoursRows =
         profile?.hours?.trim() ||
         "Tue – Thu|18:00 – 22:00\nFri – Sat|17:30 – 23:00\nSun|12:30 – 16:00\nMon|Closed";
@@ -315,10 +311,11 @@ export function buildTemplateDraft(
                         props: {
                             id: uid("header"),
                             showPhone: Boolean(profile?.phone?.trim()),
-                            linksLabel: "Menu,About,Hours,Contact",
+                            linksLabel:
+                                "Menu,Categories,Offers,Reservations,Contact",
                             navAlign: "split",
-                            ctaLabel: "Reserve",
-                            ctaHref: "#contact",
+                            ctaLabel: "Order now",
+                            ctaHref: "#menu",
                             size: "md",
                             sticky: true,
                         },
@@ -327,58 +324,76 @@ export function buildTemplateDraft(
                         type: "Hero",
                         props: {
                             id: uid("hero"),
-                            layout: "overlay",
-                            headline: name,
-                            subheadline: tagline,
-                            ctaLabel: "View menu",
+                            layout: "imageRight",
+                            headline: "Delicious food, served fresh.",
+                            subheadline: `${tagline} ${story}`,
+                            ctaLabel: "Order now",
                             ctaHref: "#menu",
-                            secondaryCtaLabel: "Reserve a table",
-                            secondaryCtaHref: "#contact",
-                            imageUrl: IMG.harborDining,
+                            secondaryCtaLabel: "Explore menu",
+                            secondaryCtaHref: "#menu",
+                            imageUrl: IMG.harborFood,
                             size: "lg",
-                            overlay: "medium",
+                            overlay: "soft",
                         },
                     },
                     {
-                        type: "About",
+                        type: "Features",
                         props: {
-                            id: uid("about"),
-                            layout: "imageRight",
-                            title: "Our kitchen",
-                            body: story,
-                            imageUrl: IMG.harborChef,
-                            stats: placeLine
-                                ? `Location|${placeLine}\nService|Dinner & weekend lunch\nReservations|Recommended`
-                                : "Service|Dinner & weekend lunch\nReservations|Recommended\nDress|Smart casual",
-                            size: "lg",
+                            id: uid("perks"),
+                            title: "",
+                            subtitle: "",
+                            items: "Fresh daily|Ingredients prepped every morning\nFast table service|From order to plate without the wait\nSecure payment|Cash, bank transfer & Telebirr\nAlways here|Friendly floor support when you need it",
+                            columns: "4",
+                            size: "sm",
+                        },
+                    },
+                    {
+                        type: "Features",
+                        props: {
+                            id: uid("cuisines"),
+                            title: "Explore by cuisine",
+                            subtitle: "Browse the kitchen by mood",
+                            items: "Grill & fire|Charred plates & house sauces\nPasta & bowls|Comfort classics, done clean\nSpice route|Warm spices & bold sides\nStreet favorites|Crispy, shareable, fast\nSweet finish|Cakes, gelato & bakery",
+                            columns: "3",
+                            size: "md",
                         },
                     },
                     {
                         type: "Menu",
                         props: {
                             id: uid("menu"),
-                            title: "Menu",
-                            subtitle:
-                                "Seasonal dishes from the kitchen — ask your server for tonight’s specials.",
+                            title: "Popular dishes",
+                            subtitle: "Guest favorites from today’s kitchen",
                             categoryFilter: "all",
-                            layout: "editorial",
-                            columns: "2",
-                            showImages: false,
+                            layout: "cards",
+                            columns: "4",
+                            showImages: true,
                             imageSize: "md",
-                            size: "lg",
+                            size: "md",
                         },
                     },
                     {
-                        type: "Gallery",
+                        type: "Features",
                         props: {
-                            id: uid("gallery"),
-                            title: "The room",
-                            imageUrls: galleryUrls(
-                                IMG.harborDining,
-                                IMG.harborPlate,
-                                IMG.harborWine,
-                            ),
-                            columns: "3",
+                            id: "offers",
+                            title: "Today’s offers",
+                            subtitle: "Worth claiming before you sit",
+                            items: "First visit welcome|Ask your waiter for the house welcome plate when you open a new table.\nFamily table special|Shareable combos for groups — perfect for weekends and celebrations.",
+                            columns: "2",
+                            size: "md",
+                        },
+                    },
+                    {
+                        type: "About",
+                        props: {
+                            id: uid("about"),
+                            layout: "imageLeft",
+                            title: `About ${name}`,
+                            body: story,
+                            imageUrl: IMG.harborDining,
+                            stats: placeLine
+                                ? `Location|${placeLine}\nService|Dine-in & table QR order\nReservations|Recommended`
+                                : "Service|Dine-in & table QR order\nReservations|Recommended\nGuests|Families & date nights",
                             size: "md",
                         },
                     },
@@ -387,12 +402,23 @@ export function buildTemplateDraft(
                         placeLine ? `Visit ${name}` : "Reservations & contact",
                     ),
                     {
+                        type: "CtaBanner",
+                        props: {
+                            id: uid("cta"),
+                            title: "Hungry? Start with the menu.",
+                            body: "Scan your table QR to order, or reserve a spot and walk in ready.",
+                            ctaLabel: "View menu",
+                            ctaHref: "#menu",
+                            size: "md",
+                        },
+                    },
+                    {
                         type: "Footer",
                         props: {
                             id: uid("footer"),
                             layout: "brandLinks",
                             note: `© ${year} ${name}${placeLine ? ` · ${placeLine}` : ""}.`,
-                            links: "Menu|#menu\nAbout|#about\nHours|#hours\nContact|#contact",
+                            links: "Menu|#menu\nOffers|#offers\nHours|#hours\nContact|#contact",
                             columns: "3",
                             size: "md",
                             showSocial: true,
@@ -514,46 +540,67 @@ export function buildTemplateDraft(
                 ],
             } as Data;
 
-        case "garden-table":
+        case "garden-table": {
+            const gardenTagline =
+                profile?.tagline?.trim() ||
+                "Fresh & delicious food for every taste.";
+            const gardenStory =
+                profile?.story?.trim() ||
+                `${name} cooks what the market brings — crisp greens, fire-roasted vegetables, and desserts that still taste like fruit.`;
             return {
                 root: { props: { title: name } },
                 content: [
-                    {
-                        type: "Header",
-                        props: {
-                            id: uid("header"),
-                            showPhone: true,
-                            linksLabel: "Menu,About,Features,Hours,Contact",
-                            navAlign: "split",
-                            size: "md",
-                            sticky: true,
-                        },
-                    },
+                    // No top Header — cards stand alone like the pebble layout.
                     {
                         type: "Hero",
                         props: {
                             id: uid("hero"),
-                            layout: "split",
-                            headline: name,
-                            subheadline:
-                                "Garden-bright cooking — herbs, fire-roasted vegetables, and slow Sundays.",
-                            ctaLabel: "See the menu",
+                            layout: "imageRight",
+                            headline: gardenTagline.toUpperCase(),
+                            subheadline: gardenStory,
+                            ctaLabel: "Order now",
                             ctaHref: "#menu",
-                            secondaryCtaLabel: "Our story",
-                            secondaryCtaHref: "#about",
-                            imageUrl: IMG.garden,
+                            secondaryCtaLabel: "View menu",
+                            secondaryCtaHref: "#menu",
+                            imageUrl: IMG.harborFood,
                             size: "lg",
-                            overlay: "light",
+                            overlay: "soft",
                         },
                     },
                     {
                         type: "Features",
                         props: {
-                            id: uid("features"),
-                            title: "From plot to plate",
-                            subtitle: "What makes lunch feel lighter",
-                            items: "Seasonal produce|We cook what the market brings that morning.\nOpen kitchen|Watch salads and grills come together.\nPatio seating|Shade, breeze, and long brunches.",
-                            columns: "3",
+                            id: uid("pill"),
+                            title: "",
+                            subtitle: "",
+                            layout: "pillBar",
+                            items: "Breakfast|Light starts & warm bread\nLunch|Bowls, salads, grill plates\nDinner|Shared tables after dark\nDrinks|Fresh juices & soft sips",
+                            columns: "4",
+                            size: "sm",
+                        },
+                    },
+                    {
+                        type: "Arrangement",
+                        props: {
+                            id: uid("arrangement"),
+                            title: "",
+                            imageUrls: galleryUrls(
+                                IMG.gardenSalad,
+                                IMG.harborPlate,
+                                IMG.garden,
+                                IMG.gallery1,
+                            ),
+                            warmTitle: "Taste the season",
+                            warmBody:
+                                "Bright plates and soft lighting for unhurried meals.",
+                            warmCtaLabel: "See menu",
+                            warmCtaHref: "#menu",
+                            darkTitle: "Reserve tonight",
+                            darkBody: placeLine
+                                ? `Find us at ${placeLine}. Ask for a patio table or a quiet corner.`
+                                : "Ask for a patio table or a quiet corner inside.",
+                            darkCtaLabel: "Contact",
+                            darkCtaHref: "#contact",
                             size: "md",
                         },
                     },
@@ -561,8 +608,8 @@ export function buildTemplateDraft(
                         type: "Menu",
                         props: {
                             id: uid("menu"),
-                            title: "Today’s garden",
-                            subtitle: "Synced with your menu items",
+                            title: "From the menu",
+                            subtitle: "Live sample dishes from your kitchen",
                             categoryFilter: "all",
                             layout: "cards",
                             columns: "3",
@@ -571,45 +618,26 @@ export function buildTemplateDraft(
                             size: "md",
                         },
                     },
+                    hoursBlock("Hours", hoursRows),
+                    contactBlock(placeLine ? `Visit ${name}` : "Visit us"),
                     {
-                        type: "About",
+                        type: "Footer",
                         props: {
-                            id: uid("about"),
-                            layout: "imageRight",
-                            title: "Grown with care",
-                            body: `${name} is a neighborhood table for people who want food that feels alive — crisp greens, bright sauces, and desserts that still taste like fruit.`,
-                            imageUrl: IMG.gardenSalad,
-                            stats: "Vegetarian|60%\nBrunch|Weekends\nPatio|Yes",
+                            id: uid("footer"),
+                            layout: "brandLinks",
+                            note: `© ${year} ${name}${placeLine ? ` · ${placeLine}` : ""}.`,
+                            links: "Menu|#menu\nHours|#hours\nContact|#contact",
+                            columns: "3",
                             size: "md",
+                            showSocial: true,
+                            instagram: profile?.instagram || "",
+                            facebook: profile?.facebook || "",
+                            tiktok: profile?.tiktok || "",
                         },
                     },
-                    {
-                        type: "Gallery",
-                        props: {
-                            id: uid("gallery"),
-                            title: "Moments",
-                            imageUrls: galleryUrls(
-                                IMG.garden,
-                                IMG.gardenSalad,
-                                IMG.gallery4,
-                                IMG.gallery1,
-                            ),
-                            columns: "4",
-                            size: "md",
-                        },
-                    },
-                    amenitiesBlock(
-                        "Guest comforts",
-                        "Outdoor seating|Shaded patio when the weather cooperates.\nKid friendly|High chairs and a shorter menu for little guests.\nDietary needs|Vegetarian, fasting, and gluten-aware options marked on the board.",
-                    ),
-                    hoursBlock(
-                        "Open hours",
-                        "Tue–Fri|10:00 – 21:00\nSat–Sun|09:00 – 22:00\nMonday|Closed",
-                    ),
-                    contactBlock("Visit the garden"),
-                    commonFooter,
                 ],
             } as Data;
+        }
 
         case "coffee-house":
             return {

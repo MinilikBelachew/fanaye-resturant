@@ -66,6 +66,19 @@ export type SiteSectionProps = {
         columns: string;
         size: string;
     } & WithTypography;
+    Arrangement: {
+        title: string;
+        imageUrls: string;
+        warmTitle: string;
+        warmBody: string;
+        warmCtaLabel: string;
+        warmCtaHref: string;
+        darkTitle: string;
+        darkBody: string;
+        darkCtaLabel: string;
+        darkCtaHref: string;
+        size: string;
+    } & WithTypography;
     Carousel: {
         title: string;
         imageUrls: string;
@@ -82,6 +95,7 @@ export type SiteSectionProps = {
         subtitle: string;
         items: string;
         columns: string;
+        layout: string;
         size: string;
     } & WithTypography;
     Testimonials: {
@@ -436,7 +450,7 @@ function MenuItemPrice({
     );
 }
 
-export const sitePuckConfig: Config<SiteSectionProps> = {
+export const sitePuckConfig = {
     components: {
         Header: {
             label: "Header",
@@ -724,13 +738,22 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                           ? 0.65
                           : 0.4;
 
+                const softFull = ctx.theme.borderRadius === "full";
                 const ctas = (
                     <div className="mt-6 flex flex-wrap gap-3">
                         {props.ctaLabel ? (
                             <a
                                 href={props.ctaHref || "#menu"}
-                                className="inline-flex rounded-full px-6 py-2.5 text-xs font-normal uppercase tracking-[0.18em] text-white transition-opacity hover:opacity-90"
-                                style={{ background: ctx.theme.primaryColor }}
+                                className={
+                                    softFull
+                                        ? "inline-flex rounded-full px-6 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-white transition-opacity hover:opacity-90"
+                                        : "inline-flex rounded-full px-6 py-2.5 text-xs font-normal uppercase tracking-[0.18em] text-white transition-opacity hover:opacity-90"
+                                }
+                                style={{
+                                    background: softFull
+                                        ? ctx.theme.accentColor || "#171717"
+                                        : ctx.theme.primaryColor,
+                                }}
                             >
                                 {props.ctaLabel}
                             </a>
@@ -738,7 +761,11 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                         {props.secondaryCtaLabel ? (
                             <a
                                 href={props.secondaryCtaHref || "#contact"}
-                                className="inline-flex rounded-full border border-current/25 px-6 py-2.5 text-xs font-normal uppercase tracking-[0.18em] transition-opacity hover:opacity-90"
+                                className={
+                                    softFull
+                                        ? "inline-flex rounded-full border border-neutral-900/15 bg-white px-6 py-3 text-xs font-semibold uppercase tracking-[0.12em] transition-opacity hover:opacity-90"
+                                        : "inline-flex rounded-full border border-current/25 px-6 py-2.5 text-xs font-normal uppercase tracking-[0.18em] transition-opacity hover:opacity-90"
+                                }
                             >
                                 {props.secondaryCtaLabel}
                             </a>
@@ -909,22 +936,59 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                 }
 
                 const imageFirst = layout === "imageLeft";
+                const radius =
+                    ctx.theme.borderRadius === "none"
+                        ? "rounded-none"
+                        : ctx.theme.borderRadius === "full"
+                          ? "rounded-[2.5rem] sm:rounded-[3rem]"
+                          : "rounded-3xl";
                 return (
-                    <section className={sectionPadding(props.size)}>
-                        <div className="mx-auto grid max-w-6xl items-center gap-8 lg:grid-cols-2">
+                    <section
+                        className={`relative overflow-hidden ${sectionPadding(props.size)}`}
+                        style={{
+                            background: `radial-gradient(ellipse 70% 80% at 85% 40%, ${ctx.theme.primaryColor}22 0%, transparent 55%), ${ctx.theme.backgroundColor}`,
+                        }}
+                    >
+                        <div className="relative mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2">
                             <div className={imageFirst ? "order-2" : "order-1"}>
                                 {copy}
                             </div>
-                            <div className={imageFirst ? "order-1" : "order-2"}>
+                            <div
+                                className={`relative ${imageFirst ? "order-1" : "order-2"}`}
+                            >
                                 {bg ? (
-                                    <img
-                                        src={bg}
-                                        alt=""
-                                        className="aspect-[4/5] w-full rounded-3xl object-cover sm:aspect-[5/4]"
-                                    />
+                                    <div
+                                        className={`relative overflow-hidden ${radius} shadow-[0_24px_60px_-28px_rgba(15,23,42,0.35)]`}
+                                    >
+                                        <img
+                                            src={bg}
+                                            alt=""
+                                            className="aspect-[4/5] w-full object-cover sm:aspect-[5/4]"
+                                        />
+                                        <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3 rounded-2xl border border-white/70 bg-white/95 px-4 py-3 shadow-sm backdrop-blur-sm">
+                                            <div className="min-w-0">
+                                                <p className="truncate text-sm font-medium text-neutral-900">
+                                                    {ctx.tenantName}
+                                                </p>
+                                                <p className="truncate text-[11px] text-neutral-500">
+                                                    {ctx.tagline ||
+                                                        "House favorite"}
+                                                </p>
+                                            </div>
+                                            <span
+                                                className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide text-white"
+                                                style={{
+                                                    background:
+                                                        ctx.theme.primaryColor,
+                                                }}
+                                            >
+                                                Featured
+                                            </span>
+                                        </div>
+                                    </div>
                                 ) : (
                                     <div
-                                        className="flex aspect-[5/4] items-center justify-center rounded-3xl text-sm text-white"
+                                        className={`flex aspect-[5/4] items-center justify-center text-sm text-white ${radius}`}
                                         style={{
                                             background: ctx.theme.primaryColor,
                                         }}
@@ -1561,6 +1625,191 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                 );
             },
         },
+        Arrangement: {
+            label: "Arrangement (pebble cards)",
+            fields: {
+                ...typographyFields(),
+                title: { type: "text", label: "Optional title" },
+                imageUrls: {
+                    type: "custom",
+                    label: "Images (use 3–4)",
+                    render: ({ value, onChange }) => (
+                        <GalleryUploadField
+                            value={String(value || "")}
+                            onChange={onChange}
+                        />
+                    ),
+                },
+                warmTitle: { type: "text", label: "Warm card title" },
+                warmBody: { type: "textarea", label: "Warm card body" },
+                warmCtaLabel: { type: "text", label: "Warm CTA" },
+                warmCtaHref: { type: "text", label: "Warm CTA link" },
+                darkTitle: { type: "text", label: "Dark card title" },
+                darkBody: { type: "textarea", label: "Dark card body" },
+                darkCtaLabel: { type: "text", label: "Dark CTA" },
+                darkCtaHref: { type: "text", label: "Dark CTA link" },
+                size: {
+                    type: "select",
+                    label: "Section size",
+                    options: SIZE_OPTIONS,
+                },
+            },
+            defaultProps: {
+                ...TYPOGRAPHY_DEFAULTS,
+                title: "",
+                imageUrls: "",
+                warmTitle: "Taste the season",
+                warmBody:
+                    "Bright plates and soft lighting for unhurried meals.",
+                warmCtaLabel: "See menu",
+                warmCtaHref: "#menu",
+                darkTitle: "Reserve tonight",
+                darkBody: "Ask for a patio table or a quiet corner inside.",
+                darkCtaLabel: "Contact",
+                darkCtaHref: "#contact",
+                size: "md",
+            },
+            render: ({
+                title,
+                imageUrls,
+                warmTitle,
+                warmBody,
+                warmCtaLabel,
+                warmCtaHref,
+                darkTitle,
+                darkBody,
+                darkCtaLabel,
+                darkCtaHref,
+                size,
+            }) => {
+                const ctx = getSiteRender();
+                const urls = parseLines(imageUrls)
+                    .map(resolveImage)
+                    .filter(Boolean);
+                const fallbacks = Object.values(DISH_IMAGES);
+                const [a, b, c, d] = [
+                    urls[0] || fallbacks[0],
+                    urls[1] || fallbacks[1],
+                    urls[2] || fallbacks[2],
+                    urls[3] || fallbacks[3],
+                ];
+                const pebble = "rounded-[2rem] sm:rounded-[2.5rem]";
+                return (
+                    <section className={sectionPadding(size)}>
+                        <div className="mx-auto max-w-6xl">
+                            {title?.trim() ? (
+                                <h2
+                                    className="mb-8 text-3xl font-semibold tracking-tight"
+                                    style={{
+                                        fontFamily: "var(--site-font-display)",
+                                    }}
+                                >
+                                    {title}
+                                </h2>
+                            ) : null}
+                            <div className="grid gap-4 lg:grid-cols-12 lg:grid-rows-2 lg:gap-5">
+                                <div
+                                    className={`relative min-h-[280px] overflow-hidden lg:col-span-5 lg:row-span-2 ${pebble}`}
+                                >
+                                    <img
+                                        src={a}
+                                        alt=""
+                                        className="absolute inset-0 size-full object-cover"
+                                    />
+                                </div>
+                                <div
+                                    className={`relative min-h-[160px] overflow-hidden lg:col-span-3 ${pebble}`}
+                                >
+                                    <img
+                                        src={b}
+                                        alt=""
+                                        className="absolute inset-0 size-full object-cover"
+                                    />
+                                </div>
+                                <div
+                                    className={`flex flex-col justify-between p-6 lg:col-span-4 ${pebble}`}
+                                    style={{
+                                        background: `${ctx.theme.primaryColor}22`,
+                                    }}
+                                >
+                                    <div>
+                                        <h3
+                                            className="text-xl font-semibold tracking-tight"
+                                            style={{
+                                                fontFamily:
+                                                    "var(--site-font-display)",
+                                            }}
+                                        >
+                                            {warmTitle}
+                                        </h3>
+                                        <p className="mt-2 text-sm opacity-70">
+                                            {warmBody}
+                                        </p>
+                                    </div>
+                                    {warmCtaLabel ? (
+                                        <a
+                                            href={warmCtaHref || "#menu"}
+                                            className="mt-5 inline-flex w-fit rounded-full bg-neutral-900 px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.14em] text-white"
+                                        >
+                                            {warmCtaLabel}
+                                        </a>
+                                    ) : null}
+                                </div>
+                                <div
+                                    className={`flex flex-col justify-between p-6 text-white lg:col-span-4 ${pebble}`}
+                                    style={{
+                                        background: `linear-gradient(135deg, #171717 0%, ${ctx.theme.primaryColor} 140%)`,
+                                    }}
+                                >
+                                    <div>
+                                        <h3
+                                            className="text-xl font-semibold tracking-tight"
+                                            style={{
+                                                fontFamily:
+                                                    "var(--site-font-display)",
+                                            }}
+                                        >
+                                            {darkTitle}
+                                        </h3>
+                                        <p className="mt-2 text-sm opacity-80">
+                                            {darkBody}
+                                        </p>
+                                    </div>
+                                    {darkCtaLabel ? (
+                                        <a
+                                            href={darkCtaHref || "#contact"}
+                                            className="mt-5 inline-flex w-fit rounded-full px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.14em] text-white"
+                                            style={{
+                                                background:
+                                                    ctx.theme.primaryColor,
+                                            }}
+                                        >
+                                            {darkCtaLabel}
+                                        </a>
+                                    ) : null}
+                                </div>
+                                <div
+                                    className={`relative min-h-[160px] overflow-hidden lg:col-span-3 ${pebble}`}
+                                >
+                                    <img
+                                        src={c}
+                                        alt=""
+                                        className="absolute inset-0 size-full object-cover"
+                                    />
+                                    {d ? (
+                                        <img
+                                            src={d}
+                                            alt=""
+                                            className="absolute bottom-3 right-3 size-16 rounded-2xl border-2 border-white object-cover shadow-md sm:size-20"
+                                        />
+                                    ) : null}
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                );
+            },
+        },
         Carousel: {
             label: "Carousel",
             fields: {
@@ -1709,6 +1958,17 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                     type: "textarea",
                     label: "Features (one per line: Title|Description)",
                 },
+                layout: {
+                    type: "select",
+                    label: "Layout",
+                    options: [
+                        { label: "Cards grid", value: "cards" },
+                        {
+                            label: "Pill bar (standalone strip)",
+                            value: "pillBar",
+                        },
+                    ],
+                },
                 columns: {
                     type: "select",
                     options: [
@@ -1728,10 +1988,23 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                 title: "Why guests return",
                 subtitle: "Hospitality, flavor, and pace.",
                 items: "Fresh daily|Ingredients sourced every morning\nFast service|From table to kitchen in minutes\nVerified pay|Secure transfer payment proof",
+                layout: "cards",
                 columns: "3",
                 size: "md",
             },
-            render: ({ title, subtitle, items, columns, size }) => {
+            render: props => {
+                const {
+                    title,
+                    subtitle,
+                    items,
+                    columns,
+                    layout = "cards",
+                    size,
+                } = props;
+                const sectionId =
+                    "id" in props && typeof props.id === "string"
+                        ? props.id
+                        : undefined;
                 const ctx = getSiteRender();
                 const rows = parsePipeRows(items, 2);
                 const border = softPanelBorder(ctx.theme);
@@ -1741,44 +2014,129 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
                         : columns === "4"
                           ? "sm:grid-cols-2 lg:grid-cols-4"
                           : "sm:grid-cols-3";
+                const pastel = [
+                    "rgba(220, 252, 231, 0.85)",
+                    "rgba(254, 243, 199, 0.9)",
+                    "rgba(255, 237, 213, 0.95)",
+                    "rgba(252, 231, 243, 0.9)",
+                    "rgba(237, 233, 254, 0.9)",
+                ];
+                const rounded =
+                    ctx.theme.borderRadius === "none"
+                        ? "rounded-xl"
+                        : ctx.theme.borderRadius === "full"
+                          ? "rounded-[2rem]"
+                          : "rounded-2xl";
+                const isPerkStrip = columns === "4" && !title?.trim();
+
+                if (layout === "pillBar") {
+                    const thumbs = Object.values(DISH_IMAGES);
+                    return (
+                        <section
+                            id={sectionId}
+                            className={sectionPadding(size)}
+                        >
+                            <div className="mx-auto max-w-6xl">
+                                <div
+                                    className="flex flex-col gap-4 rounded-full px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-2 sm:px-6"
+                                    style={{
+                                        background: `linear-gradient(90deg, #171717 0%, ${ctx.theme.primaryColor} 100%)`,
+                                    }}
+                                >
+                                    {rows
+                                        .slice(0, 4)
+                                        .map(([heading, desc], i) => (
+                                            <div
+                                                key={`${heading}-${desc}`}
+                                                className="flex min-w-0 flex-1 items-center gap-3 text-white"
+                                            >
+                                                <img
+                                                    src={
+                                                        thumbs[
+                                                            i % thumbs.length
+                                                        ]
+                                                    }
+                                                    alt=""
+                                                    className="size-11 shrink-0 rounded-full object-cover ring-2 ring-white/30"
+                                                />
+                                                <div className="min-w-0">
+                                                    <p className="truncate text-sm font-medium">
+                                                        {heading}
+                                                    </p>
+                                                    <p className="truncate text-[11px] opacity-75">
+                                                        {desc}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                </div>
+                            </div>
+                        </section>
+                    );
+                }
+
                 return (
-                    <section className={sectionPadding(size)}>
+                    <section id={sectionId} className={sectionPadding(size)}>
                         <div className="mx-auto max-w-6xl">
-                            <h2
-                                className="text-3xl font-normal tracking-tight"
-                                style={{
-                                    fontFamily: "var(--site-font-display)",
-                                }}
-                            >
-                                {title}
-                            </h2>
+                            {title?.trim() ? (
+                                <h2
+                                    className="text-3xl font-normal tracking-tight"
+                                    style={{
+                                        fontFamily: "var(--site-font-display)",
+                                    }}
+                                >
+                                    {title}
+                                </h2>
+                            ) : null}
                             {subtitle ? (
                                 <p className="mt-2 text-sm opacity-70">
                                     {subtitle}
                                 </p>
                             ) : null}
-                            <div className={`mt-8 grid gap-4 ${cols}`}>
-                                {rows.map(([heading, desc]) => (
+                            <div
+                                className={`grid gap-4 ${cols} ${title?.trim() ? "mt-8" : ""}`}
+                            >
+                                {rows.map(([heading, desc], index) => (
                                     <div
                                         key={`${heading}-${desc}`}
-                                        className="rounded-2xl p-5"
-                                        style={{
-                                            border: `1px solid ${border}`,
-                                            background: isLightColor(
-                                                ctx.theme.backgroundColor,
-                                            )
-                                                ? "rgba(15,23,42,0.03)"
-                                                : "rgba(255,255,255,0.06)",
-                                        }}
+                                        className={`${rounded} p-5 ${isPerkStrip ? "border border-black/5 bg-white shadow-sm" : ""}`}
+                                        style={
+                                            isPerkStrip
+                                                ? undefined
+                                                : {
+                                                      border: `1px solid ${border}`,
+                                                      background: isLightColor(
+                                                          ctx.theme
+                                                              .backgroundColor,
+                                                      )
+                                                          ? pastel[
+                                                                index %
+                                                                    pastel.length
+                                                            ]
+                                                          : "rgba(255,255,255,0.06)",
+                                                  }
+                                        }
                                     >
-                                        <div
-                                            className="mb-3 h-1.5 w-10 rounded-full"
-                                            style={{
-                                                background:
-                                                    ctx.theme.primaryColor,
-                                            }}
-                                        />
-                                        <h3 className="font-normal">
+                                        {!isPerkStrip ? (
+                                            <div
+                                                className="mb-3 flex size-10 items-center justify-center rounded-full text-sm font-medium text-white"
+                                                style={{
+                                                    background:
+                                                        ctx.theme.primaryColor,
+                                                }}
+                                            >
+                                                {heading.slice(0, 1)}
+                                            </div>
+                                        ) : (
+                                            <div
+                                                className="mb-3 h-1.5 w-10 rounded-full"
+                                                style={{
+                                                    background:
+                                                        ctx.theme.primaryColor,
+                                                }}
+                                            />
+                                        )}
+                                        <h3 className="font-medium">
                                             {heading}
                                         </h3>
                                         <p className="mt-2 text-sm opacity-70">
@@ -2274,4 +2632,4 @@ export const sitePuckConfig: Config<SiteSectionProps> = {
             },
         },
     },
-};
+} as Config<SiteSectionProps>;
