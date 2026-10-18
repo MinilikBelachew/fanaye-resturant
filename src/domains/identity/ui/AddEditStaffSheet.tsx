@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import {
+    Camera,
     Clock3,
     Eye,
     EyeOff,
@@ -27,7 +28,9 @@ import {
     useSetWaiterTableCoverageMutation,
     useUpdateAdminStaffMutation,
 } from "@/context/services/staffApi";
+import { useUploadMenuImageMutation } from "@/context/services/menuApi";
 import { useGetStationsQuery } from "@/context/services/stationsApi";
+import { filePublicUrl } from "@/domains/catalog/application/menuImages";
 import { Button } from "@/components/ui/button";
 import {
     Form,
@@ -40,8 +43,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "@/lib/toast";
 import {
+    dayShiftsFromForm,
     staffFormDefaults,
     staffFormSchema,
+    tableCoveragesFromForm,
     type StaffFormValues,
 } from "@/lib/validators/staff";
 import {
@@ -188,10 +193,13 @@ export default function AddEditStaffSheet() {
     const [setCoverage] = useSetWaiterTableCoverageMutation();
     const [createStaff] = useCreateAdminStaffMutation();
     const [updateStaffApi] = useUpdateAdminStaffMutation();
+    const [uploadPhoto, { isLoading: uploadingPhoto }] =
+        useUploadMenuImageMutation();
     const [createShift, { isLoading: creatingShift }] =
         useCreateShiftDefinitionMutation();
     const [showNewShift, setShowNewShift] = useState(false);
     const [showPin, setShowPin] = useState(false);
+    const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
 
     const shiftForm = useForm<ShiftDefinitionFormValues>({
         resolver: zodResolver(shiftDefinitionSchema),
@@ -205,10 +213,18 @@ export default function AddEditStaffSheet() {
     async function onCreateShift(values: ShiftDefinitionFormValues) {
         try {
             const created = await createShift(values).unwrap();
-            form.setValue("shiftDefinitionId", created.data.id, {
+            const currentCoverage = form.getValues("coverageShiftId");
+            form.setValue("coverageShiftId", created.data.id, {
                 shouldValidate: true,
                 shouldDirty: true,
             });
+            if (!currentCoverage) {
+                const map = { ...form.getValues("dayShiftByDay") };
+                for (const day of WEEKDAYS) {
+                    if (!map[day]) map[day] = created.data.id;
+                }
+                form.setValue("dayShiftByDay", map, { shouldDirty: true });
+            }
             setShowNewShift(false);
             shiftForm.reset({
                 name: "",
@@ -235,18 +251,29 @@ export default function AddEditStaffSheet() {
     });
 
     const role = form.watch("role");
-    const shiftDefinitionId = form.watch("shiftDefinitionId") || "";
-    const assignedTableIds = form.watch("assignedTableIds");
+    const dayShiftByDay = form.watch("dayShiftByDay");
+    const coverageShiftId = form.watch("coverageShiftId") || "";
+    const assignedTablesByShift = form.watch("assignedTablesByShift");
     const nameValue = form.watch("name");
+
+    const usedShiftIds = useMemo(() => {
+        return [
+            ...new Set(
+                WEEKDAYS.map(day => dayShiftByDay?.[day] || "").filter(Boolean),
+            ),
+        ];
+    }, [dayShiftByDay]);
+
+    const assignedTableIds = assignedTablesByShift?.[coverageShiftId] ?? [];
 
     const {
         data: shiftFloor,
         isFetching: floorLoading,
         isError: floorError,
-    } = useAdminShiftFloorQuery(shiftDefinitionId, {
-        skip: !isOpen || role !== "waiter" || !shiftDefinitionId,
+    } = useAdminShiftFloorQuery(coverageShiftId, {
+        skip: !isOpen || role !== "waiter" || !coverageShiftId,
         pollingInterval:
-            isOpen && role === "waiter" && shiftDefinitionId ? 8000 : 0,
+            isOpen && role === "waiter" && coverageShiftId ? 8000 : 0,
     });
 
     const editingMembershipId =
@@ -276,8 +303,37 @@ export default function AddEditStaffSheet() {
             const member = staffData?.data.find(
                 row => row.id === editingMembershipId,
             );
-            const initialShiftId =
-                member?.shiftCoverages?.[0]?.shiftDefinitionId || "";
+            const dayMap: Record<string, string> = {
+                Mon: "",
+                Tue: "",
+                Wed: "",
+                Thu: "",
+                Fri: "",
+                Sat: "",
+                Sun: "",
+            };
+            const dayRows = member?.dayShifts?.length
+                ? member.dayShifts
+                : (editingStaff.workingDays || []).map(day => ({
+                      dayCode: day,
+                      shiftDefinitionId:
+                          member?.shiftCoverages?.[0]?.shiftDefinitionId || "",
+                  }));
+            for (const row of dayRows) {
+                if (row.dayCode in dayMap && row.shiftDefinitionId) {
+                    dayMap[row.dayCode] = row.shiftDefinitionId;
+                }
+            }
+            const tablesByShift: Record<string, string[]> = {};
+            for (const coverage of member?.shiftCoverages ?? []) {
+                tablesByShift[coverage.shiftDefinitionId] = coverage.tables.map(
+                    table => table.tableId,
+                );
+            }
+            const firstShift =
+                Object.values(dayMap).find(Boolean) ||
+                member?.shiftCoverages?.[0]?.shiftDefinitionId ||
+                "";
 
             form.reset({
                 name: editingStaff.name || "",
@@ -285,15 +341,21 @@ export default function AddEditStaffSheet() {
                 phone: editingStaff.phone || "",
                 email: editingStaff.email || "",
                 pin: "",
+                hireDate: member?.hireDate || "",
+                photoId: member?.photoId || "",
                 active: editingStaff.active !== false,
-                workingDays: editingStaff.workingDays?.length
-                    ? editingStaff.workingDays
-                    : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-                shiftDefinitionId: initialShiftId,
-                assignedTableIds: editingStaff.assignedTableIds || [],
+                dayShiftByDay: dayMap,
+                assignedTablesByShift: tablesByShift,
+                coverageShiftId: firstShift,
             });
+            setPhotoPreviewUrl(
+                member?.photoPath
+                    ? filePublicUrl(member.photoPath) || null
+                    : null,
+            );
         } else {
             form.reset(staffFormDefaults);
+            setPhotoPreviewUrl(null);
         }
     }, [
         editingStaff,
@@ -305,36 +367,39 @@ export default function AddEditStaffSheet() {
     ]);
 
     useEffect(() => {
-        if (!isOpen) return;
-        if (!form.getValues("shiftDefinitionId") && shifts[0]?.id) {
-            form.setValue("shiftDefinitionId", shifts[0].id);
+        if (!isOpen || role !== "waiter") return;
+        const current = form.getValues("coverageShiftId");
+        if (current && usedShiftIds.includes(current)) return;
+        if (usedShiftIds[0]) {
+            form.setValue("coverageShiftId", usedShiftIds[0]);
         }
-    }, [isOpen, shifts, form]);
+    }, [isOpen, role, usedShiftIds, form]);
 
+    // New staff: default Mon–Sat to the first shift template once loaded
     useEffect(() => {
-        if (
-            !isOpen ||
-            !shiftDefinitionId ||
-            !editingMembershipId ||
-            !staffData
-        ) {
-            return;
+        if (!isOpen || isEditMode || !shifts[0]?.id) return;
+        const map = form.getValues("dayShiftByDay");
+        const anySet = WEEKDAYS.some(day => map?.[day]);
+        if (anySet) return;
+        const next: Record<string, string> = {
+            Mon: "",
+            Tue: "",
+            Wed: "",
+            Thu: "",
+            Fri: "",
+            Sat: "",
+            Sun: "",
+        };
+        for (const day of ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const) {
+            next[day] = shifts[0].id;
         }
-        const member = staffData.data.find(
-            row => row.id === editingMembershipId,
-        );
-        const coverage = member?.shiftCoverages.find(
-            row => row.shiftDefinitionId === shiftDefinitionId,
-        );
-        form.setValue(
-            "assignedTableIds",
-            coverage?.tables.map(table => table.tableId) ?? [],
-        );
-    }, [isOpen, shiftDefinitionId, editingMembershipId, staffData, form]);
+        form.setValue("dayShiftByDay", next);
+        form.setValue("coverageShiftId", shifts[0].id);
+    }, [isOpen, isEditMode, shifts, form]);
 
     const selectedShift = useMemo(
-        () => shifts.find(shift => shift.id === shiftDefinitionId) ?? null,
-        [shifts, shiftDefinitionId],
+        () => shifts.find(shift => shift.id === coverageShiftId) ?? null,
+        [shifts, coverageShiftId],
     );
 
     const assignmentStats = useMemo(() => {
@@ -363,7 +428,10 @@ export default function AddEditStaffSheet() {
         ownerId: string | null,
         ownerName: string | null,
     ) {
-        const current = form.getValues("assignedTableIds");
+        const shiftId = form.getValues("coverageShiftId");
+        if (!shiftId) return;
+        const byShift = { ...form.getValues("assignedTablesByShift") };
+        const current = byShift[shiftId] || [];
         const ownedByOther =
             ownerId &&
             ownerId !== editingMembershipId &&
@@ -377,13 +445,10 @@ export default function AddEditStaffSheet() {
             );
             if (!ok) return;
         }
-        form.setValue(
-            "assignedTableIds",
-            current.includes(tableId)
-                ? current.filter(id => id !== tableId)
-                : [...current, tableId],
-            { shouldDirty: true },
-        );
+        byShift[shiftId] = current.includes(tableId)
+            ? current.filter(id => id !== tableId)
+            : [...current, tableId];
+        form.setValue("assignedTablesByShift", byShift, { shouldDirty: true });
     }
 
     async function onSubmit(values: StaffFormValues) {
@@ -425,6 +490,15 @@ export default function AddEditStaffSheet() {
                 return;
             }
 
+            const dayShifts = dayShiftsFromForm(values.dayShiftByDay);
+            const tableCoverages =
+                values.role === "waiter"
+                    ? tableCoveragesFromForm(
+                          values.dayShiftByDay,
+                          values.assignedTablesByShift,
+                      )
+                    : undefined;
+
             if (isEditMode && editingMembershipId) {
                 await updateStaffApi({
                     membershipId: editingMembershipId,
@@ -437,20 +511,23 @@ export default function AddEditStaffSheet() {
                             ? { pin: values.pin.trim() }
                             : {}),
                         active: values.active,
-                        workingDays: values.workingDays,
+                        dayShifts,
                         stationCode,
                         preparationStationId,
-                        shiftDefinitionId:
-                            values.shiftDefinitionId || undefined,
+                        ...(tableCoverages ? { tableCoverages } : {}),
+                        hireDate: values.hireDate || undefined,
+                        photoId: values.photoId || null,
                     },
                 }).unwrap();
 
-                if (values.role === "waiter" && values.shiftDefinitionId) {
-                    await setCoverage({
-                        membershipId: editingMembershipId,
-                        shiftDefinitionId: values.shiftDefinitionId,
-                        tableIds: values.assignedTableIds,
-                    }).unwrap();
+                if (values.role === "waiter" && tableCoverages) {
+                    for (const coverage of tableCoverages) {
+                        await setCoverage({
+                            membershipId: editingMembershipId,
+                            shiftDefinitionId: coverage.shiftDefinitionId,
+                            tableIds: coverage.tableIds,
+                        }).unwrap();
+                    }
                 }
                 toast.success(t("toastStaffUpdated"), values.name.trim());
                 dispatch(closeAddEditStaff());
@@ -468,15 +545,13 @@ export default function AddEditStaffSheet() {
                     email: values.email.trim(),
                     pin: values.pin.trim(),
                     active: values.active,
-                    workingDays: values.workingDays,
+                    dayShifts,
                     stationCode,
                     preparationStationId,
-                    shiftDefinitionId: values.shiftDefinitionId || undefined,
-                    tableIds:
-                        values.role === "waiter"
-                            ? values.assignedTableIds
-                            : undefined,
+                    ...(tableCoverages ? { tableCoverages } : {}),
                     ...(targetBranchId ? { branchId: targetBranchId } : {}),
+                    ...(values.hireDate ? { hireDate: values.hireDate } : {}),
+                    ...(values.photoId ? { photoId: values.photoId } : {}),
                 }).unwrap();
                 if (typeof window !== "undefined") {
                     sessionStorage.removeItem("fanaye.staffTargetBranchId");
@@ -564,6 +639,101 @@ export default function AddEditStaffSheet() {
                             <h3 className="text-[12px] font-semibold tracking-wider text-slate-gray uppercase">
                                 {t("personalRoleDetails")}
                             </h3>
+
+                            <div className="flex items-center gap-4">
+                                <div className="relative size-16 shrink-0 overflow-hidden rounded-full border border-hairline bg-secondary/40">
+                                    {photoPreviewUrl ? (
+                                        <img
+                                            src={photoPreviewUrl}
+                                            alt=""
+                                            className="size-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="flex size-full items-center justify-center text-slate-gray">
+                                            <User className="size-6" />
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="min-w-0 flex-1 space-y-1.5">
+                                    <p className="text-[13px] font-medium text-foreground">
+                                        {t("staffPhoto")}
+                                    </p>
+                                    <p className="text-[12px] text-slate-gray">
+                                        {t("staffPhotoHint")}
+                                    </p>
+                                    <div className="flex flex-wrap gap-2">
+                                        <label className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-hairline bg-card px-2.5 text-[12px] font-medium text-foreground hover:bg-secondary/60">
+                                            <Camera className="size-3.5" />
+                                            {uploadingPhoto
+                                                ? t("uploadingPhoto")
+                                                : photoPreviewUrl
+                                                  ? t("replacePhoto")
+                                                  : t("uploadPhoto")}
+                                            <input
+                                                type="file"
+                                                accept="image/jpeg,image/png,image/webp,image/gif"
+                                                className="sr-only"
+                                                disabled={uploadingPhoto}
+                                                onChange={event => {
+                                                    const file =
+                                                        event.target.files?.[0];
+                                                    if (!file) return;
+                                                    void (async () => {
+                                                        try {
+                                                            const uploaded =
+                                                                await uploadPhoto(
+                                                                    file,
+                                                                ).unwrap();
+                                                            form.setValue(
+                                                                "photoId",
+                                                                uploaded.file
+                                                                    .id,
+                                                                {
+                                                                    shouldDirty: true,
+                                                                },
+                                                            );
+                                                            setPhotoPreviewUrl(
+                                                                filePublicUrl(
+                                                                    uploaded
+                                                                        .file
+                                                                        .path,
+                                                                ) ||
+                                                                    URL.createObjectURL(
+                                                                        file,
+                                                                    ),
+                                                            );
+                                                        } catch (err) {
+                                                            toast.fromUnknown(
+                                                                err,
+                                                                t(
+                                                                    "photoUploadError",
+                                                                ),
+                                                            );
+                                                        }
+                                                    })();
+                                                    event.target.value = "";
+                                                }}
+                                            />
+                                        </label>
+                                        {photoPreviewUrl ? (
+                                            <button
+                                                type="button"
+                                                className="h-8 rounded-lg border border-hairline px-2.5 text-[12px] font-medium text-slate-gray"
+                                                onClick={() => {
+                                                    form.setValue(
+                                                        "photoId",
+                                                        "",
+                                                        { shouldDirty: true },
+                                                    );
+                                                    setPhotoPreviewUrl(null);
+                                                }}
+                                            >
+                                                {t("removePhoto")}
+                                            </button>
+                                        ) : null}
+                                    </div>
+                                </div>
+                            </div>
 
                             <FormField
                                 control={form.control}
@@ -723,6 +893,27 @@ export default function AddEditStaffSheet() {
 
                             <FormField
                                 control={form.control}
+                                name="hireDate"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{t("hireDate")}</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="date"
+                                                className="h-10 rounded-[10px]"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <p className="text-[12px] text-slate-gray">
+                                            {t("hireDateHint")}
+                                        </p>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
                                 name="role"
                                 render={({ field }) => (
                                     <FormItem>
@@ -789,81 +980,107 @@ export default function AddEditStaffSheet() {
                                 </div>
                                 <p className="text-[12px] text-slate-gray">
                                     {role === "waiter"
-                                        ? t("shiftCoverageDesc")
-                                        : "Assign this cashier to an operational shift rotation (e.g. Morning, Afternoon, or Night)."}
+                                        ? "Pick a shift window per day (e.g. Monday morning, Thursday afternoon). Tables are assigned per shift window."
+                                        : "Pick a shift window per day (e.g. Monday morning, Thursday afternoon)."}
                                 </p>
+
+                                <div className="flex items-center justify-between">
+                                    <FormLabel>
+                                        {t("scheduledWorkingDays")}
+                                    </FormLabel>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowNewShift(v => !v)}
+                                        className="inline-flex items-center gap-1 text-[12px] font-medium text-primary hover:underline"
+                                    >
+                                        <Plus className="size-3.5" />
+                                        {showNewShift
+                                            ? tCommon("close")
+                                            : t("newShift")}
+                                    </button>
+                                </div>
 
                                 <FormField
                                     control={form.control}
-                                    name="shiftDefinitionId"
+                                    name="dayShiftByDay"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <div className="flex items-center justify-between">
-                                                <FormLabel>
-                                                    {t("shiftWindow")}
-                                                </FormLabel>
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        setShowNewShift(v => !v)
-                                                    }
-                                                    className="inline-flex items-center gap-1 text-[12px] font-medium text-primary hover:underline"
-                                                >
-                                                    <Plus className="size-3.5" />
-                                                    {showNewShift
-                                                        ? tCommon("close")
-                                                        : t("newShift")}
-                                                </button>
-                                            </div>
-                                            <FormControl>
-                                                <select
-                                                    value={field.value || ""}
-                                                    onChange={e =>
-                                                        field.onChange(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    className="h-10 w-full rounded-[10px] border border-input bg-card px-3 text-[13px]"
-                                                >
-                                                    {shifts.length === 0 ? (
-                                                        <option value="">
+                                            <div className="space-y-1.5">
+                                                {WEEKDAYS.map(day => (
+                                                    <div
+                                                        key={day}
+                                                        className="flex items-center gap-2"
+                                                    >
+                                                        <span className="w-10 shrink-0 text-[12px] font-medium text-foreground">
                                                             {t(
-                                                                "noShiftsOption",
+                                                                DAY_LABEL_KEYS[
+                                                                    day
+                                                                ],
                                                             )}
-                                                        </option>
-                                                    ) : (
-                                                        <option value="">
-                                                            {t(
-                                                                "selectShiftOption",
-                                                            )}
-                                                        </option>
-                                                    )}
-                                                    {shifts.map(shift => (
-                                                        <option
-                                                            key={shift.id}
-                                                            value={shift.id}
-                                                        >
-                                                            {shift.name} ·{" "}
-                                                            {
-                                                                shift.startLocalTime
+                                                        </span>
+                                                        <select
+                                                            value={
+                                                                field.value?.[
+                                                                    day
+                                                                ] || ""
                                                             }
-                                                            –
-                                                            {shift.endLocalTime}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </FormControl>
+                                                            onChange={e => {
+                                                                const next = {
+                                                                    ...field.value,
+                                                                    [day]: e
+                                                                        .target
+                                                                        .value,
+                                                                };
+                                                                field.onChange(
+                                                                    next,
+                                                                );
+                                                                if (
+                                                                    e.target
+                                                                        .value &&
+                                                                    role ===
+                                                                        "waiter"
+                                                                ) {
+                                                                    form.setValue(
+                                                                        "coverageShiftId",
+                                                                        e.target
+                                                                            .value,
+                                                                    );
+                                                                }
+                                                            }}
+                                                            className="h-9 flex-1 rounded-[10px] border border-input bg-card px-2.5 text-[12px]"
+                                                        >
+                                                            <option value="">
+                                                                Off
+                                                            </option>
+                                                            {shifts.map(
+                                                                shift => (
+                                                                    <option
+                                                                        key={
+                                                                            shift.id
+                                                                        }
+                                                                        value={
+                                                                            shift.id
+                                                                        }
+                                                                    >
+                                                                        {
+                                                                            shift.name
+                                                                        }{" "}
+                                                                        ·{" "}
+                                                                        {
+                                                                            shift.startLocalTime
+                                                                        }
+                                                                        –
+                                                                        {
+                                                                            shift.endLocalTime
+                                                                        }
+                                                                    </option>
+                                                                ),
+                                                            )}
+                                                        </select>
+                                                    </div>
+                                                ))}
+                                            </div>
                                             <FormMessage />
-                                            {selectedShift ? (
-                                                <p className="flex items-center gap-1.5 text-[12px] text-slate-gray">
-                                                    <Clock3 className="size-3.5" />
-                                                    {t("showingFloorFor", {
-                                                        name: selectedShift.name,
-                                                        start: selectedShift.startLocalTime,
-                                                        end: selectedShift.endLocalTime,
-                                                    })}
-                                                </p>
-                                            ) : null}
                                         </FormItem>
                                     )}
                                 />
@@ -1005,7 +1222,64 @@ export default function AddEditStaffSheet() {
                                     </div>
                                 ) : null}
 
-                                {role === "waiter" && shiftDefinitionId ? (
+                                {role === "waiter" &&
+                                usedShiftIds.length > 0 ? (
+                                    <div className="space-y-2">
+                                        <FormLabel>
+                                            {t("shiftWindow")} — tables
+                                        </FormLabel>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {usedShiftIds.map(shiftId => {
+                                                const shift = shifts.find(
+                                                    s => s.id === shiftId,
+                                                );
+                                                const active =
+                                                    coverageShiftId === shiftId;
+                                                return (
+                                                    <button
+                                                        key={shiftId}
+                                                        type="button"
+                                                        onClick={() =>
+                                                            form.setValue(
+                                                                "coverageShiftId",
+                                                                shiftId,
+                                                            )
+                                                        }
+                                                        className={cn(
+                                                            "rounded-full border px-3 py-1 text-[11px] font-medium transition-colors",
+                                                            active
+                                                                ? "border-primary bg-primary text-primary-foreground"
+                                                                : "border-hairline bg-card text-slate-gray hover:text-foreground",
+                                                        )}
+                                                    >
+                                                        {shift?.name || "Shift"}{" "}
+                                                        ·{" "}
+                                                        {
+                                                            (
+                                                                assignedTablesByShift[
+                                                                    shiftId
+                                                                ] || []
+                                                            ).length
+                                                        }{" "}
+                                                        tables
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        {selectedShift ? (
+                                            <p className="flex items-center gap-1.5 text-[12px] text-slate-gray">
+                                                <Clock3 className="size-3.5" />
+                                                {t("showingFloorFor", {
+                                                    name: selectedShift.name,
+                                                    start: selectedShift.startLocalTime,
+                                                    end: selectedShift.endLocalTime,
+                                                })}
+                                            </p>
+                                        ) : null}
+                                    </div>
+                                ) : null}
+
+                                {role === "waiter" && coverageShiftId ? (
                                     <div className="flex flex-wrap gap-2 text-[11px]">
                                         <span className="rounded-full border border-hairline bg-card px-2.5 py-1">
                                             {t("statsTables", {
@@ -1175,52 +1449,84 @@ export default function AddEditStaffSheet() {
                                 {t("scheduleAndAccount")}
                             </h3>
 
-                            <FormField
-                                control={form.control}
-                                name="workingDays"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>
-                                            {t("scheduledWorkingDays")}
-                                        </FormLabel>
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {WEEKDAYS.map(day => {
-                                                const isSelected =
-                                                    field.value.includes(day);
-                                                return (
-                                                    <button
+                            {role !== "waiter" && role !== "cashier" ? (
+                                <FormField
+                                    control={form.control}
+                                    name="dayShiftByDay"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>
+                                                {t("scheduledWorkingDays")}
+                                            </FormLabel>
+                                            <p className="text-[11px] text-slate-gray">
+                                                Optional weekly pattern — pick a
+                                                shift per day, or leave Off.
+                                            </p>
+                                            <div className="space-y-1.5">
+                                                {WEEKDAYS.map(day => (
+                                                    <div
                                                         key={day}
-                                                        type="button"
-                                                        onClick={() =>
-                                                            field.onChange(
-                                                                isSelected
-                                                                    ? field.value.filter(
-                                                                          d =>
-                                                                              d !==
-                                                                              day,
-                                                                      )
-                                                                    : [
-                                                                          ...field.value,
-                                                                          day,
-                                                                      ],
-                                                            )
-                                                        }
-                                                        className={cn(
-                                                            "rounded-full border px-3 py-1 text-[12px] font-medium",
-                                                            isSelected
-                                                                ? "border-primary bg-primary text-primary-foreground"
-                                                                : "border-hairline bg-surface-ivory text-slate-gray",
-                                                        )}
+                                                        className="flex items-center gap-2"
                                                     >
-                                                        {t(DAY_LABEL_KEYS[day])}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                                                        <span className="w-10 shrink-0 text-[12px] font-medium">
+                                                            {t(
+                                                                DAY_LABEL_KEYS[
+                                                                    day
+                                                                ],
+                                                            )}
+                                                        </span>
+                                                        <select
+                                                            value={
+                                                                field.value?.[
+                                                                    day
+                                                                ] || ""
+                                                            }
+                                                            onChange={e =>
+                                                                field.onChange({
+                                                                    ...field.value,
+                                                                    [day]: e
+                                                                        .target
+                                                                        .value,
+                                                                })
+                                                            }
+                                                            className="h-9 flex-1 rounded-[10px] border border-input bg-card px-2.5 text-[12px]"
+                                                        >
+                                                            <option value="">
+                                                                Off
+                                                            </option>
+                                                            {shifts.map(
+                                                                shift => (
+                                                                    <option
+                                                                        key={
+                                                                            shift.id
+                                                                        }
+                                                                        value={
+                                                                            shift.id
+                                                                        }
+                                                                    >
+                                                                        {
+                                                                            shift.name
+                                                                        }{" "}
+                                                                        ·{" "}
+                                                                        {
+                                                                            shift.startLocalTime
+                                                                        }
+                                                                        –
+                                                                        {
+                                                                            shift.endLocalTime
+                                                                        }
+                                                                    </option>
+                                                                ),
+                                                            )}
+                                                        </select>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            ) : null}
 
                             <Controller
                                 control={form.control}

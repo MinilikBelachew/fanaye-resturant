@@ -29,6 +29,7 @@ export default function FloorTableCard({
     footerLeft,
     footerAction,
     extraStatus,
+    isVip,
     onClick,
 }: {
     tableNumber: string;
@@ -41,6 +42,7 @@ export default function FloorTableCard({
     footerLeft: string;
     footerAction: string;
     extraStatus?: string | null;
+    isVip?: boolean;
     onClick: () => void;
 }) {
     const tCommon = useTranslations("common");
@@ -106,6 +108,12 @@ export default function FloorTableCard({
                             />
                             {badge.label}
                         </span>
+
+                        {isVip ? (
+                            <span className="inline-flex items-center rounded-full border border-amber-500/35 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-700 dark:text-amber-400">
+                                VIP
+                            </span>
+                        ) : null}
 
                         {seats != null ? (
                             <div className="flex items-center gap-1 text-[11.5px] font-medium text-slate-gray">

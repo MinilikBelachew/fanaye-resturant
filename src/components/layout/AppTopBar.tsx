@@ -8,6 +8,7 @@ import { LocaleSwitcher } from "@/components/theme/LocaleSwitcher";
 import OpsNotificationsBell from "@/domains/notifications/ui/OpsNotificationsBell";
 import BranchSwitcher from "@/components/layout/BranchSwitcher";
 import ShiftTopBarPill from "@/components/layout/ShiftTopBarPill";
+import { roleUsesShiftClock } from "@/domains/identity/domain/role";
 import { navForRole } from "@/domains/identity/application/nav";
 import { homePathForRole } from "@/domains/identity/application/homePath";
 import { isStationRole } from "@/domains/identity/domain/role";
@@ -41,6 +42,11 @@ const LABEL_KEYS: Record<string, string> = {
     Stations: "stations",
     Tables: "tables",
     Staff: "staff",
+    HR: "staff",
+    Finance: "finance",
+    Overview: "overview",
+    Closes: "closes",
+    Payroll: "payroll",
     Waiters: "waiters",
     Approvals: "approvals",
     Payments: "payments",
@@ -154,7 +160,7 @@ function AppTopBarInner({ className }: { className?: string }) {
             ) : null}
 
             <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
-                <ShiftTopBarPill />
+                {roleUsesShiftClock(staff?.role) ? <ShiftTopBarPill /> : null}
                 <BranchSwitcher />
                 {stationQueue ? (
                     <StationTopBarTools search={false} />

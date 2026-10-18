@@ -1,17 +1,13 @@
-import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
-import PageHeader from "@/components/custom/organisms/PageHeader";
-import DailyClosePanel from "@/domains/reporting/ui/DailyClosePanel";
+"use client";
 
-export default function ManagerDailyClosePage() {
-    return (
-        <DashboardFrame>
-            <PageHeader
-                compact
-                eyebrow="Close"
-                title="Daily close"
-                description="Review the snapshot, approve, then lock. Locking freezes the business day."
-            />
-            <DailyClosePanel mode="manager" />
-        </DashboardFrame>
-    );
+import { useEffect } from "react";
+import { useRouter } from "@/i18n/navigation";
+
+/** Daily close moved under Finance → Closes. */
+export default function ManagerDailyCloseRedirect() {
+    const router = useRouter();
+    useEffect(() => {
+        router.replace("/manager/finance/closes");
+    }, [router]);
+    return null;
 }

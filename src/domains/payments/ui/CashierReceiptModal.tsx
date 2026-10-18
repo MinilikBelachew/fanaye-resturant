@@ -266,6 +266,7 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
                                 </span>
                                 <strong className="text-slate-900 font-bold">
                                     {bill.billNumber}
+                                    {bill.isVip ? " · VIP" : ""}
                                 </strong>
                             </div>
                             <div className="flex justify-between">

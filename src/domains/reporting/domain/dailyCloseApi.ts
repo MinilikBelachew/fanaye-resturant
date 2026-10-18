@@ -2,6 +2,7 @@ export type DailyCloseBlocker = {
     code: string;
     message: string;
     entityId?: string | null;
+    expectedVersion?: number | null;
 };
 
 export type DailyCloseSummary = {

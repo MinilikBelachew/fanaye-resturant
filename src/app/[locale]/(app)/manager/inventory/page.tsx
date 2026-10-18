@@ -10,7 +10,7 @@ export default function ManagerInventoryPage() {
 
     return (
         <DashboardFrame>
-            <PageHeader title={t("title")} description={t("description")} />
+            <PageHeader title={t("title")} compact />
             <InventoryBoard />
         </DashboardFrame>
     );

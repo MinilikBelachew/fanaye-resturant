@@ -73,6 +73,9 @@ function invalidateForType(
     if (type.startsWith("guest.")) {
         dispatch(api.util.invalidateTags(["Floor", "Order", "Notifications"]));
     }
+    if (type.startsWith("leave.")) {
+        dispatch(api.util.invalidateTags(["Floor", "Notifications"]));
+    }
 }
 
 export function useOpsSocket() {

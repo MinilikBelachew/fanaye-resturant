@@ -38,6 +38,11 @@ const NAV_LABEL_KEYS: Record<string, string> = {
     Stations: "stations",
     Tables: "tables",
     Staff: "staff",
+    HR: "staff",
+    Finance: "finance",
+    Overview: "overview",
+    Closes: "closes",
+    Payroll: "payroll",
     Waiters: "waiters",
     Approvals: "approvals",
     Payments: "payments",
@@ -56,6 +61,7 @@ const NAV_LABEL_KEYS: Record<string, string> = {
     "In progress": "preparing",
     Exceptions: "exceptions",
     Notifications: "notifications",
+    Inventory: "inventory",
 };
 
 function CompactNav({ role }: { role: Role }) {

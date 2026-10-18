@@ -14,6 +14,7 @@ type PublicReceipt = {
     restaurantName: string;
     branchName: string;
     tableName: string | null;
+    isVip?: boolean;
     subtotal: string;
     total: string;
     amountPaid: string;
@@ -133,6 +134,7 @@ export default function PublicReceiptPage({
                     <p className="mt-0.5 text-[12px] text-zinc-500">
                         {receipt.branchName}
                         {receipt.tableName ? ` · ${receipt.tableName}` : ""}
+                        {receipt.isVip ? " · VIP" : ""}
                     </p>
                 </div>
 

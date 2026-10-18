@@ -20,10 +20,12 @@ import {
     useDeleteDiningTableMutation,
     useDeleteTableLocationMutation,
     useUpdateDiningTableMutation,
+    useUpdateTableLocationMutation,
 } from "@/context/services/floorApi";
 import type { AdminDiningTable } from "@/domains/floor/domain/floorLayoutApi";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "@/i18n/navigation";
 import {
     Form,
@@ -52,6 +54,7 @@ export default function ManagerFloorConfig() {
     const { data, isLoading, isError } = useAdminFloorLayoutQuery();
     const [createPlace, { isLoading: creatingPlace }] =
         useCreateTableLocationMutation();
+    const [updatePlace] = useUpdateTableLocationMutation();
     const [createTable, { isLoading: creatingTable }] =
         useCreateDiningTableMutation();
     const [updateTable, { isLoading: updatingTable }] =
@@ -90,7 +93,7 @@ export default function ManagerFloorConfig() {
 
     const placeForm = useForm<PlaceFormValues>({
         resolver: zodResolver(placeSchema),
-        defaultValues: { name: "" },
+        defaultValues: { name: "", isVip: false },
     });
 
     const tableForm = useForm<DiningTableCreateValues>({
@@ -100,6 +103,7 @@ export default function ManagerFloorConfig() {
             displayNumber: "",
             locationId: "",
             assignedWaiterMembershipId: "",
+            isVip: false,
         },
     });
 
@@ -110,6 +114,7 @@ export default function ManagerFloorConfig() {
             displayName: "",
             locationId: "",
             assignedWaiterMembershipId: "",
+            isVip: false,
         },
     });
 
@@ -121,11 +126,23 @@ export default function ManagerFloorConfig() {
 
     async function onCreatePlace(values: PlaceFormValues) {
         try {
-            await createPlace({ name: values.name }).unwrap();
-            placeForm.reset({ name: "" });
+            await createPlace({
+                name: values.name,
+                isVip: values.isVip ?? false,
+            }).unwrap();
+            placeForm.reset({ name: "", isVip: false });
             toast.success(t("toastPlaceCreated"), values.name);
         } catch (err) {
             toast.fromUnknown(err, t("toastPlaceCreateError"));
+        }
+    }
+
+    async function onTogglePlaceVip(locationId: string, isVip: boolean) {
+        try {
+            await updatePlace({ id: locationId, body: { isVip } }).unwrap();
+            toast.success(isVip ? t("toastPlaceVipOn") : t("toastPlaceVipOff"));
+        } catch (err) {
+            toast.fromUnknown(err, t("toastPlaceVipError"));
         }
     }
 
@@ -139,12 +156,14 @@ export default function ManagerFloorConfig() {
                 displayNumber: number,
                 assignedWaiterMembershipId:
                     values.assignedWaiterMembershipId || null,
+                isVip: values.isVip ?? false,
             }).unwrap();
             tableForm.reset({
                 displayName: "",
                 displayNumber: "",
                 locationId: values.locationId,
                 assignedWaiterMembershipId: "",
+                isVip: false,
             });
             toast.success(t("toastTableCreated"), `#${number} · ${label}`);
         } catch (err) {
@@ -160,6 +179,7 @@ export default function ManagerFloorConfig() {
             displayName: table.displayName,
             locationId: table.locationId,
             assignedWaiterMembershipId: table.assignedWaiterMembershipId ?? "",
+            isVip: table.isVip,
         });
     }
 
@@ -174,6 +194,7 @@ export default function ManagerFloorConfig() {
                     locationId: values.locationId,
                     assignedWaiterMembershipId:
                         values.assignedWaiterMembershipId || null,
+                    isVip: values.isVip ?? false,
                 },
             }).unwrap();
             setEditingTable(null);
@@ -310,6 +331,25 @@ export default function ManagerFloorConfig() {
                                         />
                                     </FormControl>
                                     <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={placeForm.control}
+                            name="isVip"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-row items-center gap-2 space-y-0">
+                                    <FormControl>
+                                        <Checkbox
+                                            checked={field.value}
+                                            onCheckedChange={checked =>
+                                                field.onChange(checked === true)
+                                            }
+                                        />
+                                    </FormControl>
+                                    <FormLabel className="text-[13px] font-normal">
+                                        {t("markPlaceVip")}
+                                    </FormLabel>
                                 </FormItem>
                             )}
                         />
@@ -451,6 +491,25 @@ export default function ManagerFloorConfig() {
                                 )}
                             />
                         </div>
+                        <FormField
+                            control={tableForm.control}
+                            name="isVip"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-row items-center gap-2 space-y-0">
+                                    <FormControl>
+                                        <Checkbox
+                                            checked={field.value}
+                                            onCheckedChange={checked =>
+                                                field.onChange(checked === true)
+                                            }
+                                        />
+                                    </FormControl>
+                                    <FormLabel className="text-[13px] font-normal">
+                                        {t("markTableVip")}
+                                    </FormLabel>
+                                </FormItem>
+                            )}
+                        />
                         <Button
                             type="submit"
                             disabled={saving || locations.length === 0}
@@ -501,10 +560,28 @@ export default function ManagerFloorConfig() {
                                                               .length,
                                                       })}
                                             </Badge>
+                                            {location.isVip ? (
+                                                <Badge variant="default">
+                                                    {t("vipBadge")}
+                                                </Badge>
+                                            ) : null}
                                         </div>
                                         <p className="text-[12px] text-slate-gray">
                                             {t("deletePlaceHint")}
                                         </p>
+                                        <label className="mt-2 inline-flex cursor-pointer items-center gap-2 text-[12px] text-slate-gray">
+                                            <Checkbox
+                                                checked={location.isVip}
+                                                disabled={saving}
+                                                onCheckedChange={checked =>
+                                                    void onTogglePlaceVip(
+                                                        location.id,
+                                                        checked === true,
+                                                    )
+                                                }
+                                            />
+                                            {t("markPlaceVip")}
+                                        </label>
                                     </div>
                                 </div>
                                 <Button
@@ -569,17 +646,28 @@ export default function ManagerFloorConfig() {
                                                                 </p>
                                                             ) : null}
                                                         </div>
-                                                        <Badge
-                                                            variant={
-                                                                assigned
-                                                                    ? "success"
-                                                                    : "warning"
-                                                            }
-                                                        >
-                                                            {assigned
-                                                                ? t("assigned")
-                                                                : t("open")}
-                                                        </Badge>
+                                                        <div className="flex flex-col items-end gap-1">
+                                                            <Badge
+                                                                variant={
+                                                                    assigned
+                                                                        ? "success"
+                                                                        : "warning"
+                                                                }
+                                                            >
+                                                                {assigned
+                                                                    ? t(
+                                                                          "assigned",
+                                                                      )
+                                                                    : t("open")}
+                                                            </Badge>
+                                                            {table.effectiveVip ? (
+                                                                <Badge variant="default">
+                                                                    {t(
+                                                                        "vipBadge",
+                                                                    )}
+                                                                </Badge>
+                                                            ) : null}
+                                                        </div>
                                                     </div>
                                                     <p className="mt-2 flex items-center gap-1.5 text-[12px] text-slate-gray">
                                                         <UserRound className="size-3.5 shrink-0" />
@@ -767,6 +855,32 @@ export default function ManagerFloorConfig() {
                                                 </select>
                                             </FormControl>
                                             <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={editForm.control}
+                                    name="isVip"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center gap-2 space-y-0 rounded-[10px] border border-hairline px-3 py-2.5">
+                                            <FormControl>
+                                                <Checkbox
+                                                    checked={field.value}
+                                                    onCheckedChange={checked =>
+                                                        field.onChange(
+                                                            checked === true,
+                                                        )
+                                                    }
+                                                />
+                                            </FormControl>
+                                            <div className="space-y-0.5">
+                                                <FormLabel className="text-[13px] font-medium">
+                                                    {t("markTableVip")}
+                                                </FormLabel>
+                                                <p className="text-[11px] text-slate-gray">
+                                                    {t("tableVipHint")}
+                                                </p>
+                                            </div>
                                         </FormItem>
                                     )}
                                 />

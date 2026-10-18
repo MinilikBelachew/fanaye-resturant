@@ -18,6 +18,8 @@ export type OpsNotificationType =
     | "guest.order_placed"
     | "guest.service_request"
     | "floor.updated"
+    | "leave.request.created"
+    | "leave.request.decided"
     | string;
 
 export interface OpsNotification {
@@ -50,10 +52,12 @@ export function isNotificationVisibleForRole(
             type === "ticket.unacknowledged" ||
             type === "item.delayed" ||
             type === "production.exception" ||
+            type === "leave.request.decided" ||
             normalized === "TICKET_QUEUED" ||
             normalized === "TICKET_UNACKNOWLEDGED" ||
             normalized === "ITEM_DELAYED" ||
-            normalized === "PRODUCTION_EXCEPTION"
+            normalized === "PRODUCTION_EXCEPTION" ||
+            normalized === "LEAVE_REQUEST_DECIDED"
         );
     }
 
@@ -62,13 +66,15 @@ export function isNotificationVisibleForRole(
             type === "bill.request.created" ||
             type === "cash_drop.pending" ||
             type === "cash_drop.resolved" ||
+            type === "leave.request.decided" ||
             normalized === "BILL_REQUEST_CREATED" ||
             normalized === "CASH_DROP_PENDING" ||
+            normalized === "LEAVE_REQUEST_DECIDED" ||
             normalized.includes("BILL_REQUEST")
         );
     }
 
-    if (role === "waiter") {
+    if (role === "waiter" || role === "dispatcher") {
         return (
             type === "item.ready" ||
             type === "item.delayed" ||
@@ -79,11 +85,13 @@ export function isNotificationVisibleForRole(
             type === "cash_drop.resolved" ||
             type === "production.exception" ||
             type === "menu.item.availability" ||
+            type === "leave.request.decided" ||
             normalized === "BILL_READY" ||
             normalized === "GUEST_ORDER_PLACED" ||
             normalized === "ITEM_READY" ||
             normalized === "ITEM_DELAYED" ||
             normalized === "MENU_ITEM_AVAILABILITY" ||
+            normalized === "LEAVE_REQUEST_DECIDED" ||
             [
                 "CALL_WAITER",
                 "REQUEST_WATER",
@@ -101,6 +109,13 @@ export function isNotificationVisibleForRole(
         );
     }
 
+    if (role === "store_manager") {
+        return (
+            type === "leave.request.decided" ||
+            normalized === "LEAVE_REQUEST_DECIDED"
+        );
+    }
+
     if (role === "manager" || role === "owner") {
         return (
             type === "approval.requested" ||
@@ -112,9 +127,12 @@ export function isNotificationVisibleForRole(
             type === "item.delayed" ||
             type === "branch.rush_mode.toggled" ||
             type === "menu.item.availability" ||
+            type === "leave.request.created" ||
+            type === "leave.request.decided" ||
             type.startsWith("approval") ||
             type.startsWith("cash_drop") ||
-            type.startsWith("bill.")
+            type.startsWith("bill.") ||
+            type.startsWith("leave.")
         );
     }
 
@@ -243,6 +261,22 @@ export function notificationHref(
             if (role === "dispatcher" && tableSessionId) {
                 return `/dispatcher/calls/${tableSessionId}`;
             }
+            return null;
+        case "leave.request.created":
+            if (role === "owner") return "/owner/staff/leave";
+            if (role === "manager") return "/manager/staff/leave";
+            return null;
+        case "leave.request.decided":
+            if (role === "waiter") return "/waiter/leave";
+            if (role === "cashier") return "/cashier/leave";
+            if (role === "dispatcher") return "/dispatcher/leave";
+            if (role === "store_manager") return "/store/leave";
+            if (role === "kitchen") return "/kitchen/leave";
+            if (role === "barista") return "/barista/leave";
+            if (role === "cakes") return "/cakes/leave";
+            if (role === "soft_drinks") return "/soft-drinks/leave";
+            if (role === "manager") return "/manager/staff/leave";
+            if (role === "owner") return "/owner/staff/leave";
             return null;
         default:
             return tableSessionId || tableId ? null : null;

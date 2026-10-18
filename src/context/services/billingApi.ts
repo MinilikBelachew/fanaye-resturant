@@ -80,28 +80,81 @@ export const billingApi = api.injectEndpoints({
             Bill,
             {
                 billRequestId: string;
-                expectedTableSessionVersion: number;
-                tableSessionId: string;
+                expectedTableSessionVersion?: number;
+                expectedRoomSessionVersion?: number;
+                tableSessionId?: string | null;
+                roomSessionId?: string | null;
             }
         >({
-            query: ({ billRequestId, expectedTableSessionVersion }) => ({
+            query: ({
+                billRequestId,
+                expectedTableSessionVersion,
+                expectedRoomSessionVersion,
+            }) => ({
                 url: `/bill-requests/${billRequestId}/generate`,
                 method: "POST",
-                body: { expectedTableSessionVersion },
+                body: {
+                    ...(expectedTableSessionVersion != null
+                        ? { expectedTableSessionVersion }
+                        : {}),
+                    ...(expectedRoomSessionVersion != null
+                        ? { expectedRoomSessionVersion }
+                        : {}),
+                },
                 headers: { "Idempotency-Key": idempotencyKey() },
             }),
             invalidatesTags: (_result, _error, arg) => [
                 "Floor",
+                "Rooms",
                 "Bill",
-                { type: "Bill", id: arg.tableSessionId },
+                ...(arg.tableSessionId
+                    ? [{ type: "Bill" as const, id: arg.tableSessionId }]
+                    : []),
+                ...(arg.roomSessionId
+                    ? [{ type: "Bill" as const, id: arg.roomSessionId }]
+                    : []),
+            ],
+        }),
+        roomSessionBill: builder.query<SessionBillResponse, string>({
+            query: roomSessionId => ({
+                url: `/room-sessions/${roomSessionId}/bill`,
+                method: "GET",
+            }),
+            providesTags: (_result, _error, id) => [
+                { type: "Bill", id },
+                "Bill",
+            ],
+        }),
+        requestRoomBill: builder.mutation<
+            BillRequestCreated,
+            { roomSessionId: string; expectedRoomSessionVersion: number }
+        >({
+            query: ({ roomSessionId, expectedRoomSessionVersion }) => ({
+                url: `/room-sessions/${roomSessionId}/bill-requests`,
+                method: "POST",
+                body: { expectedRoomSessionVersion },
+                headers: { "Idempotency-Key": idempotencyKey() },
+            }),
+            invalidatesTags: (_result, _error, arg) => [
+                "Rooms",
+                "Bill",
+                { type: "Bill", id: arg.roomSessionId },
+                { type: "Order", id: arg.roomSessionId },
             ],
         }),
         payCash: builder.mutation<
             {
                 payment: { paymentId: string; status: string };
                 change: string;
-                bill: { billId: string; status: string; version: number };
-                tableSession: { status: string; version: number };
+                remainingAmount: string;
+                bill: {
+                    billId: string;
+                    status: string;
+                    amountPaid: string;
+                    version: number;
+                };
+                tableSession?: { status: string; version: number };
+                roomSession?: { status: string; version: number };
             },
             {
                 billId: string;
@@ -129,8 +182,15 @@ export const billingApi = api.injectEndpoints({
                 payment: { paymentId: string; status: string };
                 tipAmount?: string;
                 verifiedAmount?: string;
-                bill: { billId: string; status: string; version: number };
-                tableSession: { status: string; version: number };
+                remainingAmount: string;
+                bill: {
+                    billId: string;
+                    status: string;
+                    amountPaid: string;
+                    version: number;
+                };
+                tableSession?: { status: string; version: number };
+                roomSession?: { status: string; version: number };
             },
             {
                 billId: string;
@@ -266,4 +326,6 @@ export const {
     useSendBillToWaiterMutation,
     useGetBillQuery,
     useLazyGetBillQuery,
+    useRoomSessionBillQuery,
+    useRequestRoomBillMutation,
 } = billingApi;

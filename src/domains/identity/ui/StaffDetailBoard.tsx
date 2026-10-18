@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import {
     ArrowLeft,
     CalendarDays,
@@ -26,7 +26,21 @@ import {
     useAdminStaffDetailQuery,
     useResetAdminStaffPasswordMutation,
     useResetAdminStaffPinMutation,
+    useUpdateAdminStaffMutation,
 } from "@/context/services/staffApi";
+import {
+    useListStaffLeaveBalancesQuery,
+    useSetStaffLeaveOverridesMutation,
+} from "@/context/services/hrApi";
+import { useListStaffPayHistoryQuery } from "@/context/services/payrollApi";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { formatEtb } from "@/lib/money";
 import { openEditStaff } from "@/context/slices/identitySlice";
 import type { AdminStaffMember } from "@/domains/identity/domain/staffApi";
 import type { Staff } from "@/domains/identity/domain/staff";
@@ -117,6 +131,7 @@ export default function StaffDetailBoard({
         useResetAdminStaffPinMutation();
     const [resetPassword, { isLoading: resettingPassword }] =
         useResetAdminStaffPasswordMutation();
+    const [updateStaff, updatingStaff] = useUpdateAdminStaffMutation();
 
     const [pinOpen, setPinOpen] = useState(false);
     const [pinValue, setPinValue] = useState("");
@@ -125,6 +140,115 @@ export default function StaffDetailBoard({
     const [passwordValue, setPasswordValue] = useState("");
     const [showPasswordValue, setShowPasswordValue] = useState(false);
     const [assignOpen, setAssignOpen] = useState(false);
+    const [hrForm, setHrForm] = useState({
+        employeeCode: "",
+        jobTitle: "",
+        employmentType: "",
+        payType: "",
+        basePay: "",
+        hireDate: "",
+        probationEndDate: "",
+        emergencyContactName: "",
+        emergencyContactPhone: "",
+        hrNotes: "",
+    });
+    const [overrideDraft, setOverrideDraft] = useState<Record<string, string>>(
+        {},
+    );
+    const { data: balancesRes } = useListStaffLeaveBalancesQuery(membershipId, {
+        skip: !membershipId,
+    });
+    const { data: payHistoryRes } = useListStaffPayHistoryQuery(membershipId, {
+        skip: !membershipId,
+    });
+    const [setLeaveOverrides] = useSetStaffLeaveOverridesMutation();
+
+    useEffect(() => {
+        if (!member) return;
+        setHrForm({
+            employeeCode: member.employeeCode ?? "",
+            jobTitle: member.jobTitle ?? "",
+            employmentType: member.employmentType ?? "",
+            payType: member.payType ?? "",
+            basePay: member.basePay != null ? String(member.basePay) : "",
+            hireDate: member.hireDate ?? "",
+            probationEndDate: member.probationEndDate ?? "",
+            emergencyContactName: member.emergencyContactName ?? "",
+            emergencyContactPhone: member.emergencyContactPhone ?? "",
+            hrNotes: member.hrNotes ?? "",
+        });
+    }, [member]);
+
+    useEffect(() => {
+        const rows = balancesRes?.data ?? [];
+        const next: Record<string, string> = {};
+        for (const row of rows) {
+            next[row.leaveTypeId] =
+                row.overrideDays != null
+                    ? String(row.overrideDays)
+                    : String(row.defaultDays ?? 0);
+        }
+        setOverrideDraft(next);
+    }, [balancesRes?.data]);
+
+    async function onSaveHr(e: React.FormEvent) {
+        e.preventDefault();
+        if (!member) return;
+        try {
+            await updateStaff({
+                membershipId: member.id,
+                body: {
+                    employeeCode: hrForm.employeeCode.trim() || undefined,
+                    jobTitle: hrForm.jobTitle.trim() || undefined,
+                    employmentType: hrForm.employmentType || undefined,
+                    payType: hrForm.payType || undefined,
+                    basePay:
+                        hrForm.basePay !== ""
+                            ? Number(hrForm.basePay)
+                            : undefined,
+                    hireDate: hrForm.hireDate || undefined,
+                    probationEndDate: hrForm.probationEndDate || undefined,
+                    emergencyContactName:
+                        hrForm.emergencyContactName.trim() || undefined,
+                    emergencyContactPhone:
+                        hrForm.emergencyContactPhone.trim() || undefined,
+                    hrNotes: hrForm.hrNotes.trim() || undefined,
+                },
+            }).unwrap();
+
+            const balanceRows = balancesRes?.data ?? [];
+            if (balanceRows.length > 0) {
+                await setLeaveOverrides({
+                    membershipId: member.id,
+                    overrides: balanceRows.map(row => {
+                        const raw = overrideDraft[row.leaveTypeId];
+                        const n = Number(raw);
+                        const defaultDays = row.defaultDays ?? 0;
+                        // Same as default → clear override; otherwise store override
+                        if (
+                            raw === "" ||
+                            !Number.isFinite(n) ||
+                            n === defaultDays
+                        ) {
+                            return {
+                                leaveTypeId: row.leaveTypeId,
+                                entitlementDays: null,
+                            };
+                        }
+                        return {
+                            leaveTypeId: row.leaveTypeId,
+                            entitlementDays: n,
+                        };
+                    }),
+                }).unwrap();
+            }
+
+            toast.success(t("hrSaved"));
+            void refetch();
+        } catch (err) {
+            toast.fromUnknown(err, t("hrSaveError"));
+        }
+    }
 
     async function onResetPin() {
         if (!member || !/^\d{4}$/.test(pinValue.trim())) {
@@ -314,6 +438,294 @@ export default function StaffDetailBoard({
                 ))}
             </div>
 
+            <form
+                onSubmit={onSaveHr}
+                className="space-y-3 rounded-2xl border border-hairline bg-card p-4"
+            >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h3 className="text-[14px] font-medium text-foreground">
+                            {t("sectionHr")}
+                        </h3>
+                        <p className="text-[12px] text-slate-gray">
+                            {t("sectionHrHint")}
+                        </p>
+                    </div>
+                    <Button
+                        type="submit"
+                        size="sm"
+                        className="h-8 rounded-full text-[12px]"
+                        disabled={updatingStaff.isLoading}
+                    >
+                        {updatingStaff.isLoading ? (
+                            <Loader2 className="size-3.5 animate-spin" />
+                        ) : null}
+                        {t("saveHr")}
+                    </Button>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <HrField
+                        label={t("hrEmployeeCode")}
+                        value={hrForm.employeeCode}
+                        onChange={v =>
+                            setHrForm(s => ({ ...s, employeeCode: v }))
+                        }
+                    />
+                    <HrField
+                        label={t("hrJobTitle")}
+                        value={hrForm.jobTitle}
+                        onChange={v => setHrForm(s => ({ ...s, jobTitle: v }))}
+                    />
+                    <div className="space-y-1 text-[12px]">
+                        <span className="font-medium text-slate-gray">
+                            {t("hrEmploymentType")}
+                        </span>
+                        <Select
+                            value={hrForm.employmentType || undefined}
+                            onValueChange={v =>
+                                setHrForm(s => ({ ...s, employmentType: v }))
+                            }
+                        >
+                            <SelectTrigger className="h-10 w-full rounded-xl border-hairline text-[13px] shadow-none">
+                                <SelectValue placeholder={t("hrPick")} />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl">
+                                {[
+                                    "FULL_TIME",
+                                    "PART_TIME",
+                                    "CONTRACT",
+                                    "CASUAL",
+                                ].map(v => (
+                                    <SelectItem key={v} value={v}>
+                                        {t(`employmentTypes.${v}`)}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-1 text-[12px]">
+                        <span className="font-medium text-slate-gray">
+                            {t("hrPayType")}
+                        </span>
+                        <Select
+                            value={hrForm.payType || undefined}
+                            onValueChange={v =>
+                                setHrForm(s => ({ ...s, payType: v }))
+                            }
+                        >
+                            <SelectTrigger className="h-10 w-full rounded-xl border-hairline text-[13px] shadow-none">
+                                <SelectValue placeholder={t("hrPick")} />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl">
+                                <SelectItem value="SALARY">
+                                    {t("payTypes.SALARY")}
+                                </SelectItem>
+                                <SelectItem value="HOURLY">
+                                    {t("payTypes.HOURLY")}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <HrField
+                        label={t("hrBasePay")}
+                        value={hrForm.basePay}
+                        onChange={v => setHrForm(s => ({ ...s, basePay: v }))}
+                        type="number"
+                        hint={
+                            hrForm.basePay
+                                ? formatEtb(Number(hrForm.basePay) || 0)
+                                : undefined
+                        }
+                    />
+                    <HrField
+                        label={t("hrHireDate")}
+                        value={hrForm.hireDate}
+                        onChange={v => setHrForm(s => ({ ...s, hireDate: v }))}
+                        type="date"
+                    />
+                    <HrField
+                        label={t("hrProbationEnd")}
+                        value={hrForm.probationEndDate}
+                        onChange={v =>
+                            setHrForm(s => ({ ...s, probationEndDate: v }))
+                        }
+                        type="date"
+                    />
+                    <HrField
+                        label={t("hrEmergencyName")}
+                        value={hrForm.emergencyContactName}
+                        onChange={v =>
+                            setHrForm(s => ({
+                                ...s,
+                                emergencyContactName: v,
+                            }))
+                        }
+                    />
+                    <HrField
+                        label={t("hrEmergencyPhone")}
+                        value={hrForm.emergencyContactPhone}
+                        onChange={v =>
+                            setHrForm(s => ({
+                                ...s,
+                                emergencyContactPhone: v,
+                            }))
+                        }
+                    />
+                    <div className="space-y-2 sm:col-span-2 lg:col-span-3">
+                        <p className="text-[12px] font-medium text-slate-gray">
+                            {t("hrLeaveBalances")}
+                        </p>
+                        <p className="text-[11px] text-slate-gray">
+                            {t("hrLeaveOverrideHint")}
+                        </p>
+                        <div className="overflow-hidden rounded-xl border border-hairline">
+                            <table className="w-full text-left text-[12px]">
+                                <thead className="bg-surface-ivory text-slate-gray">
+                                    <tr>
+                                        <th className="px-3 py-2 font-medium">
+                                            {t("hrLeaveType")}
+                                        </th>
+                                        <th className="px-3 py-2 font-medium">
+                                            {t("hrLeaveDefault")}
+                                        </th>
+                                        <th className="px-3 py-2 font-medium">
+                                            {t("hrLeaveOverride")}
+                                        </th>
+                                        <th className="px-3 py-2 font-medium">
+                                            {t("hrLeaveRemaining")}
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {(balancesRes?.data ?? []).map(row => (
+                                        <tr
+                                            key={row.leaveTypeId}
+                                            className="border-t border-hairline"
+                                        >
+                                            <td className="px-3 py-2 font-medium">
+                                                {row.leaveTypeName}
+                                            </td>
+                                            <td className="px-3 py-2 tabular-nums">
+                                                {row.defaultDays ?? 0}
+                                            </td>
+                                            <td className="px-3 py-2">
+                                                <input
+                                                    type="number"
+                                                    min={0}
+                                                    step="0.5"
+                                                    value={
+                                                        overrideDraft[
+                                                            row.leaveTypeId
+                                                        ] ??
+                                                        String(
+                                                            row.defaultDays ??
+                                                                0,
+                                                        )
+                                                    }
+                                                    onChange={e =>
+                                                        setOverrideDraft(s => ({
+                                                            ...s,
+                                                            [row.leaveTypeId]:
+                                                                e.target.value,
+                                                        }))
+                                                    }
+                                                    className="h-9 w-24 rounded-lg border border-hairline bg-background px-2 text-[13px]"
+                                                />
+                                            </td>
+                                            <td className="px-3 py-2 tabular-nums">
+                                                {row.balanceDays}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <label className="space-y-1 text-[12px] sm:col-span-2 lg:col-span-3">
+                        <span className="font-medium text-slate-gray">
+                            {t("hrNotes")}
+                        </span>
+                        <textarea
+                            value={hrForm.hrNotes}
+                            onChange={e =>
+                                setHrForm(s => ({
+                                    ...s,
+                                    hrNotes: e.target.value,
+                                }))
+                            }
+                            rows={2}
+                            className="w-full rounded-xl border border-hairline bg-background px-3 py-2 text-[13px]"
+                        />
+                    </label>
+                </div>
+            </form>
+
+            <section className="rounded-2xl border border-hairline bg-card p-4">
+                <h3 className="text-[12px] font-medium uppercase tracking-[0.08em] text-slate-gray">
+                    Pay history
+                </h3>
+                <p className="mt-1 text-[11px] text-slate-gray">
+                    Paid amounts from Finance → Payroll (frozen after mark
+                    paid).
+                </p>
+                {(payHistoryRes?.data?.length ?? 0) === 0 ? (
+                    <p className="mt-3 text-[13px] text-muted-foreground">
+                        No payments recorded yet.
+                    </p>
+                ) : (
+                    <div className="mt-3 overflow-x-auto">
+                        <table className="w-full text-left text-[12px]">
+                            <thead className="text-slate-gray">
+                                <tr>
+                                    <th className="px-2 py-1.5 font-medium">
+                                        Period
+                                    </th>
+                                    <th className="px-2 py-1.5 font-medium text-right">
+                                        Base
+                                    </th>
+                                    <th className="px-2 py-1.5 font-medium text-right">
+                                        OT
+                                    </th>
+                                    <th className="px-2 py-1.5 font-medium text-right">
+                                        Net
+                                    </th>
+                                    <th className="px-2 py-1.5 font-medium">
+                                        Method
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {(payHistoryRes?.data ?? []).map(row => (
+                                    <tr
+                                        key={row.id}
+                                        className="border-t border-hairline"
+                                    >
+                                        <td className="px-2 py-2">
+                                            {row.runLabel ||
+                                                `${row.periodStart} – ${row.periodEnd}`}
+                                        </td>
+                                        <td className="px-2 py-2 text-right tabular-nums">
+                                            {formatEtb(row.baseGross)}
+                                        </td>
+                                        <td className="px-2 py-2 text-right tabular-nums">
+                                            {row.otAmount > 0
+                                                ? formatEtb(row.otAmount)
+                                                : "—"}
+                                        </td>
+                                        <td className="px-2 py-2 text-right font-medium tabular-nums">
+                                            {formatEtb(row.net)}
+                                        </td>
+                                        <td className="px-2 py-2 text-muted-foreground">
+                                            {row.payMethod || "—"}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </section>
+
             <div className="grid gap-3 lg:grid-cols-2">
                 <section className="rounded-2xl border border-hairline bg-card p-4">
                     <h3 className="text-[12px] font-medium uppercase tracking-[0.08em] text-slate-gray">
@@ -335,9 +747,17 @@ export default function StaffDetailBoard({
                                     {t("workingDays")}
                                 </p>
                                 <p className="text-[12px] text-slate-gray">
-                                    {member.workingDays?.length
-                                        ? member.workingDays.join(" · ")
-                                        : t("noWorkingDays")}
+                                    {member.dayShifts &&
+                                    member.dayShifts.length > 0
+                                        ? member.dayShifts
+                                              .map(
+                                                  row =>
+                                                      `${row.dayCode} ${row.shiftName}`,
+                                              )
+                                              .join(" · ")
+                                        : member.workingDays?.length
+                                          ? member.workingDays.join(" · ")
+                                          : t("noWorkingDays")}
                                 </p>
                             </div>
                         </div>
@@ -553,6 +973,35 @@ export default function StaffDetailBoard({
                 />
             ) : null}
         </DashboardFrame>
+    );
+}
+
+function HrField({
+    label,
+    value,
+    onChange,
+    type = "text",
+    hint,
+}: {
+    label: string;
+    value: string;
+    onChange: (v: string) => void;
+    type?: string;
+    hint?: string;
+}) {
+    return (
+        <label className="space-y-1 text-[12px]">
+            <span className="font-medium text-slate-gray">{label}</span>
+            <input
+                type={type}
+                value={value}
+                onChange={e => onChange(e.target.value)}
+                className="h-10 w-full rounded-xl border border-hairline bg-background px-3 text-[13px]"
+            />
+            {hint ? (
+                <span className="text-[11px] text-slate-gray">{hint}</span>
+            ) : null}
+        </label>
     );
 }
 

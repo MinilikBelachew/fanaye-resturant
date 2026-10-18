@@ -6,6 +6,16 @@ import type {
 } from "@/domains/identity/domain/staffApi";
 import { api } from "./index";
 
+export type StaffDayShiftBody = {
+    dayCode: string;
+    shiftDefinitionId: string;
+};
+
+export type StaffTableCoverageBody = {
+    shiftDefinitionId: string;
+    tableIds: string[];
+};
+
 export type CreateAdminStaffBody = {
     name: string;
     role: string;
@@ -14,12 +24,16 @@ export type CreateAdminStaffBody = {
     pin?: string;
     active?: boolean;
     workingDays?: string[];
+    dayShifts?: StaffDayShiftBody[];
     stationCode?: string;
     preparationStationId?: string;
     shiftDefinitionId?: string;
     tableIds?: string[];
+    tableCoverages?: StaffTableCoverageBody[];
     /** Owner: create into a specific branch */
     branchId?: string;
+    hireDate?: string;
+    photoId?: string;
 };
 
 export type AdminStaffQueryArg = {
@@ -35,9 +49,23 @@ export type UpdateAdminStaffBody = {
     pin?: string;
     active?: boolean;
     workingDays?: string[];
+    dayShifts?: StaffDayShiftBody[];
     stationCode?: string;
     preparationStationId?: string;
     shiftDefinitionId?: string;
+    tableCoverages?: StaffTableCoverageBody[];
+    employeeCode?: string;
+    jobTitle?: string;
+    employmentType?: string;
+    payType?: string;
+    basePay?: number;
+    hireDate?: string;
+    probationEndDate?: string;
+    emergencyContactName?: string;
+    emergencyContactPhone?: string;
+    hrNotes?: string;
+    annualLeaveBalanceDays?: number;
+    photoId?: string | null;
 };
 
 export type AdminStaffDetail = AdminStaffMember & {
@@ -45,6 +73,19 @@ export type AdminStaffDetail = AdminStaffMember & {
     createdAt?: string | null;
     tablesCoveredCount?: number;
     shiftsCoveredCount?: number;
+    employeeCode?: string | null;
+    jobTitle?: string | null;
+    employmentType?: string | null;
+    payType?: string | null;
+    basePay?: number | null;
+    hireDate?: string | null;
+    probationEndDate?: string | null;
+    emergencyContactName?: string | null;
+    emergencyContactPhone?: string | null;
+    hrNotes?: string | null;
+    annualLeaveBalanceDays?: number | null;
+    photoId?: string | null;
+    photoPath?: string | null;
 };
 
 export const staffApi = api.injectEndpoints({

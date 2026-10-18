@@ -40,6 +40,8 @@ export type WaiterMenuItem = {
 
 export type WaiterMenuResponse = {
     menuId: string;
+    /** True when this table session is VIP seating (prices already include VIP %). */
+    isVip?: boolean;
     activePeriod: { id: string; name: string } | null;
     categories: WaiterMenuCategory[];
     items: WaiterMenuItem[];
@@ -73,15 +75,18 @@ export type SessionOrder = {
 };
 
 export type SessionOrdersResponse = {
-    tableSessionId: string;
+    tableSessionId?: string | null;
+    roomSessionId?: string | null;
     sessionStatus: string;
     version: number;
     data: SessionOrder[];
 };
 
 export type ConfirmOrderRequest = {
-    tableSessionId: string;
-    expectedTableSessionVersion: number;
+    tableSessionId?: string;
+    roomSessionId?: string;
+    expectedTableSessionVersion?: number;
+    expectedRoomSessionVersion?: number;
     items: Array<{
         menuItemId: string;
         quantity: number;
@@ -92,11 +97,13 @@ export type ConfirmOrderRequest = {
 
 export type ConfirmOrderResponse = {
     orderId: string;
-    tableSessionId: string;
+    tableSessionId?: string | null;
+    roomSessionId?: string | null;
     status: string;
     confirmedAt: string;
     businessDate: string;
     createdByWaiterMembershipId: string;
     items: SessionOrderItem[];
-    tableSession: { status: string; version: number };
+    tableSession?: { status: string; version: number };
+    roomSession?: { status: string; version: number };
 };

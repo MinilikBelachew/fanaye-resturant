@@ -10,10 +10,7 @@ export default function OwnerInventoryPage() {
 
     return (
         <DashboardFrame>
-            <PageHeader
-                title={t("title")}
-                description={t("descriptionOwner")}
-            />
+            <PageHeader title={t("title")} compact />
             <InventoryBoard />
         </DashboardFrame>
     );

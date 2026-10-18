@@ -8,14 +8,18 @@ import {
     useLockDailyCloseMutation,
     useRefreshDailyCloseMutation,
 } from "@/context/services/dailyCloseApi";
+import { useForceCloseTableSessionMutation } from "@/context/services/floorApi";
+import { useForceCancelOrderItemMutation } from "@/context/services/ordersApi";
 import {
     useApproveReconciliationMutation,
     useFlagReconciliationMutation,
     usePendingReconciliationsQuery,
 } from "@/context/services/reconciliationApi";
+import { useForceCloseRoomSessionMutation } from "@/context/services/roomsApi";
 import { Badge } from "@/components/ui/badge";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import type { DailyCloseBlocker } from "@/domains/reporting/domain/dailyCloseApi";
 import { useTranslations } from "next-intl";
 
 function localYmd(date = new Date()) {
@@ -81,6 +85,13 @@ export default function DailyClosePanel({
     const [lockClose, { isLoading: locking }] = useLockDailyCloseMutation();
     const [approveRecon] = useApproveReconciliationMutation();
     const [flagRecon] = useFlagReconciliationMutation();
+    const [forceCloseTable, { isLoading: forceClosingTable }] =
+        useForceCloseTableSessionMutation();
+    const [forceCloseRoom, { isLoading: forceClosingRoom }] =
+        useForceCloseRoomSessionMutation();
+    const [forceCancelTicket, { isLoading: forceCancelling }] =
+        useForceCancelOrderItemMutation();
+    const [actingEntityId, setActingEntityId] = useState<string | null>(null);
     const [error, setError] = useState("");
     const [ok, setOk] = useState("");
 
@@ -158,6 +169,44 @@ export default function DailyClosePanel({
                 }
             }
             setError(t("errorLock"));
+        }
+    }
+
+    async function onForceResolve(blocker: DailyCloseBlocker) {
+        if (isCashier || !blocker.entityId || blocker.expectedVersion == null) {
+            return;
+        }
+        setError("");
+        setOk("");
+        setActingEntityId(blocker.entityId);
+        const reason = t("forceReasonDefault");
+        try {
+            if (blocker.code === "OPEN_TABLE_SESSION") {
+                await forceCloseTable({
+                    tableSessionId: blocker.entityId,
+                    expectedVersion: blocker.expectedVersion,
+                    reason,
+                }).unwrap();
+                setOk(t("okForceClosed"));
+            } else if (blocker.code === "OPEN_ROOM_SESSION") {
+                await forceCloseRoom({
+                    roomSessionId: blocker.entityId,
+                    expectedVersion: blocker.expectedVersion,
+                    reason,
+                }).unwrap();
+                setOk(t("okForceClosed"));
+            } else if (blocker.code === "OPEN_KITCHEN_TICKET") {
+                await forceCancelTicket({
+                    orderItemId: blocker.entityId,
+                    expectedVersion: blocker.expectedVersion,
+                    reason,
+                }).unwrap();
+                setOk(t("okForceCancelled"));
+            }
+        } catch {
+            setError(t("errorForceAction"));
+        } finally {
+            setActingEntityId(null);
         }
     }
 
@@ -345,19 +394,54 @@ export default function DailyClosePanel({
                 </h2>
                 {blockers.length > 0 ? (
                     <ul className="mt-3 space-y-2">
-                        {blockers.map(blocker => (
-                            <li
-                                key={`${blocker.code}-${blocker.entityId ?? blocker.message}`}
-                                className="rounded-xl border border-hairline bg-secondary/40 px-3 py-2"
-                            >
-                                <p className="text-[13px] font-semibold text-foreground">
-                                    {blockerTitle(blocker.code, t)}
-                                </p>
-                                <p className="text-[12px] text-slate-gray">
-                                    {blocker.message}
-                                </p>
-                            </li>
-                        ))}
+                        {blockers.map(blocker => {
+                            const canForce =
+                                !isCashier &&
+                                Boolean(blocker.entityId) &&
+                                blocker.expectedVersion != null &&
+                                [
+                                    "OPEN_TABLE_SESSION",
+                                    "OPEN_ROOM_SESSION",
+                                    "OPEN_KITCHEN_TICKET",
+                                ].includes(blocker.code);
+                            const isActing =
+                                actingEntityId === blocker.entityId &&
+                                (forceClosingTable ||
+                                    forceClosingRoom ||
+                                    forceCancelling);
+                            return (
+                                <li
+                                    key={`${blocker.code}-${blocker.entityId ?? blocker.message}`}
+                                    className="flex items-start justify-between gap-3 rounded-xl border border-hairline bg-secondary/40 px-3 py-2"
+                                >
+                                    <div className="min-w-0">
+                                        <p className="text-[13px] font-semibold text-foreground">
+                                            {blockerTitle(blocker.code, t)}
+                                        </p>
+                                        <p className="text-[12px] text-slate-gray">
+                                            {blocker.message}
+                                        </p>
+                                    </div>
+                                    {canForce ? (
+                                        <button
+                                            type="button"
+                                            disabled={isActing}
+                                            onClick={() =>
+                                                void onForceResolve(blocker)
+                                            }
+                                            className="shrink-0 inline-flex h-7 items-center rounded-full border border-hairline px-3 text-[11px] font-medium disabled:opacity-50"
+                                        >
+                                            {isActing
+                                                ? t("forceActing")
+                                                : blocker.code ===
+                                                    "OPEN_KITCHEN_TICKET"
+                                                  ? t("forceCancel")
+                                                  : t("forceClose")}
+                                        </button>
+                                    ) : null}
+                                </li>
+                            );
+                        })}
                     </ul>
                 ) : (
                     <p className="mt-1 text-[13px] text-slate-gray">

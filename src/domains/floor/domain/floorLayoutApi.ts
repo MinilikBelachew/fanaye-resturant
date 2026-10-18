@@ -13,6 +13,8 @@ export type AdminDiningTable = {
     sortOrder: number;
     assignedWaiterMembershipId: string | null;
     assignedWaiterName: string | null;
+    isVip: boolean;
+    effectiveVip: boolean;
     version: number;
 };
 
@@ -22,6 +24,7 @@ export type AdminTableLocation = {
     code: string;
     sortOrder: number;
     status: string;
+    isVip: boolean;
     tables: AdminDiningTable[];
 };
 

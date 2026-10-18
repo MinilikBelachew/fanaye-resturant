@@ -22,6 +22,7 @@ import {
     TopDishesLeaderboard,
 } from "@/components/custom/organisms/Charts";
 import LiveFloorBoard from "@/domains/floor/ui/LiveFloorBoard";
+import InventoryMovementChart from "@/domains/inventory/ui/InventoryMovementChart";
 import {
     type ManagerDashboardPeriod,
     useGetManagerDashboardQuery,
@@ -98,6 +99,24 @@ export default function OwnerPage() {
         setToDate(customTo);
         setPeriod("custom");
     };
+
+    const movementRange = useMemo(() => {
+        const to = new Date();
+        const from = new Date(to);
+        if (period === "custom" && fromDate && toDate) {
+            return { from: fromDate, to: toDate };
+        }
+        if (period === "today") from.setDate(from.getDate() - 0);
+        else if (period === "week") from.setDate(from.getDate() - 6);
+        else if (period === "month") from.setDate(from.getDate() - 29);
+        else if (period === "quarter") from.setDate(from.getDate() - 89);
+        else if (period === "year") from.setDate(from.getDate() - 364);
+        else from.setDate(from.getDate() - 13);
+        return {
+            from: from.toISOString().slice(0, 10),
+            to: to.toISOString().slice(0, 10),
+        };
+    }, [period, fromDate, toDate]);
 
     const pendingCount = Number(
         String(dash?.kpis.pendingActionsFormatted ?? "0").replace(
@@ -422,6 +441,11 @@ export default function OwnerPage() {
                 <HourlySalesChart data={dash?.hourlySales ?? []} />
                 <PaymentChannelsBreakdown channels={dash?.paymentChannels} />
             </div>
+
+            <InventoryMovementChart
+                from={movementRange.from}
+                to={movementRange.to}
+            />
 
             <TopDishesLeaderboard dishes={dash?.topDishes} />
 

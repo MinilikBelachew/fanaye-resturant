@@ -6,6 +6,7 @@ import type {
     CreateAdminModifierGroupBody,
     ScannedMenuItem,
     UpdateAdminMenuItemBody,
+    VipPricingResponse,
 } from "@/domains/catalog/domain/menuApi";
 import { api } from "./index";
 
@@ -33,6 +34,24 @@ export const menuApi = api.injectEndpoints({
                 },
             }),
             providesTags: ["Menu"],
+        }),
+        vipPricing: builder.query<VipPricingResponse, void>({
+            query: () => ({
+                url: "/admin/vip-pricing",
+                method: "GET",
+            }),
+            providesTags: ["Menu"],
+        }),
+        updateDefaultVipPercent: builder.mutation<
+            VipPricingResponse,
+            { defaultVipPercent: number }
+        >({
+            query: body => ({
+                url: "/admin/vip-pricing/default",
+                method: "PATCH",
+                body,
+            }),
+            invalidatesTags: ["Menu"],
         }),
         adminModifierGroups: builder.query<
             { data: AdminModifierGroup[] },
@@ -151,6 +170,8 @@ export const menuApi = api.injectEndpoints({
 export const {
     useAdminMenuMetaQuery,
     useAdminMenuItemsQuery,
+    useVipPricingQuery,
+    useUpdateDefaultVipPercentMutation,
     useAdminModifierGroupsQuery,
     useCreateAdminModifierGroupMutation,
     useCreateAdminMenuItemMutation,

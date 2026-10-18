@@ -43,7 +43,10 @@ import {
 } from "@/context/services/staffApi";
 import { useShiftDefinitionsQuery } from "@/context/services/shiftsApi";
 import { useListBranchesQuery } from "@/context/services/branchesApi";
-import type { AdminStaffMember } from "@/domains/identity/domain/staffApi";
+import type {
+    AdminStaffDayShift,
+    AdminStaffMember,
+} from "@/domains/identity/domain/staffApi";
 import type { Staff } from "@/domains/identity/domain/staff";
 import type { Role } from "@/domains/identity/domain/role";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
@@ -78,6 +81,28 @@ function isWorkingOnDay(
     if (!workingDays || workingDays.length === 0) return true;
     const target = dayKey.toLowerCase().slice(0, 3);
     return workingDays.some(d => d.toLowerCase().slice(0, 3) === target);
+}
+
+function dayShiftFor(
+    member: AdminStaffMember,
+    dayKey: string,
+): AdminStaffDayShift | null {
+    const target = dayKey.toLowerCase().slice(0, 3);
+    const fromPlan = member.dayShifts?.find(
+        row => row.dayCode.toLowerCase().slice(0, 3) === target,
+    );
+    if (fromPlan) return fromPlan;
+    if (member.dayShifts && member.dayShifts.length > 0) return null;
+    if (!isWorkingOnDay(member.workingDays, dayKey)) return null;
+    const fallback = member.shiftCoverages[0];
+    if (!fallback) return null;
+    return {
+        dayCode: dayKey.slice(0, 1).toUpperCase() + dayKey.slice(1, 3),
+        shiftDefinitionId: fallback.shiftDefinitionId,
+        shiftName: fallback.shiftName,
+        startLocalTime: fallback.startLocalTime,
+        endLocalTime: fallback.endLocalTime,
+    };
 }
 
 function mapRoleCode(code: string): Role {
@@ -343,8 +368,8 @@ export default function StaffScheduleMatrix({
                     <PageHeader
                         compact
                         eyebrow={eyebrow}
-                        title="Weekly Shift Roster & Schedule Matrix"
-                        description="View schedule assignments, desk custody rotations, and floor coverage across the weekly rotation."
+                        title="HR"
+                        description="Weekly shift roster — desk coverage and floor assignments across the rotation."
                     />
                     <div className="flex items-center gap-2.5">
                         <Button
@@ -356,28 +381,6 @@ export default function StaffScheduleMatrix({
                             Register Staff Member
                         </Button>
                     </div>
-                </div>
-
-                {/* Sub-Navigation Tabs */}
-                <div className="flex flex-wrap items-center gap-1.5 border-b border-hairline pb-3">
-                    <Link
-                        href={basePath}
-                        className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-normal text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                    >
-                        <Users className="size-3.5" />
-                        Staff Directory
-                    </Link>
-                    <Link
-                        href={`${basePath}/shifts`}
-                        className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-normal text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                    >
-                        <Clock3 className="size-3.5" />
-                        Shift Templates & Hours
-                    </Link>
-                    <span className="inline-flex items-center gap-2 rounded-full bg-brand/10 px-3.5 py-1.5 text-xs font-normal text-brand">
-                        <Calendar className="size-3.5" />
-                        Weekly Shift Roster
-                    </span>
                 </div>
 
                 {/* Multi-Branch Selector if enabled */}
@@ -416,40 +419,33 @@ export default function StaffScheduleMatrix({
 
                 {/* KPI Summary Banner */}
                 <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-                    <div className="rounded-2xl border border-hairline bg-card p-4 shadow-subtle flex items-center justify-between">
+                    <div className="rounded-2xl border border-hairline bg-card p-4 flex items-center justify-between">
                         <div>
                             <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
                                 Total Team
                             </p>
-                            <p className="text-xl font-bold text-foreground mt-1 tabular-nums">
+                            <p className="text-xl font-semibold text-foreground mt-1 tabular-nums">
                                 {analytics.totalStaff} Members
                             </p>
                             <p className="text-[11px] text-muted-foreground mt-0.5">
                                 Across all active stations
                             </p>
                         </div>
-                        <div className="flex size-11 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                            <Users className="size-5" />
+                        <div className="flex size-10 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
+                            <Users className="size-4" />
                         </div>
                     </div>
 
-                    <div className="rounded-2xl border border-hairline bg-card p-4 shadow-subtle flex items-center justify-between">
+                    <div className="rounded-2xl border border-hairline bg-card p-4 flex items-center justify-between">
                         <div>
                             <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
                                 Cashier Desk Coverage
                             </p>
                             <div className="flex items-center gap-2 mt-1">
-                                <p className="text-xl font-bold text-foreground tabular-nums">
+                                <p className="text-xl font-semibold text-foreground tabular-nums">
                                     {analytics.cashiersCount} Cashiers
                                 </p>
-                                <span
-                                    className={cn(
-                                        "rounded-full px-2 py-0.5 text-[10px] font-bold",
-                                        analytics.coveredCashierRotations >= 2
-                                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                                            : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
-                                    )}
-                                >
+                                <span className="rounded-md bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                                     {analytics.coveredCashierRotations}/3
                                     Rotations
                                 </span>
@@ -458,42 +454,42 @@ export default function StaffScheduleMatrix({
                                 Morning, Afternoon, & Night
                             </p>
                         </div>
-                        <div className="flex size-11 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                            <Clock className="size-5" />
+                        <div className="flex size-10 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
+                            <Clock className="size-4" />
                         </div>
                     </div>
 
-                    <div className="rounded-2xl border border-hairline bg-card p-4 shadow-subtle flex items-center justify-between">
+                    <div className="rounded-2xl border border-hairline bg-card p-4 flex items-center justify-between">
                         <div>
                             <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
                                 Dining Floor Waitstaff
                             </p>
-                            <p className="text-xl font-bold text-foreground mt-1 tabular-nums">
+                            <p className="text-xl font-semibold text-foreground mt-1 tabular-nums">
                                 {analytics.waitersCount} Waiters
                             </p>
                             <p className="text-[11px] text-muted-foreground mt-0.5">
                                 Assigned to floor table sections
                             </p>
                         </div>
-                        <div className="flex size-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                            <UtensilsCrossed className="size-5" />
+                        <div className="flex size-10 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
+                            <UtensilsCrossed className="size-4" />
                         </div>
                     </div>
 
-                    <div className="rounded-2xl border border-hairline bg-card p-4 shadow-subtle flex items-center justify-between">
+                    <div className="rounded-2xl border border-hairline bg-card p-4 flex items-center justify-between">
                         <div>
                             <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
                                 Kitchen Stations
                             </p>
-                            <p className="text-xl font-bold text-foreground mt-1 tabular-nums">
+                            <p className="text-xl font-semibold text-foreground mt-1 tabular-nums">
                                 {analytics.kitchenCount} Operators
                             </p>
                             <p className="text-[11px] text-muted-foreground mt-0.5">
                                 Hot prep, bar, pizza & pass
                             </p>
                         </div>
-                        <div className="flex size-11 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
-                            <Coffee className="size-5" />
+                        <div className="flex size-10 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
+                            <Coffee className="size-4" />
                         </div>
                     </div>
                 </div>
@@ -730,22 +726,28 @@ export default function StaffScheduleMatrix({
                                         const avatarBg = getAvatarColor(
                                             member.name,
                                         );
-                                        const shiftCoverage =
-                                            member.shiftCoverages[0];
-                                        const shiftTheme = shiftCoverage
-                                            ? getShiftTheme(
-                                                  shiftCoverage.shiftName,
-                                              )
-                                            : null;
-
                                         // Count active days
                                         const workingDaysCount =
-                                            weekDays.filter(day =>
-                                                isWorkingOnDay(
+                                            weekDays.filter(day => {
+                                                if (
+                                                    member.dayShifts &&
+                                                    member.dayShifts.length > 0
+                                                ) {
+                                                    return member.dayShifts.some(
+                                                        row =>
+                                                            row.dayCode
+                                                                .toLowerCase()
+                                                                .slice(0, 3) ===
+                                                            day.key
+                                                                .toLowerCase()
+                                                                .slice(0, 3),
+                                                    );
+                                                }
+                                                return isWorkingOnDay(
                                                     member.workingDays,
                                                     day.key,
-                                                ),
-                                            ).length;
+                                                );
+                                            }).length;
 
                                         return (
                                             <tr
@@ -841,11 +843,36 @@ export default function StaffScheduleMatrix({
 
                                                 {/* 7 Days of the Week */}
                                                 {weekDays.map(day => {
+                                                    const dayPlan = dayShiftFor(
+                                                        member,
+                                                        day.key,
+                                                    );
                                                     const isWorking =
-                                                        isWorkingOnDay(
-                                                            member.workingDays,
-                                                            day.key,
-                                                        );
+                                                        Boolean(dayPlan);
+                                                    const shiftCoverage =
+                                                        dayPlan
+                                                            ? (member.shiftCoverages.find(
+                                                                  c =>
+                                                                      c.shiftDefinitionId ===
+                                                                      dayPlan.shiftDefinitionId,
+                                                              ) ?? {
+                                                                  shiftDefinitionId:
+                                                                      dayPlan.shiftDefinitionId,
+                                                                  shiftName:
+                                                                      dayPlan.shiftName,
+                                                                  startLocalTime:
+                                                                      dayPlan.startLocalTime,
+                                                                  endLocalTime:
+                                                                      dayPlan.endLocalTime,
+                                                                  tables: [],
+                                                              })
+                                                            : null;
+                                                    const shiftTheme =
+                                                        shiftCoverage
+                                                            ? getShiftTheme(
+                                                                  shiftCoverage.shiftName,
+                                                              )
+                                                            : null;
 
                                                     return (
                                                         <td

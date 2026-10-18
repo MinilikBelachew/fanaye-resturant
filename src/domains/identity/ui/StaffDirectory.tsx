@@ -1,21 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
     Building2,
-    Calendar,
     ChevronRight,
     Edit3,
     Eye,
     EyeOff,
-    Clock3,
     KeyRound,
     Lock,
     MoreVertical,
     Plus,
     Search,
     UserPlus,
-    Users,
     UtensilsCrossed,
     X,
 } from "lucide-react";
@@ -175,6 +173,10 @@ export default function StaffDirectory({
     const [menuOpenMemberId, setMenuOpenMemberId] = useState<string | null>(
         null,
     );
+    const [menuPos, setMenuPos] = useState<{
+        top: number;
+        left: number;
+    } | null>(null);
 
     const filteredStaff = useMemo(() => {
         return liveStaff.filter(member => {
@@ -291,7 +293,7 @@ export default function StaffDirectory({
                 <PageHeader
                     compact
                     eyebrow={eyebrow}
-                    title={multiBranch ? "Staff · All locations" : "Staff"}
+                    title={multiBranch ? "HR · All locations" : "HR"}
                     description={
                         multiBranch
                             ? t("pageDescriptionOwner")
@@ -325,27 +327,6 @@ export default function StaffDirectory({
                     <UserPlus className="size-4" />
                     {t("registerStaff")}
                 </button>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-1.5 border-b border-hairline pb-3">
-                <span className="inline-flex items-center gap-2 rounded-full bg-brand/10 px-3.5 py-1.5 text-xs font-normal text-brand">
-                    <Users className="size-3.5" />
-                    Staff Directory
-                </span>
-                <Link
-                    href={`${basePath}/shifts`}
-                    className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-normal text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                >
-                    <Clock3 className="size-3.5" />
-                    Shift Templates & Hours
-                </Link>
-                <Link
-                    href={`${basePath}/schedule`}
-                    className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-normal text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                >
-                    <Calendar className="size-3.5" />
-                    Weekly Shift Roster
-                </Link>
             </div>
 
             {multiBranch ? (
@@ -527,12 +508,9 @@ export default function StaffDirectory({
                                         </td>
                                     </tr>
                                 ) : (
-                                    filteredStaff.map((member, idx) => {
+                                    filteredStaff.map(member => {
                                         const isWaiter =
                                             member.roleCode === "WAITER";
-                                        const isNearBottom =
-                                            idx >= filteredStaff.length - 2 &&
-                                            filteredStaff.length > 2;
                                         return (
                                             <tr
                                                 key={member.id}
@@ -730,180 +708,231 @@ export default function StaffDirectory({
                                                     </Badge>
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
-                                                    <div className="relative inline-block text-left">
-                                                        {/* Three-dots menu trigger */}
-                                                        <Button
-                                                            type="button"
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={e => {
-                                                                e.stopPropagation();
-                                                                setMenuOpenMemberId(
-                                                                    menuOpenMemberId ===
-                                                                        member.id
-                                                                        ? null
-                                                                        : member.id,
-                                                                );
-                                                            }}
-                                                            className={cn(
-                                                                "size-8 p-0 rounded-lg text-slate-gray hover:text-foreground hover:bg-secondary transition-colors",
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={e => {
+                                                            e.stopPropagation();
+                                                            if (
                                                                 menuOpenMemberId ===
-                                                                    member.id &&
-                                                                    "bg-secondary text-foreground",
-                                                            )}
-                                                            title={t(
-                                                                "staffOptions",
-                                                            )}
-                                                        >
-                                                            <MoreVertical className="size-4" />
-                                                        </Button>
-
-                                                        {/* Dropdown Menu Popup */}
-                                                        {menuOpenMemberId ===
-                                                            member.id && (
-                                                            <>
-                                                                {/* Click outside backdrop */}
-                                                                <div
-                                                                    className="fixed inset-0 z-30"
-                                                                    onClick={() =>
-                                                                        setMenuOpenMemberId(
-                                                                            null,
-                                                                        )
-                                                                    }
-                                                                />
-
-                                                                <div
-                                                                    className={cn(
-                                                                        "absolute right-0 z-40 w-48 rounded-xl border border-hairline bg-white dark:bg-card p-1 shadow-xl animate-in fade-in zoom-in-95",
-                                                                        isNearBottom
-                                                                            ? "bottom-full mb-1.5 origin-bottom-right"
-                                                                            : "top-full mt-1.5 origin-top-right",
-                                                                    )}
-                                                                >
-                                                                    <Link
-                                                                        href={`${basePath}/${member.id}`}
-                                                                        onClick={() =>
-                                                                            setMenuOpenMemberId(
-                                                                                null,
-                                                                            )
-                                                                        }
-                                                                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-foreground hover:bg-secondary/70 transition-colors"
-                                                                    >
-                                                                        <ChevronRight className="size-3.5 text-primary" />
-                                                                        <span>
-                                                                            {tDetail(
-                                                                                "viewDetail",
-                                                                            )}
-                                                                        </span>
-                                                                    </Link>
-
-                                                                    {/* Change PIN Option */}
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setMenuOpenMemberId(
-                                                                                null,
-                                                                            );
-                                                                            setPinTarget(
-                                                                                member,
-                                                                            );
-                                                                            setPinValue(
-                                                                                "",
-                                                                            );
-                                                                            setShowPinValue(
-                                                                                false,
-                                                                            );
-                                                                        }}
-                                                                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-foreground hover:bg-secondary/70 transition-colors"
-                                                                    >
-                                                                        <KeyRound className="size-3.5 text-primary" />
-                                                                        <span>
-                                                                            {t(
-                                                                                "menuChangePin",
-                                                                            )}
-                                                                        </span>
-                                                                    </button>
-
-                                                                    {/* Reset Password Option */}
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setMenuOpenMemberId(
-                                                                                null,
-                                                                            );
-                                                                            setPasswordTarget(
-                                                                                member,
-                                                                            );
-                                                                            setPasswordValue(
-                                                                                "",
-                                                                            );
-                                                                            setShowPasswordValue(
-                                                                                false,
-                                                                            );
-                                                                        }}
-                                                                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-foreground hover:bg-secondary/70 transition-colors"
-                                                                    >
-                                                                        <Lock className="size-3.5 text-slate-gray" />
-                                                                        <span>
-                                                                            {t(
-                                                                                "menuResetPassword",
-                                                                            )}
-                                                                        </span>
-                                                                    </button>
-
-                                                                    {/* Assign Tables Option (Waiters only) */}
-                                                                    {isWaiter ? (
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                setMenuOpenMemberId(
-                                                                                    null,
-                                                                                );
-                                                                                openAssign(
-                                                                                    member,
-                                                                                );
-                                                                            }}
-                                                                            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-foreground hover:bg-secondary/70 transition-colors"
-                                                                        >
-                                                                            <UtensilsCrossed className="size-3.5 text-slate-gray" />
-                                                                            <span>
-                                                                                {t(
-                                                                                    "menuAssignTables",
-                                                                                )}
-                                                                            </span>
-                                                                        </button>
-                                                                    ) : null}
-
-                                                                    <div className="my-1 border-t border-hairline" />
-
-                                                                    {/* Edit Staff Details */}
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setMenuOpenMemberId(
-                                                                                null,
-                                                                            );
-                                                                            dispatch(
-                                                                                openEditStaff(
-                                                                                    toLegacyStaff(
-                                                                                        member,
-                                                                                    ),
-                                                                                ),
-                                                                            );
-                                                                        }}
-                                                                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-foreground hover:bg-secondary/70 transition-colors"
-                                                                    >
-                                                                        <Edit3 className="size-3.5 text-slate-gray" />
-                                                                        <span>
-                                                                            {t(
-                                                                                "menuEditStaff",
-                                                                            )}
-                                                                        </span>
-                                                                    </button>
-                                                                </div>
-                                                            </>
+                                                                member.id
+                                                            ) {
+                                                                setMenuOpenMemberId(
+                                                                    null,
+                                                                );
+                                                                setMenuPos(
+                                                                    null,
+                                                                );
+                                                                return;
+                                                            }
+                                                            const rect = (
+                                                                e.currentTarget as HTMLElement
+                                                            ).getBoundingClientRect();
+                                                            const menuW = 192;
+                                                            const menuH = 260;
+                                                            const left =
+                                                                Math.min(
+                                                                    Math.max(
+                                                                        8,
+                                                                        rect.right -
+                                                                            menuW,
+                                                                    ),
+                                                                    window.innerWidth -
+                                                                        menuW -
+                                                                        8,
+                                                                );
+                                                            const openUp =
+                                                                rect.bottom +
+                                                                    menuH >
+                                                                window.innerHeight -
+                                                                    8;
+                                                            const top = openUp
+                                                                ? Math.max(
+                                                                      8,
+                                                                      rect.top -
+                                                                          menuH -
+                                                                          6,
+                                                                  )
+                                                                : rect.bottom +
+                                                                  6;
+                                                            setMenuPos({
+                                                                top,
+                                                                left,
+                                                            });
+                                                            setMenuOpenMemberId(
+                                                                member.id,
+                                                            );
+                                                        }}
+                                                        className={cn(
+                                                            "size-8 p-0 rounded-lg text-slate-gray hover:text-foreground hover:bg-secondary transition-colors",
+                                                            menuOpenMemberId ===
+                                                                member.id &&
+                                                                "bg-secondary text-foreground",
                                                         )}
-                                                    </div>
+                                                        title={t(
+                                                            "staffOptions",
+                                                        )}
+                                                    >
+                                                        <MoreVertical className="size-4" />
+                                                    </Button>
+
+                                                    {menuOpenMemberId ===
+                                                        member.id &&
+                                                    menuPos &&
+                                                    typeof document !==
+                                                        "undefined"
+                                                        ? createPortal(
+                                                              <>
+                                                                  <div
+                                                                      className="fixed inset-0 z-[200]"
+                                                                      onClick={() => {
+                                                                          setMenuOpenMemberId(
+                                                                              null,
+                                                                          );
+                                                                          setMenuPos(
+                                                                              null,
+                                                                          );
+                                                                      }}
+                                                                  />
+                                                                  <div
+                                                                      className="fixed z-[210] w-48 rounded-xl border border-hairline bg-white p-1 shadow-xl animate-in fade-in zoom-in-95 dark:bg-card"
+                                                                      style={{
+                                                                          top: menuPos.top,
+                                                                          left: menuPos.left,
+                                                                      }}
+                                                                  >
+                                                                      <Link
+                                                                          href={`${basePath}/${member.id}`}
+                                                                          onClick={() => {
+                                                                              setMenuOpenMemberId(
+                                                                                  null,
+                                                                              );
+                                                                              setMenuPos(
+                                                                                  null,
+                                                                              );
+                                                                          }}
+                                                                          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-secondary/70"
+                                                                      >
+                                                                          <ChevronRight className="size-3.5 text-primary" />
+                                                                          <span>
+                                                                              {tDetail(
+                                                                                  "viewDetail",
+                                                                              )}
+                                                                          </span>
+                                                                      </Link>
+                                                                      <button
+                                                                          type="button"
+                                                                          onClick={() => {
+                                                                              setMenuOpenMemberId(
+                                                                                  null,
+                                                                              );
+                                                                              setMenuPos(
+                                                                                  null,
+                                                                              );
+                                                                              setPinTarget(
+                                                                                  member,
+                                                                              );
+                                                                              setPinValue(
+                                                                                  "",
+                                                                              );
+                                                                              setShowPinValue(
+                                                                                  false,
+                                                                              );
+                                                                          }}
+                                                                          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-secondary/70"
+                                                                      >
+                                                                          <KeyRound className="size-3.5 text-primary" />
+                                                                          <span>
+                                                                              {t(
+                                                                                  "menuChangePin",
+                                                                              )}
+                                                                          </span>
+                                                                      </button>
+                                                                      <button
+                                                                          type="button"
+                                                                          onClick={() => {
+                                                                              setMenuOpenMemberId(
+                                                                                  null,
+                                                                              );
+                                                                              setMenuPos(
+                                                                                  null,
+                                                                              );
+                                                                              setPasswordTarget(
+                                                                                  member,
+                                                                              );
+                                                                              setPasswordValue(
+                                                                                  "",
+                                                                              );
+                                                                              setShowPasswordValue(
+                                                                                  false,
+                                                                              );
+                                                                          }}
+                                                                          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-secondary/70"
+                                                                      >
+                                                                          <Lock className="size-3.5 text-slate-gray" />
+                                                                          <span>
+                                                                              {t(
+                                                                                  "menuResetPassword",
+                                                                              )}
+                                                                          </span>
+                                                                      </button>
+                                                                      {isWaiter ? (
+                                                                          <button
+                                                                              type="button"
+                                                                              onClick={() => {
+                                                                                  setMenuOpenMemberId(
+                                                                                      null,
+                                                                                  );
+                                                                                  setMenuPos(
+                                                                                      null,
+                                                                                  );
+                                                                                  openAssign(
+                                                                                      member,
+                                                                                  );
+                                                                              }}
+                                                                              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-secondary/70"
+                                                                          >
+                                                                              <UtensilsCrossed className="size-3.5 text-slate-gray" />
+                                                                              <span>
+                                                                                  {t(
+                                                                                      "menuAssignTables",
+                                                                                  )}
+                                                                              </span>
+                                                                          </button>
+                                                                      ) : null}
+                                                                      <div className="my-1 border-t border-hairline" />
+                                                                      <button
+                                                                          type="button"
+                                                                          onClick={() => {
+                                                                              setMenuOpenMemberId(
+                                                                                  null,
+                                                                              );
+                                                                              setMenuPos(
+                                                                                  null,
+                                                                              );
+                                                                              dispatch(
+                                                                                  openEditStaff(
+                                                                                      toLegacyStaff(
+                                                                                          member,
+                                                                                      ),
+                                                                                  ),
+                                                                              );
+                                                                          }}
+                                                                          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-secondary/70"
+                                                                      >
+                                                                          <Edit3 className="size-3.5 text-slate-gray" />
+                                                                          <span>
+                                                                              {t(
+                                                                                  "menuEditStaff",
+                                                                              )}
+                                                                          </span>
+                                                                      </button>
+                                                                  </div>
+                                                              </>,
+                                                              document.body,
+                                                          )
+                                                        : null}
                                                 </td>
                                             </tr>
                                         );

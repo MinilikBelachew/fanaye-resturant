@@ -3,20 +3,19 @@ const LEGACY_REFRESH_KEY = "fanaye.auth.refreshToken";
 const LEGACY_EXPIRES_KEY = "fanaye.auth.tokenExpires";
 const LEGACY_REMEMBER_KEY = "fanaye.auth.remember";
 
-/** Lightweight flag cookie for Next middleware redirects (not a secret). */
-export const AUTH_FLAG_COOKIE = "fanaye_signed_in";
+/** Legacy client-writable flag — cleared on boot/logout; no longer used for auth. */
+const LEGACY_AUTH_FLAG_COOKIE = "fanaye_signed_in";
 
-export function setAuthFlagCookie(remember = true) {
-    if (typeof document === "undefined") return;
-    const maxAge = remember ? 60 * 60 * 24 * 7 : undefined;
-    const parts = [`${AUTH_FLAG_COOKIE}=1`, "path=/", "SameSite=Lax"];
-    if (maxAge) parts.push(`max-age=${maxAge}`);
-    document.cookie = parts.join("; ");
-}
+/**
+ * HttpOnly session presence cookie set by the API (auth-cookies.service).
+ * Middleware gates app routes on this; JS cannot set it.
+ */
+export const SESSION_COOKIE_NAME = "fanaye_session";
 
-export function clearAuthFlagCookie() {
+/** Clears leftover client-side auth flag from older builds. */
+export function clearLegacyAuthFlagCookie() {
     if (typeof document === "undefined") return;
-    document.cookie = `${AUTH_FLAG_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
+    document.cookie = `${LEGACY_AUTH_FLAG_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
 }
 
 export function clearLegacyAuthStorage() {

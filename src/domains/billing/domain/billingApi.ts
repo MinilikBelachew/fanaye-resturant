@@ -10,6 +10,7 @@ export type BillLine = {
 
 export type Bill = {
     billId: string;
+    isVip?: boolean;
     tableSessionId: string;
     billNumber: string;
     status: string;
@@ -63,14 +64,16 @@ export type BillRequestCreated = {
 
 export type CashierBillRequest = {
     billRequestId: string;
-    tableSessionId: string;
+    tableSessionId: string | null;
+    roomSessionId?: string | null;
     tableDisplayName: string;
     waiter: { membershipId: string; displayName: string };
     requestedAt: string;
     requestAgeSeconds: number;
     estimatedAmount: string;
     currencyCode: string;
-    expectedTableSessionVersion: number;
+    expectedTableSessionVersion?: number;
+    expectedRoomSessionVersion?: number;
     warnings: string[];
 };
 

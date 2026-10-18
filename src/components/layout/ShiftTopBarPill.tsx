@@ -23,6 +23,7 @@ import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { useRealtimePollMs } from "@/domains/notifications/application/useRealtimePollMs";
 import CashierHandoverModal from "@/domains/payments/ui/CashierHandoverModal";
 import WaiterHandoverModal from "@/domains/ordering/ui/WaiterHandoverModal";
+import { roleUsesShiftClock } from "@/domains/identity/domain/role";
 import { checkShiftExpiry } from "@/domains/identity/domain/shift";
 import { Link } from "@/i18n/navigation";
 import { toast } from "@/lib/toast";
@@ -39,10 +40,11 @@ function formatElapsed(clockInAt: string): string {
 
 export default function ShiftTopBarPill() {
     const staff = useAppSelector(selectCurrentStaff);
+    const usesClock = roleUsesShiftClock(staff?.role);
     const hasSession = useAppSelector(state => Boolean(state.identity.session));
     const pollMs = useRealtimePollMs(15_000);
     const { data: shift, isFetching } = useCurrentShiftQuery(undefined, {
-        skip: !hasSession,
+        skip: !hasSession || !usesClock,
         pollingInterval: pollMs || 30_000,
     });
     const [clockIn, { isLoading: clockingIn }] = useClockInMutation();
@@ -132,6 +134,8 @@ export default function ShiftTopBarPill() {
             }
         }
     };
+
+    if (!usesClock) return null;
 
     return (
         <>

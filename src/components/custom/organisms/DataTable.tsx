@@ -102,7 +102,7 @@ export default function DataTable<T>({
 
     const visibleColumns = columns.filter(column => !hidden[column.id]);
 
-    const rows = useMemo(() => {
+    const preparedRows = useMemo(() => {
         if (serverSide) return data;
         const needle = query.trim().toLowerCase();
         const filtered = needle
@@ -131,6 +131,37 @@ export default function DataTable<T>({
             return sort.dir === "asc" ? compared : -compared;
         });
     }, [columns, data, query, searchText, serverSide, sort]);
+
+    const clientPageSize =
+        !serverSide && pagination?.limit && pagination.limit > 0
+            ? pagination.limit
+            : null;
+
+    const clientTotalPages = clientPageSize
+        ? Math.max(1, Math.ceil(preparedRows.length / clientPageSize))
+        : (pagination?.totalPages ?? 1);
+
+    const clientPage = Math.min(
+        Math.max(1, pagination?.page ?? 1),
+        clientTotalPages,
+    );
+
+    const rows = useMemo(() => {
+        if (!clientPageSize) return preparedRows;
+        const start = (clientPage - 1) * clientPageSize;
+        return preparedRows.slice(start, start + clientPageSize);
+    }, [clientPage, clientPageSize, preparedRows]);
+
+    const resolvedPagination =
+        pagination &&
+        (clientPageSize
+            ? {
+                  ...pagination,
+                  page: clientPage,
+                  totalPages: clientTotalPages,
+                  total: preparedRows.length,
+              }
+            : pagination);
 
     function toggleSort(column: DataTableColumn<T>) {
         if (!column.sortValue) return;
@@ -305,20 +336,23 @@ export default function DataTable<T>({
                 </Table>
             </div>
 
-            {pagination && pagination.totalPages > 1 ? (
+            {resolvedPagination && resolvedPagination.totalPages > 1 ? (
                 <div className="flex items-center justify-between px-1 py-2 text-[11px] text-slate-gray">
                     <span>
-                        Page {pagination.page} of {pagination.totalPages} ·{" "}
-                        {pagination.total} total
+                        Page {resolvedPagination.page} of{" "}
+                        {resolvedPagination.totalPages} ·{" "}
+                        {resolvedPagination.total} total
                     </span>
                     <div className="flex items-center gap-1.5">
                         <Button
                             type="button"
                             variant="outline"
                             size="sm"
-                            disabled={pagination.page <= 1}
+                            disabled={resolvedPagination.page <= 1}
                             onClick={() =>
-                                pagination.onPageChange(pagination.page - 1)
+                                resolvedPagination.onPageChange(
+                                    resolvedPagination.page - 1,
+                                )
                             }
                             className="h-7 gap-1 rounded-full px-2.5 text-[11px] font-normal"
                         >
@@ -329,9 +363,14 @@ export default function DataTable<T>({
                             type="button"
                             variant="outline"
                             size="sm"
-                            disabled={pagination.page >= pagination.totalPages}
+                            disabled={
+                                resolvedPagination.page >=
+                                resolvedPagination.totalPages
+                            }
                             onClick={() =>
-                                pagination.onPageChange(pagination.page + 1)
+                                resolvedPagination.onPageChange(
+                                    resolvedPagination.page + 1,
+                                )
                             }
                             className="h-7 gap-1 rounded-full px-2.5 text-[11px] font-normal"
                         >

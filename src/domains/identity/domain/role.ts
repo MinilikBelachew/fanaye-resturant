@@ -7,9 +7,11 @@ export const ROLES = [
     "super_admin",
     "owner",
     "manager",
+    "store_manager",
     "cashier",
     "waiter",
     "dispatcher",
+    "receptionist",
     "kitchen",
     "barista",
     "cakes",
@@ -28,13 +30,33 @@ export const STATION_ROLES = [
 
 export type StationRole = (typeof STATION_ROLES)[number] | string;
 
+/** Roles that clock in/out for operational shifts (top-bar pill). */
+export const SHIFT_CLOCK_ROLES = [
+    "waiter",
+    "cashier",
+    "dispatcher",
+    "manager",
+    "kitchen",
+    "barista",
+    "cakes",
+    "soft_drinks",
+] as const;
+
+/** Owner / store manager / super admin do not use shift clock-in. */
+export function roleUsesShiftClock(role: string | null | undefined): boolean {
+    if (!role) return false;
+    return (SHIFT_CLOCK_ROLES as readonly string[]).includes(role);
+}
+
 export const ROLE_LABELS: Record<string, string> = {
     super_admin: "Platform Super Admin",
     owner: "Owner / Tenant Admin",
     manager: "Manager",
+    store_manager: "Store manager",
     cashier: "Cashier",
     waiter: "Waiter",
     dispatcher: "Dispatcher",
+    receptionist: "Receptionist",
     kitchen: "Kitchen",
     barista: "Barista",
     cakes: "Cakes",

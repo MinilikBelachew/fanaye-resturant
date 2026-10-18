@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { Plus, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { NavSection } from "@/domains/identity/application/nav";
@@ -57,6 +57,16 @@ const LABEL_KEYS: Record<string, string> = {
     Stations: "stations",
     Tables: "tables",
     Staff: "staff",
+    HR: "staff",
+    Finance: "finance",
+    Overview: "overview",
+    Closes: "closes",
+    Payroll: "payroll",
+    Directory: "staffDirectory",
+    Schedule: "schedule",
+    Shifts: "shift",
+    Attendance: "attendance",
+    Leave: "leave",
     Waiters: "waiters",
     Approvals: "approvals",
     Payments: "payments",
@@ -136,18 +146,46 @@ function SidebarNavInner({
     const view = parseQueueView(searchParams.get("view"));
     const query = searchParams.get("q") ?? "";
 
+    const allNavPaths = useMemo(() => {
+        const paths: string[] = [];
+        for (const section of sections) {
+            for (const item of section.items) {
+                paths.push(item.href.split("?")[0]);
+                for (const child of item.children ?? []) {
+                    paths.push(child.href.split("?")[0]);
+                }
+            }
+        }
+        return paths;
+    }, [sections]);
+
+    /** Exact match, or prefix only when no longer nav path also matches. */
+    const pathIsActive = useMemo(() => {
+        return (href: string) => {
+            const pathOnly = href.split("?")[0];
+            if (pathname === pathOnly) return true;
+            if (pathOnly === home || !pathname.startsWith(`${pathOnly}/`)) {
+                return false;
+            }
+            const hasLongerMatch = allNavPaths.some(
+                candidate =>
+                    candidate !== pathOnly &&
+                    candidate.length > pathOnly.length &&
+                    (pathname === candidate ||
+                        pathname.startsWith(`${candidate}/`)),
+            );
+            return !hasLongerMatch;
+        };
+    }, [allNavPaths, home, pathname]);
+
     const activeHref = useMemo(() => {
         return (item: NavSection["items"][number]) => {
             if (item.filter) {
                 return pathname === home && item.filter === filter;
             }
-            const pathOnly = item.href.split("?")[0];
-            return (
-                pathname === pathOnly ||
-                (pathOnly !== home && pathname.startsWith(`${pathOnly}/`))
-            );
+            return pathIsActive(item.href);
         };
-    }, [filter, home, pathname]);
+    }, [filter, home, pathname, pathIsActive]);
 
     const items = sections.flatMap(section => section.items);
 
@@ -157,15 +195,9 @@ function SidebarNavInner({
             for (const section of sections) {
                 for (const item of section.items) {
                     if (item.children && item.children.length > 0) {
-                        const childActive = item.children.some(child => {
-                            const pathOnly = child.href.split("?")[0];
-                            return (
-                                pathname === pathOnly ||
-                                (pathOnly !== home &&
-                                    pathname.startsWith(`${pathOnly}/`))
-                            );
-                        });
-                        initial[item.href] = childActive;
+                        initial[item.href] = item.children.some(child =>
+                            pathIsActive(child.href),
+                        );
                     }
                 }
             }
@@ -173,15 +205,38 @@ function SidebarNavInner({
         },
     );
 
+    // Keep HR/Finance open when navigating between their children
+    useEffect(() => {
+        setSubmenusOpen(prev => {
+            const next = { ...prev };
+            let changed = false;
+            for (const section of sections) {
+                for (const item of section.items) {
+                    if (!item.children?.length) continue;
+                    const childActive = item.children.some(child =>
+                        pathIsActive(child.href),
+                    );
+                    if (childActive && !next[item.href]) {
+                        next[item.href] = true;
+                        changed = true;
+                    }
+                }
+            }
+            return changed ? next : prev;
+        });
+    }, [pathname, pathIsActive, sections]);
+
     if (collapsed) {
         return (
             <nav className="sidebar-scroll mt-5 flex min-h-0 flex-1 flex-col items-center gap-1 px-2 py-2">
                 {items.map(item => {
-                    const active =
-                        activeHref(item) ||
-                        Boolean(
-                            item.children?.some(child => activeHref(child)),
-                        );
+                    const childActive = Boolean(
+                        item.children?.some(child => activeHref(child)),
+                    );
+                    // Collapsed: icon active only for leaf items, or when a child matches
+                    const active = item.children?.length
+                        ? childActive
+                        : activeHref(item);
                     const count =
                         (item.badgeKey
                             ? badges[item.badgeKey]
@@ -241,7 +296,12 @@ function SidebarNavInner({
                             const childActive = Boolean(
                                 item.children?.some(child => activeHref(child)),
                             );
-                            const active = activeHref(item) || childActive;
+                            // Parent with children: only the matching child is "active"
+                            // (avoids HR + Schedule both highlighted).
+                            const active = hasChildren
+                                ? false
+                                : activeHref(item);
+                            const inSection = hasChildren && childActive;
                             const count =
                                 (item.badgeKey
                                     ? badges[item.badgeKey]
@@ -258,56 +318,44 @@ function SidebarNavInner({
                             if (hasChildren && item.children) {
                                 return (
                                     <div key={item.href} className="space-y-1">
-                                        <div className="flex items-center gap-1.5">
-                                            <Link
-                                                href={href}
-                                                onClick={onNavigate}
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setSubmenusOpen(prev => ({
+                                                    ...prev,
+                                                    [item.href]: !isSubOpen,
+                                                }))
+                                            }
+                                            className={cn(
+                                                "flex h-9 w-full items-center gap-3 rounded-full border px-3 text-[13px] transition-colors cursor-pointer",
+                                                inSection || isSubOpen
+                                                    ? "border-transparent text-foreground/90"
+                                                    : "border-transparent text-foreground/80 hover:bg-background/70 hover:text-foreground",
+                                            )}
+                                            aria-expanded={isSubOpen}
+                                            aria-label={
+                                                isSubOpen
+                                                    ? `Close ${label}`
+                                                    : `Open ${label}`
+                                            }
+                                        >
+                                            <item.icon
                                                 className={cn(
-                                                    "flex min-w-0 flex-1 items-center gap-3 rounded-full border text-[13px] transition-colors h-9 px-3",
-                                                    active
-                                                        ? "border-border bg-background font-medium text-foreground"
-                                                        : "border-transparent text-foreground/80 hover:bg-background/70 hover:text-foreground",
+                                                    "size-4 shrink-0",
+                                                    inSection
+                                                        ? "text-orange-600 dark:text-orange-400"
+                                                        : "text-muted-foreground",
                                                 )}
-                                            >
-                                                <item.icon
-                                                    className={cn(
-                                                        "size-4 shrink-0",
-                                                        active
-                                                            ? "text-orange-600 dark:text-orange-400"
-                                                            : "text-muted-foreground",
-                                                    )}
-                                                />
-                                                <span className="truncate">
-                                                    {label}
-                                                </span>
-                                            </Link>
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    setSubmenusOpen(prev => ({
-                                                        ...prev,
-                                                        [item.href]: !isSubOpen,
-                                                    }))
-                                                }
-                                                className={cn(
-                                                    "flex size-8 shrink-0 items-center justify-center rounded-full transition-colors",
-                                                    isSubOpen
-                                                        ? "border border-border bg-background text-foreground hover:bg-muted"
-                                                        : "text-muted-foreground hover:bg-background hover:text-foreground",
-                                                )}
-                                                aria-label={
-                                                    isSubOpen
-                                                        ? `Close ${label}`
-                                                        : `Open ${label}`
-                                                }
-                                            >
-                                                {isSubOpen ? (
-                                                    <X className="size-3.5" />
-                                                ) : (
-                                                    <Plus className="size-3.5" />
-                                                )}
-                                            </button>
-                                        </div>
+                                            />
+                                            <span className="min-w-0 flex-1 truncate text-left">
+                                                {label}
+                                            </span>
+                                            {isSubOpen ? (
+                                                <X className="size-3.5 shrink-0 text-muted-foreground" />
+                                            ) : (
+                                                <Plus className="size-3.5 shrink-0 text-muted-foreground" />
+                                            )}
+                                        </button>
                                         {isSubOpen ? (
                                             <ul className="ml-4 flex flex-col gap-0.5 border-l border-border/70 pl-2">
                                                 {item.children.map(child => {

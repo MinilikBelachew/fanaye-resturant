@@ -12,6 +12,7 @@ export type ShiftDefinitionFormValues = z.infer<typeof shiftDefinitionSchema>;
 
 export const placeSchema = z.object({
     name: z.string().trim().min(1, "Place name is required."),
+    isVip: z.boolean(),
 });
 
 export type PlaceFormValues = z.infer<typeof placeSchema>;
@@ -25,6 +26,7 @@ export const diningTableCreateSchema = z.object({
     displayName: z.string().trim().max(100).optional().or(z.literal("")),
     locationId: z.string().min(1, "Select a place."),
     assignedWaiterMembershipId: z.string().optional().or(z.literal("")),
+    isVip: z.boolean(),
 });
 
 export type DiningTableCreateValues = z.infer<typeof diningTableCreateSchema>;
@@ -38,6 +40,7 @@ export const diningTableEditSchema = z.object({
     displayName: z.string().trim().min(1, "Table label is required."),
     locationId: z.string().min(1, "Select a place."),
     assignedWaiterMembershipId: z.string().optional().or(z.literal("")),
+    isVip: z.boolean(),
 });
 
 export type DiningTableEditValues = z.infer<typeof diningTableEditSchema>;

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+
 export const staffFormSchema = z
     .object({
         name: z.string().trim().min(1, "Staff full name is required."),
@@ -19,29 +21,55 @@ export const staffFormSchema = z
             .refine(value => value === "" || /^\d{4}$/.test(value), {
                 message: "PIN must be exactly 4 digits.",
             }),
+        hireDate: z.string().optional().or(z.literal("")),
+        photoId: z.string().optional().or(z.literal("")),
         active: z.boolean(),
-        workingDays: z
-            .array(z.string())
-            .min(1, "Select at least one working day."),
-        shiftDefinitionId: z.string().optional().or(z.literal("")),
-        assignedTableIds: z.array(z.string()),
+        /** Per weekday: shift definition id, or "" for off */
+        dayShiftByDay: z.record(z.string(), z.string()),
+        /** Tables assigned per shift window id */
+        assignedTablesByShift: z.record(z.string(), z.array(z.string())),
+        /** Which shift's floor map is being edited */
+        coverageShiftId: z.string().optional().or(z.literal("")),
     })
     .superRefine((data, ctx) => {
+        const assignedDays = WEEKDAYS.filter(
+            day => (data.dayShiftByDay[day] || "").trim().length > 0,
+        );
         if (
-            data.role === "waiter" &&
-            data.assignedTableIds &&
-            data.assignedTableIds.length > 0 &&
-            !data.shiftDefinitionId
+            (data.role === "waiter" || data.role === "cashier") &&
+            assignedDays.length === 0
         ) {
             ctx.addIssue({
                 code: "custom",
-                path: ["shiftDefinitionId"],
-                message: "Select a shift to assign floor tables.",
+                path: ["dayShiftByDay"],
+                message: "Assign at least one day and shift window.",
             });
+        }
+
+        if (data.role === "waiter") {
+            const usedShifts = [
+                ...new Set(
+                    assignedDays
+                        .map(day => data.dayShiftByDay[day])
+                        .filter(Boolean),
+                ),
+            ];
+            const hasAnyTables = usedShifts.some(
+                shiftId =>
+                    (data.assignedTablesByShift[shiftId] || []).length > 0,
+            );
+            if (usedShifts.length > 0 && !hasAnyTables) {
+                // Tables optional at create — warn only when coverageShift set with empty
+                // Allow empty tables (manager can assign later)
+            }
         }
     });
 
 export type StaffFormValues = z.infer<typeof staffFormSchema>;
+
+const emptyDayShiftByDay = Object.fromEntries(
+    WEEKDAYS.map(day => [day, ""]),
+) as Record<(typeof WEEKDAYS)[number], string>;
 
 export const staffFormDefaults: StaffFormValues = {
     name: "",
@@ -51,8 +79,36 @@ export const staffFormDefaults: StaffFormValues = {
     phone: "",
     email: "",
     pin: "",
+    hireDate: "",
+    photoId: "",
     active: true,
-    workingDays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-    shiftDefinitionId: "",
-    assignedTableIds: [],
+    dayShiftByDay: { ...emptyDayShiftByDay },
+    assignedTablesByShift: {},
+    coverageShiftId: "",
 };
+
+export function dayShiftsFromForm(
+    dayShiftByDay: Record<string, string>,
+): Array<{ dayCode: string; shiftDefinitionId: string }> {
+    return WEEKDAYS.filter(day => (dayShiftByDay[day] || "").trim()).map(
+        day => ({
+            dayCode: day,
+            shiftDefinitionId: dayShiftByDay[day].trim(),
+        }),
+    );
+}
+
+export function tableCoveragesFromForm(
+    dayShiftByDay: Record<string, string>,
+    assignedTablesByShift: Record<string, string[]>,
+): Array<{ shiftDefinitionId: string; tableIds: string[] }> {
+    const used = [
+        ...new Set(
+            WEEKDAYS.map(day => dayShiftByDay[day] || "").filter(Boolean),
+        ),
+    ];
+    return used.map(shiftDefinitionId => ({
+        shiftDefinitionId,
+        tableIds: assignedTablesByShift[shiftDefinitionId] || [],
+    }));
+}

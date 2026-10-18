@@ -45,9 +45,9 @@ export default function PageHeader({
         }
     }
 
-    // Translate description if available
-    let localizedDesc = description;
-    if (description) {
+    // Translate description only when explicitly passed (never auto-inject).
+    let localizedDesc = description?.trim() || undefined;
+    if (localizedDesc) {
         const descKey = `desc_${title.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
         if (tHeaders.has(descKey)) {
             localizedDesc = tHeaders(descKey);

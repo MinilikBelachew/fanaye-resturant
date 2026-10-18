@@ -43,9 +43,26 @@ export type AdminMenuItem = {
     imageUrl: string | null;
     badge?: string | null;
     showOnQrMenu?: boolean;
+    /** Null = inherit house default VIP % */
+    vipPercent?: string | null;
     modifierGroups: AdminModifierGroup[];
     recipeLines?: AdminRecipeLine[];
     hasRecipe?: boolean;
+};
+
+export type VipPricingItem = {
+    id: string;
+    name: string;
+    price: string;
+    currencyCode: string;
+    categoryName: string;
+    vipPercent: string | null;
+    effectiveVipPercent: string;
+};
+
+export type VipPricingResponse = {
+    defaultVipPercent: string;
+    items: VipPricingItem[];
 };
 
 export type ScannedMenuItem = {
@@ -99,8 +116,10 @@ export type CreateAdminMenuItemBody = {
     }>;
 };
 
-export type UpdateAdminMenuItemBody = CreateAdminMenuItemBody & {
+export type UpdateAdminMenuItemBody = Partial<CreateAdminMenuItemBody> & {
     expectedVersion?: number;
+    /** Null clears override (inherit house default) */
+    vipPercent?: number | null;
 };
 
 export type CreateAdminModifierGroupBody = {

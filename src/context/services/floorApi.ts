@@ -125,7 +125,7 @@ export const floorApi = api.injectEndpoints({
         }),
         createTableLocation: builder.mutation<
             { data: AdminTableLocation },
-            { name: string; code?: string }
+            { name: string; code?: string; isVip?: boolean }
         >({
             query: body => ({
                 url: "/admin/table-locations",
@@ -136,7 +136,10 @@ export const floorApi = api.injectEndpoints({
         }),
         updateTableLocation: builder.mutation<
             { data: AdminTableLocation },
-            { id: string; body: { name?: string; code?: string } }
+            {
+                id: string;
+                body: { name?: string; code?: string; isVip?: boolean };
+            }
         >({
             query: ({ id, body }) => ({
                 url: `/admin/table-locations/${id}`,
@@ -152,6 +155,7 @@ export const floorApi = api.injectEndpoints({
                 displayName: string;
                 displayNumber: string;
                 assignedWaiterMembershipId?: string | null;
+                isVip?: boolean;
             }
         >({
             query: body => ({
@@ -170,6 +174,7 @@ export const floorApi = api.injectEndpoints({
                     displayName?: string;
                     displayNumber?: string;
                     assignedWaiterMembershipId?: string | null;
+                    isVip?: boolean;
                 };
             }
         >({
@@ -279,6 +284,22 @@ export const floorApi = api.injectEndpoints({
             }),
             invalidatesTags: ["Floor", "Shift"],
         }),
+        forceCloseTableSession: builder.mutation<
+            TableSessionResponse,
+            {
+                tableSessionId: string;
+                expectedVersion: number;
+                reason: string;
+            }
+        >({
+            query: ({ tableSessionId, expectedVersion, reason }) => ({
+                url: `/table-sessions/${tableSessionId}/force-close`,
+                method: "POST",
+                body: { expectedVersion, reason },
+                headers: { "Idempotency-Key": idempotencyKey() },
+            }),
+            invalidatesTags: ["Floor", "Shift", "DailyClose"],
+        }),
         dispatcherCalls: builder.query<DispatcherBoardResponse, void>({
             query: () => ({
                 url: "/dispatcher/calls",
@@ -323,5 +344,7 @@ export const useStartTableSessionMutation =
     floorApi.useStartTableSessionMutation;
 export const useCloseTableSessionMutation =
     floorApi.useCloseTableSessionMutation;
+export const useForceCloseTableSessionMutation =
+    floorApi.useForceCloseTableSessionMutation;
 export const useDispatcherCallsQuery = floorApi.useDispatcherCallsQuery;
 export const useOpenCallPickupMutation = floorApi.useOpenCallPickupMutation;

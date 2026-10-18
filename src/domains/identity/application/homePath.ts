@@ -8,12 +8,16 @@ export function homePathForRole(role: Role): string {
             return "/owner";
         case "manager":
             return "/manager";
+        case "store_manager":
+            return "/store";
         case "cashier":
             return "/cashier";
         case "waiter":
             return "/waiter/tables";
         case "dispatcher":
             return "/dispatcher";
+        case "receptionist":
+            return "/receptionist";
         case "kitchen":
             return "/kitchen";
         case "barista":
@@ -28,7 +32,7 @@ export function homePathForRole(role: Role): string {
 }
 
 export function roleAllowsPath(role: Role, pathname: string): boolean {
-    const rest = pathname.replace(/^\/(en|ru|uz)/, "") || "/";
+    const rest = pathname.replace(/^\/(en|ru|uz|am)/, "") || "/";
     if (rest === "/" || rest === "") return true;
     if (
         rest.startsWith("/sign-in") ||
@@ -43,6 +47,9 @@ export function roleAllowsPath(role: Role, pathname: string): boolean {
     }
     if (role === "dispatcher") {
         return rest.startsWith("/dispatcher");
+    }
+    if (role === "receptionist") {
+        return rest.startsWith("/receptionist");
     }
     if (role === "super_admin") {
         return rest.startsWith("/super-admin");

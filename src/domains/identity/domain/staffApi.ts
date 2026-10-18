@@ -22,6 +22,14 @@ export type AdminStaffShiftCoverage = {
     tables: AdminStaffCoverageTable[];
 };
 
+export type AdminStaffDayShift = {
+    dayCode: string;
+    shiftDefinitionId: string;
+    shiftName: string;
+    startLocalTime: string;
+    endLocalTime: string;
+};
+
 export type AdminStaffMember = {
     id: string;
     name: string;
@@ -29,6 +37,7 @@ export type AdminStaffMember = {
     roleLabel: string;
     active: boolean;
     workingDays: string[];
+    dayShifts?: AdminStaffDayShift[];
     phone: string | null;
     email: string | null;
     hasPin?: boolean;
@@ -38,6 +47,19 @@ export type AdminStaffMember = {
     branchId?: string | null;
     branchName?: string | null;
     shiftCoverages: AdminStaffShiftCoverage[];
+    employeeCode?: string | null;
+    jobTitle?: string | null;
+    employmentType?: string | null;
+    payType?: string | null;
+    basePay?: number | null;
+    hireDate?: string | null;
+    probationEndDate?: string | null;
+    emergencyContactName?: string | null;
+    emergencyContactPhone?: string | null;
+    hrNotes?: string | null;
+    annualLeaveBalanceDays?: number | null;
+    photoId?: string | null;
+    photoPath?: string | null;
 };
 
 export type AdminStaffListResponse = {

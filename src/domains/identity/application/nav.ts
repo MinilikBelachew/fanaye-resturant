@@ -2,15 +2,21 @@ import type { LucideIcon } from "lucide-react";
 import {
     Activity,
     AlertTriangle,
+    Banknote,
+    BedDouble,
     Bell,
     BookOpen,
     Building2,
+    CalendarDays,
     CheckCircle2,
     ClipboardCheck,
     Clock3,
+    ConciergeBell,
     CreditCard,
+    Crown,
     Flame,
     Globe,
+    HandCoins,
     Inbox,
     LayoutDashboard,
     LayoutGrid,
@@ -64,6 +70,11 @@ function stationQueueNav(home: string): NavSection[] {
                     href: `${home}/menu`,
                     label: "Station menu",
                     icon: UtensilsCrossed,
+                },
+                {
+                    href: `${home}/leave`,
+                    label: "My leave",
+                    icon: CalendarDays,
                 },
             ],
         },
@@ -151,11 +162,6 @@ function navSectionsForRole(role: Role): NavSection[] {
                             icon: Activity,
                         },
                         {
-                            href: "/owner/daily-close",
-                            label: "Daily Close",
-                            icon: ClipboardCheck,
-                        },
-                        {
                             href: "/owner/notifications",
                             label: "Notifications",
                             icon: Bell,
@@ -172,8 +178,67 @@ function navSectionsForRole(role: Role): NavSection[] {
                         },
                         {
                             href: "/owner/staff",
-                            label: "Staff",
+                            label: "HR",
                             icon: Users,
+                            children: [
+                                {
+                                    href: "/owner/staff",
+                                    label: "Directory",
+                                    icon: Users,
+                                },
+                                {
+                                    href: "/owner/staff/schedule",
+                                    label: "Schedule",
+                                    icon: LayoutGrid,
+                                },
+                                {
+                                    href: "/owner/staff/shifts",
+                                    label: "Shifts",
+                                    icon: Clock3,
+                                },
+                                {
+                                    href: "/owner/staff/attendance",
+                                    label: "Attendance",
+                                    icon: ClipboardCheck,
+                                },
+                                {
+                                    href: "/owner/staff/leave",
+                                    label: "Leave",
+                                    icon: Inbox,
+                                },
+                            ],
+                        },
+                        {
+                            href: "/owner/finance",
+                            label: "Finance",
+                            icon: Wallet,
+                            children: [
+                                {
+                                    href: "/owner/finance",
+                                    label: "Overview",
+                                    icon: LayoutDashboard,
+                                },
+                                {
+                                    href: "/owner/finance/cash",
+                                    label: "Cash",
+                                    icon: Banknote,
+                                },
+                                {
+                                    href: "/owner/finance/closes",
+                                    label: "Closes",
+                                    icon: ClipboardCheck,
+                                },
+                                {
+                                    href: "/owner/finance/reports",
+                                    label: "Reports",
+                                    icon: ScrollText,
+                                },
+                                {
+                                    href: "/owner/finance/payroll",
+                                    label: "Payroll",
+                                    icon: HandCoins,
+                                },
+                            ],
                         },
                         {
                             href: "/owner/inventory",
@@ -228,6 +293,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                                     label: "Print Menu Builder",
                                     icon: BookOpen,
                                 },
+                                {
+                                    href: "/manager/menu/vip-pricing",
+                                    label: "VIP Pricing",
+                                    icon: Crown,
+                                },
                             ],
                         },
                         {
@@ -246,9 +316,78 @@ function navSectionsForRole(role: Role): NavSection[] {
                             icon: Store,
                         },
                         {
+                            href: "/manager/rooms",
+                            label: "Rooms",
+                            icon: BedDouble,
+                        },
+                        {
+                            href: "/manager/front-desk",
+                            label: "Front desk",
+                            icon: ConciergeBell,
+                        },
+                        {
                             href: "/manager/staff",
-                            label: "Staff",
+                            label: "HR",
                             icon: Users,
+                            children: [
+                                {
+                                    href: "/manager/staff",
+                                    label: "Directory",
+                                    icon: Users,
+                                },
+                                {
+                                    href: "/manager/staff/schedule",
+                                    label: "Schedule",
+                                    icon: LayoutGrid,
+                                },
+                                {
+                                    href: "/manager/staff/shifts",
+                                    label: "Shifts",
+                                    icon: Clock3,
+                                },
+                                {
+                                    href: "/manager/staff/attendance",
+                                    label: "Attendance",
+                                    icon: ClipboardCheck,
+                                },
+                                {
+                                    href: "/manager/staff/leave",
+                                    label: "Leave",
+                                    icon: Inbox,
+                                },
+                            ],
+                        },
+                        {
+                            href: "/manager/finance",
+                            label: "Finance",
+                            icon: Wallet,
+                            children: [
+                                {
+                                    href: "/manager/finance",
+                                    label: "Overview",
+                                    icon: LayoutDashboard,
+                                },
+                                {
+                                    href: "/manager/finance/cash",
+                                    label: "Cash",
+                                    icon: Banknote,
+                                },
+                                {
+                                    href: "/manager/finance/closes",
+                                    label: "Closes",
+                                    icon: ClipboardCheck,
+                                },
+                                {
+                                    href: "/manager/finance/reports",
+                                    label: "Reports",
+                                    icon: ScrollText,
+                                },
+                                {
+                                    href: "/manager/finance/payroll",
+                                    label: "Payroll",
+                                    icon: HandCoins,
+                                },
+                            ],
                         },
                         {
                             href: "/manager/waiters",
@@ -269,16 +408,6 @@ function navSectionsForRole(role: Role): NavSection[] {
                             href: "/manager/approvals",
                             label: "Approvals",
                             icon: ClipboardCheck,
-                        },
-                        {
-                            href: "/manager/reports",
-                            label: "Reports",
-                            icon: ScrollText,
-                        },
-                        {
-                            href: "/manager/daily-close",
-                            label: "Daily Close",
-                            icon: Wallet,
                         },
                         {
                             href: "/manager/audit",
@@ -338,6 +467,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                             label: "Shift",
                             icon: Clock3,
                         },
+                        {
+                            href: "/cashier/leave",
+                            label: "My leave",
+                            icon: CalendarDays,
+                        },
                     ],
                 },
                 {
@@ -372,6 +506,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                             icon: LayoutGrid,
                         },
                         {
+                            href: "/waiter/rooms",
+                            label: "Rooms",
+                            icon: BedDouble,
+                        },
+                        {
                             href: "/waiter/ready",
                             label: "Ready",
                             icon: CheckCircle2,
@@ -390,6 +529,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                             href: "/waiter/shift",
                             label: "Shift",
                             icon: Clock3,
+                        },
+                        {
+                            href: "/waiter/leave",
+                            label: "My leave",
+                            icon: CalendarDays,
                         },
                         {
                             href: "/waiter/cash",
@@ -430,6 +574,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                             icon: Clock3,
                         },
                         {
+                            href: "/dispatcher/leave",
+                            label: "My leave",
+                            icon: CalendarDays,
+                        },
+                        {
                             href: "/dispatcher/cash",
                             label: "Cash",
                             icon: Wallet,
@@ -438,6 +587,47 @@ function navSectionsForRole(role: Role): NavSection[] {
                             href: "/dispatcher/profile",
                             label: "Profile",
                             icon: UserRound,
+                        },
+                    ],
+                },
+            ];
+        case "store_manager":
+            return [
+                {
+                    title: "Warehouse",
+                    items: [
+                        {
+                            href: "/store",
+                            label: "Dashboard",
+                            icon: LayoutDashboard,
+                        },
+                        {
+                            href: "/store/inventory",
+                            label: "Inventory",
+                            icon: Package,
+                        },
+                        {
+                            href: "/store/notifications",
+                            label: "Notifications",
+                            icon: Bell,
+                        },
+                        {
+                            href: "/store/leave",
+                            label: "My leave",
+                            icon: CalendarDays,
+                        },
+                    ],
+                },
+            ];
+        case "receptionist":
+            return [
+                {
+                    title: "Front desk",
+                    items: [
+                        {
+                            href: "/receptionist",
+                            label: "In house",
+                            icon: ConciergeBell,
                         },
                     ],
                 },

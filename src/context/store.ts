@@ -11,6 +11,7 @@ import "./services/floorApi";
 import "./services/ordersApi";
 import "./services/stationsApi";
 import "./services/billingApi";
+import "./services/roomsApi";
 import "./services/cashApi";
 import "./services/reconciliationApi";
 import "./services/dailyCloseApi";

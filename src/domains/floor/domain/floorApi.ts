@@ -3,6 +3,7 @@ export type FloorLocation = {
     code: string;
     name: string;
     sortOrder: number;
+    isVip?: boolean;
 };
 
 export type FloorTable = {
@@ -25,6 +26,8 @@ export type FloorTable = {
     readyItemCount: number;
     cookingItemCount: number;
     delayedItemCount: number;
+    isVip?: boolean;
+    effectiveVip?: boolean;
     version: number;
 };
 

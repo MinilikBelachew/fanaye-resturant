@@ -16,9 +16,8 @@ import {
     STATIONS_STORAGE_KEY,
 } from "@/context/slices/stationSlice";
 import {
-    clearAuthFlagCookie,
+    clearLegacyAuthFlagCookie,
     clearLegacyAuthStorage,
-    setAuthFlagCookie,
 } from "@/domains/identity/infrastructure/authSession";
 
 const DEMO_STORAGE_KEYS = [
@@ -59,18 +58,19 @@ export default function SessionHydrator({
         dispatch(hydrateStations([]));
         clearLegacyAuthStorage();
 
+        clearLegacyAuthFlagCookie();
+
+        // Refresh renews HttpOnly fanaye_session via Set-Cookie from the API.
         dispatch(authApi.endpoints.refresh.initiate())
             .unwrap()
-            .then(() => {
-                setAuthFlagCookie(true);
-                return dispatch(
+            .then(() =>
+                dispatch(
                     authApi.endpoints.me.initiate(undefined, {
                         forceRefetch: true,
                     }),
-                ).unwrap();
-            })
+                ).unwrap(),
+            )
             .catch(() => {
-                clearAuthFlagCookie();
                 dispatch(clearSession());
             })
             .finally(() => {

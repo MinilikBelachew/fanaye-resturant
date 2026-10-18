@@ -1,6 +1,7 @@
 import createMiddleware from "next-intl/middleware";
 import { NextRequest, NextResponse } from "next/server";
 import { routing } from "./i18n/routing";
+import { SESSION_COOKIE_NAME } from "./domains/identity/infrastructure/authSession";
 
 const intlMiddleware = createMiddleware(routing);
 
@@ -14,6 +15,7 @@ const APP_PREFIXES = [
     "/cakes",
     "/soft-drinks",
     "/dispatcher",
+    "/store",
     "/super-admin",
 ] as const;
 
@@ -31,7 +33,8 @@ function localeFromPath(pathname: string): string {
 export default function middleware(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
     const rest = stripLocale(pathname);
-    const signedIn = request.cookies.get("fanaye_signed_in")?.value === "1";
+    // HttpOnly cookie set only by the API — not forgeable via document.cookie.
+    const signedIn = request.cookies.get(SESSION_COOKIE_NAME)?.value === "1";
 
     const isAppRoute = APP_PREFIXES.some(
         prefix => rest === prefix || rest.startsWith(`${prefix}/`),

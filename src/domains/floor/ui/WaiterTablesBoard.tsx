@@ -300,6 +300,7 @@ export default function WaiterTablesBoard({
                                 location={table.locationName}
                                 badge={badge}
                                 waiter={free ? null : table.waiterName}
+                                isVip={table.effectiveVip}
                                 footerLeft={footerLeft}
                                 footerAction={
                                     busyId === table.tableId

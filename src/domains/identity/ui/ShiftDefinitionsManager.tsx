@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import {
     AlertCircle,
     ArrowRight,
-    Calendar,
     Check,
     CheckCircle2,
     Clock,
@@ -17,7 +16,6 @@ import {
     Sunrise,
     Sunset,
     Trash2,
-    Users,
     X,
 } from "lucide-react";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
@@ -32,7 +30,6 @@ import {
     useUpdateShiftDefinitionMutation,
 } from "@/context/services/shiftsApi";
 import type { ShiftDefinition } from "@/domains/identity/domain/shift";
-import { Link } from "@/i18n/navigation";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { formatEthiopianLocalTime } from "@/lib/ethiopian-calendar";
@@ -239,9 +236,9 @@ export default function ShiftDefinitionsManager({
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <PageHeader
                         compact
-                        eyebrow="Staff Management"
+                        eyebrow="HR"
                         title="Shift Definitions & Templates"
-                        description="Configure operational shifts, start and end times, and station coverage for staff."
+                        description="Configure operational shifts, start and end times, and station coverage."
                     />
                     <div className="flex items-center gap-2 self-start sm:self-auto">
                         <Button
@@ -253,28 +250,6 @@ export default function ShiftDefinitionsManager({
                             Create Custom Shift
                         </Button>
                     </div>
-                </div>
-
-                {/* Sub-tabs to easily switch between Directory and Shifts */}
-                <div className="flex flex-wrap items-center gap-1.5 border-b border-hairline pb-3">
-                    <Link
-                        href={basePath}
-                        className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-normal text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                    >
-                        <Users className="size-3.5" />
-                        Staff Directory
-                    </Link>
-                    <span className="inline-flex items-center gap-2 rounded-full bg-brand/10 px-3.5 py-1.5 text-xs font-normal text-brand">
-                        <Clock3 className="size-3.5" />
-                        Shift Templates & Hours
-                    </span>
-                    <Link
-                        href={`${basePath}/schedule`}
-                        className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-normal text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                    >
-                        <Calendar className="size-3.5" />
-                        Weekly Shift Roster
-                    </Link>
                 </div>
 
                 {/* 1-Click Quick Preset Templates */}
@@ -428,7 +403,19 @@ export default function ShiftDefinitionsManager({
                                 return (
                                     <div
                                         key={shift.id}
-                                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4.5 sm:px-6 hover:bg-secondary/20 transition-colors gap-3"
+                                        role="button"
+                                        tabIndex={0}
+                                        onClick={() => openEditModal(shift)}
+                                        onKeyDown={e => {
+                                            if (
+                                                e.key === "Enter" ||
+                                                e.key === " "
+                                            ) {
+                                                e.preventDefault();
+                                                openEditModal(shift);
+                                            }
+                                        }}
+                                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4.5 sm:px-6 hover:bg-secondary/20 transition-colors gap-3 cursor-pointer"
                                     >
                                         <div className="flex items-center gap-3.5">
                                             <div className="flex size-10 items-center justify-center rounded-xl bg-secondary text-foreground text-sm">
@@ -487,9 +474,10 @@ export default function ShiftDefinitionsManager({
                                             <div className="flex items-center gap-1.5">
                                                 <button
                                                     type="button"
-                                                    onClick={() =>
-                                                        openEditModal(shift)
-                                                    }
+                                                    onClick={e => {
+                                                        e.stopPropagation();
+                                                        openEditModal(shift);
+                                                    }}
                                                     className="flex size-8 items-center justify-center rounded-lg border border-hairline text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors cursor-pointer"
                                                     title="Edit shift"
                                                 >
@@ -497,9 +485,10 @@ export default function ShiftDefinitionsManager({
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    onClick={() =>
-                                                        setDeleteTarget(shift)
-                                                    }
+                                                    onClick={e => {
+                                                        e.stopPropagation();
+                                                        setDeleteTarget(shift);
+                                                    }}
                                                     className="flex size-8 items-center justify-center rounded-lg border border-hairline text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
                                                     title="Delete shift"
                                                 >

@@ -31,7 +31,6 @@ import {
 import { homePathForRole } from "@/domains/identity/application/homePath";
 import { mapRoleCodeToRole } from "@/domains/identity/application/mapAuthToStaff";
 import { performSignOut } from "@/domains/identity/application/signOut";
-import { setAuthFlagCookie } from "@/domains/identity/infrastructure/authSession";
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,6 +87,17 @@ export default function SignInPage() {
             }
         }
     }, []);
+
+    // After refresh restores the session (and sets HttpOnly fanaye_session),
+    // honor middleware ?next= so existing users are not stuck on sign-in.
+    useEffect(() => {
+        if (!current || typeof window === "undefined") return;
+        const next = new URLSearchParams(window.location.search).get("next");
+        if (next && next.startsWith("/") && !next.startsWith("//")) {
+            router.replace(next);
+            return;
+        }
+    }, [current, router]);
 
     const triggerPinError = (msg?: string) => {
         setError(msg || t("pinError"));
@@ -179,7 +189,7 @@ export default function SignInPage() {
                     return;
                 }
 
-                setAuthFlagCookie(rememberMe);
+                // fanaye_session is set HttpOnly by the API login response.
                 const role = mapRoleCodeToRole(
                     session.context.roleCode,
                     session.context.stationCode,
@@ -244,7 +254,6 @@ export default function SignInPage() {
                 return;
             }
 
-            setAuthFlagCookie(rememberMe);
             const role = mapRoleCodeToRole(
                 session.context.roleCode,
                 session.context.stationCode,
@@ -339,7 +348,6 @@ export default function SignInPage() {
                 return;
             }
 
-            setAuthFlagCookie(rememberMe);
             const role = mapRoleCodeToRole(
                 session.context.roleCode,
                 session.context.stationCode,

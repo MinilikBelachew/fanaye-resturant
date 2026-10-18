@@ -95,7 +95,9 @@ export default function CashierBillRequests() {
                 billRequestId: request.billRequestId,
                 expectedTableSessionVersion:
                     request.expectedTableSessionVersion,
+                expectedRoomSessionVersion: request.expectedRoomSessionVersion,
                 tableSessionId: request.tableSessionId,
+                roomSessionId: request.roomSessionId,
             }).unwrap();
 
             const item = {
@@ -122,7 +124,10 @@ export default function CashierBillRequests() {
             toast.success(
                 tCashier("billGenerated"),
                 tCashier("billGeneratedBody", {
-                    table: request.tableDisplayName || request.tableSessionId,
+                    table:
+                        request.tableDisplayName ||
+                        request.tableSessionId ||
+                        tCommon("table"),
                 }),
             );
         } catch (err) {

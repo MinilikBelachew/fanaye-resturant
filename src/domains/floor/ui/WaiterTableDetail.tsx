@@ -826,7 +826,15 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                 <div className="space-y-3 border-t border-hairline pt-3">
                                     <div className="rounded-[14px] bg-secondary/40 p-3 space-y-2">
                                         <div className="flex justify-between text-[12px] font-semibold text-slate-gray">
-                                            <span>BILL #{bill.billNumber}</span>
+                                            <span className="inline-flex items-center gap-1.5">
+                                                BILL #{bill.billNumber}
+                                                {bill.isVip ||
+                                                table.effectiveVip ? (
+                                                    <span className="rounded-full border border-amber-500/35 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-amber-700 dark:text-amber-400">
+                                                        VIP
+                                                    </span>
+                                                ) : null}
+                                            </span>
                                             <span className="text-foreground font-bold">
                                                 {formatEtb(Number(bill.total))}
                                             </span>

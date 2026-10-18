@@ -115,10 +115,23 @@ export const ordersApi = api.injectEndpoints({
             }),
             invalidatesTags: (_result, _error, arg) => [
                 "Floor",
+                "Rooms",
                 "Menu",
                 "Station",
-                { type: "Order", id: arg.tableSessionId },
+                ...(arg.tableSessionId
+                    ? [{ type: "Order" as const, id: arg.tableSessionId }]
+                    : []),
+                ...(arg.roomSessionId
+                    ? [{ type: "Order" as const, id: arg.roomSessionId }]
+                    : []),
             ],
+        }),
+        roomSessionOrders: builder.query<SessionOrdersResponse, string>({
+            query: roomSessionId => ({
+                url: `/room-sessions/${roomSessionId}/orders`,
+                method: "GET",
+            }),
+            providesTags: (_result, _error, id) => [{ type: "Order", id }],
         }),
         markOrderItemServed: builder.mutation<
             ServedOrderItemResponse,
@@ -166,6 +179,27 @@ export const ordersApi = api.injectEndpoints({
                 "Approvals",
                 { type: "Order", id: arg.tableSessionId },
             ],
+        }),
+        forceCancelOrderItem: builder.mutation<
+            {
+                data: {
+                    orderItemId: string;
+                    state: string;
+                    version: number;
+                };
+            },
+            {
+                orderItemId: string;
+                expectedVersion: number;
+                reason: string;
+            }
+        >({
+            query: ({ orderItemId, expectedVersion, reason }) => ({
+                url: `/order-items/${orderItemId}/force-cancel`,
+                method: "POST",
+                body: { expectedVersion, reason },
+            }),
+            invalidatesTags: ["Floor", "Station", "Approvals", "DailyClose"],
         }),
         requestOrderCancellation: builder.mutation<
             {
@@ -360,12 +394,16 @@ export const ordersApi = api.injectEndpoints({
 export const useWaiterMenuQuery = ordersApi.endpoints.waiterMenu.useQuery;
 export const useTableSessionOrdersQuery =
     ordersApi.endpoints.tableSessionOrders.useQuery;
+export const useRoomSessionOrdersQuery =
+    ordersApi.endpoints.roomSessionOrders.useQuery;
 export const useConfirmOrderMutation =
     ordersApi.endpoints.confirmOrder.useMutation;
 export const useMarkOrderItemServedMutation =
     ordersApi.endpoints.markOrderItemServed.useMutation;
 export const useCancelOrderItemMutation =
     ordersApi.endpoints.cancelOrderItem.useMutation;
+export const useForceCancelOrderItemMutation =
+    ordersApi.endpoints.forceCancelOrderItem.useMutation;
 export const useRequestOrderCancellationMutation =
     ordersApi.endpoints.requestOrderCancellation.useMutation;
 export const useRequestOrderChangeMutation =

@@ -58,12 +58,14 @@ function needsOptions(item: MenuItem) {
 
 export default function AddOrderMenu({
     tableSessionId,
+    roomSessionId,
     expectedVersion,
     tableLabel = "Table",
     variant = "waiter",
     onClose,
 }: {
-    tableSessionId: string;
+    tableSessionId?: string;
+    roomSessionId?: string;
     expectedVersion: number;
     tableLabel?: string;
     /** Waiter table flow vs dispatcher call-pickup flow (copy + accents). */
@@ -71,9 +73,9 @@ export default function AddOrderMenu({
     onClose: () => void;
 }) {
     const isDispatcher = variant === "dispatcher";
-    const { data, isLoading, isError } = useWaiterMenuQuery({
-        tableSessionId,
-    });
+    const { data, isLoading, isError } = useWaiterMenuQuery(
+        tableSessionId ? { tableSessionId } : {},
+    );
     const [confirmOrder, { isLoading: sending }] = useConfirmOrderMutation();
     const menuItems = useMemo(
         () => (data?.items ?? []).map(toCatalogMenuItem),
@@ -253,8 +255,15 @@ export default function AddOrderMenu({
         }
         try {
             await confirmOrder({
-                tableSessionId,
-                expectedTableSessionVersion: expectedVersion,
+                ...(roomSessionId
+                    ? {
+                          roomSessionId,
+                          expectedRoomSessionVersion: expectedVersion,
+                      }
+                    : {
+                          tableSessionId: tableSessionId!,
+                          expectedTableSessionVersion: expectedVersion,
+                      }),
                 items: lines.map(line => ({
                     menuItemId: line.menuItemId,
                     quantity: line.quantity,
@@ -573,6 +582,11 @@ export default function AddOrderMenu({
                                                     <span className="text-[14px] font-semibold text-foreground">
                                                         {formatEtb(item.price)}
                                                     </span>
+                                                    {data?.isVip ? (
+                                                        <span className="ml-1.5 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                                                            VIP
+                                                        </span>
+                                                    ) : null}
                                                 </div>
 
                                                 <div className="flex items-center gap-1.5">
@@ -659,6 +673,7 @@ export default function AddOrderMenu({
                     <OrderTicketContent
                         tableLabel={tableLabel}
                         variant={variant}
+                        isVip={Boolean(data?.isVip)}
                         lines={lines}
                         menuItems={menuItems}
                         pieceCount={pieceCount}
@@ -722,6 +737,7 @@ export default function AddOrderMenu({
                         <OrderTicketContent
                             tableLabel={tableLabel}
                             variant={variant}
+                            isVip={Boolean(data?.isVip)}
                             lines={lines}
                             menuItems={menuItems}
                             pieceCount={pieceCount}
@@ -804,6 +820,7 @@ export default function AddOrderMenu({
 function OrderTicketContent({
     tableLabel,
     variant = "waiter",
+    isVip = false,
     lines,
     menuItems,
     pieceCount,
@@ -820,6 +837,7 @@ function OrderTicketContent({
 }: {
     tableLabel: string;
     variant?: "waiter" | "dispatcher";
+    isVip?: boolean;
     lines: BasketLine[];
     menuItems: MenuItem[];
     pieceCount: number;
@@ -853,6 +871,11 @@ function OrderTicketContent({
                             ? `${tableLabel} order`
                             : `${tableLabel} Ticket`}
                     </h3>
+                    {isVip ? (
+                        <span className="rounded-full border border-amber-500/35 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-700 dark:text-amber-400">
+                            VIP
+                        </span>
+                    ) : null}
                     <span
                         className={cn(
                             "rounded-full px-2 py-0.5 text-[11px] font-medium",

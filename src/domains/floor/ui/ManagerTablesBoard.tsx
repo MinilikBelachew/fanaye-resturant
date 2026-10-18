@@ -199,6 +199,7 @@ export default function ManagerTablesBoard() {
                             key={table.tableId}
                             tableNumber={tableNumber(table)}
                             location={table.locationName}
+                            isVip={table.effectiveVip}
                             badge={
                                 occupied
                                     ? {

@@ -120,6 +120,7 @@ export const api = createApi({
         "Notifications",
         "Branches",
         "Inventory",
+        "Rooms",
     ],
     endpoints: () => ({}),
 });

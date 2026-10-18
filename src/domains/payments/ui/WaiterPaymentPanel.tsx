@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Camera, ChevronDown, ChevronUp } from "lucide-react";
 import {
     useExtractReceiptMutation,
@@ -68,6 +68,13 @@ function asBankProvider(value: string | null | undefined): BankProvider | null {
         : null;
 }
 
+function clampMoney(value: string, max: number): string {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n <= 0) return "";
+    if (n > max) return max.toFixed(2);
+    return n.toFixed(2);
+}
+
 export default function WaiterPaymentPanel({
     bill,
     tableSessionId,
@@ -76,15 +83,15 @@ export default function WaiterPaymentPanel({
     tableSessionId: string;
 }) {
     const t = useTranslations("waiter");
-    const due = Number(bill.total) - Number(bill.amountPaid);
-    const [tendered, setTendered] = useState(due.toFixed(2));
+    const total = Number(bill.total);
+    const paidSoFar = Number(bill.amountPaid);
+    const due = Math.max(0, total - paidSoFar);
+    const [amount, setAmount] = useState(due.toFixed(2));
     const [reference, setReference] = useState("");
     const [bankProvider, setBankProvider] = useState<BankProvider>("cbe");
     const [phoneNumber, setPhoneNumber] = useState("");
     const [accountSuffix, setAccountSuffix] = useState("");
-    const [cameraFor, setCameraFor] = useState<"TELEBIRR" | "BANK" | null>(
-        null,
-    );
+    const [cameraOpen, setCameraOpen] = useState(false);
     const [showManual, setShowManual] = useState(false);
     const [error, setError] = useState("");
     const [payCash, { isLoading: payingCash }] = usePayCashMutation();
@@ -96,24 +103,36 @@ export default function WaiterPaymentPanel({
         useExtractReceiptMutation();
 
     const busy = payingCash || payingTransfer || uploading || extracting;
-    const paid = bill.status === "PAID" || bill.status === "CLOSED";
+    const paid = bill.status === "PAID" || bill.status === "CLOSED" || due <= 0;
 
-    function openTransferCamera(channel: "TELEBIRR" | "BANK") {
-        setError("");
-        setCameraFor(channel);
-    }
+    useEffect(() => {
+        setAmount(due.toFixed(2));
+    }, [due, bill.version]);
 
     async function collectCash() {
         setError("");
+        const portion = clampMoney(amount, due);
+        if (!portion) {
+            setError(t("portionAmountRequired"));
+            return;
+        }
         try {
-            await payCash({
+            const result = await payCash({
                 billId: bill.billId,
                 tableSessionId,
-                amount: due.toFixed(2),
-                cashTendered: tendered,
+                amount: portion,
+                cashTendered: portion,
                 expectedBillVersion: bill.version,
             }).unwrap();
-            toast.success(t("cashRecorded"), formatEtb(due));
+            const remaining = Number(result.remainingAmount ?? 0);
+            if (remaining > 0) {
+                toast.success(
+                    t("partialCashRecorded"),
+                    t("remainingDue", { amount: formatEtb(remaining) }),
+                );
+            } else {
+                toast.success(t("cashRecorded"), formatEtb(Number(portion)));
+            }
         } catch (err) {
             const message = t("couldNotRecordCash");
             setError(message);
@@ -121,38 +140,89 @@ export default function WaiterPaymentPanel({
         }
     }
 
-    async function collectTransfer(
-        channel: "TELEBIRR" | "BANK",
-        dataUrl: string,
-    ) {
-        setError("");
-        try {
-            const receiptFile = dataUrlToFile(
-                dataUrl,
-                `${channel.toLowerCase()}-receipt.jpg`,
+    async function settleTransfer(args: {
+        channel: "TELEBIRR" | "BANK";
+        fileId: string;
+        reference: string;
+        bank: BankProvider;
+        portion: string;
+    }) {
+        const result = await payTransfer({
+            billId: bill.billId,
+            tableSessionId,
+            amount: args.portion,
+            expectedBillVersion: bill.version,
+            transferChannel: args.channel,
+            fileId: args.fileId,
+            reference: args.reference,
+            bankProvider: args.bank,
+            accountSuffix:
+                args.channel === "BANK" && args.bank === "boa"
+                    ? accountSuffix.trim() || undefined
+                    : undefined,
+            phoneNumber:
+                args.channel === "BANK" && args.bank === "cbebirr"
+                    ? phoneNumber.trim() || undefined
+                    : undefined,
+        }).unwrap();
+
+        setReference("");
+        const remaining = Number(result.remainingAmount ?? 0);
+        if (result.tipAmount && Number(result.tipAmount) > 0) {
+            toast.success(
+                t("transferPaidWithTip", {
+                    tip: formatEtb(Number(result.tipAmount)),
+                }),
+                remaining > 0
+                    ? t("remainingDue", { amount: formatEtb(remaining) })
+                    : formatEtb(Number(args.portion)),
             );
+        } else if (remaining > 0) {
+            toast.success(
+                args.channel === "TELEBIRR"
+                    ? t("telebirrRecorded")
+                    : t("bankTransferRecorded"),
+                t("remainingDue", { amount: formatEtb(remaining) }),
+            );
+        } else {
+            toast.success(
+                args.channel === "TELEBIRR"
+                    ? t("telebirrRecorded")
+                    : t("bankTransferRecorded"),
+                formatEtb(Number(args.portion)),
+            );
+        }
+    }
+
+    async function collectTransfer(dataUrl: string) {
+        setError("");
+        const portion = clampMoney(amount, due);
+        if (!portion) {
+            setError(t("portionAmountRequired"));
+            setCameraOpen(false);
+            return;
+        }
+        try {
+            const receiptFile = dataUrlToFile(dataUrl, "transfer-receipt.jpg");
 
             let resolvedReference = "";
-            let resolvedBank: BankProvider =
-                channel === "TELEBIRR" ? "telebirr" : bankProvider;
+            let resolvedBank: BankProvider = bankProvider;
 
-            // Automatically extract reference number from photo via OCR
             toast.info(t("readingReceipt"));
             try {
                 const extracted = await extractReceipt({
                     file: receiptFile,
-                    transferChannel: channel,
                 }).unwrap();
                 if (extracted.reference && extracted.reference.length >= 4) {
                     resolvedReference = extracted.reference.trim();
                     setReference(resolvedReference);
-                    const detected = asBankProvider(extracted.bankProvider);
-                    if (channel === "TELEBIRR") {
-                        resolvedBank = "telebirr";
-                    } else if (detected && detected !== "telebirr") {
-                        resolvedBank = detected;
-                        setBankProvider(detected);
-                    }
+                }
+                const detected = asBankProvider(extracted.bankProvider);
+                if (detected) {
+                    resolvedBank = detected;
+                    setBankProvider(detected);
+                }
+                if (resolvedReference) {
                     toast.info(
                         t("referenceExtracted", {
                             reference: resolvedReference,
@@ -163,7 +233,6 @@ export default function WaiterPaymentPanel({
                 toast.fromUnknown(extractErr, t("couldNotReadReference"));
             }
 
-            // Fallback to typed reference only if OCR couldn't read from photo
             if (!resolvedReference && reference.trim().length >= 4) {
                 resolvedReference = reference.trim();
             }
@@ -171,67 +240,48 @@ export default function WaiterPaymentPanel({
             if (resolvedReference.length < 4) {
                 setError(t("referenceRequired"));
                 setShowManual(true);
-                setCameraFor(null);
+                setCameraOpen(false);
                 return;
             }
 
+            const channel: "TELEBIRR" | "BANK" =
+                resolvedBank === "telebirr" ? "TELEBIRR" : "BANK";
+
             const uploaded = await uploadReceipt(receiptFile).unwrap();
-            const result = await payTransfer({
-                billId: bill.billId,
-                tableSessionId,
-                amount: due.toFixed(2),
-                expectedBillVersion: bill.version,
-                transferChannel: channel,
+            await settleTransfer({
+                channel,
                 fileId: uploaded.file.id,
                 reference: resolvedReference,
-                bankProvider: resolvedBank,
-                accountSuffix:
-                    channel === "BANK" && resolvedBank === "boa"
-                        ? accountSuffix.trim() || undefined
-                        : undefined,
-                phoneNumber:
-                    channel === "BANK" && resolvedBank === "cbebirr"
-                        ? phoneNumber.trim() || undefined
-                        : undefined,
-            }).unwrap();
-            setCameraFor(null);
-            setReference("");
-            if (result.tipAmount && Number(result.tipAmount) > 0) {
-                toast.success(
-                    t("transferPaidWithTip", {
-                        tip: formatEtb(Number(result.tipAmount)),
-                    }),
-                    formatEtb(due),
-                );
-            } else {
-                toast.success(
-                    channel === "TELEBIRR"
-                        ? t("telebirrRecorded")
-                        : t("bankTransferRecorded"),
-                    formatEtb(due),
-                );
-            }
+                bank: resolvedBank,
+                portion,
+            });
+            setCameraOpen(false);
         } catch (err) {
             const under = readTransferUnderDue(err);
             if (under) {
-                const message = t("transferUnderDue", {
+                const message = t("transferUnderClaimed", {
                     verified: formatEtb(under.verifiedAmount),
-                    remaining: formatEtb(under.remainingAmount),
+                    short: formatEtb(under.remainingAmount),
                 });
                 setError(message);
                 toast.error(t("transferUnderDueTitle"), message);
-                setCameraFor(null);
+                setCameraOpen(false);
                 return;
             }
             const message = t("couldNotSubmitTransfer");
             setError(message);
             toast.fromUnknown(err, message);
-            setCameraFor(null);
+            setCameraOpen(false);
         }
     }
 
     async function collectManualTransfer() {
         setError("");
+        const portion = clampMoney(amount, due);
+        if (!portion) {
+            setError(t("portionAmountRequired"));
+            return;
+        }
         const resolvedRef = reference.trim();
         if (resolvedRef.length < 4) {
             setError(t("referenceRequired"));
@@ -240,7 +290,6 @@ export default function WaiterPaymentPanel({
 
         try {
             const channel = bankProvider === "telebirr" ? "TELEBIRR" : "BANK";
-            // Create a minimal synthetic slip for manual entry
             const canvas = document.createElement("canvas");
             canvas.width = 400;
             canvas.height = 200;
@@ -252,7 +301,7 @@ export default function WaiterPaymentPanel({
                 ctx.font = "16px sans-serif";
                 ctx.fillText(`Manual Reference: ${resolvedRef}`, 20, 50);
                 ctx.fillText(`Bank: ${bankProvider.toUpperCase()}`, 20, 80);
-                ctx.fillText(`Amount: ${due.toFixed(2)} ETB`, 20, 110);
+                ctx.fillText(`Amount: ${portion} ETB`, 20, 110);
             }
             const blob = await new Promise<Blob | null>(res =>
                 canvas.toBlob(res, "image/jpeg", 0.7),
@@ -263,48 +312,19 @@ export default function WaiterPaymentPanel({
                 { type: "image/jpeg" },
             );
             const uploaded = await uploadReceipt(manualFile).unwrap();
-
-            const result = await payTransfer({
-                billId: bill.billId,
-                tableSessionId,
-                amount: due.toFixed(2),
-                expectedBillVersion: bill.version,
-                transferChannel: channel,
+            await settleTransfer({
+                channel,
                 fileId: uploaded.file.id,
                 reference: resolvedRef,
-                bankProvider,
-                accountSuffix:
-                    channel === "BANK" && bankProvider === "boa"
-                        ? accountSuffix.trim() || undefined
-                        : undefined,
-                phoneNumber:
-                    channel === "BANK" && bankProvider === "cbebirr"
-                        ? phoneNumber.trim() || undefined
-                        : undefined,
-            }).unwrap();
-
-            setReference("");
-            if (result.tipAmount && Number(result.tipAmount) > 0) {
-                toast.success(
-                    t("transferPaidWithTip", {
-                        tip: formatEtb(Number(result.tipAmount)),
-                    }),
-                    formatEtb(due),
-                );
-            } else {
-                toast.success(
-                    channel === "TELEBIRR"
-                        ? t("telebirrRecorded")
-                        : t("bankTransferRecorded"),
-                    formatEtb(due),
-                );
-            }
+                bank: bankProvider,
+                portion,
+            });
         } catch (err) {
             const under = readTransferUnderDue(err);
             if (under) {
-                const message = t("transferUnderDue", {
+                const message = t("transferUnderClaimed", {
                     verified: formatEtb(under.verifiedAmount),
-                    remaining: formatEtb(under.remainingAmount),
+                    short: formatEtb(under.remainingAmount),
                 });
                 setError(message);
                 toast.error(t("transferUnderDueTitle"), message);
@@ -324,7 +344,7 @@ export default function WaiterPaymentPanel({
                 </p>
                 <p className="mt-1 text-[14px] text-slate-gray">
                     {t("paidCanClose", {
-                        amount: formatEtb(Number(bill.total)),
+                        amount: formatEtb(total),
                     })}
                 </p>
             </div>
@@ -338,27 +358,42 @@ export default function WaiterPaymentPanel({
                     <p className="text-[12px] font-medium tracking-[0.08em] text-steel-gray uppercase">
                         {t("collect")} · {bill.billNumber}
                     </p>
-                    <p className="mt-1 text-[22px] font-semibold">
-                        {formatEtb(due)}
-                    </p>
+                    <div className="mt-2 grid grid-cols-2 gap-2 text-[13px]">
+                        <div className="rounded-xl border border-hairline bg-secondary/30 px-3 py-2">
+                            <p className="text-[11px] text-slate-gray">
+                                {t("paidSoFar")}
+                            </p>
+                            <p className="font-semibold">
+                                {formatEtb(paidSoFar)}
+                            </p>
+                        </div>
+                        <div className="rounded-xl border border-hairline bg-secondary/30 px-3 py-2">
+                            <p className="text-[11px] text-slate-gray">
+                                {t("remainingLabel")}
+                            </p>
+                            <p className="font-semibold">{formatEtb(due)}</p>
+                        </div>
+                    </div>
                 </div>
                 <div className="space-y-2">
                     <label className="text-[13px] text-slate-gray">
-                        {t("cashTendered")}
+                        {t("payAmountNow")}
                     </label>
                     <Input
-                        value={tendered}
-                        onChange={event => setTendered(event.target.value)}
+                        value={amount}
+                        onChange={event => setAmount(event.target.value)}
                         inputMode="decimal"
                     />
                     <Button
                         className="h-11 w-full"
                         disabled={busy}
-                        onClick={collectCash}
+                        onClick={() => void collectCash()}
                     >
                         {payingCash
                             ? t("recording")
-                            : t("collectCash", { amount: formatEtb(due) })}
+                            : t("collectCash", {
+                                  amount: formatEtb(Number(amount) || 0),
+                              })}
                     </Button>
                 </div>
 
@@ -366,32 +401,19 @@ export default function WaiterPaymentPanel({
                     <p className="text-[12px] font-medium tracking-[0.08em] text-steel-gray uppercase">
                         Digital / Transfer Verification
                     </p>
-                    <div className="grid grid-cols-2 gap-2">
-                        <Button
-                            variant="outline"
-                            className="h-12 w-full gap-2 border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-medium text-[13px]"
-                            disabled={busy}
-                            onClick={() => openTransferCamera("TELEBIRR")}
-                        >
-                            <Camera className="h-4 w-4" />
-                            {extracting && cameraFor === "TELEBIRR"
-                                ? t("readingReceipt")
-                                : "Scan Telebirr"}
-                        </Button>
-                        <Button
-                            variant="outline"
-                            className="h-12 w-full gap-2 border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 text-blue-700 dark:text-blue-400 font-medium text-[13px]"
-                            disabled={busy}
-                            onClick={() => openTransferCamera("BANK")}
-                        >
-                            <Camera className="h-4 w-4" />
-                            {extracting && cameraFor === "BANK"
-                                ? t("readingReceipt")
-                                : "Scan Bank Slip"}
-                        </Button>
-                    </div>
+                    <Button
+                        variant="outline"
+                        className="h-12 w-full gap-2 border-foreground/15 bg-secondary/40 hover:bg-secondary/70 font-medium text-[13px]"
+                        disabled={busy}
+                        onClick={() => {
+                            setError("");
+                            setCameraOpen(true);
+                        }}
+                    >
+                        <Camera className="h-4 w-4" />
+                        {extracting ? t("readingReceipt") : t("scanReceipt")}
+                    </Button>
 
-                    {/* Manual Fallback Toggle */}
                     <div className="pt-1">
                         <button
                             type="button"
@@ -490,24 +512,20 @@ export default function WaiterPaymentPanel({
                     </div>
 
                     <p className="text-[11px] text-slate-gray">
-                        {t("verifyBeforeSettle")}
+                        {t("verifySplitHint")}
                     </p>
                 </div>
                 {error ? (
                     <p className="text-[13px] text-red-600">{error}</p>
                 ) : null}
             </div>
-            {cameraFor ? (
+            {cameraOpen ? (
                 <CameraCapture
-                    title={
-                        cameraFor === "TELEBIRR"
-                            ? t("telebirrReceipt")
-                            : t("bankTransferReceipt")
-                    }
+                    title={t("scanReceipt")}
                     isProcessing={busy}
-                    onCancel={() => setCameraFor(null)}
+                    onCancel={() => setCameraOpen(false)}
                     onCapture={dataUrl => {
-                        void collectTransfer(cameraFor, dataUrl);
+                        void collectTransfer(dataUrl);
                     }}
                 />
             ) : null}
