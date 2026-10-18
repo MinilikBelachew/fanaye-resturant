@@ -76,6 +76,7 @@ jobs:
           build-args: |
             NEXT_PUBLIC_API_URL=/backend/v1
             NEXT_PUBLIC_APP_URL=https://restaurant.learnica.net
+            NEXT_PUBLIC_SOCKET_URL=https://restaurant.learnica.net
 
   deploy-to-vps:
     name: Deploy Container on Contabo VPS
