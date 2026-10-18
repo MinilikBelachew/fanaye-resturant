@@ -304,13 +304,13 @@ export default function GuestTableOrderingPage({
 
     if (error || !data) {
         return (
-            <div className="flex min-h-svh flex-col items-center justify-center gap-4 bg-slate-50 px-6 text-center text-slate-800">
-                <div className="flex size-14 items-center justify-center rounded-full bg-rose-100 text-rose-600">
+            <div className="flex min-h-svh flex-col items-center justify-center gap-4 bg-slate-50 px-6 text-center text-slate-800 dark:bg-slate-950 dark:text-slate-100">
+                <div className="flex size-14 items-center justify-center rounded-full bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-300">
                     <Info className="size-6" />
                 </div>
                 <div>
                     <h1 className="text-xl font-bold">Table Not Found</h1>
-                    <p className="mt-1 text-xs text-slate-500 max-w-sm">
+                    <p className="mt-1 text-xs text-slate-500 max-w-sm dark:text-slate-400">
                         This QR code may have expired or is not configured for
                         dining service. Please request a printed menu from your
                         waiter.
@@ -328,11 +328,11 @@ export default function GuestTableOrderingPage({
     }
 
     return (
-        <div className="min-h-svh bg-slate-100/70 pb-32 text-slate-900 selection:bg-amber-500/30">
+        <div className="min-h-svh bg-slate-100/70 pb-32 text-slate-900 selection:bg-amber-500/30 dark:bg-slate-950 dark:text-slate-100">
             {/* Central Responsive Shell: Bound on Tablet & Desktop */}
             <div className="mx-auto w-full max-w-4xl lg:max-w-5xl sm:px-4 sm:pt-4 md:pt-6">
                 {/* Top Cover Banner */}
-                <header className="relative h-56 sm:h-64 md:h-72 w-full overflow-hidden bg-slate-900 sm:rounded-3xl sm:shadow-lg sm:border sm:border-slate-200/50">
+                <header className="relative h-56 sm:h-64 md:h-72 w-full overflow-hidden bg-slate-900 sm:rounded-3xl sm:shadow-lg sm:border sm:border-slate-200/50 dark:border-slate-700/60">
                     {config?.coverImageUrl ? (
                         <img
                             src={config.coverImageUrl}
@@ -399,20 +399,20 @@ export default function GuestTableOrderingPage({
 
                 {/* Active Table Order Status (if existing orders) */}
                 {activeSession && activeSession.items.length > 0 ? (
-                    <section className="mx-4 sm:mx-0 mt-3.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-900 shadow-xs">
+                    <section className="mx-4 sm:mx-0 mt-3.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-950 shadow-xs dark:border-amber-400/35 dark:bg-amber-500/15 dark:text-amber-100">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 font-bold">
-                                <Clock className="size-4 text-amber-600 animate-spin" />
+                                <Clock className="size-4 text-amber-600 animate-spin dark:text-amber-400" />
                                 <span>
                                     Table {table?.displayNumber || ""} Active
                                     Order
                                 </span>
                             </div>
-                            <span className="rounded-full bg-amber-600 px-2.5 py-0.5 text-[10px] font-bold text-white uppercase">
+                            <span className="rounded-full bg-amber-600 px-2.5 py-0.5 text-[10px] font-bold text-white uppercase dark:bg-amber-500 dark:text-slate-950">
                                 {activeSession.status}
                             </span>
                         </div>
-                        <div className="mt-2.5 space-y-1 text-[11px] text-slate-700">
+                        <div className="mt-2.5 space-y-1 text-[11px] text-slate-700 dark:text-slate-200">
                             {activeSession.items.slice(0, 3).map(line => (
                                 <div
                                     key={line.id}
@@ -421,13 +421,13 @@ export default function GuestTableOrderingPage({
                                     <span>
                                         {line.quantity}x {line.name}
                                     </span>
-                                    <span className="font-semibold text-slate-900">
+                                    <span className="font-semibold text-slate-900 dark:text-slate-100">
                                         {line.state.replace(/_/g, " ")}
                                     </span>
                                 </div>
                             ))}
                             {activeSession.items.length > 3 ? (
-                                <p className="text-[10px] text-slate-500 pt-0.5">
+                                <p className="text-[10px] text-slate-500 pt-0.5 dark:text-slate-400">
                                     + {activeSession.items.length - 3} more
                                     item(s) in kitchen
                                 </p>
@@ -439,18 +439,18 @@ export default function GuestTableOrderingPage({
                 {/* Search Input */}
                 <div className="px-4 sm:px-0 pt-3.5">
                     <div className="relative flex items-center">
-                        <Search className="pointer-events-none absolute left-3.5 size-4 text-slate-400" />
+                        <Search className="pointer-events-none absolute left-3.5 size-4 text-slate-400 dark:text-slate-500" />
                         <Input
                             type="search"
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                             placeholder="Search tibs, buna, pasta, cocktails…"
-                            className="w-full rounded-2xl border border-slate-200/80 bg-white py-2.5 pr-4 pl-10 text-xs sm:text-sm shadow-xs placeholder:text-slate-400 focus-visible:ring-amber-500"
+                            className="w-full rounded-2xl border border-slate-200/80 bg-white py-2.5 pr-4 pl-10 text-xs sm:text-sm shadow-xs placeholder:text-slate-400 focus-visible:ring-amber-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
                         />
                         {search ? (
                             <button
                                 onClick={() => setSearch("")}
-                                className="absolute right-3.5 text-slate-400 hover:text-slate-600"
+                                className="absolute right-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                             >
                                 <X className="size-4" />
                             </button>
@@ -473,8 +473,8 @@ export default function GuestTableOrderingPage({
                                 onClick={() => setSelectedDiet(filter.id)}
                                 className={`flex-shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${
                                     selectedDiet === filter.id
-                                        ? "bg-slate-900 text-white shadow-xs"
-                                        : "bg-white text-slate-600 border border-slate-200/70 hover:bg-slate-50"
+                                        ? "bg-slate-900 text-white shadow-xs dark:bg-amber-500 dark:text-slate-950"
+                                        : "bg-white text-slate-600 border border-slate-200/70 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-800"
                                 }`}
                             >
                                 {filter.label}
@@ -487,11 +487,11 @@ export default function GuestTableOrderingPage({
                 {featured.length > 0 && !search && selectedDiet === "ALL" ? (
                     <section className="mt-5 px-4 sm:px-0">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5 dark:text-slate-400">
                                 <Sparkles className="size-3.5 text-amber-500" />
                                 Chef&apos;s Recommendations
                             </h2>
-                            <span className="text-[11px] font-semibold text-amber-600">
+                            <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">
                                 Must Try
                             </span>
                         </div>
@@ -501,9 +501,9 @@ export default function GuestTableOrderingPage({
                                 <div
                                     key={item.id}
                                     onClick={() => handleItemClick(item)}
-                                    className="flex-shrink-0 w-44 sm:w-48 cursor-pointer rounded-2xl border border-slate-200/80 bg-white p-2.5 shadow-xs transition-all hover:shadow-md hover:border-amber-400/60 active:scale-95"
+                                    className="flex-shrink-0 w-44 sm:w-48 cursor-pointer rounded-2xl border border-slate-200/80 bg-white p-2.5 shadow-xs transition-all hover:shadow-md hover:border-amber-400/60 active:scale-95 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-amber-500/50"
                                 >
-                                    <div className="relative h-28 w-full overflow-hidden rounded-xl bg-slate-100">
+                                    <div className="relative h-28 w-full overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
                                         {item.imageUrl ? (
                                             <img
                                                 src={item.imageUrl}
@@ -511,7 +511,7 @@ export default function GuestTableOrderingPage({
                                                 className="h-full w-full object-cover"
                                             />
                                         ) : (
-                                            <div className="flex h-full w-full items-center justify-center text-xl text-slate-300">
+                                            <div className="flex h-full w-full items-center justify-center text-xl text-slate-300 dark:text-slate-600">
                                                 🍽️
                                             </div>
                                         )}
@@ -519,15 +519,15 @@ export default function GuestTableOrderingPage({
                                             Special
                                         </span>
                                     </div>
-                                    <h3 className="mt-2 text-xs sm:text-sm font-bold text-slate-900 truncate">
+                                    <h3 className="mt-2 text-xs sm:text-sm font-bold text-slate-900 truncate dark:text-slate-100">
                                         {item.name}
                                     </h3>
                                     <div className="mt-1 flex items-center justify-between">
-                                        <span className="text-xs sm:text-sm font-bold text-amber-600">
+                                        <span className="text-xs sm:text-sm font-bold text-amber-600 dark:text-amber-400">
                                             {formatEtb(Number(item.price))}
                                         </span>
                                         {config?.allowGuestOrders ? (
-                                            <span className="flex size-6 items-center justify-center rounded-full bg-slate-900 text-white shadow-xs hover:bg-amber-600 transition-colors">
+                                            <span className="flex size-6 items-center justify-center rounded-full bg-slate-900 text-white shadow-xs hover:bg-amber-600 transition-colors dark:bg-amber-500 dark:text-slate-950 dark:hover:bg-amber-400">
                                                 <Plus className="size-3.5" />
                                             </span>
                                         ) : null}
@@ -539,13 +539,13 @@ export default function GuestTableOrderingPage({
                 ) : null}
 
                 {/* Sticky Category Tabs */}
-                <div className="sticky top-2 z-20 mt-4 mx-4 sm:mx-0 flex gap-2 overflow-x-auto rounded-2xl border border-slate-200/80 bg-white/95 px-3 py-2 backdrop-blur-md shadow-xs scrollbar-none">
+                <div className="sticky top-2 z-20 mt-4 mx-4 sm:mx-0 flex gap-2 overflow-x-auto rounded-2xl border border-slate-200/80 bg-white/95 px-3 py-2 backdrop-blur-md shadow-xs scrollbar-none dark:border-slate-700 dark:bg-slate-900/95">
                     <button
                         onClick={() => setActiveCategory("all")}
                         className={`flex-shrink-0 rounded-full px-3.5 py-1 text-xs font-bold transition-all ${
                             activeCategory === "all"
-                                ? "bg-amber-600 text-white shadow-xs"
-                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                ? "bg-amber-600 text-white shadow-xs dark:bg-amber-500 dark:text-slate-950"
+                                : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                         }`}
                     >
                         All ({items.length})
@@ -556,8 +556,8 @@ export default function GuestTableOrderingPage({
                             onClick={() => setActiveCategory(cat.id)}
                             className={`flex-shrink-0 rounded-full px-3.5 py-1 text-xs font-bold transition-all ${
                                 activeCategory === cat.id
-                                    ? "bg-amber-600 text-white shadow-xs"
-                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                    ? "bg-amber-600 text-white shadow-xs dark:bg-amber-500 dark:text-slate-950"
+                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                             }`}
                         >
                             {cat.name} ({cat.itemsCount})
@@ -568,12 +568,12 @@ export default function GuestTableOrderingPage({
                 {/* Menu Item Cards: Responsive 2-Column Grid on Tablet & Big Screens! */}
                 <main className="mt-4 px-4 sm:px-0">
                     {filteredItems.length === 0 ? (
-                        <div className="rounded-3xl border border-slate-200 bg-white py-12 px-6 text-center shadow-xs">
+                        <div className="rounded-3xl border border-slate-200 bg-white py-12 px-6 text-center shadow-xs dark:border-slate-700 dark:bg-slate-900">
                             <div className="text-3xl">🍲</div>
-                            <h3 className="mt-2 text-sm font-bold text-slate-800">
+                            <h3 className="mt-2 text-sm font-bold text-slate-800 dark:text-slate-100">
                                 No dishes found
                             </h3>
-                            <p className="mt-1 text-xs text-slate-500">
+                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                                 Try adjusting your search terms or dietary
                                 filters.
                             </p>
@@ -584,9 +584,9 @@ export default function GuestTableOrderingPage({
                                 <div
                                     key={item.id}
                                     onClick={() => handleItemClick(item)}
-                                    className="flex cursor-pointer items-center gap-3.5 rounded-3xl border border-slate-200/80 bg-white p-3.5 shadow-xs transition-all hover:shadow-md hover:border-amber-400/60 active:scale-[0.99] group"
+                                    className="flex cursor-pointer items-center gap-3.5 rounded-3xl border border-slate-200/80 bg-white p-3.5 shadow-xs transition-all hover:shadow-md hover:border-amber-400/60 active:scale-[0.99] group dark:border-slate-700 dark:bg-slate-900 dark:hover:border-amber-500/50"
                                 >
-                                    <div className="relative size-20 sm:size-24 flex-shrink-0 overflow-hidden rounded-2xl bg-slate-100">
+                                    <div className="relative size-20 sm:size-24 flex-shrink-0 overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800">
                                         {item.imageUrl ? (
                                             <img
                                                 src={item.imageUrl}
@@ -594,7 +594,7 @@ export default function GuestTableOrderingPage({
                                                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                                             />
                                         ) : (
-                                            <div className="flex h-full w-full items-center justify-center text-2xl text-slate-300">
+                                            <div className="flex h-full w-full items-center justify-center text-2xl text-slate-300 dark:text-slate-600">
                                                 🍲
                                             </div>
                                         )}
@@ -607,20 +607,20 @@ export default function GuestTableOrderingPage({
 
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-1.5">
-                                            <h3 className="text-sm font-bold text-slate-900 truncate group-hover:text-amber-600 transition-colors">
+                                            <h3 className="text-sm font-bold text-slate-900 truncate group-hover:text-amber-600 transition-colors dark:text-slate-100 dark:group-hover:text-amber-400">
                                                 {item.name}
                                             </h3>
                                         </div>
-                                        <p className="mt-0.5 text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                                        <p className="mt-0.5 text-xs text-slate-500 line-clamp-2 leading-relaxed dark:text-slate-400">
                                             {item.description ||
                                                 "Crafted fresh with premium ingredients"}
                                         </p>
                                         <div className="mt-2.5 flex items-center justify-between">
-                                            <span className="text-sm sm:text-base font-extrabold text-slate-900">
+                                            <span className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-slate-100">
                                                 {formatEtb(Number(item.price))}
                                             </span>
                                             {config?.allowGuestOrders ? (
-                                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 border border-amber-500/20 group-hover:bg-amber-100 transition-colors">
+                                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 border border-amber-500/20 group-hover:bg-amber-100 transition-colors dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30 dark:group-hover:bg-amber-500/25">
                                                     <Plus className="size-3.5" />
                                                     Add
                                                 </span>
@@ -662,31 +662,31 @@ export default function GuestTableOrderingPage({
             {/* Item Customization & Modifier Modal */}
             {customizingItem ? (
                 <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-xs p-0 sm:items-center sm:p-4 animate-in fade-in duration-200">
-                    <div className="relative flex max-h-[90vh] w-full max-w-md flex-col rounded-t-[32px] sm:rounded-[32px] bg-white p-6 shadow-2xl overflow-y-auto">
-                        <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+                    <div className="relative flex max-h-[90vh] w-full max-w-md flex-col rounded-t-[32px] sm:rounded-[32px] bg-white p-6 shadow-2xl overflow-y-auto dark:bg-slate-900 dark:text-slate-100">
+                        <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3 dark:border-slate-800">
                             <div>
-                                <h3 className="text-lg font-black text-slate-900">
+                                <h3 className="text-lg font-black text-slate-900 dark:text-slate-50">
                                     {customizingItem.name}
                                 </h3>
-                                <p className="mt-1 text-xs text-slate-500">
+                                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                                     {customizingItem.description ||
                                         "Customize your order"}
                                 </p>
                             </div>
                             <button
                                 onClick={() => setCustomizingItem(null)}
-                                className="flex size-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200"
+                                className="flex size-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                             >
                                 <X className="size-4" />
                             </button>
                         </div>
 
                         {/* Modifier Groups */}
-                        <div className="mt-4 space-y-4 divide-y divide-slate-100">
+                        <div className="mt-4 space-y-4 divide-y divide-slate-100 dark:divide-slate-800">
                             {customizingItem.modifierGroups.map(group => (
                                 <div key={group.id} className="pt-3 first:pt-0">
                                     <div className="flex items-center justify-between">
-                                        <h4 className="text-xs font-bold text-slate-900">
+                                        <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
                                             {group.name}
                                         </h4>
                                         <span className="text-[10px] font-semibold text-slate-400">
@@ -714,8 +714,8 @@ export default function GuestTableOrderingPage({
                                                     }
                                                     className={`flex cursor-pointer items-center justify-between rounded-xl border p-2.5 text-xs transition-colors ${
                                                         isSelected
-                                                            ? "border-amber-500 bg-amber-500/10 text-amber-950 font-semibold"
-                                                            : "border-slate-200/80 bg-white text-slate-700 hover:bg-slate-50"
+                                                            ? "border-amber-500 bg-amber-500/10 text-amber-950 font-semibold dark:text-amber-100 dark:bg-amber-500/20"
+                                                            : "border-slate-200/80 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                                                     }`}
                                                 >
                                                     <div className="flex items-center gap-2">
@@ -723,7 +723,7 @@ export default function GuestTableOrderingPage({
                                                             className={`flex size-4 items-center justify-center rounded-full border ${
                                                                 isSelected
                                                                     ? "border-amber-600 bg-amber-600 text-white"
-                                                                    : "border-slate-300"
+                                                                    : "border-slate-300 dark:border-slate-600"
                                                             }`}
                                                         >
                                                             {isSelected ? (
@@ -736,7 +736,7 @@ export default function GuestTableOrderingPage({
                                                     </div>
                                                     {Number(option.priceDelta) >
                                                     0 ? (
-                                                        <span className="text-[11px] font-bold text-amber-600">
+                                                        <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400">
                                                             +
                                                             {formatEtb(
                                                                 Number(
@@ -758,7 +758,7 @@ export default function GuestTableOrderingPage({
 
                             {/* Special Instructions */}
                             <div className="pt-3">
-                                <label className="text-xs font-bold text-slate-900">
+                                <label className="text-xs font-bold text-slate-900 dark:text-slate-100">
                                     Special Instructions
                                 </label>
                                 <Input
@@ -767,13 +767,13 @@ export default function GuestTableOrderingPage({
                                         setCustomizingComment(e.target.value)
                                     }
                                     placeholder="e.g. Mitmita on the side, extra ice, no onions…"
-                                    className="mt-1.5 text-xs"
+                                    className="mt-1.5 text-xs dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                                 />
                             </div>
 
                             {/* Quantity Selector */}
                             <div className="pt-4 flex items-center justify-between">
-                                <span className="text-xs font-bold text-slate-800">
+                                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
                                     Quantity
                                 </span>
                                 <div className="flex items-center gap-3">
@@ -783,18 +783,18 @@ export default function GuestTableOrderingPage({
                                                 Math.max(1, q - 1),
                                             )
                                         }
-                                        className="flex size-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700"
+                                        className="flex size-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                                     >
                                         <Minus className="size-3.5" />
                                     </button>
-                                    <span className="w-5 text-center text-sm font-black text-slate-900">
+                                    <span className="w-5 text-center text-sm font-black text-slate-900 dark:text-slate-100">
                                         {customizingQuantity}
                                     </span>
                                     <button
                                         onClick={() =>
                                             setCustomizingQuantity(q => q + 1)
                                         }
-                                        className="flex size-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700"
+                                        className="flex size-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                                     >
                                         <Plus className="size-3.5" />
                                     </button>
@@ -822,21 +822,21 @@ export default function GuestTableOrderingPage({
             {/* Cart Review Drawer / Modal */}
             {cartOpen ? (
                 <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-xs p-0 sm:items-center sm:p-4 animate-in fade-in duration-200">
-                    <div className="relative flex max-h-[90vh] w-full max-w-md flex-col rounded-t-[32px] sm:rounded-[32px] bg-white p-6 shadow-2xl overflow-y-auto">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div className="relative flex max-h-[90vh] w-full max-w-md flex-col rounded-t-[32px] sm:rounded-[32px] bg-white p-6 shadow-2xl overflow-y-auto dark:bg-slate-900 dark:text-slate-100">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
                             <div>
-                                <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                                    <ShoppingBag className="size-5 text-amber-600" />
+                                <h3 className="text-lg font-black text-slate-900 flex items-center gap-2 dark:text-slate-50">
+                                    <ShoppingBag className="size-5 text-amber-600 dark:text-amber-400" />
                                     Your Table Order
                                 </h3>
-                                <p className="text-xs text-slate-500">
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
                                     {table?.displayName} · Ready to send to the
                                     kitchen
                                 </p>
                             </div>
                             <button
                                 onClick={() => setCartOpen(false)}
-                                className="flex size-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200"
+                                className="flex size-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                             >
                                 <X className="size-4" />
                             </button>
@@ -847,26 +847,26 @@ export default function GuestTableOrderingPage({
                                 Your cart is empty.
                             </div>
                         ) : (
-                            <div className="mt-3 space-y-3 divide-y divide-slate-100">
+                            <div className="mt-3 space-y-3 divide-y divide-slate-100 dark:divide-slate-800">
                                 {cart.map(line => (
                                     <div
                                         key={line.cartId}
                                         className="pt-3 first:pt-0 flex items-start justify-between gap-3"
                                     >
                                         <div className="flex-1 min-w-0">
-                                            <h4 className="text-xs font-bold text-slate-900">
+                                            <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
                                                 {line.quantity}x{" "}
                                                 {line.item.name}
                                             </h4>
                                             {line.selectedOptions.length > 0 ? (
-                                                <p className="text-[11px] text-slate-500">
+                                                <p className="text-[11px] text-slate-500 dark:text-slate-400">
                                                     {line.selectedOptions
                                                         .map(o => o.name)
                                                         .join(", ")}
                                                 </p>
                                             ) : null}
                                             {line.comment ? (
-                                                <p className="text-[10px] italic text-amber-700">
+                                                <p className="text-[10px] italic text-amber-700 dark:text-amber-300">
                                                     Note: &ldquo;{line.comment}
                                                     &rdquo;
                                                 </p>
@@ -874,7 +874,7 @@ export default function GuestTableOrderingPage({
                                         </div>
 
                                         <div className="flex items-center gap-2 flex-shrink-0">
-                                            <span className="text-xs font-bold text-slate-900">
+                                            <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
                                                 {formatEtb(line.totalPrice)}
                                             </span>
                                             <button
@@ -892,7 +892,7 @@ export default function GuestTableOrderingPage({
                                 {/* Diners Count & General Note */}
                                 <div className="pt-3 space-y-3">
                                     <div className="flex items-center justify-between text-xs">
-                                        <span className="font-semibold text-slate-700">
+                                        <span className="font-semibold text-slate-700 dark:text-slate-300">
                                             Guests at table:
                                         </span>
                                         <div className="flex items-center gap-2">
@@ -904,8 +904,8 @@ export default function GuestTableOrderingPage({
                                                     }
                                                     className={`size-6 rounded-full text-[11px] font-bold ${
                                                         customerCount === count
-                                                            ? "bg-slate-900 text-white"
-                                                            : "bg-slate-100 text-slate-600"
+                                                            ? "bg-slate-900 text-white dark:bg-amber-500 dark:text-slate-950"
+                                                            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
                                                     }`}
                                                 >
                                                     {count}
@@ -915,7 +915,7 @@ export default function GuestTableOrderingPage({
                                     </div>
 
                                     <div>
-                                        <label className="text-xs font-semibold text-slate-700">
+                                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                                             Table Note (Optional)
                                         </label>
                                         <Input
@@ -924,16 +924,16 @@ export default function GuestTableOrderingPage({
                                                 setOrderNotes(e.target.value)
                                             }
                                             placeholder="e.g. Please bring drinks first, extra glasses…"
-                                            className="mt-1 text-xs"
+                                            className="mt-1 text-xs dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                                         />
                                     </div>
                                 </div>
 
                                 {/* Total & Submit Button */}
                                 <div className="pt-4 space-y-3">
-                                    <div className="flex items-center justify-between text-sm font-black text-slate-900">
+                                    <div className="flex items-center justify-between text-sm font-black text-slate-900 dark:text-slate-50">
                                         <span>Order Total</span>
-                                        <span className="text-amber-600 text-base">
+                                        <span className="text-amber-600 text-base dark:text-amber-400">
                                             {formatEtb(cartTotal)}
                                         </span>
                                     </div>
@@ -941,7 +941,7 @@ export default function GuestTableOrderingPage({
                                     <Button
                                         onClick={handleSendOrder}
                                         disabled={isSubmittingOrder}
-                                        className="w-full gap-2 rounded-2xl bg-slate-900 py-6 text-sm font-bold text-white hover:bg-slate-800 shadow-xl"
+                                        className="w-full gap-2 rounded-2xl bg-slate-900 py-6 text-sm font-bold text-white hover:bg-slate-800 shadow-xl dark:bg-amber-500 dark:text-slate-950 dark:hover:bg-amber-400"
                                     >
                                         {isSubmittingOrder ? (
                                             <Loader2 className="size-4 animate-spin" />
@@ -960,21 +960,21 @@ export default function GuestTableOrderingPage({
             {/* Service Bell Modal */}
             {serviceModalOpen ? (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-                    <div className="relative w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div className="relative w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl dark:bg-slate-900 dark:text-slate-100">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
                             <div>
-                                <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                                    <BellRing className="size-4 text-amber-600" />
+                                <h3 className="text-base font-black text-slate-900 flex items-center gap-2 dark:text-slate-50">
+                                    <BellRing className="size-4 text-amber-600 dark:text-amber-400" />
                                     Call Waiter & Service
                                 </h3>
-                                <p className="text-xs text-slate-500">
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
                                     Need assistance? We will alert your
                                     table&apos;s waiter instantly.
                                 </p>
                             </div>
                             <button
                                 onClick={() => setServiceModalOpen(false)}
-                                className="flex size-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200"
+                                className="flex size-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                             >
                                 <X className="size-4" />
                             </button>
@@ -984,7 +984,7 @@ export default function GuestTableOrderingPage({
                             <button
                                 disabled={isSubmittingService}
                                 onClick={() => handleServiceCall("CALL_WAITER")}
-                                className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white p-3.5 text-left text-xs font-bold text-slate-900 hover:bg-slate-50 active:scale-98 transition-transform"
+                                className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white p-3.5 text-left text-xs font-bold text-slate-900 hover:bg-slate-50 active:scale-98 transition-transform dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                             >
                                 <span className="flex items-center gap-2.5">
                                     <span className="text-base">🙋</span>
@@ -998,7 +998,7 @@ export default function GuestTableOrderingPage({
                                 onClick={() =>
                                     handleServiceCall("REQUEST_WATER")
                                 }
-                                className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white p-3.5 text-left text-xs font-bold text-slate-900 hover:bg-slate-50 active:scale-98 transition-transform"
+                                className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white p-3.5 text-left text-xs font-bold text-slate-900 hover:bg-slate-50 active:scale-98 transition-transform dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                             >
                                 <span className="flex items-center gap-2.5">
                                     <span className="text-base">💧</span>
@@ -1015,13 +1015,13 @@ export default function GuestTableOrderingPage({
                                         "TELEBIRR",
                                     )
                                 }
-                                className="flex w-full items-center justify-between rounded-2xl border border-amber-200 bg-amber-500/10 p-3.5 text-left text-xs font-bold text-amber-950 hover:bg-amber-500/20 active:scale-98 transition-transform"
+                                className="flex w-full items-center justify-between rounded-2xl border border-amber-200 bg-amber-500/10 p-3.5 text-left text-xs font-bold text-amber-950 hover:bg-amber-500/20 active:scale-98 transition-transform dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-100"
                             >
                                 <span className="flex items-center gap-2.5">
                                     <span className="text-base">📱</span>
                                     <span>Request Bill · Pay Telebirr</span>
                                 </span>
-                                <Check className="size-4 text-amber-600" />
+                                <Check className="size-4 text-amber-600 dark:text-amber-400" />
                             </button>
 
                             <button
@@ -1029,7 +1029,7 @@ export default function GuestTableOrderingPage({
                                 onClick={() =>
                                     handleServiceCall("REQUEST_BILL", "CASH")
                                 }
-                                className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white p-3.5 text-left text-xs font-bold text-slate-900 hover:bg-slate-50 active:scale-98 transition-transform"
+                                className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white p-3.5 text-left text-xs font-bold text-slate-900 hover:bg-slate-50 active:scale-98 transition-transform dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                             >
                                 <span className="flex items-center gap-2.5">
                                     <span className="text-base">💵</span>
@@ -1045,41 +1045,41 @@ export default function GuestTableOrderingPage({
             {/* Guest Wi-Fi Modal */}
             {wifiModalOpen ? (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-                    <div className="relative w-full max-w-xs rounded-3xl bg-white p-6 shadow-2xl text-center">
-                        <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-600">
+                    <div className="relative w-full max-w-xs rounded-3xl bg-white p-6 shadow-2xl text-center dark:bg-slate-900 dark:text-slate-100">
+                        <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400">
                             <Wifi className="size-6" />
                         </div>
-                        <h3 className="mt-3 text-base font-black text-slate-900">
+                        <h3 className="mt-3 text-base font-black text-slate-900 dark:text-slate-50">
                             Guest Wi-Fi
                         </h3>
-                        <div className="mt-4 rounded-2xl bg-slate-100 p-3.5 text-xs text-slate-800 space-y-1.5">
+                        <div className="mt-4 rounded-2xl bg-slate-100 p-3.5 text-xs text-slate-800 space-y-1.5 dark:bg-slate-800 dark:text-slate-200">
                             <div>
                                 <span className="text-slate-400 block text-[10px]">
                                     Network Name
                                 </span>
-                                <span className="font-bold text-sm text-slate-900">
+                                <span className="font-bold text-sm text-slate-900 dark:text-slate-50">
                                     {config?.wifiSsid}
                                 </span>
                             </div>
                             {config?.wifiRequiresPassword ||
                             config?.wifiPassword ? (
-                                <div className="pt-1 border-t border-slate-200">
+                                <div className="pt-1 border-t border-slate-200 dark:border-slate-700">
                                     <span className="text-slate-400 block text-[10px]">
                                         Password
                                     </span>
-                                    <span className="text-[11px] text-amber-700 font-semibold">
+                                    <span className="text-[11px] text-amber-700 font-semibold dark:text-amber-300">
                                         Ask staff for the Wi‑Fi password
                                     </span>
                                 </div>
                             ) : (
-                                <span className="text-[11px] text-emerald-600 font-semibold">
+                                <span className="text-[11px] text-emerald-600 font-semibold dark:text-emerald-400">
                                     No password required
                                 </span>
                             )}
                         </div>
                         <Button
                             onClick={() => setWifiModalOpen(false)}
-                            className="mt-4 w-full rounded-xl bg-slate-900 text-xs font-bold text-white"
+                            className="mt-4 w-full rounded-xl bg-slate-900 text-xs font-bold text-white dark:bg-amber-500 dark:text-slate-950"
                         >
                             Done
                         </Button>
