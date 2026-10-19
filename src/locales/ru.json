@@ -2263,6 +2263,7 @@
         "cashierHint": "You can prepare and refresh. A manager approves and locks the day.",
         "waiterLines": "Waiter lines",
         "stationLines": "Station lines",
+        "kitchenAutoCancelHint": "Auto-cancelled when you lock the day — will not show as New tomorrow.",
         "reconciliationsToReview": "Reconciliations to review",
         "ordersCount": "{count} orders",
         "waiterCashLine": "Cash {cash} · dropped {dropped} · still on them {still}",

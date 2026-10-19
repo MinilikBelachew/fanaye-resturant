@@ -6,7 +6,10 @@ import {
     useReportCannotPrepareMutation,
     useStartPreparationMutation,
 } from "@/context/services/stationsApi";
-import type { StationTicket } from "@/domains/fulfillment/domain/stationTicket";
+import {
+    isQuickServeWorkflow,
+    type StationTicket,
+} from "@/domains/fulfillment/domain/stationTicket";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -15,10 +18,12 @@ export default function StationTicketActions({
     ticket,
     compact = false,
     overlay = false,
+    workflowMode,
 }: {
     ticket: StationTicket;
     compact?: boolean;
     overlay?: boolean;
+    workflowMode?: string | null;
 }) {
     const [acknowledge, { isLoading: acknowledging }] =
         useAcknowledgeOrderItemMutation();
@@ -33,6 +38,7 @@ export default function StationTicketActions({
     };
     const busy = acknowledging || starting || markingReady || reporting;
     const label = ticket.itemName || "Ticket";
+    const quickServe = isQuickServeWorkflow(workflowMode);
 
     async function run(
         action: () => Promise<unknown>,
@@ -54,7 +60,47 @@ export default function StationTicketActions({
     const primaryBtnClass =
         "bg-primary text-primary-foreground hover:bg-primary-deep shadow-sm font-semibold";
 
+    const readyButton = (
+        <Button
+            size={size}
+            disabled={busy}
+            className={primaryBtnClass}
+            onClick={() => {
+                void run(
+                    () => ready(body).unwrap(),
+                    "Ready to serve",
+                    "Could not mark ready.",
+                );
+            }}
+        >
+            Ready to serve
+        </Button>
+    );
+
     if (ticket.state === "QUEUED") {
+        if (quickServe) {
+            return (
+                <div className="flex flex-wrap items-center gap-2">
+                    {readyButton}
+                    <Button
+                        size={size}
+                        variant="outline"
+                        disabled={busy}
+                        className={secondaryBtnClass}
+                        onClick={() => {
+                            void run(
+                                () => start(body).unwrap(),
+                                "Prep started",
+                                "Could not start preparation.",
+                            );
+                        }}
+                    >
+                        Start
+                    </Button>
+                </div>
+            );
+        }
+
         return (
             <div className="flex flex-wrap items-center gap-2">
                 <Button
@@ -91,6 +137,29 @@ export default function StationTicketActions({
     }
 
     if (ticket.state === "ACKNOWLEDGED") {
+        if (quickServe) {
+            return (
+                <div className="flex flex-wrap items-center gap-2">
+                    {readyButton}
+                    <Button
+                        size={size}
+                        variant="outline"
+                        disabled={busy}
+                        className={secondaryBtnClass}
+                        onClick={() => {
+                            void run(
+                                () => start(body).unwrap(),
+                                "Prep started",
+                                "Could not start preparation.",
+                            );
+                        }}
+                    >
+                        Start preparing
+                    </Button>
+                </div>
+            );
+        }
+
         return (
             <Button
                 size={size}
@@ -112,20 +181,7 @@ export default function StationTicketActions({
     if (ticket.state === "IN_PREPARATION") {
         return (
             <div className="flex flex-wrap items-center gap-2">
-                <Button
-                    size={size}
-                    disabled={busy}
-                    className={primaryBtnClass}
-                    onClick={() => {
-                        void run(
-                            () => ready(body).unwrap(),
-                            "Marked ready",
-                            "Could not mark ready.",
-                        );
-                    }}
-                >
-                    Mark ready
-                </Button>
+                {readyButton}
                 <Button
                     size={size}
                     variant="outline"
@@ -150,7 +206,7 @@ export default function StationTicketActions({
                             alsoSoldOut
                                 ? "Cannot prepare · sold out for waiters"
                                 : "Reported cannot prepare",
-                            "Could not report exception.",
+                            "Could not report cannot prepare.",
                         );
                     }}
                 >

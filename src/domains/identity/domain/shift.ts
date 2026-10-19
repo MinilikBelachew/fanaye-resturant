@@ -20,10 +20,20 @@ export type ShiftSession = {
     assignmentId: string | null;
 };
 
+export type WeeklyShiftPlanItem = {
+    dayCode: string;
+    definitionName: string;
+    startLocalTime: string;
+    endLocalTime: string;
+    shiftDefinitionId: string;
+};
+
 export type CurrentShiftResponse = {
     clockedIn: boolean;
     shiftSession: ShiftSession | null;
     upcomingAssignment: ShiftAssignmentSummary | null;
+    weeklyPlan?: WeeklyShiftPlanItem[];
+    upcomingAssignments?: ShiftAssignmentSummary[];
 };
 
 export type ClockInRequest = {

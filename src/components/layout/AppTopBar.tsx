@@ -98,7 +98,15 @@ function AppTopBarInner({ className }: { className?: string }) {
     const serviceMode = useAppSelector(
         state => state.identity.session?.serviceMode,
     );
-    const sections = staff ? navForRole(staff.role, serviceMode) : [];
+    const roomsEnabled = useAppSelector(
+        state => state.identity.session?.roomsEnabled,
+    );
+    const sections = staff
+        ? navForRole(staff.role, {
+              serviceMode,
+              roomsEnabled: roomsEnabled === true,
+          })
+        : [];
     const items = sections.flatMap(section => section.items);
     const isOrderDetail = pathname.includes("/orders/");
     const status = parseQueueFilter(searchParams.get("status"));

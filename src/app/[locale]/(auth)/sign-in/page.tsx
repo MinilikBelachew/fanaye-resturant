@@ -18,7 +18,6 @@ import {
     Search,
     ShieldCheck,
     Store,
-    UserCheck,
     X,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/context/hooks";
@@ -567,9 +566,6 @@ export default function SignInPage() {
 
                                 {/* PIN Dots Indicator */}
                                 <div className="flex flex-col items-center justify-center pt-0.5">
-                                    <span className="text-[11px] font-semibold text-slate-gray uppercase tracking-wider mb-2">
-                                        {t("enterPin")}
-                                    </span>
                                     <div
                                         className={cn(
                                             "flex items-center gap-3 py-1.5 px-3 rounded-xl bg-surface-ivory/50 dark:bg-secondary/30 transition-transform",
@@ -760,26 +756,6 @@ export default function SignInPage() {
                                 )}
                             </Button>
                         </form>
-                    )}
-
-                    {current && (
-                        <div className="mt-3.5 pt-3 border-t border-hairline text-center">
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    router.push(homePathForRole(current.role))
-                                }
-                                className="inline-flex items-center gap-1.5 text-[12px] font-medium text-primary hover:underline"
-                            >
-                                <UserCheck className="size-3.5 text-primary" />
-                                <span>
-                                    {t("resumeSession")}{" "}
-                                    <strong>{current.name}</strong> (
-                                    {current.role})
-                                </span>
-                                <ArrowRight className="size-3" />
-                            </button>
-                        </div>
                     )}
                 </div>
             </div>

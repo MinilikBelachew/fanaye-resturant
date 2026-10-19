@@ -1,7 +1,10 @@
 "use client";
 
 import { useAppSelector } from "@/context/hooks";
-import { useStationOrderItemQuery } from "@/context/services/stationsApi";
+import {
+    useStationOrderItemQuery,
+    useStationQueueQuery,
+} from "@/context/services/stationsApi";
 import StationTicketActions from "@/domains/fulfillment/ui/StationTicketActions";
 import TicketExtras from "@/domains/fulfillment/ui/TicketExtras";
 import { homePathForRole } from "@/domains/identity/application/homePath";
@@ -27,6 +30,10 @@ export default function StationTicketDetail({
         isLoading,
         isError,
     } = useStationOrderItemQuery(itemId, { skip: !itemId });
+    const { data: queue } = useStationQueueQuery(stationId ?? "", {
+        skip: !stationId,
+    });
+    const workflowMode = queue?.workflowMode ?? "FULL_PREP";
     const home = homePathForRole(role);
 
     if (isLoading) {
@@ -154,7 +161,10 @@ export default function StationTicketDetail({
                     </p>
                 ) : null}
                 <div className="mt-6">
-                    <StationTicketActions ticket={ticket} />
+                    <StationTicketActions
+                        ticket={ticket}
+                        workflowMode={workflowMode}
+                    />
                 </div>
             </article>
         </div>

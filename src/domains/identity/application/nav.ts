@@ -655,9 +655,43 @@ const BAKERY_HIDDEN = new Set([
     "/cashier/cash-drops",
 ]);
 
-function navForRole(role: Role, serviceMode?: string | null): NavSection[] {
-    const sections = navSectionsForRole(role);
-    if (serviceMode !== "BAKERY") return sections;
+const WAITER_ROOMS_HREF = "/waiter/rooms";
+
+export type NavOptions = {
+    serviceMode?: string | null;
+    /** When false, hide waiter Rooms (branch has no hotel rooms). */
+    roomsEnabled?: boolean | null;
+};
+
+function navForRole(
+    role: Role,
+    serviceModeOrOptions?: string | null | NavOptions,
+    roomsEnabledArg?: boolean | null,
+): NavSection[] {
+    const options: NavOptions =
+        serviceModeOrOptions && typeof serviceModeOrOptions === "object"
+            ? serviceModeOrOptions
+            : {
+                  serviceMode: serviceModeOrOptions,
+                  roomsEnabled: roomsEnabledArg,
+              };
+
+    let sections = navSectionsForRole(role);
+
+    // Waiter Rooms only when this branch actually has rooms configured.
+    if (role === "waiter" && options.roomsEnabled !== true) {
+        sections = sections
+            .map(section => ({
+                ...section,
+                items: section.items.filter(
+                    item => item.href !== WAITER_ROOMS_HREF,
+                ),
+            }))
+            .filter(section => section.items.length > 0);
+    }
+
+    if (options.serviceMode !== "BAKERY") return sections;
+
     return sections
         .map(section => ({
             ...section,

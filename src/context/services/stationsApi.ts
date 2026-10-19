@@ -21,6 +21,7 @@ export const stationsApi = api.injectEndpoints({
                 code?: string;
                 description?: string;
                 status?: string;
+                workflowMode?: string;
                 defaultDelayThresholdMinutes?: number;
                 avgPrepMin?: number;
                 color?: string;
@@ -35,6 +36,7 @@ export const stationsApi = api.injectEndpoints({
                     name: body.name,
                     code: body.code,
                     status: body.status ?? "ACTIVE",
+                    workflowMode: body.workflowMode ?? "FULL_PREP",
                     defaultDelayThresholdMinutes:
                         body.defaultDelayThresholdMinutes ??
                         body.avgPrepMin ??
@@ -53,6 +55,7 @@ export const stationsApi = api.injectEndpoints({
                 description?: string;
                 status?: string;
                 enabled?: boolean;
+                workflowMode?: string;
                 defaultDelayThresholdMinutes?: number;
                 avgPrepMin?: number;
                 color?: string;

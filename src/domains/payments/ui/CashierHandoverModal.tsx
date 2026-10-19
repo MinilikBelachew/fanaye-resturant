@@ -69,10 +69,17 @@ export default function CashierHandoverModal({
 
     const handleContinueToPin = () => {
         setError("");
-        if (counted <= 0) {
+        if (
+            countedInput.trim() === "" ||
+            Number.isNaN(parseFloat(countedInput))
+        ) {
             setError(
-                "Please enter the physical cash amount counted in the drawer.",
+                "Enter the physical cash counted in the drawer (0 is allowed if empty).",
             );
+            return;
+        }
+        if (counted < 0) {
+            setError("Counted cash cannot be negative.");
             return;
         }
         if (floatNext > counted) {

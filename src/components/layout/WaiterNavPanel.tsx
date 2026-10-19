@@ -19,6 +19,9 @@ export default function WaiterNavPanel({
     collapsed?: boolean;
 }) {
     const staff = useAppSelector(selectCurrentStaff);
+    const roomsEnabled = useAppSelector(
+        state => state.identity.session?.roomsEnabled,
+    );
     const router = useRouter();
     const dispatch = useAppDispatch();
     const tTopBar = useTranslations("topbar");
@@ -30,6 +33,9 @@ export default function WaiterNavPanel({
         floor?.data.reduce((sum, table) => sum + table.readyItemCount, 0) ?? 0;
     if (!staff) return null;
 
+    const waiterSections = navForRole("waiter", {
+        roomsEnabled: roomsEnabled === true,
+    });
     const extraBadges: Record<string, number> =
         readyCount > 0 ? { "/waiter/ready": readyCount } : {};
 
@@ -46,7 +52,7 @@ export default function WaiterNavPanel({
                 </div>
                 <SidebarNav
                     collapsed
-                    sections={navForRole("waiter")}
+                    sections={waiterSections}
                     extraBadges={extraBadges}
                     onNavigate={onNavigate}
                 />
@@ -71,7 +77,7 @@ export default function WaiterNavPanel({
                 <RoleSwitcher />
             </div>
             <SidebarNav
-                sections={navForRole("waiter")}
+                sections={waiterSections}
                 extraBadges={extraBadges}
                 onNavigate={onNavigate}
             />

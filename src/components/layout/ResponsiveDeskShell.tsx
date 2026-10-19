@@ -71,9 +71,13 @@ function CompactNav({ role }: { role: Role }) {
     const serviceMode = useAppSelector(
         state => state.identity.session?.serviceMode,
     );
-    const items = navForRole(role, serviceMode).flatMap(
-        section => section.items,
+    const roomsEnabled = useAppSelector(
+        state => state.identity.session?.roomsEnabled,
     );
+    const items = navForRole(role, {
+        serviceMode,
+        roomsEnabled: roomsEnabled === true,
+    }).flatMap(section => section.items);
 
     return (
         <nav className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">

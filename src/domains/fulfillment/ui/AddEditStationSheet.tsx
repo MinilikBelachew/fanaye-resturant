@@ -64,6 +64,10 @@ export default function AddEditStationSheet() {
                     editingStation.avgPrepMin ??
                     editingStation.defaultDelayThresholdMinutes ??
                     10,
+                workflowMode:
+                    editingStation.workflowMode === "QUICK_SERVE"
+                        ? "QUICK_SERVE"
+                        : "FULL_PREP",
                 enabled:
                     editingStation.enabled ??
                     editingStation.status === "ACTIVE",
@@ -87,6 +91,7 @@ export default function AddEditStationSheet() {
                     name: values.name,
                     code: values.code || undefined,
                     avgPrepMin: values.avgPrepMin,
+                    workflowMode: values.workflowMode,
                     enabled: values.enabled,
                 }).unwrap();
                 toast.success(t("toastUpdated"), values.name);
@@ -95,6 +100,7 @@ export default function AddEditStationSheet() {
                     name: values.name,
                     code: values.code || undefined,
                     avgPrepMin: values.avgPrepMin,
+                    workflowMode: values.workflowMode,
                     status: values.enabled ? "ACTIVE" : "DISABLED",
                 }).unwrap();
                 toast.success(t("toastCreated"), values.name);
@@ -229,6 +235,66 @@ export default function AddEditStationSheet() {
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
+                            )}
+                        />
+
+                        <Controller
+                            control={form.control}
+                            name="workflowMode"
+                            render={({ field }) => (
+                                <div className="space-y-2">
+                                    <p className="text-[13px] font-medium text-foreground">
+                                        {t("workflowMode")}
+                                    </p>
+                                    <p className="text-[12px] text-slate-gray">
+                                        {t("workflowModeHint")}
+                                    </p>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {(
+                                            [
+                                                {
+                                                    value: "FULL_PREP" as const,
+                                                    label: t(
+                                                        "workflowFullPrep",
+                                                    ),
+                                                    desc: t(
+                                                        "workflowFullPrepDesc",
+                                                    ),
+                                                },
+                                                {
+                                                    value: "QUICK_SERVE" as const,
+                                                    label: t(
+                                                        "workflowQuickServe",
+                                                    ),
+                                                    desc: t(
+                                                        "workflowQuickServeDesc",
+                                                    ),
+                                                },
+                                            ] as const
+                                        ).map(option => (
+                                            <button
+                                                key={option.value}
+                                                type="button"
+                                                onClick={() =>
+                                                    field.onChange(option.value)
+                                                }
+                                                className={cn(
+                                                    "rounded-xl border px-3 py-2.5 text-left transition-colors",
+                                                    field.value === option.value
+                                                        ? "border-primary bg-primary/5"
+                                                        : "border-hairline bg-background hover:bg-secondary/40",
+                                                )}
+                                            >
+                                                <p className="text-[13px] font-medium text-foreground">
+                                                    {option.label}
+                                                </p>
+                                                <p className="mt-0.5 text-[11px] text-slate-gray">
+                                                    {option.desc}
+                                                </p>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                             )}
                         />
 

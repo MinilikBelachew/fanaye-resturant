@@ -96,9 +96,11 @@ function isFreshTicket(ticket: StationTicket) {
 function TicketCard({
     role,
     ticket,
+    workflowMode,
 }: {
     role: StationRole;
     ticket: StationTicket;
+    workflowMode?: string | null;
 }) {
     const tStations = useTranslations("stations");
     const tCommon = useTranslations("common");
@@ -185,7 +187,12 @@ function TicketCard({
                         · ~{ticket.expectedPrepMinutes} min
                     </p>
                     <div className="mt-2.5 flex flex-wrap items-center gap-1.5 [&_button]:h-7 [&_button]:px-2.5 [&_button]:text-[11px]">
-                        <StationTicketActions ticket={ticket} compact overlay />
+                        <StationTicketActions
+                            ticket={ticket}
+                            compact
+                            overlay
+                            workflowMode={workflowMode}
+                        />
                         <Link
                             href={stationOrderPath(role, ticket.orderItemId)}
                             className="inline-flex h-7 items-center rounded-md border border-white/25 bg-white/10 px-2.5 text-[11px] font-medium text-white backdrop-blur-md transition-colors hover:bg-white/20"
@@ -257,6 +264,7 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
     const query = searchParams.get("q") ?? "";
     const { stationId, tickets, counts, isLoading, isError, data, refetch } =
         useCurrentStationQueue();
+    const workflowMode = data?.workflowMode ?? "FULL_PREP";
 
     const rows: TicketRow[] = tickets
         .filter(ticket => matchesStationFilter(ticket, status))
@@ -389,7 +397,12 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                 header: tCommon("status"),
                 sortValue: row => STATUS_RANK[row.ticket.state] ?? 99,
                 hideable: false,
-                cell: row => <StationStatusSelect ticket={row.ticket} />,
+                cell: row => (
+                    <StationStatusSelect
+                        ticket={row.ticket}
+                        workflowMode={workflowMode}
+                    />
+                ),
             },
             {
                 id: "waiter",
@@ -459,7 +472,7 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                     ),
             },
         ],
-        [role, tStations, tCommon],
+        [role, tStations, tCommon, workflowMode],
     );
 
     const emptyLabel = tStations("noTickets");
@@ -698,6 +711,7 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                             key={row.ticket.orderItemId}
                             role={role}
                             ticket={row.ticket}
+                            workflowMode={workflowMode}
                         />
                     ))}
                 </div>

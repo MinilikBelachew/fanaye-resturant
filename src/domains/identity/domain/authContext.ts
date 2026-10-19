@@ -15,6 +15,8 @@ export type AuthContext = {
     branchId: string | null;
     branchName: string | null;
     serviceMode: string | null;
+    /** Branch has hotel rooms — waiters only see Rooms nav when true. */
+    roomsEnabled?: boolean;
     staffMembershipId: string | null;
     roleCode: string;
     stationId: string | null;

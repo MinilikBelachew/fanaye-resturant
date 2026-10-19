@@ -7,6 +7,8 @@ export const STATION_IDS = {
 
 export type StationId = string;
 
+export type StationWorkflowMode = "FULL_PREP" | "QUICK_SERVE";
+
 export interface PreparationStation {
     id: string;
     name: string;
@@ -14,6 +16,8 @@ export interface PreparationStation {
     description?: string;
     status?: string;
     enabled: boolean;
+    /** FULL_PREP = kitchen; QUICK_SERVE = bar/soft drinks ready in one step */
+    workflowMode?: StationWorkflowMode | string;
     color?: string;
     category?: string;
     avgPrepMin?: number;

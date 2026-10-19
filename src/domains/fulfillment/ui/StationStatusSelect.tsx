@@ -7,6 +7,7 @@ import {
     useStartPreparationMutation,
 } from "@/context/services/stationsApi";
 import {
+    isQuickServeWorkflow,
     stationStateLabel,
     type StationTicket,
 } from "@/domains/fulfillment/domain/stationTicket";
@@ -44,8 +45,10 @@ function tone(ticket: StationTicket) {
 
 export default function StationStatusSelect({
     ticket,
+    workflowMode,
 }: {
     ticket: StationTicket;
+    workflowMode?: string | null;
 }) {
     const [acknowledge] = useAcknowledgeOrderItemMutation();
     const [start] = useStartPreparationMutation();
@@ -54,6 +57,7 @@ export default function StationStatusSelect({
     const current = SETTABLE.includes(ticket.state as (typeof SETTABLE)[number])
         ? ticket.state
         : null;
+    const quickServe = isQuickServeWorkflow(workflowMode);
 
     if (!current) {
         return (
@@ -77,8 +81,42 @@ export default function StationStatusSelect({
     };
     const label = ticket.itemName || "Ticket";
 
+    function canSelect(state: string) {
+        if (state === ticket.state) return true;
+        if (state === "READY") {
+            if (quickServe) {
+                return (
+                    ticket.state === "QUEUED" ||
+                    ticket.state === "ACKNOWLEDGED" ||
+                    ticket.state === "IN_PREPARATION"
+                );
+            }
+            return ticket.state === "IN_PREPARATION";
+        }
+        if (state === "ACKNOWLEDGED") return ticket.state === "QUEUED";
+        if (state === "IN_PREPARATION") {
+            return ticket.state === "QUEUED" || ticket.state === "ACKNOWLEDGED";
+        }
+        if (state === "CANNOT_PREPARE") {
+            return (
+                ticket.state === "QUEUED" ||
+                ticket.state === "ACKNOWLEDGED" ||
+                ticket.state === "IN_PREPARATION"
+            );
+        }
+        return false;
+    }
+
     async function apply(next: string) {
         if (next === ticket.state) return;
+        if (!canSelect(next)) {
+            toast.error(
+                quickServe
+                    ? "That status change is not allowed."
+                    : "Mark in progress before ready on this station.",
+            );
+            return;
+        }
 
         try {
             if (next === "ACKNOWLEDGED") {
@@ -89,7 +127,10 @@ export default function StationStatusSelect({
                 toast.success("Prep started", label);
             } else if (next === "READY") {
                 await ready(body).unwrap();
-                toast.success("Marked ready", label);
+                toast.success(
+                    quickServe ? "Ready to serve" : "Marked ready",
+                    label,
+                );
             } else if (next === "CANNOT_PREPARE") {
                 const alsoSoldOut = window.confirm(
                     "Also mark this dish sold out so waiters cannot order it again?",
@@ -124,7 +165,7 @@ export default function StationStatusSelect({
                 <SelectValue>{stationStateLabel(ticket.state)}</SelectValue>
             </SelectTrigger>
             <SelectContent align="start">
-                {SETTABLE.map(state => (
+                {SETTABLE.filter(state => canSelect(state)).map(state => (
                     <SelectItem key={state} value={state}>
                         {stationStateLabel(state)}
                     </SelectItem>

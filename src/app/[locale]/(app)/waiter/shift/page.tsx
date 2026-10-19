@@ -3,13 +3,15 @@
 import {
     ArrowRightLeft,
     Bell,
+    CalendarDays,
     Flame,
     LayoutGrid,
     LogIn,
     LogOut,
     Wallet,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { useAppSelector } from "@/context/hooks";
 import { useWaiterCashSummaryQuery } from "@/context/services/cashApi";
 import { useWaiterTablesQuery } from "@/context/services/floorApi";
@@ -25,10 +27,59 @@ import { Button } from "@/components/ui/button";
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import WaiterHandoverModal from "@/domains/ordering/ui/WaiterHandoverModal";
 import { Link } from "@/i18n/navigation";
+import {
+    ETHIOPIAN_DAYS,
+    formatEthiopianLocalTime,
+    getEthiopianDateDetails,
+} from "@/lib/ethiopian-calendar";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { getStaffAvatarUrl } from "@/lib/avatars";
-import { useTranslations } from "next-intl";
+
+const WEEK_DAY_CODES = [
+    "Mon",
+    "Tue",
+    "Wed",
+    "Thu",
+    "Fri",
+    "Sat",
+    "Sun",
+] as const;
+
+function mondayOfWeek(date = new Date()) {
+    const d = new Date(date);
+    const mondayOffset = (d.getDay() + 6) % 7;
+    d.setHours(12, 0, 0, 0);
+    d.setDate(d.getDate() - mondayOffset);
+    return d;
+}
+
+function dateForDayCodeThisWeek(dayCode: string, weekStart = mondayOfWeek()) {
+    const index = WEEK_DAY_CODES.indexOf(
+        dayCode as (typeof WEEK_DAY_CODES)[number],
+    );
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + (index >= 0 ? index : 0));
+    return d;
+}
+
+function dayLabel(dayCode: string, isAmharic: boolean) {
+    const row = ETHIOPIAN_DAYS.find(day => day.key === dayCode);
+    if (!row) return dayCode;
+    return isAmharic ? row.am : row.en;
+}
+
+function formatGregorianDate(date: Date, locale: string) {
+    return date.toLocaleDateString(
+        locale.startsWith("am") ? "am-ET" : "en-GB",
+        {
+            weekday: "short",
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+        },
+    );
+}
 
 function MetricCard({
     label,
@@ -73,8 +124,21 @@ function formatClock(value?: string | null) {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
+function formatWindowLabel(start?: string | null, end?: string | null) {
+    if (!start || !end) return null;
+    const greg = `${start} – ${end}`;
+    const ethStart = formatEthiopianLocalTime(start);
+    const ethEnd = formatEthiopianLocalTime(end);
+    return {
+        greg,
+        eth: `${ethStart.formattedAm} – ${ethEnd.formattedAm}`,
+    };
+}
+
 export default function WaiterShiftPage() {
     const t = useTranslations("waiter");
+    const locale = useLocale();
+    const isAmharic = locale.startsWith("am");
     const staff = useAppSelector(selectCurrentStaff);
     const hasSession = useAppSelector(state => Boolean(state.identity.session));
     const { data: shift, isFetching } = useCurrentShiftQuery(undefined, {
@@ -111,14 +175,77 @@ export default function WaiterShiftPage() {
     const clockedIn = Boolean(shift?.clockedIn && shift.shiftSession);
     const session = shift?.shiftSession ?? null;
     const upcoming = shift?.upcomingAssignment ?? null;
+    const weeklyPlan = shift?.weeklyPlan ?? [];
+    const upcomingAssignments = shift?.upcomingAssignments ?? [];
     const busy = clockingIn || clockingOut || isFetching;
     const staffName = staff?.name ?? t("server");
+    const today = useMemo(() => new Date(), []);
+    const ethToday = useMemo(() => getEthiopianDateDetails(today), [today]);
+    const gregToday = useMemo(
+        () => formatGregorianDate(today, locale),
+        [today, locale],
+    );
+    const todayDayCode = WEEK_DAY_CODES[(today.getDay() + 6) % 7];
+    const todayPlan = useMemo(
+        () => weeklyPlan.find(row => row.dayCode === todayDayCode) ?? null,
+        [weeklyPlan, todayDayCode],
+    );
+    const assignedShiftName =
+        session?.definitionName ||
+        todayPlan?.definitionName ||
+        upcoming?.definitionName ||
+        t("navShift");
+    const plannedWindow = useMemo(() => {
+        if (todayPlan) {
+            return formatWindowLabel(
+                todayPlan.startLocalTime,
+                todayPlan.endLocalTime,
+            );
+        }
+        const startIso =
+            session?.scheduledStartAt ?? upcoming?.scheduledStartAt ?? null;
+        const endIso =
+            session?.scheduledEndAt ?? upcoming?.scheduledEndAt ?? null;
+        if (!startIso || !endIso) return null;
+        const start = new Date(startIso);
+        const end = new Date(endIso);
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+            return null;
+        }
+        const startHm = `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`;
+        const endHm = `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`;
+        return formatWindowLabel(startHm, endHm);
+    }, [
+        todayPlan,
+        session?.scheduledStartAt,
+        session?.scheduledEndAt,
+        upcoming?.scheduledStartAt,
+        upcoming?.scheduledEndAt,
+    ]);
+    const weekCells = useMemo(() => {
+        const byDay = new Map(weeklyPlan.map(row => [row.dayCode, row]));
+        return WEEK_DAY_CODES.map(dayCode => {
+            const date = dateForDayCodeThisWeek(dayCode);
+            const eth = getEthiopianDateDetails(date);
+            const row = byDay.get(dayCode) ?? null;
+            const window = row
+                ? formatWindowLabel(row.startLocalTime, row.endLocalTime)
+                : null;
+            const isToday = dayCode === todayDayCode;
+            return { dayCode, date, eth, row, window, isToday };
+        });
+    }, [weeklyPlan, todayDayCode]);
 
     function shiftErrorMessage(error: unknown) {
         if (error && typeof error === "object" && "data" in error) {
             const data = (
                 error as {
-                    data?: { errors?: { shift?: string }; openTables?: number };
+                    data?: {
+                        code?: string;
+                        message?: string;
+                        errors?: { shift?: string };
+                        openTables?: number;
+                    };
                 }
             ).data;
             if (data?.errors?.shift === "openTables") {
@@ -130,6 +257,18 @@ export default function WaiterShiftPage() {
             if (data?.errors?.shift === "alreadyClosed") {
                 return t("shiftAlreadyClosed");
             }
+            if (data?.errors?.shift === "noAssignmentToday") {
+                return t("noShiftToday");
+            }
+            if (data?.errors?.shift === "outsideWindow") {
+                return data.message?.trim() || t("shiftOutsideWindow");
+            }
+            if (data?.code === "NO_SHIFT_TODAY") {
+                return t("noShiftToday");
+            }
+            if (data?.code === "SHIFT_OUTSIDE_WINDOW") {
+                return data.message?.trim() || t("shiftOutsideWindow");
+            }
             if (data?.errors && "version" in data.errors) {
                 return t("shiftChangedRefresh");
             }
@@ -140,9 +279,9 @@ export default function WaiterShiftPage() {
     async function handleClockIn() {
         setActionError("");
         try {
-            await clockIn(
-                upcoming?.id ? { shiftAssignmentId: upcoming.id } : {},
-            ).unwrap();
+            // Let the server resolve today's assigned window — do not force a
+            // stale/upcoming assignment id from another day.
+            await clockIn({}).unwrap();
         } catch (error) {
             setActionError(shiftErrorMessage(error));
         }
@@ -228,24 +367,35 @@ export default function WaiterShiftPage() {
                         </Badge>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-hairline pt-3.5 text-[13px]">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-hairline pt-3.5 text-[13px]">
                         <div>
-                            <p className="font-normal text-foreground">
-                                {session?.definitionName ||
-                                    upcoming?.definitionName ||
-                                    t("navShift")}
+                            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-gray">
+                                {t("todayDate")}
+                            </p>
+                            <p className="mt-0.5 font-normal text-foreground">
+                                {gregToday}
                             </p>
                             <p className="text-[12px] text-slate-gray">
-                                {formatClock(
-                                    session?.scheduledStartAt ??
-                                        upcoming?.scheduledStartAt,
-                                )}
-                                {" – "}
-                                {formatClock(
-                                    session?.scheduledEndAt ??
-                                        upcoming?.scheduledEndAt,
-                                )}
+                                {isAmharic
+                                    ? ethToday.formattedAm
+                                    : ethToday.formattedEn}
                             </p>
+                        </div>
+                        <div>
+                            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-gray">
+                                {t("assignedShift")}
+                            </p>
+                            <p className="mt-0.5 font-normal text-foreground">
+                                {assignedShiftName}
+                            </p>
+                            <p className="text-[12px] text-slate-gray">
+                                {plannedWindow?.greg ?? "—"}
+                            </p>
+                            {plannedWindow ? (
+                                <p className="text-[12px] text-slate-gray">
+                                    {plannedWindow.eth}
+                                </p>
+                            ) : null}
                         </div>
                         <div>
                             <p className="font-normal text-foreground">
@@ -319,6 +469,93 @@ export default function WaiterShiftPage() {
                             </Button>
                         )}
                     </div>
+                </div>
+
+                <div className="rounded-[16px] border border-hairline bg-card p-3 sm:p-4">
+                    <div className="mb-2.5 flex items-center justify-between gap-2">
+                        <div>
+                            <p className="text-[13px] font-medium text-foreground">
+                                {t("myAssignedShifts")}
+                            </p>
+                            <p className="text-[11px] text-slate-gray">
+                                {t("myAssignedShiftsHint")}
+                            </p>
+                        </div>
+                        <CalendarDays className="size-3.5 text-slate-gray" />
+                    </div>
+
+                    {weeklyPlan.length > 0 || upcomingAssignments.length > 0 ? (
+                        <div className="overflow-x-auto">
+                            <table className="w-full min-w-[640px] border-collapse text-left">
+                                <thead>
+                                    <tr className="border-b border-hairline">
+                                        {weekCells.map(cell => (
+                                            <th
+                                                key={cell.dayCode}
+                                                className={cn(
+                                                    "px-1.5 py-1.5 text-[10px] font-medium uppercase tracking-wide text-slate-gray",
+                                                    cell.isToday &&
+                                                        "text-brand",
+                                                )}
+                                            >
+                                                <span className="block">
+                                                    {dayLabel(
+                                                        cell.dayCode,
+                                                        isAmharic,
+                                                    )}
+                                                </span>
+                                                <span className="block font-normal normal-case tracking-normal text-[10px] text-slate-gray">
+                                                    {cell.date.getDate()}{" "}
+                                                    {isAmharic
+                                                        ? cell.eth.monthNameAm
+                                                        : cell.eth.monthNameEn}
+                                                </span>
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        {weekCells.map(cell => (
+                                            <td
+                                                key={cell.dayCode}
+                                                className={cn(
+                                                    "align-top border-r border-hairline px-1.5 py-2 last:border-r-0",
+                                                    cell.isToday &&
+                                                        "bg-brand/5",
+                                                )}
+                                            >
+                                                {cell.row ? (
+                                                    <div className="space-y-0.5">
+                                                        <p className="text-[11px] font-medium leading-snug text-foreground">
+                                                            {
+                                                                cell.row
+                                                                    .definitionName
+                                                            }
+                                                        </p>
+                                                        <p className="text-[10px] leading-snug text-slate-gray">
+                                                            {cell.window?.greg}
+                                                        </p>
+                                                        <p className="text-[10px] leading-snug text-slate-gray">
+                                                            {cell.window?.eth}
+                                                        </p>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-[10px] text-slate-gray/70">
+                                                        —
+                                                    </p>
+                                                )}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <p className="text-[12px] text-slate-gray">
+                            {t("noAssignedShifts")}
+                        </p>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

@@ -18,9 +18,41 @@ import {
 import { useForceCloseRoomSessionMutation } from "@/context/services/roomsApi";
 import { Badge } from "@/components/ui/badge";
 import { formatEtb } from "@/lib/money";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import type { DailyCloseBlocker } from "@/domains/reporting/domain/dailyCloseApi";
 import { useTranslations } from "next-intl";
+
+type ForceActionErrorData = {
+    code?: string;
+    errors?: {
+        session?: string;
+        openTicketCount?: number;
+    };
+};
+
+function forceActionErrorMessage(err: unknown, fallback: string): string {
+    if (!err || typeof err !== "object" || !("data" in err)) return fallback;
+    const data = (err as { data?: ForceActionErrorData }).data;
+    if (!data) return fallback;
+    if (data.code === "TABLE_FORCE_CLOSE_BLOCKED") {
+        const session =
+            data.errors?.session ??
+            "Cancel kitchen tickets or settle the bill before force-closing.";
+        const count = data.errors?.openTicketCount;
+        return typeof count === "number"
+            ? `${session} (${count} open ticket${count === 1 ? "" : "s"})`
+            : session;
+    }
+    if (data.code === "TABLE_FORCE_CLOSE_UNPAID") {
+        return (
+            data.errors?.session ??
+            "Settle or void unpaid items before force-closing."
+        );
+    }
+    if (data.errors?.session) return data.errors.session;
+    return fallback;
+}
 
 function localYmd(date = new Date()) {
     const y = date.getFullYear();
@@ -188,6 +220,7 @@ export default function DailyClosePanel({
                     reason,
                 }).unwrap();
                 setOk(t("okForceClosed"));
+                toast.success(t("okForceClosed"));
             } else if (blocker.code === "OPEN_ROOM_SESSION") {
                 await forceCloseRoom({
                     roomSessionId: blocker.entityId,
@@ -195,6 +228,7 @@ export default function DailyClosePanel({
                     reason,
                 }).unwrap();
                 setOk(t("okForceClosed"));
+                toast.success(t("okForceClosed"));
             } else if (blocker.code === "OPEN_KITCHEN_TICKET") {
                 await forceCancelTicket({
                     orderItemId: blocker.entityId,
@@ -202,9 +236,12 @@ export default function DailyClosePanel({
                     reason,
                 }).unwrap();
                 setOk(t("okForceCancelled"));
+                toast.success(t("okForceCancelled"));
             }
-        } catch {
-            setError(t("errorForceAction"));
+        } catch (err) {
+            const message = forceActionErrorMessage(err, t("errorForceAction"));
+            setError(message);
+            toast.error(t("errorForceAction"), message);
         } finally {
             setActingEntityId(null);
         }
@@ -395,6 +432,8 @@ export default function DailyClosePanel({
                 {blockers.length > 0 ? (
                     <ul className="mt-3 space-y-2">
                         {blockers.map(blocker => {
+                            const isKitchen =
+                                blocker.code === "OPEN_KITCHEN_TICKET";
                             const canForce =
                                 !isCashier &&
                                 Boolean(blocker.entityId) &&
@@ -421,6 +460,11 @@ export default function DailyClosePanel({
                                         <p className="text-[12px] text-slate-gray">
                                             {blocker.message}
                                         </p>
+                                        {isKitchen ? (
+                                            <p className="mt-0.5 text-[11px] text-slate-gray">
+                                                {t("kitchenAutoCancelHint")}
+                                            </p>
+                                        ) : null}
                                     </div>
                                     {canForce ? (
                                         <button
@@ -433,8 +477,7 @@ export default function DailyClosePanel({
                                         >
                                             {isActing
                                                 ? t("forceActing")
-                                                : blocker.code ===
-                                                    "OPEN_KITCHEN_TICKET"
+                                                : isKitchen
                                                   ? t("forceCancel")
                                                   : t("forceClose")}
                                         </button>

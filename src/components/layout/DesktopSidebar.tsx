@@ -24,7 +24,10 @@ export default function DesktopSidebar({ className }: { className?: string }) {
     const { counts: liveCounts } = useCurrentStationQueue();
     const counts = staff && isStationRole(staff.role) ? liveCounts : null;
     if (!staff) return null;
-    const sections = navForRole(staff.role, session?.serviceMode);
+    const sections = navForRole(staff.role, {
+        serviceMode: session?.serviceMode,
+        roomsEnabled: session?.roomsEnabled === true,
+    });
 
     async function logOut() {
         await performSignOut(dispatch);
