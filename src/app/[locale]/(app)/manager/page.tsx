@@ -52,6 +52,7 @@ import {
     useGetManagerDashboardQuery,
 } from "@/context/services/managerDashboardApi";
 import { useTranslations } from "next-intl";
+import DualCalendarDatePicker from "@/components/custom/molecules/DualCalendarDatePicker";
 import { KpiStatsSkeleton } from "@/components/custom/molecules/Skeletons";
 import { useRealtimePollMs } from "@/domains/notifications/application/useRealtimePollMs";
 import { cn } from "@/lib/utils";
@@ -85,8 +86,7 @@ export default function ManagerPage() {
     const [period, setPeriod] = useState<ManagerDashboardPeriod>("today");
     const [fromDate, setFromDate] = useState("");
     const [toDate, setToDate] = useState("");
-    const [customFrom, setCustomFrom] = useState("");
-    const [customTo, setCustomTo] = useState("");
+    const [customPickerOpen, setCustomPickerOpen] = useState(false);
     const [inspectItem, setInspectItem] = useState<{
         kind:
             | "latePrep"
@@ -107,6 +107,15 @@ export default function ManagerPage() {
             description?: string;
             progressPercent?: number;
         };
+        ticketLines?: Array<{
+            id: string;
+            itemName: string;
+            quantity: number;
+            tableDisplayName: string;
+            waiterName: string;
+            state: string;
+            waitMinutes: number;
+        }>;
     } | null>(null);
     const [hoverTooltip, setHoverTooltip] = useState<{
         title: string;
@@ -153,13 +162,6 @@ export default function ManagerPage() {
         return tManager("periodCustom");
     };
 
-    const applyCustom = () => {
-        if (!customFrom || !customTo) return;
-        setFromDate(customFrom);
-        setToDate(customTo);
-        setPeriod("custom");
-    };
-
     const collectionsTrend =
         kpis?.collectionsTrend ?? kpis?.dailyRevenueTrend ?? "0%";
     const collectionsTrendLabel =
@@ -168,16 +170,21 @@ export default function ManagerPage() {
             ? tManager("vsCollectedYesterday")
             : tManager("vsPriorPeriod"));
 
-    const pendingCount = Number(kpis?.pendingActionsFormatted ?? "0") || 0;
-    const backlogCount = Number(kpis?.stationBacklogFormatted ?? "0") || 0;
     const actNow = dash?.actNow;
+    const pendingCount =
+        actNow?.pendingActionItems?.length ??
+        (Number(kpis?.pendingActionsFormatted ?? "0") || 0);
+    const backlogCount = Number(kpis?.stationBacklogFormatted ?? "0") || 0;
 
     const statusItems = [
         {
             id: "needsAttention",
             title: tManager("needsAttention"),
             count: pendingCount,
-            meta: kpis?.pendingActionsHint ?? tManager("nothingWaiting"),
+            meta:
+                pendingCount > 0
+                    ? (kpis?.pendingActionsHint ?? tManager("nothingWaiting"))
+                    : tManager("nothingWaiting"),
             tone: pendingCount > 0 ? ("warn" as const) : ("ok" as const),
             href: "/manager/approvals",
         },
@@ -291,7 +298,7 @@ export default function ManagerPage() {
                 </div>
             </div>
 
-            <div className="flex flex-col gap-2">
+            <div className="relative z-[55] flex flex-col gap-2">
                 <div className="flex flex-wrap gap-1.5">
                     {PERIODS.map(id => {
                         const active = period === id;
@@ -304,8 +311,12 @@ export default function ManagerPage() {
                                         setPeriod(id);
                                         setFromDate("");
                                         setToDate("");
+                                        setCustomPickerOpen(false);
                                     } else {
                                         setPeriod("custom");
+                                        setCustomPickerOpen(open =>
+                                            period === "custom" ? !open : true,
+                                        );
                                     }
                                 }}
                                 className={cn(
@@ -320,35 +331,27 @@ export default function ManagerPage() {
                         );
                     })}
                 </div>
-                {period === "custom" ? (
-                    <div className="flex flex-wrap items-end gap-2">
-                        <label className="flex flex-col gap-1 text-[11px] text-slate-gray">
-                            {tManager("fromDate")}
-                            <input
-                                type="date"
-                                value={customFrom}
-                                onChange={e => setCustomFrom(e.target.value)}
-                                className="rounded-md border border-hairline bg-card px-2 py-1.5 text-[13px] text-foreground"
-                            />
-                        </label>
-                        <label className="flex flex-col gap-1 text-[11px] text-slate-gray">
-                            {tManager("toDate")}
-                            <input
-                                type="date"
-                                value={customTo}
-                                onChange={e => setCustomTo(e.target.value)}
-                                className="rounded-md border border-hairline bg-card px-2 py-1.5 text-[13px] text-foreground"
-                            />
-                        </label>
-                        <button
-                            type="button"
-                            onClick={applyCustom}
-                            disabled={!customFrom || !customTo}
-                            className="rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground disabled:opacity-50"
-                        >
-                            {tManager("applyRange")}
-                        </button>
-                    </div>
+                {period === "custom" && customPickerOpen ? (
+                    <DualCalendarDatePicker
+                        variant="popover"
+                        from={fromDate || undefined}
+                        to={toDate || undefined}
+                        defaultSelectionMode="range"
+                        applyLabel={tManager("applyRange")}
+                        onDismiss={() => setCustomPickerOpen(false)}
+                        onApply={({ from, to }) => {
+                            setFromDate(from);
+                            setToDate(to);
+                            setPeriod("custom");
+                            setCustomPickerOpen(false);
+                        }}
+                        onClear={() => {
+                            setFromDate("");
+                            setToDate("");
+                            setPeriod("today");
+                            setCustomPickerOpen(false);
+                        }}
+                    />
                 ) : null}
             </div>
 
@@ -619,41 +622,68 @@ export default function ManagerPage() {
                                                                                 e.currentTarget.getBoundingClientRect();
                                                                             setHoverTooltip(
                                                                                 {
-                                                                                    title: `+${dish.overdueMinutes}m Overdue Preparation`,
+                                                                                    title: tManager(
+                                                                                        "hoverLateTitle",
+                                                                                        {
+                                                                                            minutes:
+                                                                                                dish.overdueMinutes,
+                                                                                        },
+                                                                                    ),
                                                                                     badge: dish.state,
                                                                                     badgeTone:
                                                                                         "bad",
                                                                                     rows: [
                                                                                         {
-                                                                                            label: "Dish",
+                                                                                            label: tManager(
+                                                                                                "hoverDish",
+                                                                                            ),
                                                                                             value: `${dish.quantity}× ${dish.itemName}`,
                                                                                         },
                                                                                         {
-                                                                                            label: "Table",
+                                                                                            label: tManager(
+                                                                                                "hoverTable",
+                                                                                            ),
                                                                                             value: dish.tableDisplayName,
                                                                                         },
                                                                                         {
-                                                                                            label: "Station",
+                                                                                            label: tManager(
+                                                                                                "hoverStation",
+                                                                                            ),
                                                                                             value: dish.stationName,
                                                                                         },
                                                                                         {
-                                                                                            label: "Waiter",
+                                                                                            label: tManager(
+                                                                                                "hoverWaiter",
+                                                                                            ),
                                                                                             value: dish.waiterName,
                                                                                         },
                                                                                         {
-                                                                                            label: "Timing",
-                                                                                            value: `Target ${dish.targetMinutes}m · Elapsed ${dish.elapsedMinutes}m`,
+                                                                                            label: tManager(
+                                                                                                "hoverTiming",
+                                                                                            ),
+                                                                                            value: tManager(
+                                                                                                "hoverTargetElapsed",
+                                                                                                {
+                                                                                                    target: dish.targetMinutes,
+                                                                                                    elapsed:
+                                                                                                        dish.elapsedMinutes,
+                                                                                                },
+                                                                                            ),
                                                                                         },
                                                                                         ...(dish.modifiersSummary
                                                                                             ? [
                                                                                                   {
-                                                                                                      label: "Modifiers",
+                                                                                                      label: tManager(
+                                                                                                          "hoverModifiers",
+                                                                                                      ),
                                                                                                       value: dish.modifiersSummary,
                                                                                                   },
                                                                                               ]
                                                                                             : []),
                                                                                     ],
-                                                                                    hint: "Click to inspect ticket details",
+                                                                                    hint: tManager(
+                                                                                        "hoverInspectTicket",
+                                                                                    ),
                                                                                     x: rect.left,
                                                                                     y:
                                                                                         rect.bottom +
@@ -771,29 +801,45 @@ export default function ManagerPage() {
                                                                                 e.currentTarget.getBoundingClientRect();
                                                                             setHoverTooltip(
                                                                                 {
-                                                                                    title: `Ready for ${dish.readyMinutes} min (Awaiting Pickup)`,
+                                                                                    title: tManager(
+                                                                                        "hoverReadyWaitingTitle",
+                                                                                        {
+                                                                                            minutes:
+                                                                                                dish.readyMinutes,
+                                                                                        },
+                                                                                    ),
                                                                                     badge: "READY",
                                                                                     badgeTone:
                                                                                         "warn",
                                                                                     rows: [
                                                                                         {
-                                                                                            label: "Dish",
+                                                                                            label: tManager(
+                                                                                                "hoverDish",
+                                                                                            ),
                                                                                             value: `${dish.quantity}× ${dish.itemName}`,
                                                                                         },
                                                                                         {
-                                                                                            label: "Table",
+                                                                                            label: tManager(
+                                                                                                "hoverTable",
+                                                                                            ),
                                                                                             value: dish.tableDisplayName,
                                                                                         },
                                                                                         {
-                                                                                            label: "Station",
+                                                                                            label: tManager(
+                                                                                                "hoverStation",
+                                                                                            ),
                                                                                             value: dish.stationName,
                                                                                         },
                                                                                         {
-                                                                                            label: "Waiter",
+                                                                                            label: tManager(
+                                                                                                "hoverWaiter",
+                                                                                            ),
                                                                                             value: dish.waiterName,
                                                                                         },
                                                                                         {
-                                                                                            label: "Ready Time",
+                                                                                            label: tManager(
+                                                                                                "hoverReadyTime",
+                                                                                            ),
                                                                                             value: new Date(
                                                                                                 dish.readyAt,
                                                                                             ).toLocaleTimeString(
@@ -805,7 +851,9 @@ export default function ManagerPage() {
                                                                                             ),
                                                                                         },
                                                                                     ],
-                                                                                    hint: "Click to inspect ticket details",
+                                                                                    hint: tManager(
+                                                                                        "hoverInspectTicket",
+                                                                                    ),
                                                                                     x: rect.left,
                                                                                     y:
                                                                                         rect.bottom +
@@ -949,13 +997,17 @@ export default function ManagerPage() {
                                                                                         "warn",
                                                                                     rows: [
                                                                                         {
-                                                                                            label: "Details",
+                                                                                            label: tManager(
+                                                                                                "hoverDetails",
+                                                                                            ),
                                                                                             value: req.description,
                                                                                         },
                                                                                         ...(req.tableDisplayName
                                                                                             ? [
                                                                                                   {
-                                                                                                      label: "Table",
+                                                                                                      label: tManager(
+                                                                                                          "hoverTable",
+                                                                                                      ),
                                                                                                       value: req.tableDisplayName,
                                                                                                   },
                                                                                               ]
@@ -963,7 +1015,9 @@ export default function ManagerPage() {
                                                                                         ...(req.staffName
                                                                                             ? [
                                                                                                   {
-                                                                                                      label: "Staff",
+                                                                                                      label: tManager(
+                                                                                                          "hoverStaff",
+                                                                                                      ),
                                                                                                       value: req.staffName,
                                                                                                   },
                                                                                               ]
@@ -971,13 +1025,17 @@ export default function ManagerPage() {
                                                                                         ...(req.amountFormatted
                                                                                             ? [
                                                                                                   {
-                                                                                                      label: "Amount",
+                                                                                                      label: tManager(
+                                                                                                          "hoverAmount",
+                                                                                                      ),
                                                                                                       value: req.amountFormatted,
                                                                                                   },
                                                                                               ]
                                                                                             : []),
                                                                                     ],
-                                                                                    hint: "Click to inspect request",
+                                                                                    hint: tManager(
+                                                                                        "hoverInspectRequest",
+                                                                                    ),
                                                                                     x: rect.left,
                                                                                     y:
                                                                                         rect.bottom +
@@ -996,17 +1054,27 @@ export default function ManagerPage() {
                                                                             <span className="shrink-0 rounded bg-primary/15 px-1.5 py-0.5 font-bold text-primary text-[10px] uppercase">
                                                                                 {req.kind ===
                                                                                 "BILL_REQUEST"
-                                                                                    ? "Bill"
+                                                                                    ? tManager(
+                                                                                          "hoverKindBill",
+                                                                                      )
                                                                                     : req.kind ===
                                                                                         "CASH_DROP"
-                                                                                      ? "Cash"
+                                                                                      ? tManager(
+                                                                                            "hoverKindCash",
+                                                                                        )
                                                                                       : req.kind ===
                                                                                           "CANCELLATION"
-                                                                                        ? "Void"
+                                                                                        ? tManager(
+                                                                                              "hoverKindVoid",
+                                                                                          )
                                                                                         : req.kind ===
                                                                                             "PRODUCTION_EXCEPTION"
-                                                                                          ? "86"
-                                                                                          : "Edit"}
+                                                                                          ? tManager(
+                                                                                                "hoverKind86",
+                                                                                            )
+                                                                                          : tManager(
+                                                                                                "hoverKindEdit",
+                                                                                            )}
                                                                             </span>
                                                                             <span className="truncate font-medium text-foreground">
                                                                                 {req.tableDisplayName
@@ -1057,28 +1125,87 @@ export default function ManagerPage() {
                                                                                     details:
                                                                                         [
                                                                                             {
-                                                                                                label: "Station",
+                                                                                                label: tManager(
+                                                                                                    "hoverStation",
+                                                                                                ),
                                                                                                 value: st.stationName,
                                                                                             },
                                                                                             {
-                                                                                                label: "Queued Tickets",
-                                                                                                value: `${st.queuedCount} tickets`,
+                                                                                                label: tManager(
+                                                                                                    "hoverQueued",
+                                                                                                ),
+                                                                                                value: tManager(
+                                                                                                    "hoverTicketsQueued",
+                                                                                                    {
+                                                                                                        count: st.queuedCount,
+                                                                                                    },
+                                                                                                ),
                                                                                             },
                                                                                             {
-                                                                                                label: "In Preparation",
-                                                                                                value: `${st.inPrepCount} tickets`,
+                                                                                                label: tManager(
+                                                                                                    "hoverInPrep",
+                                                                                                ),
+                                                                                                value: tManager(
+                                                                                                    "hoverTicketsQueued",
+                                                                                                    {
+                                                                                                        count: st.inPrepCount,
+                                                                                                    },
+                                                                                                ),
                                                                                             },
                                                                                             {
-                                                                                                label: "Oldest Waiting Ticket",
-                                                                                                value: `${st.oldestWaitMinutes} min`,
+                                                                                                label: tManager(
+                                                                                                    "hoverOldestWait",
+                                                                                                ),
+                                                                                                value: tManager(
+                                                                                                    "hoverMinutesShort",
+                                                                                                    {
+                                                                                                        count: st.oldestWaitMinutes,
+                                                                                                    },
+                                                                                                ),
                                                                                             },
                                                                                         ],
                                                                                     alertBox:
                                                                                         {
-                                                                                            title: "Station Load Level",
-                                                                                            value: `${st.queuedCount + st.inPrepCount} tickets waiting`,
-                                                                                            description: `${st.queuedCount} waiting to be started · ${st.inPrepCount} currently being prepared`,
+                                                                                            title: tManager(
+                                                                                                "stationLoadLevel",
+                                                                                            ),
+                                                                                            value: tManager(
+                                                                                                "hoverTicketsWaiting",
+                                                                                                {
+                                                                                                    count:
+                                                                                                        st.queuedCount +
+                                                                                                        st.inPrepCount,
+                                                                                                },
+                                                                                            ),
+                                                                                            description:
+                                                                                                tManager(
+                                                                                                    "stationLoadDesc",
+                                                                                                    {
+                                                                                                        queued: st.queuedCount,
+                                                                                                        prep: st.inPrepCount,
+                                                                                                    },
+                                                                                                ),
                                                                                         },
+                                                                                    ticketLines:
+                                                                                        (
+                                                                                            st.tickets ??
+                                                                                            []
+                                                                                        ).map(
+                                                                                            t => ({
+                                                                                                id: t.orderItemId,
+                                                                                                itemName:
+                                                                                                    t.itemName,
+                                                                                                quantity:
+                                                                                                    t.quantity,
+                                                                                                tableDisplayName:
+                                                                                                    t.tableDisplayName,
+                                                                                                waiterName:
+                                                                                                    t.waiterName,
+                                                                                                state: t.state,
+                                                                                                waitMinutes:
+                                                                                                    t.waitMinutes,
+                                                                                            }),
+                                                                                        ),
                                                                                 },
                                                                             )
                                                                         }
@@ -1087,25 +1214,61 @@ export default function ManagerPage() {
                                                                                 e.currentTarget.getBoundingClientRect();
                                                                             setHoverTooltip(
                                                                                 {
-                                                                                    title: `${st.stationName} Station Backlog`,
-                                                                                    badge: `${st.queuedCount + st.inPrepCount} Tickets`,
+                                                                                    title: tManager(
+                                                                                        "hoverStationBacklogTitle",
+                                                                                        {
+                                                                                            station:
+                                                                                                st.stationName,
+                                                                                        },
+                                                                                    ),
+                                                                                    badge: tManager(
+                                                                                        "hoverTickets",
+                                                                                        {
+                                                                                            count:
+                                                                                                st.queuedCount +
+                                                                                                st.inPrepCount,
+                                                                                        },
+                                                                                    ),
                                                                                     badgeTone:
                                                                                         "warn",
                                                                                     rows: [
                                                                                         {
-                                                                                            label: "Queued",
-                                                                                            value: `${st.queuedCount} tickets`,
+                                                                                            label: tManager(
+                                                                                                "hoverQueued",
+                                                                                            ),
+                                                                                            value: tManager(
+                                                                                                "hoverTicketsQueued",
+                                                                                                {
+                                                                                                    count: st.queuedCount,
+                                                                                                },
+                                                                                            ),
                                                                                         },
                                                                                         {
-                                                                                            label: "In Preparation",
-                                                                                            value: `${st.inPrepCount} tickets`,
+                                                                                            label: tManager(
+                                                                                                "hoverInPrep",
+                                                                                            ),
+                                                                                            value: tManager(
+                                                                                                "hoverTicketsQueued",
+                                                                                                {
+                                                                                                    count: st.inPrepCount,
+                                                                                                },
+                                                                                            ),
                                                                                         },
                                                                                         {
-                                                                                            label: "Oldest Wait",
-                                                                                            value: `${st.oldestWaitMinutes} min`,
+                                                                                            label: tManager(
+                                                                                                "hoverOldestWait",
+                                                                                            ),
+                                                                                            value: tManager(
+                                                                                                "hoverMinutesShort",
+                                                                                                {
+                                                                                                    count: st.oldestWaitMinutes,
+                                                                                                },
+                                                                                            ),
                                                                                         },
                                                                                     ],
-                                                                                    hint: "Click to inspect station status",
+                                                                                    hint: tManager(
+                                                                                        "hoverInspectStation",
+                                                                                    ),
                                                                                     x: rect.left,
                                                                                     y:
                                                                                         rect.bottom +
@@ -1209,21 +1372,38 @@ export default function ManagerPage() {
                                                                                 e.currentTarget.getBoundingClientRect();
                                                                             setHoverTooltip(
                                                                                 {
-                                                                                    title: `${staff.staffName} Not Clocked In`,
+                                                                                    title: tManager(
+                                                                                        "hoverStaffOfflineTitle",
+                                                                                        {
+                                                                                            name: staff.staffName,
+                                                                                        },
+                                                                                    ),
                                                                                     badge: staff.role,
                                                                                     badgeTone:
                                                                                         "bad",
                                                                                     rows: [
                                                                                         {
-                                                                                            label: "Scheduled Start",
+                                                                                            label: tManager(
+                                                                                                "hoverScheduledStart",
+                                                                                            ),
                                                                                             value: staff.shiftStartFormatted,
                                                                                         },
                                                                                         {
-                                                                                            label: "Delay",
-                                                                                            value: `+${staff.minutesLate} min late`,
+                                                                                            label: tManager(
+                                                                                                "hoverDelay",
+                                                                                            ),
+                                                                                            value: tManager(
+                                                                                                "hoverMinutesLate",
+                                                                                                {
+                                                                                                    minutes:
+                                                                                                        staff.minutesLate,
+                                                                                                },
+                                                                                            ),
                                                                                         },
                                                                                     ],
-                                                                                    hint: "Click to inspect attendance",
+                                                                                    hint: tManager(
+                                                                                        "hoverInspectAttendance",
+                                                                                    ),
                                                                                     x: rect.left,
                                                                                     y:
                                                                                         rect.bottom +
@@ -1330,21 +1510,29 @@ export default function ManagerPage() {
                                                                                 e.currentTarget.getBoundingClientRect();
                                                                             setHoverTooltip(
                                                                                 {
-                                                                                    title: `Low Stock: ${ing.ingredientName}`,
-                                                                                    badge: "PAR ALERT",
+                                                                                    title: `${tManager("lowStock")}: ${ing.ingredientName}`,
+                                                                                    badge: tManager(
+                                                                                        "lowStock",
+                                                                                    ),
                                                                                     badgeTone:
                                                                                         "warn",
                                                                                     rows: [
                                                                                         {
-                                                                                            label: "On Hand",
+                                                                                            label: tManager(
+                                                                                                "hoverOnHand",
+                                                                                            ),
                                                                                             value: `${ing.onHandQty} ${ing.unit}`,
                                                                                         },
                                                                                         {
-                                                                                            label: "Par Level",
+                                                                                            label: tManager(
+                                                                                                "hoverPar",
+                                                                                            ),
                                                                                             value: `${ing.parLevel} ${ing.unit}`,
                                                                                         },
                                                                                     ],
-                                                                                    hint: "Click to inspect ingredient",
+                                                                                    hint: tManager(
+                                                                                        "hoverInspectIngredient",
+                                                                                    ),
                                                                                     x: rect.left,
                                                                                     y:
                                                                                         rect.bottom +
@@ -1450,21 +1638,34 @@ export default function ManagerPage() {
                                                                                 e.currentTarget.getBoundingClientRect();
                                                                             setHoverTooltip(
                                                                                 {
-                                                                                    title: `Unpaid Check: ${b.tableDisplayName}`,
-                                                                                    badge: "DUE",
+                                                                                    title: tManager(
+                                                                                        "hoverUnpaidCheckTitle",
+                                                                                        {
+                                                                                            table: b.tableDisplayName,
+                                                                                        },
+                                                                                    ),
+                                                                                    badge: tManager(
+                                                                                        "hoverDue",
+                                                                                    ),
                                                                                     badgeTone:
                                                                                         "warn",
                                                                                     rows: [
                                                                                         {
-                                                                                            label: "Unpaid Due",
+                                                                                            label: tManager(
+                                                                                                "hoverUnpaidDue",
+                                                                                            ),
                                                                                             value: b.unpaidAmountFormatted,
                                                                                         },
                                                                                         {
-                                                                                            label: "Total Bill",
+                                                                                            label: tManager(
+                                                                                                "hoverTotalBill",
+                                                                                            ),
                                                                                             value: b.totalAmountFormatted,
                                                                                         },
                                                                                         {
-                                                                                            label: "Time",
+                                                                                            label: tManager(
+                                                                                                "hoverTime",
+                                                                                            ),
                                                                                             value: new Date(
                                                                                                 b.billedAt,
                                                                                             ).toLocaleTimeString(
@@ -1476,7 +1677,9 @@ export default function ManagerPage() {
                                                                                             ),
                                                                                         },
                                                                                     ],
-                                                                                    hint: "Click to inspect check",
+                                                                                    hint: tManager(
+                                                                                        "hoverInspectCheck",
+                                                                                    ),
                                                                                     x: rect.left,
                                                                                     y:
                                                                                         rect.bottom +
@@ -1568,7 +1771,7 @@ export default function ManagerPage() {
             {/* Unified Floating Detail Tooltip */}
             {hoverTooltip && (
                 <div
-                    className="fixed z-50 pointer-events-none -translate-x-2 w-72 rounded-xl border border-border bg-popover/95 p-3 text-popover-foreground shadow-2xl backdrop-blur-md text-xs animate-in fade-in duration-150"
+                    className="fixed z-[90] pointer-events-none -translate-x-2 w-72 rounded-xl border border-border bg-popover/95 p-3 text-popover-foreground shadow-2xl backdrop-blur-md text-xs animate-in fade-in duration-150"
                     style={{
                         top: Math.min(
                             hoverTooltip.y,
@@ -1644,10 +1847,10 @@ export default function ManagerPage() {
                 </div>
             )}
 
-            {/* Unified Act Now Inspection Modal */}
+            {/* Unified Act Now Inspection Modal — above period filters (z-55) + calendar popover (z-70) */}
             {inspectItem && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200"
                     role="dialog"
                     aria-modal="true"
                 >
@@ -1788,6 +1991,58 @@ export default function ManagerPage() {
                                     </p>
                                 </div>
                             )}
+
+                            {inspectItem.ticketLines &&
+                            inspectItem.ticketLines.length > 0 ? (
+                                <div className="space-y-1.5">
+                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                        {tManager("backlogTickets")}
+                                    </p>
+                                    <ul className="max-h-52 space-y-1.5 overflow-y-auto pr-0.5">
+                                        {inspectItem.ticketLines.map(line => (
+                                            <li
+                                                key={line.id}
+                                                className="rounded-lg border border-border bg-muted/25 px-2.5 py-2"
+                                            >
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <div className="min-w-0">
+                                                        <p className="truncate text-[12px] font-semibold text-foreground">
+                                                            {line.quantity}×{" "}
+                                                            {line.itemName}
+                                                        </p>
+                                                        <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
+                                                            {
+                                                                line.tableDisplayName
+                                                            }{" "}
+                                                            · {line.waiterName}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex shrink-0 flex-col items-end gap-0.5">
+                                                        <span className="rounded bg-secondary px-1.5 py-0.5 text-[9px] font-medium uppercase text-muted-foreground">
+                                                            {line.state ===
+                                                            "IN_PREPARATION"
+                                                                ? tManager(
+                                                                      "hoverInPrep",
+                                                                  )
+                                                                : tManager(
+                                                                      "hoverQueued",
+                                                                  )}
+                                                        </span>
+                                                        <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                                                            {tManager(
+                                                                "hoverMinutesShort",
+                                                                {
+                                                                    count: line.waitMinutes,
+                                                                },
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ) : null}
                         </div>
 
                         {/* Actions: Strictly in-place close without page redirect */}

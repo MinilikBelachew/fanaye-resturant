@@ -187,11 +187,22 @@ export interface UnpaidBillItemDetail {
     billedAt: string;
 }
 
+export interface StationBacklogTicketDetail {
+    orderItemId: string;
+    itemName: string;
+    quantity: number;
+    tableDisplayName: string;
+    waiterName: string;
+    state: string;
+    waitMinutes: number;
+}
+
 export interface StationBacklogItemDetail {
     stationName: string;
     queuedCount: number;
     inPrepCount: number;
     oldestWaitMinutes: number;
+    tickets?: StationBacklogTicketDetail[];
 }
 
 export interface ActNowInsight {
