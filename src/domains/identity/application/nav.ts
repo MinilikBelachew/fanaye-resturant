@@ -378,11 +378,6 @@ function navSectionsForRole(role: Role): NavSection[] {
                                     icon: ClipboardCheck,
                                 },
                                 {
-                                    href: "/manager/finance/reports",
-                                    label: "Reports",
-                                    icon: ScrollText,
-                                },
-                                {
                                     href: "/manager/finance/payroll",
                                     label: "Payroll",
                                     icon: HandCoins,
@@ -408,6 +403,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                             href: "/manager/approvals",
                             label: "Approvals",
                             icon: ClipboardCheck,
+                        },
+                        {
+                            href: "/manager/reports",
+                            label: "Reports",
+                            icon: ScrollText,
                         },
                         {
                             href: "/manager/audit",

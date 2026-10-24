@@ -1,11 +1,12 @@
-import FinancePlaceholder from "@/domains/finance/ui/FinancePlaceholder";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "@/i18n/navigation";
 
 export default function ManagerFinanceReportsPage() {
-    return (
-        <FinancePlaceholder
-            title="Finance reports"
-            description="Period sales, tender mix, and labor cost for this branch."
-            hint="Period filters and exportable reports will connect here."
-        />
-    );
+    const router = useRouter();
+    useEffect(() => {
+        router.replace("/manager/reports");
+    }, [router]);
+    return null;
 }
