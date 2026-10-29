@@ -11,6 +11,7 @@ import {
     UtensilsCrossed,
     X,
 } from "lucide-react";
+import { useState } from "react";
 import { useAppSelector } from "@/context/hooks";
 import type { MenuItem } from "@/domains/catalog/domain/menu";
 import {
@@ -21,14 +22,24 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface MenuItemDetailSheetProps {
     item: MenuItem | null;
     isOpen: boolean;
     onClose: () => void;
     onEdit: (item: MenuItem) => void;
+    onDelete?: (item: MenuItem) => void;
     onToggleAvailability?: (item: MenuItem) => void;
 }
+
+type ConfirmDialogState = {
+    title: string;
+    body: string;
+    confirmLabel: string;
+    onConfirm: () => void | Promise<void>;
+    danger?: boolean;
+};
 
 const STATION_META: Record<
     StationId,
@@ -65,9 +76,13 @@ export default function MenuItemDetailSheet({
     isOpen,
     onClose,
     onEdit,
+    onDelete,
     onToggleAvailability,
 }: MenuItemDetailSheetProps) {
+    const t = useTranslations("manager");
     const stations = useAppSelector(state => state.station.stations);
+    const [confirmDialog, setConfirmDialog] =
+        useState<ConfirmDialogState | null>(null);
 
     if (!isOpen || !item) return null;
 
@@ -91,10 +106,18 @@ export default function MenuItemDetailSheet({
     }
 
     function handleDelete() {
-        if (!item) return;
-        // Hard delete not in Step M — use 86 / sold-out instead.
-        handleToggleStatus();
-        onClose();
+        if (!item || !onDelete) return;
+        setConfirmDialog({
+            title: t("deleteMenuItem"),
+            body: t("deleteConfirmBody", { name: item.name }),
+            confirmLabel: t("delete"),
+            danger: true,
+            onConfirm: () => {
+                onDelete(item);
+                setConfirmDialog(null);
+                onClose();
+            },
+        });
     }
 
     return (
@@ -120,14 +143,16 @@ export default function MenuItemDetailSheet({
                         >
                             <Edit3 className="size-4" />
                         </button>
-                        <button
-                            type="button"
-                            onClick={handleDelete}
-                            className="flex size-8 items-center justify-center rounded-full border border-hairline bg-card text-slate-gray transition-colors hover:bg-red-50 hover:text-destructive"
-                            title="Delete item"
-                        >
-                            <Trash2 className="size-4" />
-                        </button>
+                        {onDelete && (
+                            <button
+                                type="button"
+                                onClick={handleDelete}
+                                className="flex size-8 items-center justify-center rounded-full border border-hairline bg-card text-slate-gray transition-colors hover:bg-red-50 hover:text-destructive"
+                                title="Delete item"
+                            >
+                                <Trash2 className="size-4" />
+                            </button>
+                        )}
                         <button
                             type="button"
                             onClick={onClose}
@@ -324,7 +349,56 @@ export default function MenuItemDetailSheet({
                         <Edit3 className="size-3.5" />
                         Edit dish
                     </Button>
+                    {onDelete && (
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={handleDelete}
+                            className="h-9 flex items-center gap-1.5 rounded-full px-3 text-[13px] text-destructive hover:bg-red-50 hover:text-destructive"
+                        >
+                            <Trash2 className="size-3.5" />
+                            {t("delete")}
+                        </Button>
+                    )}
                 </div>
+
+                {/* Confirm Dialog */}
+                {confirmDialog ? (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-[2px]">
+                        <div className="w-full max-w-sm space-y-4 rounded-2xl border border-hairline bg-card p-5 shadow-xl animate-in fade-in zoom-in duration-200">
+                            <div>
+                                <h3 className="text-[15px] font-semibold text-foreground">
+                                    {confirmDialog.title}
+                                </h3>
+                                <p className="mt-2 text-[13px] leading-relaxed text-slate-gray">
+                                    {confirmDialog.body}
+                                </p>
+                            </div>
+                            <div className="flex justify-end gap-2 pt-2">
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => setConfirmDialog(null)}
+                                    className="h-9 rounded-lg text-[13px]"
+                                >
+                                    {t("cancel")}
+                                </Button>
+                                <Button
+                                    onClick={() =>
+                                        void confirmDialog.onConfirm()
+                                    }
+                                    className={cn(
+                                        "h-9 rounded-lg px-5 text-[13px] text-white",
+                                        confirmDialog.danger
+                                            ? "bg-rose-600 hover:bg-rose-700"
+                                            : "bg-brand hover:bg-brand-deep",
+                                    )}
+                                >
+                                    {confirmDialog.confirmLabel}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                ) : null}
             </div>
         </div>
     );

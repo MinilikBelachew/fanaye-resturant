@@ -27,8 +27,7 @@ function systemPrefersDark() {
 }
 
 function applyTheme(mode: ThemeMode) {
-    const dark =
-        mode === "dark" || (mode === "system" && systemPrefersDark());
+    const dark = mode === "dark" || (mode === "system" && systemPrefersDark());
     document.documentElement.classList.toggle("dark", dark);
 }
 

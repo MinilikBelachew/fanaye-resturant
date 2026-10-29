@@ -28,7 +28,17 @@ export type AdminTableLocation = {
     tables: AdminDiningTable[];
 };
 
+export type AdminFloorLayoutShift = {
+    id: string;
+    name: string;
+    startLocalTime: string;
+    endLocalTime: string;
+};
+
 export type AdminFloorLayoutResponse = {
     data: AdminTableLocation[];
     waiters: AdminWaiterOption[];
+    shifts?: AdminFloorLayoutShift[];
+    activeShiftId?: string | null;
+    selectedShiftId?: string | null;
 };

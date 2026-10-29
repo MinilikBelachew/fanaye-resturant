@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%">
+  <defs>
+    <linearGradient id="oilGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFD700" />
+      <stop offset="50%" stop-color="#FFE866" />
+      <stop offset="100%" stop-color="#E6B800" />
+    </linearGradient>
+    <linearGradient id="glassGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#E8F4F8" />
+      <stop offset="100%" stop-color="#CBE3EB" />
+    </linearGradient>
+  </defs>
+  <circle cx="64" cy="64" r="58" fill="#FFFCF0" />
+  <!-- Bottle Cap -->
+  <rect x="56" y="16" width="16" height="10" rx="2" fill="#E53E3E" />
+  <!-- Bottle Neck -->
+  <path d="M58 26 L70 26 L70 42 L78 52 L50 52 L58 42 Z" fill="url(#glassGrad)" stroke="#B8D0D8" stroke-width="1.5" />
+  <!-- Bottle Body -->
+  <rect x="46" y="52" width="36" height="58" rx="6" fill="url(#glassGrad)" stroke="#B8D0D8" stroke-width="1.5" />
+  <!-- Golden Oil Level -->
+  <rect x="48" y="60" width="32" height="48" rx="4" fill="url(#oilGrad)" />
+  <!-- Drop on label -->
+  <path d="M64 74 C64 74 60 80 60 84 C60 86.5 61.8 88.5 64 88.5 C66.2 88.5 68 86.5 68 84 C68 80 64 74 64 74 Z" fill="#D69E2E" />
+</svg>

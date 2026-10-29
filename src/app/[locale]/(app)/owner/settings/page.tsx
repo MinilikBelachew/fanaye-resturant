@@ -8,6 +8,7 @@ import {
     Globe,
     Loader2,
     Save,
+    Truck,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
@@ -61,12 +62,18 @@ export default function OwnerSettingsPage() {
     const [calendarMode, setCalendarMode] = useState<CalendarMode>(
         getSavedCalendarMode(),
     );
+    const [autoApproveSupplyRequests, setAutoApproveSupplyRequests] =
+        useState(false);
+    const [requireDriverForDispatch, setRequireDriverForDispatch] =
+        useState(false);
 
     useEffect(() => {
         if (!site) return;
         setTenantName(site.tenantName || "");
         setSlug(site.slug || "");
         setLogoUrl(site.theme?.logoUrl || "");
+        setAutoApproveSupplyRequests(Boolean(site.autoApproveSupplyRequests));
+        setRequireDriverForDispatch(Boolean(site.requireDriverForDispatch));
         if (
             site.calendarPreference === "GREGORIAN" ||
             site.calendarPreference === "ETHIOPIAN"
@@ -83,9 +90,20 @@ export default function OwnerSettingsPage() {
             tenantName.trim() !== (site.tenantName || "").trim() ||
             slug.trim() !== (site.slug || "").trim() ||
             (logoUrl || "") !== (site.theme?.logoUrl || "") ||
-            calendarMode !== (site.calendarPreference || "ETHIOPIAN")
+            calendarMode !== (site.calendarPreference || "ETHIOPIAN") ||
+            autoApproveSupplyRequests !==
+                Boolean(site.autoApproveSupplyRequests) ||
+            requireDriverForDispatch !== Boolean(site.requireDriverForDispatch)
         );
-    }, [site, tenantName, slug, logoUrl, calendarMode]);
+    }, [
+        site,
+        tenantName,
+        slug,
+        logoUrl,
+        calendarMode,
+        autoApproveSupplyRequests,
+        requireDriverForDispatch,
+    ]);
 
     async function onSave() {
         const name = tenantName.trim();
@@ -107,10 +125,18 @@ export default function OwnerSettingsPage() {
                     logoUrl: logoUrl || null,
                 },
                 calendarPreference: calendarMode,
+                autoApproveSupplyRequests,
+                requireDriverForDispatch,
             }).unwrap();
             setTenantName(result.data.tenantName);
             setSlug(result.data.slug);
             setLogoUrl(result.data.theme?.logoUrl || "");
+            setAutoApproveSupplyRequests(
+                Boolean(result.data.autoApproveSupplyRequests),
+            );
+            setRequireDriverForDispatch(
+                Boolean(result.data.requireDriverForDispatch),
+            );
             if (
                 result.data.calendarPreference === "GREGORIAN" ||
                 result.data.calendarPreference === "ETHIOPIAN"
@@ -327,6 +353,120 @@ export default function OwnerSettingsPage() {
                             <span className="text-[10px] text-slate-gray">
                                 Auto-synced across roster and shifts
                             </span>
+                        </div>
+                    </section>
+
+                    {/* Inventory Transfer & Fleet Approval Settings Card */}
+                    <section className="space-y-4 rounded-[16px] border border-hairline bg-card p-4 shadow-subtle sm:p-5">
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <h2 className="text-[14px] font-semibold tracking-tight text-foreground flex items-center gap-2">
+                                    <Truck className="size-4 text-primary" />
+                                    <span>
+                                        Branch Supply Requests & Fleet Transit
+                                    </span>
+                                </h2>
+                                <p className="text-[12px] text-slate-gray">
+                                    Configure auto-approval rules and driver
+                                    assignment requirements for inter-branch
+                                    inventory transfers.
+                                </p>
+                            </div>
+                            <Badge
+                                variant="outline"
+                                className="text-[10px] uppercase font-bold text-primary border-primary/30 bg-primary/5"
+                            >
+                                Transit Rules
+                            </Badge>
+                        </div>
+
+                        <div className="space-y-3 pt-1">
+                            {/* Toggle 1: Owner Approval Governance */}
+                            <div className="flex items-start justify-between gap-4 rounded-xl border border-hairline bg-surface-ivory/40 p-3.5 dark:bg-card/40">
+                                <div className="space-y-0.5">
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-[13px] font-semibold text-foreground">
+                                            Require Owner Approval for Supply
+                                            Requests
+                                        </p>
+                                        <span
+                                            className={cn(
+                                                "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                                                !autoApproveSupplyRequests
+                                                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                                                    : "bg-zinc-500/10 text-zinc-500 border border-zinc-500/20",
+                                            )}
+                                        >
+                                            {!autoApproveSupplyRequests
+                                                ? "Active (ON)"
+                                                : "Bypassed (OFF)"}
+                                        </span>
+                                    </div>
+                                    <p className="text-[12px] text-slate-gray leading-relaxed">
+                                        {!autoApproveSupplyRequests
+                                            ? "ON — Only the restaurant owner can approve or reject branch supply requests. Once approved, the central storekeeper can start preparing (PREPARING status). If rejected, the request cannot move forward."
+                                            : "OFF — Owner review is bypassed. Central storekeepers can immediately start preparing (PREPARING status) and dispatch stock to branches."}
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setAutoApproveSupplyRequests(v => !v)
+                                    }
+                                    className={cn(
+                                        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                                        !autoApproveSupplyRequests
+                                            ? "bg-emerald-600"
+                                            : "bg-zinc-300 dark:bg-zinc-700",
+                                    )}
+                                    title="Toggle Owner Approval requirement"
+                                >
+                                    <span
+                                        className={cn(
+                                            "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out",
+                                            !autoApproveSupplyRequests
+                                                ? "translate-x-5"
+                                                : "translate-x-0",
+                                        )}
+                                    />
+                                </button>
+                            </div>
+
+                            {/* Toggle 2: Require Driver */}
+                            <div className="flex items-start justify-between gap-4 rounded-xl border border-hairline bg-surface-ivory/40 p-3.5 dark:bg-card/40">
+                                <div className="space-y-0.5">
+                                    <p className="text-[13px] font-semibold text-foreground">
+                                        Require Driver Assignment for Dispatch
+                                    </p>
+                                    <p className="text-[12px] text-slate-gray leading-relaxed">
+                                        When enabled, shipments leaving the
+                                        central warehouse must have a registered
+                                        driver and vehicle licence plate
+                                        assigned before departure.
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setRequireDriverForDispatch(v => !v)
+                                    }
+                                    className={cn(
+                                        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                                        requireDriverForDispatch
+                                            ? "bg-emerald-600"
+                                            : "bg-zinc-300 dark:bg-zinc-700",
+                                    )}
+                                >
+                                    <span
+                                        className={cn(
+                                            "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out",
+                                            requireDriverForDispatch
+                                                ? "translate-x-5"
+                                                : "translate-x-0",
+                                        )}
+                                    />
+                                </button>
+                            </div>
                         </div>
                     </section>
                 </div>

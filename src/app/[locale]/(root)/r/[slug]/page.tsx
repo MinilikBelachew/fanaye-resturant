@@ -11,6 +11,7 @@ import {
     sitePuckConfig,
 } from "@/domains/site/puck/sitePuckConfig";
 import { SiteFontLoader } from "@/domains/site/puck/siteTypography";
+import SiteFeedbackWidget from "@/domains/feedback/ui/SiteFeedbackWidget";
 
 export default function PublicRestaurantSitePage({
     params,
@@ -102,6 +103,7 @@ export default function PublicRestaurantSitePage({
             >
                 <Render config={sitePuckConfig} data={site.data as Data} />
             </main>
+            <SiteFeedbackWidget slug={slug} />
         </SiteRenderContext.Provider>
     );
 }

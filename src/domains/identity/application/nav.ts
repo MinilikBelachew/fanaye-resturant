@@ -3,12 +3,15 @@ import {
     Activity,
     AlertTriangle,
     Banknote,
+    BarChart3,
     BedDouble,
     Bell,
     BookOpen,
+    Boxes,
     Building2,
     CalendarDays,
     CheckCircle2,
+    ChefHat,
     ClipboardCheck,
     Clock3,
     ConciergeBell,
@@ -20,6 +23,7 @@ import {
     Inbox,
     LayoutDashboard,
     LayoutGrid,
+    MessageSquareQuote,
     Package,
     Phone,
     QrCode,
@@ -27,6 +31,7 @@ import {
     ScrollText,
     Shield,
     Store,
+    Truck,
     UserRound,
     Users,
     UtensilsCrossed,
@@ -66,6 +71,11 @@ function stationQueueNav(home: string): NavSection[] {
         {
             title: "Station",
             items: [
+                {
+                    href: `${home}/materials`,
+                    label: "Returnable Materials",
+                    icon: Boxes,
+                },
                 {
                     href: `${home}/menu`,
                     label: "Station menu",
@@ -162,6 +172,16 @@ function navSectionsForRole(role: Role): NavSection[] {
                             icon: Activity,
                         },
                         {
+                            href: "/owner/outside",
+                            label: "Outside Orders",
+                            icon: Building2,
+                        },
+                        /* {
+                            href: "/owner/fresh-prep",
+                            label: "Fresh Prep",
+                            icon: ChefHat,
+                        }, */
+                        {
                             href: "/owner/notifications",
                             label: "Notifications",
                             icon: Bell,
@@ -170,6 +190,16 @@ function navSectionsForRole(role: Role): NavSection[] {
                             href: "/owner/website",
                             label: "Website",
                             icon: Globe,
+                        },
+                        {
+                            href: "/owner/feedback",
+                            label: "Feedback",
+                            icon: MessageSquareQuote,
+                        },
+                        {
+                            href: "/owner/menu-engineering",
+                            label: "Menu Engineering",
+                            icon: BarChart3,
                         },
                         {
                             href: "/owner/branches",
@@ -244,6 +274,38 @@ function navSectionsForRole(role: Role): NavSection[] {
                             href: "/owner/inventory",
                             label: "Inventory",
                             icon: Package,
+                            children: [
+                                {
+                                    href: "/owner/inventory/analytics",
+                                    label: "Analytics",
+                                    icon: BarChart3,
+                                },
+                                {
+                                    href: "/owner/inventory",
+                                    label: "Stock & Items",
+                                    icon: Boxes,
+                                },
+                                {
+                                    href: "/owner/inventory/materials",
+                                    label: "Materials",
+                                    icon: UtensilsCrossed,
+                                },
+                                {
+                                    href: "/owner/inventory/transfers",
+                                    label: "Branch Supply",
+                                    icon: Truck,
+                                },
+                                {
+                                    href: "/owner/inventory/receiving",
+                                    label: "Receiving & Audit",
+                                    icon: ClipboardCheck,
+                                },
+                                {
+                                    href: "/owner/inventory/prep",
+                                    label: "Central Prep",
+                                    icon: ChefHat,
+                                },
+                            ],
                         },
                         {
                             href: "/owner/settings",
@@ -268,6 +330,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                             label: "Live Operations",
                             icon: Activity,
                         },
+                        /* {
+                            href: "/manager/fresh-prep",
+                            label: "Fresh Prep",
+                            icon: ChefHat,
+                        }, */
                     ],
                 },
                 {
@@ -298,6 +365,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                                     label: "VIP Pricing",
                                     icon: Crown,
                                 },
+                                {
+                                    href: "/manager/menu-engineering",
+                                    label: "Menu Engineering",
+                                    icon: BarChart3,
+                                },
                             ],
                         },
                         {
@@ -309,6 +381,38 @@ function navSectionsForRole(role: Role): NavSection[] {
                             href: "/manager/inventory",
                             label: "Inventory",
                             icon: Package,
+                            children: [
+                                {
+                                    href: "/manager/inventory/analytics",
+                                    label: "Analytics",
+                                    icon: BarChart3,
+                                },
+                                {
+                                    href: "/manager/inventory",
+                                    label: "Stock & Items",
+                                    icon: Boxes,
+                                },
+                                {
+                                    href: "/manager/inventory/materials",
+                                    label: "Materials",
+                                    icon: UtensilsCrossed,
+                                },
+                                {
+                                    href: "/manager/inventory/transfers",
+                                    label: "Branch Supply",
+                                    icon: Truck,
+                                },
+                                {
+                                    href: "/manager/inventory/receiving",
+                                    label: "Receiving & Audit",
+                                    icon: ClipboardCheck,
+                                },
+                                {
+                                    href: "/manager/inventory/prep",
+                                    label: "Central Prep",
+                                    icon: ChefHat,
+                                },
+                            ],
                         },
                         {
                             href: "/manager/tables",
@@ -319,6 +423,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                             href: "/manager/rooms",
                             label: "Rooms",
                             icon: BedDouble,
+                        },
+                        {
+                            href: "/manager/outside",
+                            label: "Outside Orders",
+                            icon: Building2,
                         },
                         {
                             href: "/manager/front-desk",
@@ -393,6 +502,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                             href: "/manager/website",
                             label: "Website",
                             icon: Globe,
+                        },
+                        {
+                            href: "/manager/feedback",
+                            label: "Feedback",
+                            icon: MessageSquareQuote,
                         },
                     ],
                 },
@@ -511,6 +625,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                             icon: BedDouble,
                         },
                         {
+                            href: "/waiter/outside",
+                            label: "Outside",
+                            icon: Building2,
+                        },
+                        {
                             href: "/waiter/ready",
                             label: "Ready",
                             icon: CheckCircle2,
@@ -605,6 +724,38 @@ function navSectionsForRole(role: Role): NavSection[] {
                             href: "/store/inventory",
                             label: "Inventory",
                             icon: Package,
+                            children: [
+                                {
+                                    href: "/store/inventory/analytics",
+                                    label: "Analytics",
+                                    icon: BarChart3,
+                                },
+                                {
+                                    href: "/store/inventory",
+                                    label: "Stock & Items",
+                                    icon: Boxes,
+                                },
+                                {
+                                    href: "/store/inventory/materials",
+                                    label: "Materials",
+                                    icon: UtensilsCrossed,
+                                },
+                                {
+                                    href: "/store/inventory/transfers",
+                                    label: "Branch Supply",
+                                    icon: Truck,
+                                },
+                                {
+                                    href: "/store/inventory/receiving",
+                                    label: "Receiving & Audit",
+                                    icon: ClipboardCheck,
+                                },
+                                {
+                                    href: "/store/inventory/prep",
+                                    label: "Central Prep",
+                                    icon: ChefHat,
+                                },
+                            ],
                         },
                         {
                             href: "/store/notifications",
@@ -628,6 +779,19 @@ function navSectionsForRole(role: Role): NavSection[] {
                             href: "/receptionist",
                             label: "In house",
                             icon: ConciergeBell,
+                        },
+                    ],
+                },
+            ];
+        case "driver":
+            return [
+                {
+                    title: "Driver",
+                    items: [
+                        {
+                            href: "/driver",
+                            label: "Shipments & Transfers",
+                            icon: Truck,
                         },
                     ],
                 },

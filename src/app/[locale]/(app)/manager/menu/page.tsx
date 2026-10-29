@@ -12,12 +12,14 @@ import {
     ScanLine,
     Search,
     Table as TableIcon,
+    Trash2,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import {
     useAdminMenuItemsQuery,
     useAdminMenuMetaQuery,
     useClearMenuItemSoldOutMutation,
+    useDeleteAdminMenuItemMutation,
     useMarkMenuItemSoldOutMutation,
 } from "@/context/services/menuApi";
 import { adminMenuItemToCatalog } from "@/domains/catalog/application/mapAdminMenu";
@@ -48,6 +50,7 @@ export default function ManagerMenuPage() {
     const [scanSheetOpen, setScanSheetOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
     const [detailItem, setDetailItem] = useState<MenuItem | null>(null);
+    const [deletingItem, setDeletingItem] = useState<MenuItem | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedStation, setSelectedStation] = useState<string>("all");
     const deferredSearch = useDeferredValue(searchQuery.trim());
@@ -61,6 +64,7 @@ export default function ManagerMenuPage() {
     );
     const [markSoldOut] = useMarkMenuItemSoldOutMutation();
     const [clearSoldOut] = useClearMenuItemSoldOutMutation();
+    const [deleteMenuItem] = useDeleteAdminMenuItemMutation();
 
     const stations = metaData?.data.stations ?? [];
     const menuItems = useMemo(
@@ -107,6 +111,16 @@ export default function ManagerMenuPage() {
             await markSoldOut({ id: item.id });
         } else {
             await clearSoldOut({ id: item.id });
+        }
+    }
+
+    async function handleDeleteMenuItem(item: MenuItem) {
+        try {
+            await deleteMenuItem({ id: item.id }).unwrap();
+            setDeletingItem(null);
+            setDetailItem(null);
+        } catch (error) {
+            console.error("Failed to delete menu item:", error);
         }
     }
 
@@ -205,6 +219,14 @@ export default function ManagerMenuPage() {
                             onClick={() => handleOpenEdit(row)}
                         >
                             <Edit3 className="size-3.5" />
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => setDeletingItem(row)}
+                        >
+                            <Trash2 className="size-3.5" />
                         </Button>
                     </div>
                 ),
@@ -440,6 +462,17 @@ export default function ManagerMenuPage() {
                                             <Edit3 className="size-3.5" />
                                             {t("edit")}
                                         </button>
+                                        <button
+                                            type="button"
+                                            onClick={e => {
+                                                e.stopPropagation();
+                                                setDeletingItem(item);
+                                            }}
+                                            className="flex items-center gap-1 text-[12px] font-medium text-rose-400 hover:text-rose-300 hover:underline"
+                                        >
+                                            <Trash2 className="size-3.5" />
+                                            {t("delete")}
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -500,10 +533,48 @@ export default function ManagerMenuPage() {
                     setDetailItem(null);
                     handleOpenEdit(item);
                 }}
+                onDelete={item => {
+                    setDeletingItem(item);
+                }}
                 onToggleAvailability={item => {
                     void handleToggleAvailability(item);
                 }}
             />
+
+            {/* Confirmation Modal for Delete */}
+            {deletingItem ? (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-[2px]">
+                    <div className="w-full max-w-sm space-y-4 rounded-2xl border border-hairline bg-card p-5 shadow-xl animate-in fade-in zoom-in duration-200">
+                        <div>
+                            <h3 className="text-[15px] font-semibold text-foreground">
+                                {t("deleteMenuItem")}
+                            </h3>
+                            <p className="mt-2 text-[13px] leading-relaxed text-slate-gray">
+                                {t("deleteConfirmBody", {
+                                    name: deletingItem.name,
+                                })}
+                            </p>
+                        </div>
+                        <div className="flex justify-end gap-2 pt-2">
+                            <Button
+                                variant="ghost"
+                                onClick={() => setDeletingItem(null)}
+                                className="h-9 rounded-lg text-[13px]"
+                            >
+                                {t("cancel")}
+                            </Button>
+                            <Button
+                                onClick={() =>
+                                    void handleDeleteMenuItem(deletingItem)
+                                }
+                                className="h-9 rounded-lg bg-rose-600 px-5 text-[13px] text-white hover:bg-rose-700"
+                            >
+                                {t("delete")}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
         </DashboardFrame>
     );
 }

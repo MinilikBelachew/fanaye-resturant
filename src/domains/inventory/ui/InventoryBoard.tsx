@@ -7,7 +7,6 @@ import {
     useCreateInventoryIngredientMutation,
     useCreateMainWarehouseMutation,
     useDeleteInventoryIngredientMutation,
-    useDisableMainWarehouseMutation,
     useGetInventoryNetworkStatusQuery,
     useListInventoryBalancesQuery,
     useListInventoryCountsQuery,
@@ -15,6 +14,7 @@ import {
     useListInventoryLedgerQuery,
     useListInventoryLocationsQuery,
     useListInventoryUnitsQuery,
+    useListInventoryCategoriesQuery,
     usePostInventoryCountMutation,
     useReceiveInventoryStockMutation,
     useStartInventoryCountMutation,
@@ -27,6 +27,7 @@ import {
     usePostYieldTestMutation,
     useUpdateYieldTestMutation,
     useDeleteYieldTestMutation,
+    useListSupplyRequestsQuery,
     type InventoryIngredient,
     type InventoryItemKind,
     type InventoryLocation,
@@ -54,6 +55,7 @@ const LEDGER_FILTER_OPTIONS = [
 ] as const;
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import InventoryProductionPanel from "@/domains/inventory/ui/InventoryProductionPanel";
+import InventoryMaterialsPanel from "@/domains/inventory/ui/InventoryMaterialsPanel";
 import {
     MySupplyRequestsPanel,
     PendingSupplyPanel,
@@ -69,10 +71,38 @@ import {
     PrimaryActionButton,
     parsePositiveQty,
 } from "@/domains/inventory/ui/InventoryFormControls";
+import {
+    ItemImagePicker,
+    ItemThumbnail,
+} from "@/domains/inventory/ui/ItemImagePicker";
+import { CategoryManagerModal } from "@/domains/inventory/ui/CategoryManagerModal";
+import { UnitManagerModal } from "@/domains/inventory/ui/UnitManagerModal";
+import { VendorManagerSheet } from "@/domains/inventory/ui/VendorManagerSheet";
+import { DriverManagementModal } from "@/domains/inventory/ui/DriverManagementModal";
+import { InventoryCategoriesPanel } from "@/domains/inventory/ui/InventoryCategoriesPanel";
+import { InventoryUnitsPanel } from "@/domains/inventory/ui/InventoryUnitsPanel";
+import { InventoryVendorsPanel } from "@/domains/inventory/ui/InventoryVendorsPanel";
+import { InventoryDriversPanel } from "@/domains/inventory/ui/InventoryDriversPanel";
+import { ReceiveStockSheet } from "@/domains/inventory/ui/ReceiveStockSheet";
+import { ReceiveHistoryView } from "@/domains/inventory/ui/ReceiveHistoryView";
+import { UnitPicker } from "@/domains/inventory/ui/UnitPicker";
+import type { InventoryPreset } from "@/domains/inventory/application/inventoryPresets";
 import { formatEtb, formatQty } from "@/lib/money";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
-import { Loader2, Pencil, Trash2 } from "lucide-react";
+import {
+    Boxes,
+    ChefHat,
+    ClipboardCheck,
+    Loader2,
+    Pencil,
+    Ruler,
+    Store,
+    Tag,
+    Trash2,
+    Truck,
+    X,
+} from "lucide-react";
 
 type ConfirmDialogState = {
     title: string;
@@ -85,11 +115,16 @@ type ConfirmDialogState = {
 type Tab =
     | "stock"
     | "ingredients"
+    | "materials"
+    | "ledger"
+    | "categories"
+    | "units"
+    | "vendors"
+    | "drivers"
     | "receive"
     | "waste"
     | "yield"
     | "counts"
-    | "ledger"
     | "send"
     | "incoming"
     | "outgoing"
@@ -98,7 +133,23 @@ type Tab =
     | "pending-supply"
     | "my-requests";
 
-export default function InventoryBoard() {
+type InventoryCategory =
+    | "stock_items"
+    | "branch_supply"
+    | "receiving_audit"
+    | "central_prep";
+
+interface CategoryMeta {
+    id: InventoryCategory;
+    label: string;
+    hint: string;
+    icon: typeof Boxes;
+    tabs: Tab[];
+}
+
+export default function InventoryBoard({
+    initialTab,
+}: { initialTab?: Tab } = {}) {
     const t = useTranslations("inventory");
     const router = useRouter();
     const pathname = usePathname();
@@ -118,10 +169,21 @@ export default function InventoryBoard() {
         if (cleaned.includes("/store/")) return "/store/inventory";
         return "/owner/inventory";
     }, [pathname]);
-    const [tab, setTab] = useState<Tab>("stock");
+    const [tab, setTab] = useState<Tab>(initialTab || "stock");
+
+    useEffect(() => {
+        if (initialTab) {
+            setTab(initialTab);
+        }
+    }, [initialTab]);
     const [q, setQ] = useState("");
     const [page, setPage] = useState(1);
     const [lowStockOnly, setLowStockOnly] = useState(false);
+    const [selectedCategoryId, setSelectedCategoryId] = useState("");
+    const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+    const [unitModalOpen, setUnitModalOpen] = useState(false);
+    const [vendorModalOpen, setVendorModalOpen] = useState(false);
+    const [driverModalOpen, setDriverModalOpen] = useState(false);
     const [ledgerType, setLedgerType] = useState("");
     const [activeCountId, setActiveCountId] = useState<string | null>(null);
     const [locationId, setLocationId] = useState("");
@@ -137,6 +199,8 @@ export default function InventoryBoard() {
         itemKind: "RAW" as InventoryItemKind,
         unitCost: "",
         parLevel: "",
+        imageUrl: "",
+        categoryId: "",
     });
     const [confirmDialog, setConfirmDialog] =
         useState<ConfirmDialogState | null>(null);
@@ -157,6 +221,8 @@ export default function InventoryBoard() {
 
     const { data: unitsRes } = useListInventoryUnitsQuery();
     const unitOptions = unitsRes?.data ?? [];
+    const { data: categoriesRes } = useListInventoryCategoriesQuery();
+    const dbCategories = categoriesRes?.data ?? [];
     const { data: networkRes } = useGetInventoryNetworkStatusQuery();
     const { data: locationsRes } = useListInventoryLocationsQuery();
     const network = networkRes?.data;
@@ -167,8 +233,6 @@ export default function InventoryBoard() {
         (staff?.role === "owner" || staff?.role === "store_manager");
     const canManageLocations = network?.canManageLocations ?? canOperateCentral;
     const canEnableMain = network?.canEnableMain ?? canOperateCentral;
-    const canDisableMain =
-        network?.canDisableMain ?? (canOperateCentral && isNetwork);
     const isBranchScoped = !canOperateCentral;
     const mainLocation =
         locations.find(l => l.type === "MAIN_WAREHOUSE") ??
@@ -201,40 +265,196 @@ export default function InventoryBoard() {
             locationId !== myBranchStore.id
         ) {
             setLocationId(myBranchStore.id);
+        } else if (
+            canOperateCentral &&
+            mainLocation &&
+            (!locationId || locationId === "")
+        ) {
+            setLocationId(mainLocation.id);
         }
-    }, [isBranchScoped, myBranchStore, locationId]);
+    }, [
+        isBranchScoped,
+        myBranchStore,
+        canOperateCentral,
+        mainLocation,
+        locationId,
+    ]);
 
-    const tabs: { id: Tab; label: string }[] = useMemo(() => {
-        const base: { id: Tab; label: string }[] = [
-            { id: "stock", label: t("tabs.stock") },
-            { id: "ingredients", label: t("tabs.ingredients") },
-            { id: "receive", label: t("tabs.receive") },
-            { id: "waste", label: t("tabs.waste") },
-            { id: "yield", label: t("tabs.yield") },
-            { id: "counts", label: t("tabs.counts") },
-            { id: "ledger", label: t("tabs.ledger") },
-        ];
-        if (!isNetwork) return base;
-        if (canOperateCentral) {
+    const tabs: { id: Tab; label: string; icon?: any; iconColor?: string }[] =
+        useMemo(() => {
+            const base: {
+                id: Tab;
+                label: string;
+                icon?: any;
+                iconColor?: string;
+            }[] = [
+                { id: "stock", label: t("tabs.stock") },
+                { id: "ingredients", label: t("tabs.ingredients") },
+                {
+                    id: "materials",
+                    label: "Materials",
+                    icon: Boxes,
+                    iconColor: "text-amber-600 dark:text-amber-400",
+                },
+                { id: "ledger", label: t("tabs.ledger") },
+                {
+                    id: "categories",
+                    label: t("tabs.categories"),
+                    icon: Tag,
+                    iconColor: "text-emerald-600 dark:text-emerald-400",
+                },
+                {
+                    id: "units",
+                    label: t("tabs.units"),
+                    icon: Ruler,
+                    iconColor: "text-sky-600 dark:text-sky-400",
+                },
+                {
+                    id: "vendors",
+                    label: t("tabs.vendors"),
+                    icon: Store,
+                    iconColor: "text-emerald-600 dark:text-emerald-400",
+                },
+                ...(canOperateCentral
+                    ? [
+                          {
+                              id: "drivers" as Tab,
+                              label: t("tabs.drivers"),
+                              icon: Truck,
+                              iconColor: "text-amber-600 dark:text-amber-400",
+                          },
+                      ]
+                    : []),
+                { id: "receive", label: t("tabs.receive") },
+                { id: "waste", label: t("tabs.waste") },
+                { id: "yield", label: t("tabs.yield") },
+                { id: "counts", label: t("tabs.counts") },
+            ];
+            if (!isNetwork) return base;
+            if (canOperateCentral) {
+                return [
+                    ...base,
+                    { id: "produce", label: t("tabs.produce") },
+                    { id: "send", label: t("tabs.send") },
+                    { id: "request", label: t("tabs.request") },
+                    { id: "pending-supply", label: t("tabs.pendingSupply") },
+                    { id: "my-requests", label: t("tabs.myRequests") },
+                    { id: "outgoing", label: t("tabs.outgoing") },
+                ];
+            }
             return [
                 ...base,
                 { id: "produce", label: t("tabs.produce") },
-                { id: "send", label: t("tabs.send") },
                 { id: "request", label: t("tabs.request") },
-                { id: "pending-supply", label: t("tabs.pendingSupply") },
                 { id: "my-requests", label: t("tabs.myRequests") },
                 { id: "incoming", label: t("tabs.incoming") },
-                { id: "outgoing", label: t("tabs.outgoing") },
             ];
-        }
-        return [
-            ...base,
-            { id: "produce", label: t("tabs.produce") },
-            { id: "request", label: t("tabs.request") },
-            { id: "my-requests", label: t("tabs.myRequests") },
-            { id: "incoming", label: t("tabs.incoming") },
+        }, [t, isNetwork, canOperateCentral]);
+
+    const categories: CategoryMeta[] = useMemo(() => {
+        const branchSupplyTabs: Tab[] = canOperateCentral
+            ? ["pending-supply", "send", "outgoing"]
+            : ["request", "my-requests", "incoming"];
+
+        const centralPrepTabs: Tab[] = ["produce", "yield"];
+
+        const allCats: CategoryMeta[] = [
+            {
+                id: "stock_items",
+                label: t("categories.stockItems"),
+                hint: t("categoryHints.stockItems"),
+                icon: Boxes,
+                tabs: [
+                    "stock",
+                    "ingredients",
+                    "materials",
+                    "ledger",
+                    "categories",
+                    "units",
+                    "vendors",
+                    ...(canOperateCentral ? (["drivers"] as Tab[]) : []),
+                ],
+            },
+            {
+                id: "branch_supply",
+                label: t("categories.branchSupply"),
+                hint: t("categoryHints.branchSupply"),
+                icon: Truck,
+                tabs: isNetwork ? branchSupplyTabs : [],
+            },
+            {
+                id: "receiving_audit",
+                label: t("categories.receivingAudit"),
+                hint: t("categoryHints.receivingAudit"),
+                icon: ClipboardCheck,
+                tabs: ["receive", "counts", "waste"],
+            },
+            {
+                id: "central_prep",
+                label: t("categories.centralPrep"),
+                hint: t("categoryHints.centralPrep"),
+                icon: ChefHat,
+                tabs: centralPrepTabs,
+            },
         ];
-    }, [t, isNetwork, canOperateCentral]);
+
+        return allCats.filter(cat => cat.tabs.length > 0);
+    }, [canOperateCentral, isNetwork, t]);
+
+    const routeCategory = useMemo<InventoryCategory>(() => {
+        if (pathname.includes("/inventory/materials")) return "stock_items";
+        if (pathname.includes("/inventory/transfers")) return "branch_supply";
+        if (pathname.includes("/inventory/receiving")) return "receiving_audit";
+        if (pathname.includes("/inventory/prep")) return "central_prep";
+        return "stock_items";
+    }, [pathname]);
+
+    const activeCategory = useMemo<InventoryCategory>(() => {
+        const found = categories.find(cat => cat.tabs.includes(tab));
+        return found ? found.id : routeCategory;
+    }, [categories, tab, routeCategory]);
+
+    useEffect(() => {
+        const targetCategory = categories.find(c => c.id === routeCategory);
+        if (targetCategory && !targetCategory.tabs.includes(tab)) {
+            setTab(targetCategory.tabs[0]);
+            setPage(1);
+            setActiveCountId(null);
+        }
+    }, [routeCategory, categories]);
+
+    const currentCategoryTabs = useMemo(() => {
+        const current = categories.find(c => c.id === activeCategory);
+        if (!current) return [];
+        return current.tabs.map(tabId => {
+            const found = tabs.find(item => item.id === tabId);
+            return {
+                id: tabId,
+                label: found ? found.label : tabId,
+                icon: found?.icon,
+                iconColor: found?.iconColor,
+            };
+        });
+    }, [categories, activeCategory, tabs]);
+
+    function selectCategory(catId: InventoryCategory) {
+        const targetCategory = categories.find(c => c.id === catId);
+        if (!targetCategory || targetCategory.tabs.length === 0) return;
+
+        let targetSlug = "";
+        if (catId === "branch_supply") targetSlug = "/transfers";
+        else if (catId === "receiving_audit") targetSlug = "/receiving";
+        else if (catId === "central_prep") targetSlug = "/prep";
+
+        const targetPath = `${inventoryBasePath}${targetSlug}`;
+        if (pathname !== targetPath) {
+            router.push(targetPath);
+        } else if (!targetCategory.tabs.includes(tab)) {
+            setTab(targetCategory.tabs[0]);
+            setPage(1);
+            setActiveCountId(null);
+        }
+    }
 
     useEffect(() => {
         if (!tabs.some(item => item.id === tab)) {
@@ -247,11 +467,20 @@ export default function InventoryBoard() {
             page,
             limit: 25,
             q: q.trim() || undefined,
+            ...(selectedCategoryId ? { categoryId: selectedCategoryId } : {}),
             ...(tab === "stock" && lowStockOnly ? { lowStock: "true" } : {}),
             ...(tab === "ledger" && ledgerType ? { type: ledgerType } : {}),
             ...(locationId ? { locationId } : {}),
         }),
-        [page, q, tab, lowStockOnly, ledgerType, locationId],
+        [
+            page,
+            q,
+            tab,
+            lowStockOnly,
+            ledgerType,
+            locationId,
+            selectedCategoryId,
+        ],
     );
 
     const balances = useListInventoryBalancesQuery(listParams, {
@@ -298,6 +527,22 @@ export default function InventoryBoard() {
     const countDetail = useGetInventoryCountQuery(activeCountId ?? "", {
         skip: !activeCountId,
     });
+    const pendingSupply = useListSupplyRequestsQuery(
+        { page: 1, limit: 1, direction: "pending" },
+        { skip: !isNetwork || !canOperateCentral },
+    );
+    const pendingSupplyCount = pendingSupply.data?.meta?.total ?? 0;
+
+    function getTabBadge(tabId: Tab): number | undefined {
+        if (tabId === "stock") return tabCounts.data?.summary?.skuCount;
+        if (tabId === "ingredients") return ingredientCount.data?.meta?.total;
+        if (tabId === "ledger") return ledgerCount.data?.meta?.total;
+        if (tabId === "counts") return countsMeta.data?.meta?.total;
+        if (tabId === "pending-supply") {
+            return pendingSupplyCount > 0 ? pendingSupplyCount : undefined;
+        }
+        return undefined;
+    }
 
     const [createIngredient, creating] = useCreateInventoryIngredientMutation();
     const [updateIngredient, updatingIngredient] =
@@ -306,8 +551,6 @@ export default function InventoryBoard() {
         useDeleteInventoryIngredientMutation();
     const [createMainWarehouse, enablingMain] =
         useCreateMainWarehouseMutation();
-    const [disableMainWarehouse, disablingMain] =
-        useDisableMainWarehouseMutation();
     const [updateLocation, updatingLocation] =
         useUpdateInventoryLocationMutation();
     const [receiveStock, receiving] = useReceiveInventoryStockMutation();
@@ -327,6 +570,8 @@ export default function InventoryBoard() {
         unitCost: "",
         parLevel: "",
         initialQty: "",
+        imageUrl: "",
+        categoryId: "",
     });
     const [receiveForm, setReceiveForm] = useState({
         ingredientId: "",
@@ -338,6 +583,7 @@ export default function InventoryBoard() {
     const [wasteForm, setWasteForm] = useState({
         ingredientId: "",
         quantity: "",
+        unit: "",
         note: "",
     });
     const [yieldTried, setYieldTried] = useState(false);
@@ -345,10 +591,13 @@ export default function InventoryBoard() {
         ingredientId: "",
         purchasedQuantity: "",
         usableQuantity: "",
+        unit: "",
         writeOffTrim: true,
         note: "",
     });
     const [countEdits, setCountEdits] = useState<Record<string, string>>({});
+    const [countUnits, setCountUnits] = useState<Record<string, string>>({});
+    const [receiveSheetOpen, setReceiveSheetOpen] = useState(false);
 
     function resetPageOnSearch(value: string) {
         setQ(value);
@@ -365,6 +614,10 @@ export default function InventoryBoard() {
                 unitCost: Number(ingForm.unitCost) || 0,
                 parLevel: Number(ingForm.parLevel) || 0,
                 initialQty: Number(ingForm.initialQty) || 0,
+                imageUrl: ingForm.imageUrl
+                    ? ingForm.imageUrl.trim()
+                    : undefined,
+                categoryId: ingForm.categoryId || undefined,
                 ...(locationId ? { locationId } : {}),
             }).unwrap();
             toast.success(t("toastIngredientCreated"), ingForm.name.trim());
@@ -375,6 +628,8 @@ export default function InventoryBoard() {
                 unitCost: "",
                 parLevel: "",
                 initialQty: "",
+                imageUrl: "",
+                categoryId: "",
             });
         } catch (err) {
             toast.fromUnknown(err, t("errCreateIngredient"));
@@ -396,20 +651,6 @@ export default function InventoryBoard() {
         }
     }
 
-    function askDisableMainWarehouse() {
-        setConfirmDialog({
-            title: t("disableMainTitle"),
-            body: t("disableMainConfirm"),
-            confirmLabel: t("disableMainAction"),
-            danger: true,
-            onConfirm: async () => {
-                await disableMainWarehouse().unwrap();
-                selectStockLocation("");
-                toast.success(t("toastMainDisabled"));
-            },
-        });
-    }
-
     function openEditIngredient(row: InventoryIngredient) {
         setEditingIngredient(row);
         setEditIngForm({
@@ -418,6 +659,8 @@ export default function InventoryBoard() {
             itemKind: (row.itemKind as InventoryItemKind) || "RAW",
             unitCost: String(row.unitCost ?? ""),
             parLevel: String(row.parLevel ?? ""),
+            imageUrl: row.imageUrl || "",
+            categoryId: row.categoryId || "",
         });
     }
 
@@ -433,6 +676,10 @@ export default function InventoryBoard() {
                     itemKind: editIngForm.itemKind,
                     unitCost: Number(editIngForm.unitCost) || 0,
                     parLevel: Number(editIngForm.parLevel) || 0,
+                    imageUrl: editIngForm.imageUrl
+                        ? editIngForm.imageUrl.trim()
+                        : null,
+                    categoryId: editIngForm.categoryId || null,
                 },
             }).unwrap();
             toast.success(t("toastIngredientUpdated"));
@@ -548,10 +795,16 @@ export default function InventoryBoard() {
             await wasteStock({
                 ingredientId: wasteForm.ingredientId,
                 quantity: qty,
+                ...(wasteForm.unit ? { unit: wasteForm.unit } : {}),
                 note: wasteForm.note || undefined,
             }).unwrap();
             toast.success(t("toastWasteLogged"));
-            setWasteForm({ ingredientId: "", quantity: "", note: "" });
+            setWasteForm({
+                ingredientId: "",
+                quantity: "",
+                unit: "",
+                note: "",
+            });
             setWasteTried(false);
         } catch (err) {
             toast.fromUnknown(err, t("errWaste"));
@@ -563,6 +816,7 @@ export default function InventoryBoard() {
             ingredientId: "",
             purchasedQuantity: "",
             usableQuantity: "",
+            unit: "",
             writeOffTrim: true,
             note: "",
         });
@@ -576,6 +830,7 @@ export default function InventoryBoard() {
             ingredientId: row.ingredient.id,
             purchasedQuantity: String(row.purchasedQuantity),
             usableQuantity: String(row.usableQuantity),
+            unit: row.unit ?? row.ingredient.unit,
             writeOffTrim: false,
             note: row.note ?? "",
         });
@@ -645,6 +900,7 @@ export default function InventoryBoard() {
                         body: {
                             purchasedQuantity: purchased,
                             usableQuantity: usable,
+                            ...(yieldForm.unit ? { unit: yieldForm.unit } : {}),
                             note: yieldForm.note || null,
                         },
                     }).unwrap();
@@ -661,6 +917,7 @@ export default function InventoryBoard() {
                         ingredientId: yieldForm.ingredientId,
                         purchasedQuantity: purchased,
                         usableQuantity: usable,
+                        ...(yieldForm.unit ? { unit: yieldForm.unit } : {}),
                         ...(locationId ? { locationId } : {}),
                         writeOffTrim: yieldForm.writeOffTrim,
                         note: yieldForm.note || undefined,
@@ -697,14 +954,20 @@ export default function InventoryBoard() {
                     countEdits[line.ingredientId] ??
                     (line.countedQty != null ? String(line.countedQty) : "");
                 if (raw === "") return null;
+                const unit =
+                    countUnits[line.ingredientId] ??
+                    line.countedUnit ??
+                    line.unit;
                 return {
                     ingredientId: line.ingredientId,
                     countedQty: Number(raw),
+                    ...(unit && unit !== line.unit ? { unit } : {}),
                 };
             })
             .filter(Boolean) as Array<{
             ingredientId: string;
             countedQty: number;
+            unit?: string;
         }>;
         try {
             await updateLines({ id: activeCountId, lines }).unwrap();
@@ -722,6 +985,7 @@ export default function InventoryBoard() {
             toast.success(t("toastCountPosted"));
             setActiveCountId(null);
             setCountEdits({});
+            setCountUnits({});
         } catch (err) {
             toast.fromUnknown(err, t("errPostCount"));
         }
@@ -775,196 +1039,88 @@ export default function InventoryBoard() {
     return (
         <div className="space-y-4">
             {network ? (
-                <div className="flex flex-wrap items-stretch justify-between gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-hairline bg-card/40 p-2">
                     {isBranchScoped && myBranchStore ? (
-                        <div className="rounded-xl border border-hairline bg-card px-4 py-3">
-                            <p className="text-[14px] font-semibold text-foreground">
+                        <div className="inline-flex items-center gap-2 rounded-lg border border-hairline bg-card px-3 py-1.5 text-[12px] shadow-2xs">
+                            <span className="size-2 rounded-full bg-emerald-500" />
+                            <span className="font-semibold text-foreground">
                                 {myBranchStore.branch?.name ??
                                     myBranchStore.name}
-                            </p>
-                            <p className="mt-0.5 text-[11px] text-slate-gray">
+                            </span>
+                            <span className="text-[11px] text-slate-gray">
                                 {t("storeCardBranchBadge")}
-                            </p>
+                            </span>
                         </div>
                     ) : null}
 
                     {!isBranchScoped ? (
-                        <div className="flex min-w-0 flex-1 flex-wrap gap-2.5">
-                            {isNetwork ? (
-                                <button
-                                    type="button"
-                                    onClick={() => selectStockLocation("")}
-                                    className={cn(
-                                        "min-w-[7.5rem] rounded-xl border px-4 py-3 text-left transition-colors",
-                                        locationId === ""
-                                            ? "border-foreground bg-foreground text-background"
-                                            : "border-hairline bg-card text-foreground hover:border-foreground/25",
-                                    )}
-                                >
-                                    <p className="text-[14px] font-semibold">
-                                        {t("allLocations")}
-                                    </p>
-                                    <p
-                                        className={cn(
-                                            "mt-0.5 text-[11px]",
-                                            locationId === ""
-                                                ? "text-background/70"
-                                                : "text-slate-gray",
-                                        )}
-                                    >
-                                        {t("storeCardAllHint")}
-                                    </p>
-                                </button>
-                            ) : null}
-
+                        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
                             {isNetwork && mainLocation ? (
                                 <div
                                     className={cn(
-                                        "flex min-w-[10rem] items-stretch gap-1 rounded-xl border transition-colors",
+                                        "group inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] transition-all",
                                         locationId === mainLocation.id
-                                            ? "border-foreground bg-foreground text-background"
-                                            : "border-hairline bg-card text-foreground",
+                                            ? "border border-hairline bg-card text-foreground font-semibold shadow-xs ring-1 ring-black/5 dark:ring-white/10"
+                                            : "text-slate-gray hover:bg-card/60 hover:text-foreground",
                                     )}
                                 >
                                     <button
                                         type="button"
-                                        className="min-w-0 flex-1 px-4 py-3 text-left"
+                                        className="inline-flex items-center gap-1.5"
                                         onClick={() =>
                                             selectStockLocation(mainLocation.id)
                                         }
                                     >
-                                        <p className="truncate text-[14px] font-semibold">
-                                            {mainLocation.name}
-                                        </p>
-                                        <p
+                                        <span>{mainLocation.name}</span>
+                                        <span
                                             className={cn(
-                                                "mt-0.5 text-[11px]",
+                                                "rounded px-1.5 py-0.2 text-[10px] font-medium leading-tight",
                                                 locationId === mainLocation.id
-                                                    ? "text-background/70"
-                                                    : "text-slate-gray",
+                                                    ? "bg-emerald-600/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400"
+                                                    : "bg-secondary text-slate-gray",
                                             )}
                                         >
                                             {t("storeCardMainBadge")}
-                                        </p>
+                                        </span>
                                     </button>
                                     {canManageLocations ? (
                                         <button
                                             type="button"
                                             aria-label={t("editStore")}
-                                            className={cn(
-                                                "shrink-0 self-stretch px-3 transition-colors",
-                                                locationId === mainLocation.id
-                                                    ? "text-background/80 hover:bg-white/10 hover:text-background"
-                                                    : "text-slate-gray hover:bg-secondary hover:text-foreground",
-                                            )}
+                                            className="opacity-0 transition-opacity group-hover:opacity-100 text-slate-gray hover:text-foreground"
                                             onClick={() =>
                                                 openEditLocation(mainLocation)
                                             }
                                         >
-                                            <Pencil className="size-4" />
+                                            <Pencil className="size-3" />
                                         </button>
                                     ) : null}
                                 </div>
                             ) : null}
-
-                            {branchStores.map(loc => {
-                                const selected = locationId === loc.id;
-                                return (
-                                    <div
-                                        key={loc.id}
-                                        className={cn(
-                                            "flex min-w-[10rem] items-stretch gap-1 rounded-xl border transition-colors",
-                                            selected
-                                                ? "border-foreground bg-foreground text-background"
-                                                : "border-hairline bg-card text-foreground",
-                                        )}
-                                    >
-                                        <button
-                                            type="button"
-                                            className="min-w-0 flex-1 px-4 py-3 text-left"
-                                            onClick={() =>
-                                                selectStockLocation(loc.id)
-                                            }
-                                        >
-                                            <p className="truncate text-[14px] font-semibold">
-                                                {loc.branch?.name ?? loc.name}
-                                            </p>
-                                            <p
-                                                className={cn(
-                                                    "mt-0.5 text-[11px]",
-                                                    selected
-                                                        ? "text-background/70"
-                                                        : "text-slate-gray",
-                                                )}
-                                            >
-                                                {t("storeCardBranchBadge")}
-                                            </p>
-                                        </button>
-                                        {canManageLocations ? (
-                                            <button
-                                                type="button"
-                                                aria-label={t("editStore")}
-                                                className={cn(
-                                                    "shrink-0 self-stretch px-3 transition-colors",
-                                                    selected
-                                                        ? "text-background/80 hover:bg-white/10 hover:text-background"
-                                                        : "text-slate-gray hover:bg-secondary hover:text-foreground",
-                                                )}
-                                                onClick={() =>
-                                                    openEditLocation(loc)
-                                                }
-                                            >
-                                                <Pencil className="size-4" />
-                                            </button>
-                                        ) : null}
-                                    </div>
-                                );
-                            })}
                         </div>
                     ) : null}
 
-                    {canEnableMain || canDisableMain ? (
-                        <div className="flex items-center gap-3 self-center rounded-xl border border-hairline bg-card px-4 py-3">
-                            <div className="min-w-0">
-                                <p className="text-[13px] font-semibold text-foreground">
-                                    {t("mainInventoryLabel")}
-                                </p>
-                                <p className="text-[11px] text-slate-gray">
-                                    {isNetwork
-                                        ? t("mainInventoryOnHint")
-                                        : t("mainInventoryOffHint")}
-                                </p>
-                            </div>
+                    {!isNetwork && canEnableMain ? (
+                        <div className="flex items-center gap-2 rounded-lg border border-hairline bg-card/60 px-2.5 py-1 text-[12px]">
+                            <span className="text-[11px] font-medium text-slate-gray">
+                                {t("mainInventoryLabel")}
+                            </span>
                             <button
                                 type="button"
                                 role="switch"
                                 aria-checked={isNetwork}
                                 aria-label={t("mainInventoryLabel")}
-                                disabled={
-                                    enablingMain.isLoading ||
-                                    disablingMain.isLoading
-                                }
-                                onClick={() => {
-                                    if (isNetwork) askDisableMainWarehouse();
-                                    else void onEnableMainWarehouse();
-                                }}
+                                disabled={enablingMain.isLoading}
+                                onClick={() => void onEnableMainWarehouse()}
                                 className={cn(
-                                    "relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60",
-                                    isNetwork ? "bg-brand" : "bg-slate-300",
+                                    "relative h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-60",
+                                    "bg-slate-300 dark:bg-slate-700",
                                 )}
                             >
-                                {enablingMain.isLoading ||
-                                disablingMain.isLoading ? (
-                                    <Loader2 className="absolute inset-0 m-auto size-3.5 animate-spin text-white" />
+                                {enablingMain.isLoading ? (
+                                    <Loader2 className="absolute inset-0 m-auto size-3 animate-spin text-white" />
                                 ) : (
-                                    <span
-                                        className={cn(
-                                            "absolute top-0.5 size-5 rounded-full bg-white shadow transition-transform",
-                                            isNetwork
-                                                ? "left-[1.375rem]"
-                                                : "left-0.5",
-                                        )}
-                                    />
+                                    <span className="absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow transition-transform" />
                                 )}
                             </button>
                         </div>
@@ -1016,7 +1172,7 @@ export default function InventoryBoard() {
                             <button
                                 type="submit"
                                 disabled={updatingLocation.isLoading}
-                                className="inline-flex h-10 items-center gap-2 rounded-xl bg-brand px-3.5 text-[13px] font-semibold text-white disabled:opacity-60"
+                                className="inline-flex h-10 items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 text-[13px] font-semibold text-white disabled:opacity-60"
                             >
                                 {updatingLocation.isLoading ? (
                                     <Loader2 className="size-3.5 animate-spin" />
@@ -1037,6 +1193,27 @@ export default function InventoryBoard() {
                         <h3 className="text-[15px] font-semibold">
                             {t("editIngredientTitle")}
                         </h3>
+                        <div className="space-y-1 text-[12px]">
+                            <span className="font-medium text-slate-gray">
+                                {t("fieldImage")}
+                            </span>
+                            <ItemImagePicker
+                                value={editIngForm.imageUrl}
+                                onChange={url =>
+                                    setEditIngForm(s => ({
+                                        ...s,
+                                        imageUrl: url,
+                                    }))
+                                }
+                                itemName={editIngForm.name}
+                                onSelectPreset={(preset: InventoryPreset) => {
+                                    setEditIngForm(s => ({
+                                        ...s,
+                                        imageUrl: preset.imageUrl,
+                                    }));
+                                }}
+                            />
+                        </div>
                         <Field
                             label={t("fieldName")}
                             value={editIngForm.name}
@@ -1118,7 +1295,7 @@ export default function InventoryBoard() {
                             <button
                                 type="submit"
                                 disabled={updatingIngredient.isLoading}
-                                className="inline-flex h-10 items-center gap-2 rounded-xl bg-brand px-3.5 text-[13px] font-semibold text-white disabled:opacity-60"
+                                className="inline-flex h-10 items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 text-[13px] font-semibold text-white disabled:opacity-60"
                             >
                                 {updatingIngredient.isLoading ? (
                                     <Loader2 className="size-3.5 animate-spin" />
@@ -1164,7 +1341,7 @@ export default function InventoryBoard() {
                                     "inline-flex h-10 items-center gap-2 rounded-xl px-3.5 text-[13px] font-semibold text-white disabled:opacity-60",
                                     confirmDialog.danger
                                         ? "bg-rose-600 hover:bg-rose-700"
-                                        : "bg-brand",
+                                        : "bg-emerald-600 hover:bg-emerald-700",
                                 )}
                             >
                                 {confirmBusy ? (
@@ -1177,19 +1354,12 @@ export default function InventoryBoard() {
                 </div>
             ) : null}
 
-            <div className="flex flex-wrap items-stretch gap-x-1 border-b border-hairline">
-                {tabs.map(tabItem => {
+            {/* Sub-Views Pill Bar (Displaying only the views for active category) */}
+            <div className="flex flex-wrap items-center gap-2 border-b border-hairline pb-3 pt-1">
+                {currentCategoryTabs.map(tabItem => {
                     const active = tab === tabItem.id;
-                    const badge =
-                        tabItem.id === "stock"
-                            ? tabCounts.data?.summary?.skuCount
-                            : tabItem.id === "ingredients"
-                              ? ingredientCount.data?.meta?.total
-                              : tabItem.id === "ledger"
-                                ? ledgerCount.data?.meta?.total
-                                : tabItem.id === "counts"
-                                  ? countsMeta.data?.meta?.total
-                                  : undefined;
+                    const badge = getTabBadge(tabItem.id);
+
                     return (
                         <button
                             key={tabItem.id}
@@ -1200,26 +1370,36 @@ export default function InventoryBoard() {
                                 setActiveCountId(null);
                             }}
                             className={cn(
-                                "relative inline-flex items-center gap-2 px-3 py-2.5 text-[13px] font-medium transition-colors",
+                                "relative inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium transition-all border",
                                 active
-                                    ? "rounded-t-md bg-secondary/90 text-foreground"
-                                    : "text-slate-gray hover:text-foreground",
+                                    ? "bg-foreground text-background shadow-xs font-semibold border-foreground"
+                                    : "bg-card text-slate-gray border-hairline hover:bg-secondary hover:text-foreground",
                             )}
                         >
-                            {active ? (
-                                <span
-                                    className="size-1.5 shrink-0 rounded-full bg-slate-gray"
-                                    aria-hidden
+                            {tabItem.icon ? (
+                                <tabItem.icon
+                                    className={cn(
+                                        "size-3.5 shrink-0",
+                                        active
+                                            ? "text-background"
+                                            : tabItem.iconColor,
+                                    )}
                                 />
                             ) : null}
                             <span>{tabItem.label}</span>
                             {badge != null && Number(badge) > 0 ? (
-                                <span className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-slate-200 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-slate-600 dark:bg-white/10 dark:text-slate-300">
+                                <span
+                                    className={cn(
+                                        "inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums",
+                                        active
+                                            ? "bg-background/20 text-background"
+                                            : tabItem.id === "pending-supply"
+                                              ? "bg-emerald-600 text-white"
+                                              : "bg-secondary text-slate-gray",
+                                    )}
+                                >
                                     {badge}
                                 </span>
-                            ) : null}
-                            {active ? (
-                                <span className="absolute inset-x-0 -bottom-px h-[2px] bg-slate-600 dark:bg-slate-300" />
                             ) : null}
                         </button>
                     );
@@ -1234,6 +1414,70 @@ export default function InventoryBoard() {
                         placeholder={t("searchPlaceholder")}
                         className="h-10 w-full max-w-xs rounded-xl border border-hairline bg-background px-3 text-[13px]"
                     />
+
+                    {(tab === "stock" || tab === "ingredients") && (
+                        <div className="flex items-center gap-2">
+                            <div className="min-w-[14rem]">
+                                <InventoryNiceSelect
+                                    value={selectedCategoryId || "__all__"}
+                                    placeholder={t("allCategories")}
+                                    options={[
+                                        {
+                                            value: "__all__",
+                                            label: t("allCategories"),
+                                        },
+                                        ...dbCategories.map(c => ({
+                                            value: c.id,
+                                            label: c.amharicName
+                                                ? `${c.name} (${c.amharicName})`
+                                                : c.name,
+                                        })),
+                                    ]}
+                                    onChange={v => {
+                                        setSelectedCategoryId(
+                                            v === "__all__" ? "" : v,
+                                        );
+                                        setPage(1);
+                                    }}
+                                />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setTab("categories")}
+                                className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-hairline bg-card px-3 text-[13px] font-medium text-slate-gray hover:bg-secondary hover:text-foreground transition-colors"
+                            >
+                                <Tag className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                                <span>{t("tabs.categories")}</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setTab("units")}
+                                className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-hairline bg-card px-3 text-[13px] font-medium text-slate-gray hover:bg-secondary hover:text-foreground transition-colors"
+                            >
+                                <Ruler className="size-3.5 text-sky-600 dark:text-sky-400" />
+                                <span>{t("tabs.units")}</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setTab("vendors")}
+                                className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-hairline bg-card px-3 text-[13px] font-medium text-slate-gray hover:bg-secondary hover:text-foreground transition-colors"
+                            >
+                                <Store className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                                <span>{t("tabs.vendors")}</span>
+                            </button>
+                            {canOperateCentral && (
+                                <button
+                                    type="button"
+                                    onClick={() => setTab("drivers")}
+                                    className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-hairline bg-card px-3 text-[13px] font-medium text-slate-gray hover:bg-secondary hover:text-foreground transition-colors"
+                                >
+                                    <Truck className="size-3.5 text-amber-600 dark:text-amber-400" />
+                                    <span>{t("tabs.drivers")}</span>
+                                </button>
+                            )}
+                        </div>
+                    )}
+
                     {tab === "stock" ? (
                         <label className="flex items-center gap-2 text-[13px]">
                             <input
@@ -1304,7 +1548,23 @@ export default function InventoryBoard() {
                                         className="border-t border-hairline"
                                     >
                                         <td className="px-4 py-3 font-medium">
-                                            {row.name}
+                                            <div className="flex items-center gap-3">
+                                                <ItemThumbnail
+                                                    src={row.imageUrl}
+                                                    name={row.name}
+                                                    className="size-9"
+                                                />
+                                                <div>
+                                                    <span className="font-medium text-foreground">
+                                                        {row.name}
+                                                    </span>
+                                                    {row.category ? (
+                                                        <span className="block text-[11px] text-slate-gray">
+                                                            {row.category.name}
+                                                        </span>
+                                                    ) : null}
+                                                </div>
+                                            </div>
                                         </td>
                                         <td className="px-4 py-3 tabular-nums">
                                             {formatQty(row.onHandQty)}{" "}
@@ -1388,7 +1648,32 @@ export default function InventoryBoard() {
                                             className="border-t border-hairline"
                                         >
                                             <td className="px-4 py-3 font-medium">
-                                                {row.name}
+                                                <div className="flex items-center gap-3">
+                                                    <ItemThumbnail
+                                                        src={row.imageUrl}
+                                                        name={row.name}
+                                                        className="size-10"
+                                                    />
+                                                    <div>
+                                                        <span className="font-semibold text-foreground">
+                                                            {row.name}
+                                                        </span>
+                                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                                            <span className="text-[11px] text-slate-gray">
+                                                                {row.itemKind}
+                                                            </span>
+                                                            {row.category ? (
+                                                                <span className="rounded-md bg-secondary/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-gray">
+                                                                    {
+                                                                        row
+                                                                            .category
+                                                                            .name
+                                                                    }
+                                                                </span>
+                                                            ) : null}
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </td>
                                             <td className="px-4 py-3">
                                                 {row.unit}
@@ -1482,6 +1767,70 @@ export default function InventoryBoard() {
                                 })}
                             </p>
                         ) : null}
+                        <div className="space-y-1 text-[12px]">
+                            <div className="flex items-center justify-between">
+                                <span className="font-medium text-slate-gray">
+                                    Category
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setCategoryModalOpen(true)}
+                                    className="text-[11px] text-emerald-600 hover:underline"
+                                >
+                                    + New Category
+                                </button>
+                            </div>
+                            <InventoryNiceSelect
+                                value={ingForm.categoryId || "__none__"}
+                                placeholder="Select category..."
+                                options={[
+                                    {
+                                        value: "__none__",
+                                        label: "Select category...",
+                                    },
+                                    ...dbCategories.map(c => ({
+                                        value: c.id,
+                                        label: c.amharicName
+                                            ? `${c.name} (${c.amharicName})`
+                                            : c.name,
+                                    })),
+                                ]}
+                                onChange={v =>
+                                    setIngForm(s => ({
+                                        ...s,
+                                        categoryId: v === "__none__" ? "" : v,
+                                    }))
+                                }
+                            />
+                        </div>
+
+                        <div className="space-y-1 text-[12px]">
+                            <span className="font-medium text-slate-gray">
+                                {t("fieldImage")}
+                            </span>
+                            <ItemImagePicker
+                                value={ingForm.imageUrl}
+                                onChange={url =>
+                                    setIngForm(s => ({ ...s, imageUrl: url }))
+                                }
+                                itemName={ingForm.name}
+                                onSelectPreset={(preset: InventoryPreset) => {
+                                    const matchingDbCat = dbCategories.find(
+                                        c => c.code === preset.category,
+                                    );
+                                    setIngForm(s => ({
+                                        ...s,
+                                        name: preset.name,
+                                        unit: preset.unit,
+                                        itemKind: preset.itemKind,
+                                        imageUrl: preset.imageUrl,
+                                        ...(matchingDbCat
+                                            ? { categoryId: matchingDbCat.id }
+                                            : {}),
+                                    }));
+                                }}
+                            />
+                        </div>
                         <Field
                             label={t("fieldName")}
                             value={ingForm.name}
@@ -1579,7 +1928,7 @@ export default function InventoryBoard() {
                         <button
                             type="submit"
                             disabled={creating.isLoading}
-                            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-brand text-[13px] font-semibold text-white disabled:opacity-60"
+                            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-[13px] font-semibold text-white disabled:opacity-60"
                         >
                             {creating.isLoading ? (
                                 <Loader2 className="size-4 animate-spin" />
@@ -1591,100 +1940,23 @@ export default function InventoryBoard() {
             ) : null}
 
             {tab === "receive" ? (
-                <form
-                    onSubmit={onReceive}
-                    className="max-w-lg space-y-3 rounded-2xl border border-hairline p-4"
-                >
-                    <h3 className="text-[14px] font-semibold">
-                        {t("receiveTitle")}
-                    </h3>
-                    {canOperateCentral && isNetwork ? (
-                        <p className="rounded-xl bg-secondary/50 px-3 py-2 text-[11px] text-slate-gray">
-                            {t("stockTargetHint", { name: stockTargetName })}
-                        </p>
-                    ) : null}
-                    <IngredientSelect
-                        label={t("fieldIngredient")}
-                        placeholder={t("selectIngredient")}
-                        value={receiveForm.ingredientId}
-                        options={ingredientOptions}
-                        error={
-                            receiveTried && !receiveForm.ingredientId
-                                ? t("errPickIngredient")
-                                : undefined
-                        }
-                        onChange={v => {
-                            const picked = ingredientOptions.find(
-                                i => i.id === v,
-                            );
-                            setReceiveForm(s => ({
-                                ...s,
-                                ingredientId: v,
-                                unitCost:
-                                    s.unitCost ||
-                                    (picked
-                                        ? String(picked.unitCost)
-                                        : s.unitCost),
-                            }));
+                <>
+                    <ReceiveHistoryView
+                        locationId={locationId}
+                        stockTargetName={stockTargetName}
+                        onOpenReceiveSheet={() => setReceiveSheetOpen(true)}
+                    />
+                    <ReceiveStockSheet
+                        open={receiveSheetOpen}
+                        onClose={() => setReceiveSheetOpen(false)}
+                        locationId={locationId}
+                        stockTargetName={stockTargetName}
+                        ingredients={ingredientOptions}
+                        onSuccess={() => {
+                            /* Cache auto-invalidated via invalidatesTags: ["Inventory"] on the mutation */
                         }}
                     />
-                    <Field
-                        label={t("fieldQuantity")}
-                        value={receiveForm.quantity}
-                        onChange={v =>
-                            setReceiveForm(s => ({ ...s, quantity: v }))
-                        }
-                        type="number"
-                        error={
-                            receiveTried &&
-                            parsePositiveQty(receiveForm.quantity) == null
-                                ? t("errQtyRequired")
-                                : undefined
-                        }
-                    />
-                    <Field
-                        label={t("fieldUnitCostOptional")}
-                        value={receiveForm.unitCost}
-                        onChange={v =>
-                            setReceiveForm(s => ({ ...s, unitCost: v }))
-                        }
-                        type="number"
-                    />
-                    <Field
-                        label={t("fieldSupplierNote")}
-                        value={receiveForm.supplierNote}
-                        onChange={v =>
-                            setReceiveForm(s => ({ ...s, supplierNote: v }))
-                        }
-                    />
-                    <Field
-                        label={t("fieldInvoiceRef")}
-                        value={receiveForm.invoiceRef}
-                        onChange={v =>
-                            setReceiveForm(s => ({ ...s, invoiceRef: v }))
-                        }
-                    />
-                    {receiveQty > 0 ? (
-                        <div className="rounded-xl bg-secondary/60 px-3 py-2 text-[12px]">
-                            <span className="text-slate-gray">
-                                {t("receiveLineTotal")}
-                            </span>
-                            <span className="ml-2 font-medium tabular-nums text-foreground">
-                                {formatEtb(receiveTotal)}
-                            </span>
-                            <span className="ml-2 text-[11px] text-slate-gray">
-                                ({formatQty(receiveQty)} ×{" "}
-                                {formatEtb(receiveUnitCost)})
-                            </span>
-                        </div>
-                    ) : null}
-                    <PrimaryActionButton loading={receiving.isLoading}>
-                        {receiving.isLoading ? (
-                            <Loader2 className="size-4 animate-spin" />
-                        ) : null}
-                        {t("receiveStock")}
-                    </PrimaryActionButton>
-                </form>
+                </>
             ) : null}
 
             {tab === "waste" ? (
@@ -1706,7 +1978,13 @@ export default function InventoryBoard() {
                                 : undefined
                         }
                         onChange={v =>
-                            setWasteForm(s => ({ ...s, ingredientId: v }))
+                            setWasteForm(s => ({
+                                ...s,
+                                ingredientId: v,
+                                unit:
+                                    ingredientOptions.find(i => i.id === v)
+                                        ?.unit ?? "",
+                            }))
                         }
                     />
                     <Field
@@ -1723,6 +2001,19 @@ export default function InventoryBoard() {
                                 : undefined
                         }
                     />
+                    <div className="space-y-1 text-[12px]">
+                        <span className="font-medium text-slate-gray">
+                            {t("colUnit")}
+                        </span>
+                        <UnitPicker
+                            baseUnit={selectedWaste?.unit ?? ""}
+                            value={wasteForm.unit || selectedWaste?.unit || ""}
+                            onChange={v =>
+                                setWasteForm(s => ({ ...s, unit: v }))
+                            }
+                            disabled={!selectedWaste}
+                        />
+                    </div>
                     <Field
                         label={t("fieldReason")}
                         value={wasteForm.note}
@@ -1783,9 +2074,27 @@ export default function InventoryBoard() {
                                 setYieldForm(s => ({
                                     ...s,
                                     ingredientId: v,
+                                    unit:
+                                        ingredientOptions.find(i => i.id === v)
+                                            ?.unit ?? "",
                                 }));
                             }}
                         />
+                        <div className="space-y-1 text-[12px]">
+                            <span className="font-medium text-slate-gray">
+                                {t("colUnit")}
+                            </span>
+                            <UnitPicker
+                                baseUnit={selectedYield?.unit ?? ""}
+                                value={
+                                    yieldForm.unit || selectedYield?.unit || ""
+                                }
+                                onChange={v =>
+                                    setYieldForm(s => ({ ...s, unit: v }))
+                                }
+                                disabled={!selectedYield}
+                            />
+                        </div>
                         <div className="grid gap-3 sm:grid-cols-2">
                             <Field
                                 label={t("fieldPurchasedQty")}
@@ -2051,7 +2360,7 @@ export default function InventoryBoard() {
                             type="button"
                             onClick={onStartCount}
                             disabled={starting.isLoading}
-                            className="inline-flex h-10 items-center gap-2 rounded-xl bg-brand px-4 text-[13px] font-semibold text-white disabled:opacity-60"
+                            className="inline-flex h-10 items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 text-[13px] font-semibold text-white disabled:opacity-60"
                         >
                             {starting.isLoading ? (
                                 <Loader2 className="size-4 animate-spin" />
@@ -2096,7 +2405,7 @@ export default function InventoryBoard() {
                                             <td className="px-4 py-3 text-right">
                                                 <button
                                                     type="button"
-                                                    className="text-brand font-medium"
+                                                    className="text-emerald-600 hover:underline font-medium"
                                                     onClick={() =>
                                                         setActiveCountId(row.id)
                                                     }
@@ -2145,7 +2454,7 @@ export default function InventoryBoard() {
                                                 type="button"
                                                 onClick={onPostCount}
                                                 disabled={posting.isLoading}
-                                                className="rounded-xl bg-brand px-3 py-2 text-[12px] font-semibold text-white"
+                                                className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3 py-2 text-[12px] font-semibold text-white"
                                             >
                                                 {t("postCount")}
                                             </button>
@@ -2202,30 +2511,56 @@ export default function InventoryBoard() {
                                                         {countDetail.data?.data
                                                             .status ===
                                                         "DRAFT" ? (
-                                                            <input
-                                                                type="number"
-                                                                className="h-9 w-28 rounded-lg border border-hairline px-2"
-                                                                value={
-                                                                    countedRaw
-                                                                }
-                                                                onChange={e =>
-                                                                    setCountEdits(
-                                                                        s => ({
-                                                                            ...s,
-                                                                            [line.ingredientId]:
-                                                                                e
-                                                                                    .target
-                                                                                    .value,
-                                                                        }),
-                                                                    )
-                                                                }
-                                                            />
+                                                            <div className="flex items-center gap-1.5">
+                                                                <input
+                                                                    type="number"
+                                                                    className="h-9 w-24 rounded-lg border border-hairline px-2"
+                                                                    value={
+                                                                        countedRaw
+                                                                    }
+                                                                    onChange={e =>
+                                                                        setCountEdits(
+                                                                            s => ({
+                                                                                ...s,
+                                                                                [line.ingredientId]:
+                                                                                    e
+                                                                                        .target
+                                                                                        .value,
+                                                                            }),
+                                                                        )
+                                                                    }
+                                                                />
+                                                                <UnitPicker
+                                                                    compact
+                                                                    baseUnit={
+                                                                        line.unit
+                                                                    }
+                                                                    value={
+                                                                        countUnits[
+                                                                            line
+                                                                                .ingredientId
+                                                                        ] ??
+                                                                        line.countedUnit ??
+                                                                        line.unit
+                                                                    }
+                                                                    onChange={v =>
+                                                                        setCountUnits(
+                                                                            s => ({
+                                                                                ...s,
+                                                                                [line.ingredientId]:
+                                                                                    v,
+                                                                            }),
+                                                                        )
+                                                                    }
+                                                                />
+                                                            </div>
                                                         ) : (
                                                             <>
                                                                 {
                                                                     line.countedQty
                                                                 }{" "}
-                                                                {line.unit}
+                                                                {line.countedUnit ??
+                                                                    line.unit}
                                                             </>
                                                         )}
                                                     </td>
@@ -2381,6 +2716,14 @@ export default function InventoryBoard() {
                 </div>
             ) : null}
 
+            {tab === "materials" ? <InventoryMaterialsPanel /> : null}
+            {tab === "categories" ? <InventoryCategoriesPanel /> : null}
+            {tab === "units" ? <InventoryUnitsPanel /> : null}
+            {tab === "vendors" ? <InventoryVendorsPanel /> : null}
+            {tab === "drivers" && canOperateCentral ? (
+                <InventoryDriversPanel />
+            ) : null}
+
             {meta &&
             meta.totalPages > 1 &&
             tab !== "receive" &&
@@ -2391,7 +2734,12 @@ export default function InventoryBoard() {
             tab !== "produce" &&
             tab !== "request" &&
             tab !== "pending-supply" &&
-            tab !== "my-requests" ? (
+            tab !== "my-requests" &&
+            tab !== "materials" &&
+            tab !== "categories" &&
+            tab !== "units" &&
+            tab !== "vendors" &&
+            tab !== "drivers" ? (
                 <div className="flex items-center justify-between text-[13px]">
                     <span className="text-slate-gray">
                         {t("pageMeta", {
@@ -2420,6 +2768,241 @@ export default function InventoryBoard() {
                     </div>
                 </div>
             ) : null}
+
+            {/* Edit Item Modal */}
+            {editingIngredient ? (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+                    <form
+                        onSubmit={onSaveIngredientEdit}
+                        className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl border border-hairline bg-card shadow-2xl overflow-hidden"
+                    >
+                        <div className="flex items-center justify-between border-b border-hairline px-6 py-4">
+                            <h3 className="text-[16px] font-semibold text-foreground">
+                                {t("editIngredient")}
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={() => setEditingIngredient(null)}
+                                className="rounded-lg p-1.5 text-slate-gray hover:bg-secondary"
+                            >
+                                <X className="size-4" />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                            <div className="space-y-1 text-[12px]">
+                                <span className="font-medium text-slate-gray">
+                                    {t("fieldImage")}
+                                </span>
+                                <ItemImagePicker
+                                    value={editIngForm.imageUrl}
+                                    onChange={url =>
+                                        setEditIngForm(s => ({
+                                            ...s,
+                                            imageUrl: url,
+                                        }))
+                                    }
+                                    itemName={editIngForm.name}
+                                    onSelectPreset={preset => {
+                                        const matchingDbCat = dbCategories.find(
+                                            c => c.code === preset.category,
+                                        );
+                                        setEditIngForm(s => ({
+                                            ...s,
+                                            imageUrl: preset.imageUrl,
+                                            ...(matchingDbCat
+                                                ? {
+                                                      categoryId:
+                                                          matchingDbCat.id,
+                                                  }
+                                                : {}),
+                                        }));
+                                    }}
+                                />
+                            </div>
+
+                            <Field
+                                label={t("fieldName")}
+                                value={editIngForm.name}
+                                onChange={v =>
+                                    setEditIngForm(s => ({ ...s, name: v }))
+                                }
+                                required
+                            />
+
+                            <div className="space-y-1 text-[12px]">
+                                <div className="flex items-center justify-between">
+                                    <span className="font-medium text-slate-gray">
+                                        Category
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setCategoryModalOpen(true)
+                                        }
+                                        className="text-[11px] text-emerald-600 hover:underline"
+                                    >
+                                        + New Category
+                                    </button>
+                                </div>
+                                <InventoryNiceSelect
+                                    value={editIngForm.categoryId || "__none__"}
+                                    placeholder="Select category..."
+                                    options={[
+                                        {
+                                            value: "__none__",
+                                            label: "Select category...",
+                                        },
+                                        ...dbCategories.map(c => ({
+                                            value: c.id,
+                                            label: c.amharicName
+                                                ? `${c.name} (${c.amharicName})`
+                                                : c.name,
+                                        })),
+                                    ]}
+                                    onChange={v =>
+                                        setEditIngForm(s => ({
+                                            ...s,
+                                            categoryId:
+                                                v === "__none__" ? "" : v,
+                                        }))
+                                    }
+                                />
+                            </div>
+
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <div className="space-y-1 text-[12px]">
+                                    <span className="font-medium text-slate-gray">
+                                        {t("fieldUnit")}
+                                    </span>
+                                    <InventoryNiceSelect
+                                        value={editIngForm.unit}
+                                        placeholder={t("fieldUnit")}
+                                        options={
+                                            unitOptions.length === 0
+                                                ? [{ value: "kg", label: "kg" }]
+                                                : unitOptions.map(u => ({
+                                                      value: u.code,
+                                                      label: `${u.name} (${u.code})`,
+                                                  }))
+                                        }
+                                        onChange={v =>
+                                            setEditIngForm(s => ({
+                                                ...s,
+                                                unit: v,
+                                            }))
+                                        }
+                                    />
+                                </div>
+
+                                <div className="space-y-1 text-[12px]">
+                                    <span className="font-medium text-slate-gray">
+                                        {t("fieldItemKind")}
+                                    </span>
+                                    <InventoryNiceSelect
+                                        value={editIngForm.itemKind}
+                                        placeholder={t("fieldItemKind")}
+                                        options={[
+                                            {
+                                                value: "RAW",
+                                                label: t("itemKindRaw"),
+                                            },
+                                            {
+                                                value: "PRODUCED",
+                                                label: t("itemKindProduced"),
+                                            },
+                                            {
+                                                value: "FINISHED",
+                                                label: t("itemKindFinished"),
+                                            },
+                                        ]}
+                                        onChange={v =>
+                                            setEditIngForm(s => ({
+                                                ...s,
+                                                itemKind:
+                                                    v as InventoryItemKind,
+                                            }))
+                                        }
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <Field
+                                    label={t("fieldUnitCost")}
+                                    value={editIngForm.unitCost}
+                                    onChange={v =>
+                                        setEditIngForm(s => ({
+                                            ...s,
+                                            unitCost: v,
+                                        }))
+                                    }
+                                    type="number"
+                                />
+
+                                <Field
+                                    label={t("fieldParLevel")}
+                                    value={editIngForm.parLevel}
+                                    onChange={v =>
+                                        setEditIngForm(s => ({
+                                            ...s,
+                                            parLevel: v,
+                                        }))
+                                    }
+                                    type="number"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end gap-2 border-t border-hairline px-6 py-3 bg-secondary/20">
+                            <button
+                                type="button"
+                                onClick={() => setEditingIngredient(null)}
+                                className="rounded-xl border border-hairline bg-card px-4 py-2 text-[13px] font-medium hover:bg-secondary text-slate-gray"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={updatingIngredient.isLoading}
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-[13px] font-semibold text-white shadow-xs disabled:opacity-60"
+                            >
+                                {updatingIngredient.isLoading ? (
+                                    <Loader2 className="size-4 animate-spin" />
+                                ) : null}
+                                <span>{t("save")}</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            ) : null}
+
+            {/* Category Manager Modal */}
+            <CategoryManagerModal
+                open={categoryModalOpen}
+                onClose={() => setCategoryModalOpen(false)}
+                onSelectCategory={cat => {
+                    setIngForm(s => ({ ...s, categoryId: cat.id }));
+                }}
+            />
+
+            {/* Units & Conversions Manager Modal */}
+            <UnitManagerModal
+                open={unitModalOpen}
+                onClose={() => setUnitModalOpen(false)}
+            />
+
+            {/* Vendors Manager Side Sheet */}
+            <VendorManagerSheet
+                open={vendorModalOpen}
+                onClose={() => setVendorModalOpen(false)}
+            />
+
+            {/* Fleet & Driver Management Modal */}
+            <DriverManagementModal
+                open={driverModalOpen}
+                onClose={() => setDriverModalOpen(false)}
+            />
         </div>
     );
 }

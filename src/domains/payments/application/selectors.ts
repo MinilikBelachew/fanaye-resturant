@@ -5,10 +5,7 @@ import {
     type PaymentMethod,
 } from "@/domains/payments/domain/payment";
 
-export function selectSessionDue(
-    state: RootState,
-    sessionId: string,
-): number {
+export function selectSessionDue(state: RootState, sessionId: string): number {
     return state.ops.items
         .filter(
             item =>
@@ -31,8 +28,7 @@ export function selectLoggedPaymentForSession(
 ): Payment | undefined {
     return state.ops.payments.find(
         payment =>
-            payment.sessionId === sessionId &&
-            isLoggedPayment(payment.status),
+            payment.sessionId === sessionId && isLoggedPayment(payment.status),
     );
 }
 

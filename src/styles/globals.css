@@ -39,6 +39,7 @@
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-canvas-cream: var(--canvas);
+    --color-surface-card: var(--card);
     --color-surface-ivory: var(--muted);
     --color-ink-charcoal: var(--foreground);
     --color-slate-gray: var(--muted-foreground);

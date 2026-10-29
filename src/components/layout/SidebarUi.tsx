@@ -21,10 +21,7 @@ export function SidebarUiProvider({ children }: { children: ReactNode }) {
     const toggle = useCallback(() => {
         setCollapsed(value => !value);
     }, []);
-    const value = useMemo(
-        () => ({ collapsed, toggle }),
-        [collapsed, toggle],
-    );
+    const value = useMemo(() => ({ collapsed, toggle }), [collapsed, toggle]);
     return (
         <SidebarUiContext.Provider value={value}>
             {children}

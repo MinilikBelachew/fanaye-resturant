@@ -7,6 +7,7 @@ import {
     Inbox,
     LayoutGrid,
     Table2,
+    Boxes,
 } from "lucide-react";
 import DataTable, {
     type DataTableColumn,
@@ -41,9 +42,13 @@ import { formatEtb } from "@/lib/money";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Suspense, useMemo } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { StationQueueSkeleton } from "@/components/custom/molecules/Skeletons";
+import IssueMaterialsModal from "@/domains/outside-orders/ui/IssueMaterialsModal";
+import KitchenMaterialsAuditModal from "@/domains/outside-orders/ui/KitchenMaterialsAuditModal";
+import { useListActiveMaterialIssuesQuery } from "@/context/services/outsideOrdersApi";
+import { Button } from "@/components/ui/button";
 
 const STATUS_RANK: Record<string, number> = {
     QUEUED: 0,
@@ -52,6 +57,45 @@ const STATUS_RANK: Record<string, number> = {
     READY: 3,
     CANNOT_PREPARE: 4,
 };
+
+function MaterialsButton({
+    ticket,
+    compact = false,
+}: {
+    ticket: StationTicket;
+    compact?: boolean;
+}) {
+    const [showMaterialsModal, setShowMaterialsModal] = useState(false);
+
+    return (
+        <>
+            <button
+                type="button"
+                onClick={() => setShowMaterialsModal(true)}
+                className={cn(
+                    "inline-flex items-center gap-1.5 rounded-md border font-medium transition-colors",
+                    compact
+                        ? "h-7 px-2.5 text-[11px] border-amber-400/40 bg-amber-500/20 text-amber-100 backdrop-blur-md hover:bg-amber-500/30"
+                        : "h-8 px-3 text-xs border-amber-400/60 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:bg-amber-950/50 dark:text-amber-200 dark:hover:bg-amber-950",
+                )}
+            >
+                <Boxes className="size-3.5" />
+                Materials
+            </button>
+
+            {showMaterialsModal && (
+                <IssueMaterialsModal
+                    outsideOrderId={ticket.outsideOrderId}
+                    destinationName={ticket.tableDisplayName}
+                    onClose={() => setShowMaterialsModal(false)}
+                    onSuccess={() => {
+                        // Modal will close itself after success
+                    }}
+                />
+            )}
+        </>
+    );
+}
 
 type TicketRow = {
     ticket: StationTicket;
@@ -193,6 +237,9 @@ function TicketCard({
                             overlay
                             workflowMode={workflowMode}
                         />
+                        {ticket.outsideOrderId && (
+                            <MaterialsButton ticket={ticket} compact />
+                        )}
                         <Link
                             href={stationOrderPath(role, ticket.orderItemId)}
                             className="inline-flex h-7 items-center rounded-md border border-white/25 bg-white/10 px-2.5 text-[11px] font-medium text-white backdrop-blur-md transition-colors hover:bg-white/20"
@@ -265,6 +312,26 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
     const { stationId, tickets, counts, isLoading, isError, data, refetch } =
         useCurrentStationQueue();
     const workflowMode = data?.workflowMode ?? "FULL_PREP";
+    const [showMaterialsAuditModal, setShowMaterialsAuditModal] = useState(
+        () => searchParams.get("view_materials") === "true",
+    );
+    const { data: activeMaterialsRes } = useListActiveMaterialIssuesQuery(
+        undefined,
+        {
+            pollingInterval: 10000,
+        },
+    );
+    const pendingAuditCount = useMemo(() => {
+        return (activeMaterialsRes?.data ?? []).filter(
+            i => i.status === "RETURNED",
+        ).length;
+    }, [activeMaterialsRes?.data]);
+
+    useEffect(() => {
+        if (searchParams.get("view_materials") === "true") {
+            setShowMaterialsAuditModal(true);
+        }
+    }, [searchParams]);
 
     const rows: TicketRow[] = tickets
         .filter(ticket => matchesStationFilter(ticket, status))
@@ -471,6 +538,20 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                         ),
                     ),
             },
+            {
+                id: "materials",
+                header: "Materials",
+                sortValue: () => 0,
+                hideable: true,
+                cell: row => {
+                    if (!row.ticket.outsideOrderId) {
+                        return (
+                            <span className="text-slate-gray text-xs">—</span>
+                        );
+                    }
+                    return <MaterialsButton ticket={row.ticket} />;
+                },
+            },
         ],
         [role, tStations, tCommon, workflowMode],
     );
@@ -603,35 +684,87 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                               : QUEUE_FILTER_LABELS[status]}
                     </h1>
                 </div>
-                <div className="flex rounded-[10px] border border-hairline bg-card p-0.5 sm:rounded-[12px] sm:p-1">
-                    <button
+                <div className="flex items-center gap-2">
+                    <Button
                         type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => router.push(`/${role}/materials`)}
                         className={cn(
-                            "flex items-center gap-1 rounded-[8px] px-2.5 py-1.5 text-[12px] font-normal sm:gap-1.5 sm:rounded-[10px] sm:px-3 sm:text-[13px] cursor-pointer",
-                            view === "cards"
-                                ? "bg-secondary text-foreground"
-                                : "text-slate-gray hover:bg-secondary/70",
+                            "h-8 sm:h-9 px-2.5 sm:px-3 text-[12px] sm:text-[13px] font-medium border-hairline cursor-pointer",
+                            pendingAuditCount > 0
+                                ? "border-amber-500/50 bg-amber-500/10 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20"
+                                : "text-foreground hover:bg-secondary",
                         )}
-                        onClick={() => setView("cards")}
                     >
-                        <LayoutGrid className="size-3.5 sm:size-4" />
-                        {tStations("cards")}
-                    </button>
-                    <button
-                        type="button"
-                        className={cn(
-                            "flex items-center gap-1 rounded-[8px] px-2.5 py-1.5 text-[12px] font-normal sm:gap-1.5 sm:rounded-[10px] sm:px-3 sm:text-[13px] cursor-pointer",
-                            view === "table"
-                                ? "bg-secondary text-foreground"
-                                : "text-slate-gray hover:bg-secondary/70",
+                        <Boxes className="size-3.5 sm:size-4 mr-1 text-amber-600 dark:text-amber-400" />
+                        <span>Tableware Audit</span>
+                        {pendingAuditCount > 0 && (
+                            <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0.2 text-[10px] font-bold text-white animate-pulse">
+                                {pendingAuditCount}
+                            </span>
                         )}
-                        onClick={() => setView("table")}
-                    >
-                        <Table2 className="size-3.5 sm:size-4" />
-                        {tStations("table")}
-                    </button>
+                    </Button>
+                    <div className="flex rounded-[10px] border border-hairline bg-card p-0.5 sm:rounded-[12px] sm:p-1">
+                        <button
+                            type="button"
+                            className={cn(
+                                "flex items-center gap-1 rounded-[8px] px-2.5 py-1.5 text-[12px] font-normal sm:gap-1.5 sm:rounded-[10px] sm:px-3 sm:text-[13px] cursor-pointer",
+                                view === "cards"
+                                    ? "bg-secondary text-foreground"
+                                    : "text-slate-gray hover:bg-secondary/70",
+                            )}
+                            onClick={() => setView("cards")}
+                        >
+                            <LayoutGrid className="size-3.5 sm:size-4" />
+                            {tStations("cards")}
+                        </button>
+                        <button
+                            type="button"
+                            className={cn(
+                                "flex items-center gap-1 rounded-[8px] px-2.5 py-1.5 text-[12px] font-normal sm:gap-1.5 sm:rounded-[10px] sm:px-3 sm:text-[13px] cursor-pointer",
+                                view === "table"
+                                    ? "bg-secondary text-foreground"
+                                    : "text-slate-gray hover:bg-secondary/70",
+                            )}
+                            onClick={() => setView("table")}
+                        >
+                            <Table2 className="size-3.5 sm:size-4" />
+                            {tStations("table")}
+                        </button>
+                    </div>
                 </div>
             </div>
+
+            {/* Tableware Audit Alert Banner if returns are waiting */}
+            {pendingAuditCount > 0 && (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-950 dark:text-amber-200 animate-in fade-in-50">
+                    <div className="flex items-center gap-2">
+                        <span className="flex size-2 rounded-full bg-amber-500 animate-ping" />
+                        <Boxes className="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                        <span>
+                            <strong>
+                                {pendingAuditCount} returnable tableware
+                                issue(s)
+                            </strong>{" "}
+                            brought back by waiters awaiting your audit.
+                        </span>
+                    </div>
+                    <Button
+                        size="sm"
+                        onClick={() => router.push(`/${role}/materials`)}
+                        className="h-7 px-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs cursor-pointer shadow-xs"
+                    >
+                        Verify & Approve Audit
+                    </Button>
+                </div>
+            )}
+
+            {showMaterialsAuditModal && (
+                <KitchenMaterialsAuditModal
+                    onClose={() => setShowMaterialsAuditModal(false)}
+                />
+            )}
 
             {/* Interactive Top Status Filter */}
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-2.5">

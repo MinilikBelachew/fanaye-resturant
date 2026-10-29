@@ -230,6 +230,7 @@ export function QtyLineCard({
     hint,
     quantity,
     unit,
+    unitNode,
     onQuantityChange,
     onRemove,
     removeLabel,
@@ -241,6 +242,8 @@ export function QtyLineCard({
     hint?: string;
     quantity: string;
     unit: string;
+    /** Optional custom unit picker node replacing the static unit label. */
+    unitNode?: React.ReactNode;
     onQuantityChange: (v: string) => void;
     onRemove: () => void;
     removeLabel: string;
@@ -270,7 +273,9 @@ export function QtyLineCard({
                         error ? "border-rose-400" : "border-hairline",
                     )}
                 />
-                <span className="text-[12px] text-slate-gray">{unit}</span>
+                {unitNode ?? (
+                    <span className="text-[12px] text-slate-gray">{unit}</span>
+                )}
                 <button
                     type="button"
                     aria-label={removeLabel}

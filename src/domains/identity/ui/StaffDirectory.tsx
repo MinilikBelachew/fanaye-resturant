@@ -9,10 +9,12 @@ import {
     Eye,
     EyeOff,
     KeyRound,
+    Loader2,
     Lock,
     MoreVertical,
     Plus,
     Search,
+    Trash2,
     UserPlus,
     UtensilsCrossed,
     X,
@@ -23,6 +25,7 @@ import { openAddStaff, openEditStaff } from "@/context/slices/identitySlice";
 import {
     type AdminStaffQueryArg,
     useAdminStaffQuery,
+    useDeleteAdminStaffMutation,
     useResetAdminStaffPasswordMutation,
     useResetAdminStaffPinMutation,
 } from "@/context/services/staffApi";
@@ -83,12 +86,16 @@ function mapRoleCode(code: string): Role {
             return "owner";
         case "MANAGER":
             return "manager";
+        case "STORE_MANAGER":
+            return "store_manager";
         case "CASHIER":
             return "cashier";
         case "WAITER":
             return "waiter";
         case "DISPATCHER":
             return "dispatcher";
+        case "DRIVER":
+            return "driver";
         case "STATION_OPERATOR":
             return "kitchen";
         default:
@@ -113,6 +120,75 @@ function toLegacyStaff(member: AdminStaffMember): Staff {
             coverage.tables.map(table => table.tableId),
         ),
     };
+}
+
+function formatMemberShiftCoverages(
+    shiftCoverages: AdminStaffMember["shiftCoverages"],
+    roleCode: string,
+) {
+    const map = new Map<
+        string,
+        {
+            shiftDefinitionId: string;
+            shiftName: string;
+            startLocalTime: string;
+            endLocalTime: string;
+            byDay: Map<string, string[]>;
+            allTables: Set<string>;
+        }
+    >();
+
+    for (const cov of shiftCoverages) {
+        if (!map.has(cov.shiftDefinitionId)) {
+            map.set(cov.shiftDefinitionId, {
+                shiftDefinitionId: cov.shiftDefinitionId,
+                shiftName: cov.shiftName,
+                startLocalTime: cov.startLocalTime,
+                endLocalTime: cov.endLocalTime,
+                byDay: new Map(),
+                allTables: new Set(),
+            });
+        }
+        const item = map.get(cov.shiftDefinitionId)!;
+        const day = cov.dayCode || "Mon";
+        const tableNames = cov.tables.map(
+            tbl => tbl.displayNumber || tbl.displayName,
+        );
+        item.byDay.set(day, tableNames);
+        tableNames.forEach(t => item.allTables.add(t));
+    }
+
+    return Array.from(map.values()).map(item => {
+        const days = Array.from(item.byDay.keys());
+        const firstTables =
+            days.length > 0 ? (item.byDay.get(days[0]) ?? []).join(", ") : "";
+        const allSame = days.every(
+            d => (item.byDay.get(d) ?? []).join(", ") === firstTables,
+        );
+
+        let tablesSummary = "";
+        if (item.allTables.size === 0) {
+            tablesSummary =
+                roleCode === "CASHIER"
+                    ? "Cash desk custody"
+                    : "Scheduled shift";
+        } else if (allSame) {
+            tablesSummary = firstTables;
+        } else {
+            tablesSummary = days
+                .filter(d => (item.byDay.get(d) ?? []).length > 0)
+                .map(d => `${d}: ${(item.byDay.get(d) ?? []).join(", ")}`)
+                .join(" · ");
+        }
+
+        return {
+            key: item.shiftDefinitionId,
+            shiftName: item.shiftName,
+            startLocalTime: item.startLocalTime,
+            endLocalTime: item.endLocalTime,
+            tablesSummary,
+        };
+    });
 }
 
 export default function StaffDirectory({
@@ -152,15 +228,16 @@ export default function StaffDirectory({
         useResetAdminStaffPinMutation();
     const [resetPassword, { isLoading: resettingPassword }] =
         useResetAdminStaffPasswordMutation();
+    const [deleteStaff, { isLoading: isDeletingStaff }] =
+        useDeleteAdminStaffMutation();
 
     const [activeTab, setActiveTab] = useState<FilterTab>("all");
     const [searchQuery, setSearchQuery] = useState("");
-    const [assignWaiterId, setAssignWaiterId] = useState<string | null>(null);
-    const [assignWaiterName, setAssignWaiterName] = useState<string | null>(
+    const [assignWaiter, setAssignWaiter] = useState<AdminStaffMember | null>(
         null,
     );
 
-    // Modal state for PIN & Password resets
+    // Modal state for PIN & Password resets & Deletion
     const [pinTarget, setPinTarget] = useState<AdminStaffMember | null>(null);
     const [pinValue, setPinValue] = useState("");
     const [showPinValue, setShowPinValue] = useState(false);
@@ -169,6 +246,10 @@ export default function StaffDirectory({
         useState<AdminStaffMember | null>(null);
     const [passwordValue, setPasswordValue] = useState("");
     const [showPasswordValue, setShowPasswordValue] = useState(false);
+
+    const [deleteTarget, setDeleteTarget] = useState<AdminStaffMember | null>(
+        null,
+    );
 
     const [menuOpenMemberId, setMenuOpenMemberId] = useState<string | null>(
         null,
@@ -190,7 +271,12 @@ export default function StaffDirectory({
             }
             if (
                 activeTab === "management" &&
-                !["OWNER_ADMIN", "MANAGER", "CASHIER"].includes(member.roleCode)
+                ![
+                    "OWNER_ADMIN",
+                    "MANAGER",
+                    "CASHIER",
+                    "STORE_MANAGER",
+                ].includes(member.roleCode)
             ) {
                 return false;
             }
@@ -218,8 +304,7 @@ export default function StaffDirectory({
     ).size;
 
     function openAssign(member: AdminStaffMember) {
-        setAssignWaiterId(member.id);
-        setAssignWaiterName(member.name);
+        setAssignWaiter(member);
     }
 
     async function handleSavePin() {
@@ -268,6 +353,21 @@ export default function StaffDirectory({
             const message =
                 (err as { data?: { message?: string } })?.data?.message ||
                 t("toastPasswordError");
+            toast.error(message);
+        }
+    }
+
+    async function handleDeleteStaff() {
+        if (!deleteTarget) return;
+        try {
+            await deleteStaff(deleteTarget.id).unwrap();
+            toast.success(t("toastStaffDeleted"), deleteTarget.name);
+            setDeleteTarget(null);
+            void refetch();
+        } catch (err: unknown) {
+            const message =
+                (err as { data?: { message?: string } })?.data?.message ||
+                t("toastStaffDeleteError");
             toast.error(message);
         }
     }
@@ -624,52 +724,39 @@ export default function StaffDirectory({
                                                                     )}
                                                                 </span>
                                                             ) : (
-                                                                member.shiftCoverages.map(
-                                                                    coverage => (
-                                                                        <div
-                                                                            key={
-                                                                                coverage.shiftDefinitionId
+                                                                formatMemberShiftCoverages(
+                                                                    member.shiftCoverages,
+                                                                    member.roleCode,
+                                                                ).map(item => (
+                                                                    <div
+                                                                        key={
+                                                                            item.key
+                                                                        }
+                                                                        className="text-[12px]"
+                                                                    >
+                                                                        <span className="font-semibold text-foreground">
+                                                                            {
+                                                                                item.shiftName
+                                                                            }{" "}
+                                                                            (
+                                                                            {
+                                                                                item.startLocalTime
                                                                             }
-                                                                            className="text-[12px]"
-                                                                        >
-                                                                            <span className="font-semibold text-foreground">
-                                                                                {
-                                                                                    coverage.shiftName
-                                                                                }{" "}
-                                                                                (
-                                                                                {
-                                                                                    coverage.startLocalTime
-                                                                                }
-                                                                                {
-                                                                                    " – "
-                                                                                }
-                                                                                {
-                                                                                    coverage.endLocalTime
-                                                                                }
-                                                                                ):
-                                                                            </span>{" "}
-                                                                            <span className="text-slate-gray">
-                                                                                {coverage
-                                                                                    .tables
-                                                                                    .length >
-                                                                                0
-                                                                                    ? coverage.tables
-                                                                                          .map(
-                                                                                              tbl =>
-                                                                                                  tbl.displayNumber ||
-                                                                                                  tbl.displayName,
-                                                                                          )
-                                                                                          .join(
-                                                                                              ", ",
-                                                                                          )
-                                                                                    : member.roleCode ===
-                                                                                        "CASHIER"
-                                                                                      ? "Cash desk custody"
-                                                                                      : "Scheduled shift"}
-                                                                            </span>
-                                                                        </div>
-                                                                    ),
-                                                                )
+                                                                            {
+                                                                                " – "
+                                                                            }
+                                                                            {
+                                                                                item.endLocalTime
+                                                                            }
+                                                                            ):
+                                                                        </span>{" "}
+                                                                        <span className="text-slate-gray">
+                                                                            {
+                                                                                item.tablesSummary
+                                                                            }
+                                                                        </span>
+                                                                    </div>
+                                                                ))
                                                             )}
                                                             {isWaiter ? (
                                                                 <button
@@ -928,6 +1015,29 @@ export default function StaffDirectory({
                                                                               )}
                                                                           </span>
                                                                       </button>
+                                                                      <div className="my-1 border-t border-hairline" />
+                                                                      <button
+                                                                          type="button"
+                                                                          onClick={() => {
+                                                                              setMenuOpenMemberId(
+                                                                                  null,
+                                                                              );
+                                                                              setMenuPos(
+                                                                                  null,
+                                                                              );
+                                                                              setDeleteTarget(
+                                                                                  member,
+                                                                              );
+                                                                          }}
+                                                                          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
+                                                                      >
+                                                                          <Trash2 className="size-3.5 text-red-500" />
+                                                                          <span>
+                                                                              {t(
+                                                                                  "menuDeleteStaff",
+                                                                              )}
+                                                                          </span>
+                                                                      </button>
                                                                   </div>
                                                               </>,
                                                               document.body,
@@ -1155,15 +1265,87 @@ export default function StaffDirectory({
                 </div>
             )}
 
+            {/* DELETE STAFF CONFIRMATION MODAL */}
+            {deleteTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4 animate-in fade-in">
+                    <div
+                        className="fixed inset-0"
+                        onClick={() =>
+                            !isDeletingStaff && setDeleteTarget(null)
+                        }
+                    />
+                    <div className="relative z-10 w-full max-w-sm rounded-[20px] border border-hairline bg-white dark:bg-card p-6 shadow-2xl animate-in zoom-in-95">
+                        <div className="flex items-start gap-3 mb-4">
+                            <div className="size-10 rounded-full bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
+                                <Trash2 className="size-5" />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="font-bold text-[16px] text-foreground">
+                                    {t("deleteStaffTitle")}
+                                </h3>
+                                <p className="text-[12px] text-slate-gray mt-0.5">
+                                    {deleteTarget.name} (
+                                    {deleteTarget.roleLabel})
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                disabled={isDeletingStaff}
+                                onClick={() => setDeleteTarget(null)}
+                                className="size-7 rounded-full flex items-center justify-center text-slate-gray hover:bg-secondary"
+                            >
+                                <X className="size-4" />
+                            </button>
+                        </div>
+
+                        <p className="text-[13px] text-slate-gray leading-relaxed mb-6">
+                            {t("deleteStaffConfirmMsg", {
+                                name: deleteTarget.name,
+                            })}
+                        </p>
+
+                        <div className="flex items-center justify-end gap-2.5">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                disabled={isDeletingStaff}
+                                onClick={() => setDeleteTarget(null)}
+                                className="h-9 rounded-xl text-[13px]"
+                            >
+                                {tCommon("cancel")}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                disabled={isDeletingStaff}
+                                onClick={() => void handleDeleteStaff()}
+                                className="h-9 rounded-xl bg-red-600 hover:bg-red-700 text-white text-[13px] font-semibold gap-1.5 shadow-sm"
+                            >
+                                {isDeletingStaff ? (
+                                    <>
+                                        <Loader2 className="size-3.5 animate-spin" />
+                                        <span>{t("deleting")}</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Trash2 className="size-3.5" />
+                                        <span>{t("deleteStaffButton")}</span>
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <AddEditStaffSheet />
             <AssignTablesSheet
-                isOpen={Boolean(assignWaiterId)}
-                waiterMembershipId={assignWaiterId}
-                waiterName={assignWaiterName}
-                onClose={() => {
-                    setAssignWaiterId(null);
-                    setAssignWaiterName(null);
-                }}
+                isOpen={Boolean(assignWaiter)}
+                waiter={assignWaiter}
+                waiterMembershipId={assignWaiter?.id ?? null}
+                waiterName={assignWaiter?.name ?? null}
+                shifts={shifts}
+                onClose={() => setAssignWaiter(null)}
             />
         </DashboardFrame>
     );

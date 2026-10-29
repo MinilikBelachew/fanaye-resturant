@@ -1,8 +1,4 @@
-export type AuditCategory =
-    | "orders"
-    | "fulfillment"
-    | "payments"
-    | "system";
+export type AuditCategory = "orders" | "fulfillment" | "payments" | "system";
 
 export interface AuditEvent {
     id: string;

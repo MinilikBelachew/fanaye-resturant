@@ -8,6 +8,7 @@ import {
     Plus,
     Search,
     Sparkles,
+    UtensilsCrossed,
     Wifi,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -256,8 +257,8 @@ export const LivePhoneSimulator: React.FC<LivePhoneSimulatorProps> = ({
                                             className="h-full w-full object-cover"
                                         />
                                     ) : (
-                                        <div className="flex h-full w-full items-center justify-center text-[9px] text-slate-400">
-                                            🍽️
+                                        <div className="flex h-full w-full items-center justify-center text-slate-300">
+                                            <UtensilsCrossed className="size-5" />
                                         </div>
                                     )}
                                 </div>

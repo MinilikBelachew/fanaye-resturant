@@ -26,6 +26,7 @@ const LABEL_KEYS: Record<string, string> = {
     Dashboard: "dashboard",
     "Live Ops": "liveOps",
     "Live Operations": "liveOps",
+    "Fresh Prep": "freshPrep",
     Tenants: "tenants",
     "Staff Directory": "staffDirectory",
     "Platform Audit": "audit",
@@ -66,6 +67,18 @@ const LABEL_KEYS: Record<string, string> = {
     Exceptions: "exceptions",
     Notifications: "notifications",
     Alerts: "alerts",
+    Inventory: "inventory",
+    "Stock & Items": "stockItems",
+    "Branch Supply": "branchSupply",
+    "Receiving & Audit": "receivingAudit",
+    "Central Prep": "centralPrep",
+    Plans: "plans",
+    "Roles & Permissions": "rolesPermissions",
+    Directory: "staffDirectory",
+    Schedule: "schedule",
+    Shifts: "shift",
+    Attendance: "attendance",
+    Leave: "leave",
 };
 
 const headerClass =

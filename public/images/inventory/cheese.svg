@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%">
+  <defs>
+    <linearGradient id="cheeseTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE066" />
+      <stop offset="100%" stop-color="#FFCC00" />
+    </linearGradient>
+    <linearGradient id="cheeseSide" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#EBB400" />
+      <stop offset="100%" stop-color="#B8860B" />
+    </linearGradient>
+  </defs>
+  <circle cx="64" cy="64" r="58" fill="#FFFDF0" />
+  <!-- Cheese Top Wedge -->
+  <path d="M28 58 L96 32 C104 46 106 66 102 82 L28 58 Z" fill="url(#cheeseTop)" stroke="#D4A000" stroke-width="1.5" />
+  <!-- Cheese Front Face -->
+  <path d="M28 58 L102 82 L102 96 C102 98 98 100 94 98 L28 72 Z" fill="url(#cheeseSide)" stroke="#9C7200" stroke-width="1.5" />
+  <!-- Cheese Holes -->
+  <ellipse cx="64" cy="50" rx="6" ry="3.5" fill="#E6B800" />
+  <ellipse cx="84" cy="46" rx="4" ry="2.5" fill="#E6B800" />
+  <ellipse cx="48" cy="56" rx="4.5" ry="3" fill="#E6B800" />
+  <ellipse cx="56" cy="74" rx="5" ry="4" fill="#996F00" />
+  <ellipse cx="80" cy="86" rx="6" ry="5" fill="#996F00" />
+  <ellipse cx="38" cy="66" rx="3.5" ry="3" fill="#996F00" />
+</svg>

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%">
+  <defs>
+    <radialGradient id="onionGrad" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#C0567C" />
+      <stop offset="60%" stop-color="#8E2D56" />
+      <stop offset="100%" stop-color="#5B1636" />
+    </radialGradient>
+    <linearGradient id="sproutGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#6E9A34" />
+      <stop offset="100%" stop-color="#9BC53D" />
+    </linearGradient>
+    <linearGradient id="rootGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#D4B483" />
+      <stop offset="100%" stop-color="#A68050" />
+    </linearGradient>
+  </defs>
+  <circle cx="64" cy="64" r="58" fill="#FBF7FA" />
+  <path d="M64 26 C40 26 24 50 24 74 C24 96 42 112 64 112 C86 112 104 96 104 74 C104 50 88 26 64 26 Z" fill="url(#onionGrad)" />
+  <path d="M64 28 C50 42 38 62 38 78 C38 95 49 108 64 110" fill="none" stroke="#D97A9F" stroke-width="2.5" stroke-linecap="round" opacity="0.6" />
+  <path d="M64 28 C78 42 90 62 90 78 C90 95 79 108 64 110" fill="none" stroke="#D97A9F" stroke-width="2.5" stroke-linecap="round" opacity="0.6" />
+  <path d="M64 28 C58 48 52 68 52 82 C52 97 58 107 64 110" fill="none" stroke="#E698B5" stroke-width="2" stroke-linecap="round" opacity="0.5" />
+  <path d="M64 28 C70 48 76 68 76 82 C76 97 70 107 64 110" fill="none" stroke="#E698B5" stroke-width="2" stroke-linecap="round" opacity="0.5" />
+  <path d="M64 26 C62 18 56 12 50 8 C58 12 63 18 64 26 Z" fill="url(#sproutGrad)" />
+  <path d="M64 26 C66 17 72 10 78 6 C71 11 66 18 64 26 Z" fill="url(#sproutGrad)" />
+  <path d="M58 112 C56 118 53 123 50 126 M64 112 C64 119 63 124 64 127 M70 112 C72 118 75 123 78 126" stroke="url(#rootGrad)" stroke-width="2" stroke-linecap="round" />
+</svg>

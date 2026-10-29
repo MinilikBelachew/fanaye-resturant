@@ -47,6 +47,7 @@ export default [
             "@typescript-eslint/no-explicit-any": "warn",
 
             // General Rules
+            "no-empty": ["warn", { "allowEmptyCatch": true }],
             "no-console": [
                 "warn",
                 {

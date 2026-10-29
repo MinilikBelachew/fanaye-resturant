@@ -1,18 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { User } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { LayoutGrid, Table2, User } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useFloorTablesQuery } from "@/context/services/floorApi";
 import { tableNumber } from "@/domains/floor/application/groupFloor";
 import FloorLocationSections from "@/domains/floor/ui/FloorLocationSections";
 import FloorTableCard from "@/domains/floor/ui/FloorTableCard";
+import ManagerTablesTableView from "@/domains/floor/ui/ManagerTablesTableView";
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 
 export default function ManagerTablesBoard() {
     const t = useTranslations("managerTables");
     const tDetail = useTranslations("managerTableDetail");
+    const tCommon = useTranslations("common");
     const router = useRouter();
     const { data, isLoading, isError } = useFloorTablesQuery();
     const tables = data?.data ?? [];
@@ -22,6 +24,27 @@ export default function ManagerTablesBoard() {
         "all" | "occupied" | "available"
     >("all");
     const [waiterFilter, setWaiterFilter] = useState("all");
+    const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem("fanaye_manager_tables_view");
+            if (saved === "cards" || saved === "table") {
+                setViewMode(saved);
+            }
+        } catch {
+            // ignore localStorage error
+        }
+    }, []);
+
+    const handleSetViewMode = (mode: "cards" | "table") => {
+        setViewMode(mode);
+        try {
+            localStorage.setItem("fanaye_manager_tables_view", mode);
+        } catch {
+            // ignore
+        }
+    };
 
     const stats = useMemo(() => {
         const occupied = tables.filter(table => table.tableSessionId);
@@ -165,76 +188,134 @@ export default function ManagerTablesBoard() {
                         </button>
                     ))}
                 </div>
-                <select
-                    value={waiterFilter}
-                    onChange={e => setWaiterFilter(e.target.value)}
-                    className="rounded-full border border-hairline bg-surface-ivory px-3 py-1.5 text-[12px] font-medium outline-none"
-                >
-                    <option value="all">{t("allServers")}</option>
-                    {waiterOptions.map(waiter => (
-                        <option key={waiter.id} value={waiter.id}>
-                            {waiter.name}
-                        </option>
-                    ))}
-                </select>
+                <div className="flex items-center gap-2">
+                    <select
+                        value={waiterFilter}
+                        onChange={e => setWaiterFilter(e.target.value)}
+                        className="rounded-full border border-hairline bg-surface-ivory px-3 py-1.5 text-[12px] font-medium outline-none"
+                    >
+                        <option value="all">{t("allServers")}</option>
+                        {waiterOptions.map(waiter => (
+                            <option key={waiter.id} value={waiter.id}>
+                                {waiter.name}
+                            </option>
+                        ))}
+                    </select>
+
+                    {/* View Switcher: Cards vs Table with localStorage persistence */}
+                    <div className="flex items-center rounded-full border border-hairline bg-surface-ivory p-0.5 shadow-2xs">
+                        <button
+                            type="button"
+                            onClick={() => handleSetViewMode("cards")}
+                            className={cn(
+                                "flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-medium transition-all select-none",
+                                viewMode === "cards"
+                                    ? "bg-foreground text-background shadow-xs font-semibold"
+                                    : "text-slate-gray hover:text-foreground",
+                            )}
+                            title="Cards Grid View"
+                        >
+                            <LayoutGrid className="size-3.5" />
+                            <span className="hidden sm:inline">Cards</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleSetViewMode("table")}
+                            className={cn(
+                                "flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-medium transition-all select-none",
+                                viewMode === "table"
+                                    ? "bg-foreground text-background shadow-xs font-semibold"
+                                    : "text-slate-gray hover:text-foreground",
+                            )}
+                            title="Data Table View"
+                        >
+                            <Table2 className="size-3.5" />
+                            <span className="hidden sm:inline">Table</span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
-            <FloorLocationSections
-                tables={filteredTables}
-                locations={locations}
-                renderTable={table => {
-                    const occupied = Boolean(table.tableSessionId);
-                    const footerLeft = !occupied
-                        ? t("available")
-                        : table.readyItemCount > 0
-                          ? t("readyCount", { count: table.readyItemCount })
-                          : table.cookingItemCount > 0
-                            ? t("cookingCount", {
-                                  count: table.cookingItemCount,
-                              })
-                            : (table.sessionStatus ?? t("open"));
+            {viewMode === "table" ? (
+                <ManagerTablesTableView
+                    tables={filteredTables}
+                    locations={locations}
+                    onSelectTable={id => router.push(`/manager/tables/${id}`)}
+                    labels={{
+                        table: tCommon("table"),
+                        location: "Zone / Location",
+                        status: "Status",
+                        server: t("assignedWaiterLabel") || "Assigned Server",
+                        orderStatus: "Order Progress",
+                        guests: t("guests") || "Guests",
+                        action: "Action",
+                        viewDetail: tDetail("viewDetail"),
+                        available: t("available"),
+                        occupied: t("occupied"),
+                        vipBadge: "VIP",
+                        unassigned: t("noWaiterAssigned"),
+                    }}
+                />
+            ) : (
+                <FloorLocationSections
+                    tables={filteredTables}
+                    locations={locations}
+                    renderTable={table => {
+                        const occupied = Boolean(table.tableSessionId);
+                        const footerLeft = !occupied
+                            ? t("available")
+                            : table.readyItemCount > 0
+                              ? t("readyCount", { count: table.readyItemCount })
+                              : table.cookingItemCount > 0
+                                ? t("cookingCount", {
+                                      count: table.cookingItemCount,
+                                  })
+                                : (table.sessionStatus ?? t("open"));
 
-                    return (
-                        <FloorTableCard
-                            key={table.tableId}
-                            tableNumber={tableNumber(table)}
-                            location={table.locationName}
-                            isVip={table.effectiveVip}
-                            badge={
-                                occupied
-                                    ? {
-                                          label: t("occupied"),
-                                          tone: "occupied",
-                                      }
-                                    : {
-                                          label: t("available"),
-                                          tone: "available",
-                                      }
-                            }
-                            waiter={
-                                occupied
-                                    ? table.waiterName
-                                    : table.assignedWaiterName
-                            }
-                            note={
-                                occupied
-                                    ? null
-                                    : table.assignedWaiterName
-                                      ? t("assignedWaiterNote", {
-                                            name: table.assignedWaiterName,
-                                        })
-                                      : t("noWaiterAssigned")
-                            }
-                            total={null}
-                            footerLeft={footerLeft}
-                            footerAction={tDetail("viewDetail")}
-                            onClick={() =>
-                                router.push(`/manager/tables/${table.tableId}`)
-                            }
-                        />
-                    );
-                }}
-            />
+                        return (
+                            <FloorTableCard
+                                key={table.tableId}
+                                tableNumber={tableNumber(table)}
+                                location={table.locationName}
+                                isVip={table.effectiveVip}
+                                badge={
+                                    occupied
+                                        ? {
+                                              label: t("occupied"),
+                                              tone: "occupied",
+                                          }
+                                        : {
+                                              label: t("available"),
+                                              tone: "available",
+                                          }
+                                }
+                                waiter={
+                                    occupied
+                                        ? table.waiterName
+                                        : table.assignedWaiterName
+                                }
+                                note={
+                                    occupied
+                                        ? null
+                                        : table.assignedWaiterName
+                                          ? t("assignedWaiterNote", {
+                                                name: table.assignedWaiterName,
+                                            })
+                                          : t("noWaiterAssigned")
+                                }
+                                total={null}
+                                footerLeft={footerLeft}
+                                footerAction={tDetail("viewDetail")}
+                                onClick={() =>
+                                    router.push(
+                                        `/manager/tables/${table.tableId}`,
+                                    )
+                                }
+                            />
+                        );
+                    }}
+                />
+            )}
         </div>
     );
 }

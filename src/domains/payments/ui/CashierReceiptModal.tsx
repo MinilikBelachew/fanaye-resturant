@@ -1,7 +1,15 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { Check, FileDown, Loader2, Printer, Send, X } from "lucide-react";
+import {
+    Check,
+    FileDown,
+    Lightbulb,
+    Loader2,
+    Printer,
+    Send,
+    X,
+} from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Bill } from "@/domains/billing/domain/billingApi";
@@ -398,19 +406,20 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
 
                 {/* Footer info bar */}
                 <div className="no-print bg-slate-50 px-6 py-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                    <span>
+                    <span className="flex items-center gap-1">
+                        <Lightbulb className="size-3.5 text-amber-500 shrink-0" />
                         {showSendToWaiter ? (
-                            <>
-                                💡 Click{" "}
+                            <span>
+                                Click{" "}
                                 <strong>&ldquo;Send to Waiter&rdquo;</strong> to
                                 dispatch an instant alert to the server to
                                 collect the bill.
-                            </>
+                            </span>
                         ) : (
-                            <>
-                                💡 Present this digital receipt to the guest to
+                            <span>
+                                Present this digital receipt to the guest to
                                 scan and verify or collect payment.
-                            </>
+                            </span>
                         )}
                     </span>
                     <Button

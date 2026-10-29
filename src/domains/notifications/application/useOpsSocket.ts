@@ -76,6 +76,9 @@ function invalidateForType(
     if (type.startsWith("leave.")) {
         dispatch(api.util.invalidateTags(["Floor", "Notifications"]));
     }
+    if (type.startsWith("inventory.")) {
+        dispatch(api.util.invalidateTags(["Inventory", "Notifications"]));
+    }
 }
 
 export function useOpsSocket() {

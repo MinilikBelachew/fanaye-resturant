@@ -26,6 +26,8 @@ import "./services/notificationsApi";
 import "./services/branchesApi";
 import "./services/inventoryApi";
 import "./services/managerReportsApi";
+import "./services/feedbackApi";
+import "./services/menuEngineeringApi";
 
 export const store = configureStore({
     reducer: {

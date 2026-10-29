@@ -39,6 +39,7 @@ const LABEL_KEYS: Record<string, string> = {
     Dashboard: "dashboard",
     "Live Ops": "liveOps",
     "Live Operations": "liveOps",
+    "Fresh Prep": "freshPrep",
     Tenants: "tenants",
     Plans: "plans",
     "Staff Directory": "staffDirectory",
@@ -54,6 +55,8 @@ const LABEL_KEYS: Record<string, string> = {
     "Menu Items": "menuItems",
     "QR Menu Builder": "qrMenu",
     "Print Menu Builder": "printMenu",
+    "Menu Engineering": "menuEngineering",
+    Feedback: "feedback",
     Stations: "stations",
     Tables: "tables",
     Staff: "staff",
@@ -86,6 +89,11 @@ const LABEL_KEYS: Record<string, string> = {
     Exceptions: "exceptions",
     Notifications: "notifications",
     Alerts: "alerts",
+    Inventory: "inventory",
+    "Stock & Items": "stockItems",
+    "Branch Supply": "branchSupply",
+    "Receiving & Audit": "receivingAudit",
+    "Central Prep": "centralPrep",
 };
 
 export default function SidebarNav(props: {
@@ -258,13 +266,13 @@ function SidebarNavInner({
                                 className={cn(
                                     "relative flex size-10 items-center justify-center rounded-full border transition-colors",
                                     active
-                                        ? "border-border bg-background text-orange-600 dark:text-orange-400"
+                                        ? "border-border bg-background text-emerald-600 dark:text-emerald-400"
                                         : "border-transparent text-muted-foreground hover:bg-background/70 hover:text-foreground",
                                 )}
                             >
                                 <item.icon className="size-4" />
                                 {count > 0 ? (
-                                    <span className="absolute top-1 right-1 size-2 rounded-full bg-orange-500" />
+                                    <span className="absolute top-1 right-1 size-2 rounded-full bg-emerald-600" />
                                 ) : null}
                             </Link>
                             <span className="pointer-events-none absolute top-1/2 left-[calc(100%+12px)] z-50 -translate-y-1/2 rounded-lg border border-border/80 bg-popover px-2.5 py-1 text-[12px] font-medium whitespace-nowrap text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100">
@@ -343,7 +351,7 @@ function SidebarNavInner({
                                                 className={cn(
                                                     "size-4 shrink-0",
                                                     inSection
-                                                        ? "text-orange-600 dark:text-orange-400"
+                                                        ? "text-emerald-600 dark:text-emerald-400"
                                                         : "text-muted-foreground",
                                                 )}
                                             />
@@ -373,7 +381,7 @@ function SidebarNavInner({
                                                                 className={cn(
                                                                     "flex h-8 items-center gap-2.5 rounded-full px-3 text-[12px] transition-colors",
                                                                     childIsActive
-                                                                        ? "bg-background font-medium text-orange-600 dark:text-orange-400"
+                                                                        ? "bg-background font-medium text-emerald-600 dark:text-emerald-400"
                                                                         : "text-muted-foreground hover:bg-background/70 hover:text-foreground",
                                                                 )}
                                                             >
@@ -412,7 +420,7 @@ function SidebarNavInner({
                                             className={cn(
                                                 "size-4 shrink-0",
                                                 active
-                                                    ? "text-orange-600 dark:text-orange-400"
+                                                    ? "text-emerald-600 dark:text-emerald-400"
                                                     : "text-muted-foreground",
                                             )}
                                         />
@@ -424,7 +432,7 @@ function SidebarNavInner({
                                                 className={cn(
                                                     "rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
                                                     count > 0
-                                                        ? "bg-orange-500 text-white"
+                                                        ? "bg-emerald-600 text-white"
                                                         : "bg-background text-muted-foreground",
                                                 )}
                                             >

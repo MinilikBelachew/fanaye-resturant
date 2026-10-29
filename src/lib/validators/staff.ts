@@ -23,6 +23,8 @@ export const staffFormSchema = z
             }),
         hireDate: z.string().optional().or(z.literal("")),
         photoId: z.string().optional().or(z.literal("")),
+        licencePlate: z.string().trim().optional(),
+        vehicleDesc: z.string().trim().optional(),
         active: z.boolean(),
         /** Per weekday: shift definition id, or "" for off */
         dayShiftByDay: z.record(z.string(), z.string()),
@@ -32,6 +34,25 @@ export const staffFormSchema = z
         coverageShiftId: z.string().optional().or(z.literal("")),
     })
     .superRefine((data, ctx) => {
+        if (data.role === "driver") {
+            if (!data.phone || data.phone.trim().length < 9) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["phone"],
+                    message: "Valid phone number is required for drivers.",
+                });
+            }
+            if (!data.licencePlate || data.licencePlate.trim().length < 2) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["licencePlate"],
+                    message:
+                        "Licence plate number is required (e.g. 3-12345 AA).",
+                });
+            }
+            return;
+        }
+
         const assignedDays = WEEKDAYS.filter(
             day => (data.dayShiftByDay[day] || "").trim().length > 0,
         );
@@ -81,6 +102,8 @@ export const staffFormDefaults: StaffFormValues = {
     pin: "",
     hireDate: "",
     photoId: "",
+    licencePlate: "",
+    vehicleDesc: "",
     active: true,
     dayShiftByDay: { ...emptyDayShiftByDay },
     assignedTablesByShift: {},
@@ -101,7 +124,11 @@ export function dayShiftsFromForm(
 export function tableCoveragesFromForm(
     dayShiftByDay: Record<string, string>,
     assignedTablesByShift: Record<string, string[]>,
-): Array<{ shiftDefinitionId: string; tableIds: string[] }> {
+): Array<{
+    shiftDefinitionId: string;
+    tableIds: string[];
+    applyToAllDays?: boolean;
+}> {
     const used = [
         ...new Set(
             WEEKDAYS.map(day => dayShiftByDay[day] || "").filter(Boolean),
@@ -110,5 +137,6 @@ export function tableCoveragesFromForm(
     return used.map(shiftDefinitionId => ({
         shiftDefinitionId,
         tableIds: assignedTablesByShift[shiftDefinitionId] || [],
+        applyToAllDays: true,
     }));
 }

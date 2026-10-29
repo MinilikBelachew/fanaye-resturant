@@ -60,6 +60,7 @@ function needsOptions(item: MenuItem) {
 export default function AddOrderMenu({
     tableSessionId,
     roomSessionId,
+    outsideOrderId,
     expectedVersion,
     tableLabel = "Table",
     variant = "waiter",
@@ -67,6 +68,7 @@ export default function AddOrderMenu({
 }: {
     tableSessionId?: string;
     roomSessionId?: string;
+    outsideOrderId?: string;
     expectedVersion: number;
     tableLabel?: string;
     /** Waiter table flow vs dispatcher call-pickup flow (copy + accents). */
@@ -256,15 +258,20 @@ export default function AddOrderMenu({
         }
         try {
             await confirmOrder({
-                ...(roomSessionId
+                ...(outsideOrderId
                     ? {
-                          roomSessionId,
-                          expectedRoomSessionVersion: expectedVersion,
+                          outsideOrderId,
+                          expectedOutsideOrderVersion: expectedVersion,
                       }
-                    : {
-                          tableSessionId: tableSessionId!,
-                          expectedTableSessionVersion: expectedVersion,
-                      }),
+                    : roomSessionId
+                      ? {
+                            roomSessionId,
+                            expectedRoomSessionVersion: expectedVersion,
+                        }
+                      : {
+                            tableSessionId: tableSessionId!,
+                            expectedTableSessionVersion: expectedVersion,
+                        }),
                 items: lines.map(line => ({
                     menuItemId: line.menuItemId,
                     quantity: line.quantity,

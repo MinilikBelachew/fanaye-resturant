@@ -113,6 +113,7 @@ export type CreateAdminMenuItemBody = {
     recipeLines?: Array<{
         ingredientId: string;
         quantityPerServing: number;
+        unit?: string;
     }>;
 };
 

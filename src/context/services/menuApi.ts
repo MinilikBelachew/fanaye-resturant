@@ -164,6 +164,26 @@ export const menuApi = api.injectEndpoints({
             }),
             invalidatesTags: ["Menu"],
         }),
+        deleteAdminCategory: builder.mutation<
+            { success: boolean },
+            { id: string }
+        >({
+            query: ({ id }) => ({
+                url: `/menu/categories/${id}`,
+                method: "DELETE",
+            }),
+            invalidatesTags: ["Menu"],
+        }),
+        deleteAdminMenuItem: builder.mutation<
+            { success: boolean },
+            { id: string }
+        >({
+            query: ({ id }) => ({
+                url: `/menu/items/${id}`,
+                method: "DELETE",
+            }),
+            invalidatesTags: ["Menu"],
+        }),
     }),
 });
 
@@ -181,4 +201,6 @@ export const {
     useImportScannedMenuMutation,
     useMarkMenuItemSoldOutMutation,
     useClearMenuItemSoldOutMutation,
+    useDeleteAdminCategoryMutation,
+    useDeleteAdminMenuItemMutation,
 } = menuApi;

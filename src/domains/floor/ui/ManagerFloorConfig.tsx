@@ -3,11 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import Image from "next/image";
 import {
     ChevronRight,
+    LayoutGrid,
     MapPin,
+    Pencil,
     Plus,
     Save,
+    Table2,
     Trash2,
     UserRound,
     Utensils,
@@ -23,6 +27,7 @@ import {
     useUpdateTableLocationMutation,
 } from "@/context/services/floorApi";
 import type { AdminDiningTable } from "@/domains/floor/domain/floorLayoutApi";
+import { ManagerDiningTableCard } from "@/domains/floor/ui/ManagerDiningTableCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -51,7 +56,10 @@ export default function ManagerFloorConfig() {
     const t = useTranslations("managerTables");
     const tDetail = useTranslations("managerTableDetail");
     const tCommon = useTranslations("common");
-    const { data, isLoading, isError } = useAdminFloorLayoutQuery();
+    const [selectedShiftId, setSelectedShiftId] = useState<string>("");
+    const { data, isLoading, isError } = useAdminFloorLayoutQuery(
+        selectedShiftId ? { shiftId: selectedShiftId } : undefined,
+    );
     const [createPlace, { isLoading: creatingPlace }] =
         useCreateTableLocationMutation();
     const [updatePlace] = useUpdateTableLocationMutation();
@@ -66,12 +74,37 @@ export default function ManagerFloorConfig() {
 
     const locations = data?.data ?? [];
     const waiters = data?.waiters ?? [];
+    const shifts = data?.shifts ?? [];
+    const activeShiftId = data?.activeShiftId;
 
     const [editingTable, setEditingTable] = useState<AdminDiningTable | null>(
         null,
     );
     const [confirmPlaceId, setConfirmPlaceId] = useState<string | null>(null);
     const [confirmTableId, setConfirmTableId] = useState<string | null>(null);
+    const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem(
+                "fanaye_manager_floor_config_view",
+            );
+            if (saved === "cards" || saved === "table") {
+                setViewMode(saved);
+            }
+        } catch {
+            // ignore
+        }
+    }, []);
+
+    const handleSetViewMode = (mode: "cards" | "table") => {
+        setViewMode(mode);
+        try {
+            localStorage.setItem("fanaye_manager_floor_config_view", mode);
+        } catch {
+            // ignore
+        }
+    };
 
     const totals = useMemo(() => {
         const tables = locations.reduce(
@@ -154,8 +187,6 @@ export default function ManagerFloorConfig() {
                 locationId: values.locationId,
                 displayName: label,
                 displayNumber: number,
-                assignedWaiterMembershipId:
-                    values.assignedWaiterMembershipId || null,
                 isVip: values.isVip ?? false,
             }).unwrap();
             tableForm.reset({
@@ -178,7 +209,7 @@ export default function ManagerFloorConfig() {
             displayNumber: table.displayNumber ?? "",
             displayName: table.displayName,
             locationId: table.locationId,
-            assignedWaiterMembershipId: table.assignedWaiterMembershipId ?? "",
+            assignedWaiterMembershipId: "",
             isVip: table.isVip,
         });
     }
@@ -192,8 +223,6 @@ export default function ManagerFloorConfig() {
                     displayNumber: values.displayNumber.trim(),
                     displayName: values.displayName.trim(),
                     locationId: values.locationId,
-                    assignedWaiterMembershipId:
-                        values.assignedWaiterMembershipId || null,
                     isVip: values.isVip ?? false,
                 },
             }).unwrap();
@@ -458,39 +487,14 @@ export default function ManagerFloorConfig() {
                                     </FormItem>
                                 )}
                             />
-                            <FormField
-                                control={tableForm.control}
-                                name="assignedWaiterMembershipId"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormControl>
-                                            <select
-                                                value={field.value || ""}
-                                                onChange={e =>
-                                                    field.onChange(
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className="h-10 w-full rounded-[10px] border border-input bg-card px-3 text-[13px]"
-                                            >
-                                                <option value="">
-                                                    {t("assignWaiterLater")}
-                                                </option>
-                                                {waiters.map(waiter => (
-                                                    <option
-                                                        key={waiter.id}
-                                                        value={waiter.id}
-                                                    >
-                                                        {waiter.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
                         </div>
+                        <p className="text-[11px] text-slate-gray">
+                            Waiter assignments are scheduled by shift in{" "}
+                            <span className="font-semibold text-foreground">
+                                HR → Directory
+                            </span>
+                            .
+                        </p>
                         <FormField
                             control={tableForm.control}
                             name="isVip"
@@ -534,6 +538,125 @@ export default function ManagerFloorConfig() {
                 </div>
             ) : (
                 <div className="space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+                        <div>
+                            <h3 className="text-[14px] font-semibold text-foreground">
+                                {totals.places} {t("placesCount") || "places"} •{" "}
+                                {totals.tables} {t("tablesCount") || "tables"}
+                            </h3>
+                            <p className="text-[12px] text-slate-gray">
+                                {totals.unassigned > 0
+                                    ? `${totals.unassigned} tables unassigned`
+                                    : "All tables assigned"}
+                            </p>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2.5">
+                            {/* Shift Selector */}
+                            {shifts.length > 0 ? (
+                                <div className="flex flex-wrap items-center gap-1 rounded-full border border-hairline bg-surface-ivory p-0.5 shadow-2xs">
+                                    <span className="pl-2.5 pr-1 text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
+                                        Shift:
+                                    </span>
+                                    {shifts.map(shift => {
+                                        const isSelected =
+                                            (selectedShiftId ||
+                                                data?.selectedShiftId) ===
+                                            shift.id;
+                                        const isLive =
+                                            activeShiftId === shift.id;
+                                        return (
+                                            <button
+                                                key={shift.id}
+                                                type="button"
+                                                onClick={() =>
+                                                    setSelectedShiftId(shift.id)
+                                                }
+                                                className={cn(
+                                                    "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-medium transition-all select-none",
+                                                    isSelected
+                                                        ? "bg-foreground text-background shadow-xs font-semibold"
+                                                        : "text-slate-gray hover:text-foreground",
+                                                )}
+                                                title={`${shift.name} (${shift.startLocalTime}–${shift.endLocalTime})`}
+                                            >
+                                                {isLive ? (
+                                                    <span className="relative flex size-1.5">
+                                                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                                                        <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500"></span>
+                                                    </span>
+                                                ) : null}
+                                                <span>{shift.name}</span>
+                                                <span
+                                                    className={cn(
+                                                        "text-[10px]",
+                                                        isSelected
+                                                            ? "text-background/70"
+                                                            : "text-slate-gray",
+                                                    )}
+                                                >
+                                                    {shift.startLocalTime}–
+                                                    {shift.endLocalTime}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setSelectedShiftId("all")
+                                        }
+                                        className={cn(
+                                            "rounded-full px-2 py-1 text-[12px] font-medium transition-all select-none",
+                                            selectedShiftId === "all"
+                                                ? "bg-foreground text-background shadow-xs font-semibold"
+                                                : "text-slate-gray hover:text-foreground",
+                                        )}
+                                        title="Show default/permanent assignments without shift filter"
+                                    >
+                                        All
+                                    </button>
+                                </div>
+                            ) : null}
+
+                            {/* View Switcher: Cards vs Table with localStorage persistence */}
+                            <div className="flex items-center rounded-full border border-hairline bg-surface-ivory p-0.5 shadow-2xs">
+                                <button
+                                    type="button"
+                                    onClick={() => handleSetViewMode("cards")}
+                                    className={cn(
+                                        "flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-medium transition-all select-none",
+                                        viewMode === "cards"
+                                            ? "bg-foreground text-background shadow-xs font-semibold"
+                                            : "text-slate-gray hover:text-foreground",
+                                    )}
+                                    title="Cards Grid View"
+                                >
+                                    <LayoutGrid className="size-3.5" />
+                                    <span className="hidden sm:inline">
+                                        Cards
+                                    </span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleSetViewMode("table")}
+                                    className={cn(
+                                        "flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-medium transition-all select-none",
+                                        viewMode === "table"
+                                            ? "bg-foreground text-background shadow-xs font-semibold"
+                                            : "text-slate-gray hover:text-foreground",
+                                    )}
+                                    title="Data Table View"
+                                >
+                                    <Table2 className="size-3.5" />
+                                    <span className="hidden sm:inline">
+                                        Table
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     {locations.map(location => (
                         <section
                             key={location.id}
@@ -619,140 +742,256 @@ export default function ManagerFloorConfig() {
                                 <p className="px-4 py-8 text-center text-[13px] text-slate-gray">
                                     {t("noTablesInPlace")}
                                 </p>
+                            ) : viewMode === "cards" ? (
+                                <div className="grid gap-3.5 p-4 sm:grid-cols-2 xl:grid-cols-3">
+                                    {location.tables.map((table, index) => (
+                                        <ManagerDiningTableCard
+                                            key={table.id}
+                                            table={table}
+                                            index={index}
+                                            saving={saving}
+                                            confirmTableId={confirmTableId}
+                                            onOpenEdit={openEdit}
+                                            onDeleteTable={onDeleteTable}
+                                            onResetConfirm={() =>
+                                                setConfirmTableId(null)
+                                            }
+                                            labels={{
+                                                assigned: t("assigned"),
+                                                open: t("open"),
+                                                vipBadge: t("vipBadge"),
+                                                noWaiterAssigned:
+                                                    t("noWaiterAssigned"),
+                                                viewDetail:
+                                                    tDetail("viewDetail"),
+                                                edit: tCommon("edit"),
+                                                delete: tCommon("delete"),
+                                                confirm: tCommon("confirm"),
+                                            }}
+                                        />
+                                    ))}
+                                </div>
                             ) : (
-                                <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
-                                    {location.tables.map(table => {
-                                        const assigned = Boolean(
-                                            table.assignedWaiterName,
-                                        );
-                                        return (
-                                            <article
-                                                key={table.id}
-                                                className="flex flex-col justify-between rounded-[14px] border border-hairline bg-background/60 p-3.5"
-                                            >
-                                                <div>
-                                                    <div className="flex items-start justify-between gap-2">
-                                                        <div>
-                                                            <p className="text-[14px] font-semibold tracking-tight">
-                                                                {table.displayNumber
-                                                                    ? `#${table.displayNumber}`
-                                                                    : table.displayName}
-                                                            </p>
-                                                            {table.displayNumber ? (
-                                                                <p className="text-[12px] text-slate-gray">
-                                                                    {
-                                                                        table.displayName
-                                                                    }
-                                                                </p>
-                                                            ) : null}
-                                                        </div>
-                                                        <div className="flex flex-col items-end gap-1">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full border-collapse text-left text-[13px]">
+                                        <thead>
+                                            <tr className="border-b border-hairline/60 bg-muted/20 text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
+                                                <th className="px-4 py-3">
+                                                    {tCommon("table")}
+                                                </th>
+                                                <th className="px-4 py-3">
+                                                    Status
+                                                </th>
+                                                <th className="px-4 py-3">
+                                                    Assigned Waiter
+                                                </th>
+                                                <th className="px-4 py-3 text-right">
+                                                    Actions
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-hairline/50">
+                                            {location.tables.map(table => {
+                                                const assigned = Boolean(
+                                                    table.assignedWaiterName,
+                                                );
+                                                const isConfirmingDelete =
+                                                    confirmTableId === table.id;
+                                                const tableNum =
+                                                    table.displayNumber
+                                                        ? `#${table.displayNumber}`
+                                                        : table.displayName;
+                                                const waiterInitials =
+                                                    table.assignedWaiterName
+                                                        ? table.assignedWaiterName
+                                                              .split(" ")
+                                                              .filter(Boolean)
+                                                              .map(p => p[0])
+                                                              .slice(0, 2)
+                                                              .join("")
+                                                              .toUpperCase()
+                                                        : null;
+
+                                                return (
+                                                    <tr
+                                                        key={table.id}
+                                                        className="group transition-colors hover:bg-secondary/40"
+                                                    >
+                                                        {/* Table column with thumbnail preview */}
+                                                        <td className="px-4 py-3">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="relative size-10 shrink-0 overflow-hidden rounded-lg border border-hairline bg-neutral-900 shadow-2xs">
+                                                                    <Image
+                                                                        src="/images/dining_table_round.jpg"
+                                                                        alt={
+                                                                            table.displayName
+                                                                        }
+                                                                        fill
+                                                                        sizes="40px"
+                                                                        className="object-cover object-center"
+                                                                    />
+                                                                </div>
+                                                                <div className="min-w-0">
+                                                                    <div className="flex items-center gap-1.5">
+                                                                        <span className="font-bold text-foreground">
+                                                                            {
+                                                                                tableNum
+                                                                            }
+                                                                        </span>
+                                                                        {table.effectiveVip ? (
+                                                                            <Badge
+                                                                                variant="outline"
+                                                                                className="border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1 py-0 text-[9px] font-semibold"
+                                                                            >
+                                                                                VIP
+                                                                            </Badge>
+                                                                        ) : null}
+                                                                    </div>
+                                                                    {table.displayNumber ? (
+                                                                        <p className="truncate text-[11px] text-slate-gray">
+                                                                            {
+                                                                                table.displayName
+                                                                            }
+                                                                        </p>
+                                                                    ) : null}
+                                                                </div>
+                                                            </div>
+                                                        </td>
+
+                                                        {/* Status column */}
+                                                        <td className="px-4 py-3">
                                                             <Badge
                                                                 variant={
                                                                     assigned
                                                                         ? "success"
                                                                         : "warning"
                                                                 }
+                                                                className="gap-1.5 px-2.5 py-0.5 text-[11px] font-medium"
                                                             >
+                                                                <span
+                                                                    className={cn(
+                                                                        "size-1.5 rounded-full",
+                                                                        assigned
+                                                                            ? "bg-emerald-500 animate-pulse"
+                                                                            : "bg-amber-500",
+                                                                    )}
+                                                                />
                                                                 {assigned
                                                                     ? t(
                                                                           "assigned",
                                                                       )
                                                                     : t("open")}
                                                             </Badge>
-                                                            {table.effectiveVip ? (
-                                                                <Badge variant="default">
+                                                        </td>
+
+                                                        {/* Waiter column */}
+                                                        <td className="px-4 py-3">
+                                                            {assigned ? (
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
+                                                                        {
+                                                                            waiterInitials
+                                                                        }
+                                                                    </span>
+                                                                    <span className="truncate font-semibold text-foreground">
+                                                                        {
+                                                                            table.assignedWaiterName
+                                                                        }
+                                                                    </span>
+                                                                </div>
+                                                            ) : (
+                                                                <span className="flex items-center gap-1 text-[12px] text-amber-700 dark:text-amber-400">
+                                                                    <UserRound className="size-3" />
                                                                     {t(
-                                                                        "vipBadge",
+                                                                        "noWaiterAssigned",
                                                                     )}
-                                                                </Badge>
-                                                            ) : null}
-                                                        </div>
-                                                    </div>
-                                                    <p className="mt-2 flex items-center gap-1.5 text-[12px] text-slate-gray">
-                                                        <UserRound className="size-3.5 shrink-0" />
-                                                        {assigned ? (
-                                                            <span className="truncate font-medium text-foreground">
-                                                                {
-                                                                    table.assignedWaiterName
-                                                                }
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-amber-700 dark:text-amber-400">
-                                                                {t(
-                                                                    "noWaiterAssigned",
-                                                                )}
-                                                            </span>
-                                                        )}
-                                                    </p>
-                                                </div>
-                                                <div className="mt-3 flex gap-2">
-                                                    <Button
-                                                        type="button"
-                                                        size="sm"
-                                                        variant="outline"
-                                                        className="flex-1"
-                                                        asChild
-                                                    >
-                                                        <Link
-                                                            href={`/manager/tables/${table.id}`}
-                                                        >
-                                                            {tDetail(
-                                                                "viewDetail",
+                                                                </span>
                                                             )}
-                                                            <ChevronRight className="size-3.5" />
-                                                        </Link>
-                                                    </Button>
-                                                    <Button
-                                                        type="button"
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() =>
-                                                            openEdit(table)
-                                                        }
-                                                    >
-                                                        {tCommon("edit")}
-                                                    </Button>
-                                                    <Button
-                                                        type="button"
-                                                        size="sm"
-                                                        variant={
-                                                            confirmTableId ===
-                                                            table.id
-                                                                ? "destructive"
-                                                                : "outline"
-                                                        }
-                                                        disabled={saving}
-                                                        onClick={() =>
-                                                            void onDeleteTable(
-                                                                table,
-                                                            )
-                                                        }
-                                                        onBlur={() => {
-                                                            if (
-                                                                confirmTableId ===
-                                                                table.id
-                                                            ) {
-                                                                setTimeout(
-                                                                    () =>
-                                                                        setConfirmTableId(
-                                                                            null,
-                                                                        ),
-                                                                    200,
-                                                                );
-                                                            }
-                                                        }}
-                                                    >
-                                                        <Trash2 className="size-3.5" />
-                                                        {confirmTableId ===
-                                                        table.id
-                                                            ? tCommon("confirm")
-                                                            : tCommon("delete")}
-                                                    </Button>
-                                                </div>
-                                            </article>
-                                        );
-                                    })}
+                                                        </td>
+
+                                                        {/* Actions column */}
+                                                        <td className="px-4 py-3 text-right">
+                                                            <div className="flex items-center justify-end gap-1.5">
+                                                                <Button
+                                                                    type="button"
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    className="h-8 gap-1 px-2.5 text-[12px] font-medium"
+                                                                    asChild
+                                                                >
+                                                                    <Link
+                                                                        href={`/manager/tables/${table.id}`}
+                                                                    >
+                                                                        {tDetail(
+                                                                            "viewDetail",
+                                                                        )}
+                                                                        <ChevronRight className="size-3.5" />
+                                                                    </Link>
+                                                                </Button>
+                                                                <Button
+                                                                    type="button"
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={() =>
+                                                                        openEdit(
+                                                                            table,
+                                                                        )
+                                                                    }
+                                                                    className="h-8 gap-1 px-2.5 text-[12px] font-medium"
+                                                                >
+                                                                    <Pencil className="size-3.5" />
+                                                                    {tCommon(
+                                                                        "edit",
+                                                                    )}
+                                                                </Button>
+                                                                <Button
+                                                                    type="button"
+                                                                    size="sm"
+                                                                    variant={
+                                                                        isConfirmingDelete
+                                                                            ? "destructive"
+                                                                            : "outline"
+                                                                    }
+                                                                    disabled={
+                                                                        saving
+                                                                    }
+                                                                    onClick={() =>
+                                                                        void onDeleteTable(
+                                                                            table,
+                                                                        )
+                                                                    }
+                                                                    onBlur={() => {
+                                                                        if (
+                                                                            isConfirmingDelete
+                                                                        ) {
+                                                                            setTimeout(
+                                                                                () =>
+                                                                                    setConfirmTableId(
+                                                                                        null,
+                                                                                    ),
+                                                                                200,
+                                                                            );
+                                                                        }
+                                                                    }}
+                                                                    className="h-8 px-2.5"
+                                                                    title={tCommon(
+                                                                        "delete",
+                                                                    )}
+                                                                >
+                                                                    <Trash2 className="size-3.5" />
+                                                                    {isConfirmingDelete
+                                                                        ? tCommon(
+                                                                              "confirm",
+                                                                          )
+                                                                        : null}
+                                                                </Button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
                                 </div>
                             )}
                         </section>
@@ -884,41 +1123,14 @@ export default function ManagerFloorConfig() {
                                         </FormItem>
                                     )}
                                 />
-                                <FormField
-                                    control={editForm.control}
-                                    name="assignedWaiterMembershipId"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>
-                                                {t("assignedWaiter")}
-                                            </FormLabel>
-                                            <FormControl>
-                                                <select
-                                                    value={field.value || ""}
-                                                    onChange={e =>
-                                                        field.onChange(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    className="h-10 w-full rounded-[10px] border border-input bg-card px-3 text-[13px]"
-                                                >
-                                                    <option value="">
-                                                        {t("unassigned")}
-                                                    </option>
-                                                    {waiters.map(waiter => (
-                                                        <option
-                                                            key={waiter.id}
-                                                            value={waiter.id}
-                                                        >
-                                                            {waiter.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                                <p className="text-[11px] text-slate-gray">
+                                    Waiter table assignments are managed by
+                                    shift in{" "}
+                                    <span className="font-semibold text-foreground">
+                                        HR → Directory
+                                    </span>
+                                    .
+                                </p>
                             </div>
                             <div className="flex flex-col gap-2 border-t border-hairline px-5 py-4">
                                 <div className="flex gap-2">

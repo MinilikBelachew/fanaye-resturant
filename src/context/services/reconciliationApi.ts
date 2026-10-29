@@ -39,16 +39,15 @@ export const reconciliationApi = api.injectEndpoints({
             }),
             invalidatesTags: ["Reconciliation", "DailyClose", "Cash"],
         }),
-        pendingReconciliations: builder.query<
-            { data: Reconciliation[] },
-            void
-        >({
-            query: () => ({
-                url: "/approvals/reconciliations",
-                method: "GET",
-            }),
-            providesTags: ["Reconciliation"],
-        }),
+        pendingReconciliations: builder.query<{ data: Reconciliation[] }, void>(
+            {
+                query: () => ({
+                    url: "/approvals/reconciliations",
+                    method: "GET",
+                }),
+                providesTags: ["Reconciliation"],
+            },
+        ),
         approveReconciliation: builder.mutation<
             { data: Reconciliation },
             { reconciliationId: string; reviewComment?: string }

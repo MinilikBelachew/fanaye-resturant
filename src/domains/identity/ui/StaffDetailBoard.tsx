@@ -78,12 +78,16 @@ function mapRoleCode(code: string): Role {
             return "owner";
         case "MANAGER":
             return "manager";
+        case "STORE_MANAGER":
+            return "store_manager";
         case "CASHIER":
             return "cashier";
         case "WAITER":
             return "waiter";
         case "DISPATCHER":
             return "dispatcher";
+        case "DRIVER":
+            return "driver";
         case "STATION_OPERATOR":
             return "kitchen";
         default:
@@ -955,6 +959,7 @@ export default function StaffDetailBoard({
             <AddEditStaffSheet />
             <AssignTablesSheet
                 isOpen={assignOpen}
+                waiter={member}
                 waiterMembershipId={assignOpen ? member.id : null}
                 waiterName={member.name}
                 onClose={() => setAssignOpen(false)}

@@ -17,6 +17,7 @@ export type AdminStaffCoverageTable = {
 export type AdminStaffShiftCoverage = {
     shiftDefinitionId: string;
     shiftName: string;
+    dayCode?: string;
     startLocalTime: string;
     endLocalTime: string;
     tables: AdminStaffCoverageTable[];
@@ -87,6 +88,7 @@ export type AdminShiftFloorLocation = {
 export type AdminShiftFloorResponse = {
     shiftDefinitionId: string;
     shiftName: string;
+    dayCode?: string;
     startLocalTime: string;
     endLocalTime: string;
     locations: AdminShiftFloorLocation[];

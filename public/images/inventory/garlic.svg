@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%">
+  <defs>
+    <radialGradient id="garlicGrad" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="65%" stop-color="#F1ECE4" />
+      <stop offset="100%" stop-color="#D5CBBF" />
+    </radialGradient>
+    <linearGradient id="stemGarlic" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#C5B8A8" />
+      <stop offset="100%" stop-color="#9C8B77" />
+    </linearGradient>
+  </defs>
+  <circle cx="64" cy="64" r="58" fill="#FBFBF9" />
+  <!-- Garlic Bulb -->
+  <path d="M64 32 C54 32 30 52 30 76 C30 96 46 108 64 108 C82 108 98 96 98 76 C98 52 74 32 64 32 Z" fill="url(#garlicGrad)" />
+  <!-- Cloves ridges -->
+  <path d="M64 34 C54 48 44 68 44 84 C44 98 52 106 64 108" fill="none" stroke="#CABFB2" stroke-width="2" />
+  <path d="M64 34 C74 48 84 68 84 84 C84 98 76 106 64 108" fill="none" stroke="#CABFB2" stroke-width="2" />
+  <path d="M64 34 C64 56 64 80 64 108" fill="none" stroke="#CABFB2" stroke-width="2" />
+  <!-- Stem -->
+  <path d="M62 34 L62 16 C62 14 66 14 66 16 L66 34 Z" fill="url(#stemGarlic)" />
+  <!-- Roots -->
+  <path d="M58 108 C56 114 54 118 52 122 M64 108 C64 114 64 118 64 122 M70 108 C72 114 74 118 76 122" stroke="#B8A896" stroke-width="2" stroke-linecap="round" />
+</svg>

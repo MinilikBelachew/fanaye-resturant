@@ -26,7 +26,7 @@ import {
     Users,
     UtensilsCrossed,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
     type CalendarMode,
     formatDayCellLabel,
@@ -83,6 +83,33 @@ function isWorkingOnDay(
     return workingDays.some(d => d.toLowerCase().slice(0, 3) === target);
 }
 
+function format12HourTime(time24: string): string {
+    const [hStr, mStr] = time24.split(":");
+    const h = parseInt(hStr, 10) || 0;
+    const m = parseInt(mStr, 10) || 0;
+    const period = h >= 12 ? "PM" : "AM";
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    const mm = m < 10 ? `0${m}` : `${m}`;
+    return `${h12}:${mm} ${period}`;
+}
+
+function formatShiftLabelWithEth(
+    s: {
+        name: string;
+        startLocalTime: string;
+        endLocalTime: string;
+    },
+    isAmharic = true,
+): string {
+    const s12 = format12HourTime(s.startLocalTime);
+    const e12 = format12HourTime(s.endLocalTime);
+    const ethTimes = formatEthiopianLocalTime(s.startLocalTime);
+    const ethTimee = formatEthiopianLocalTime(s.endLocalTime);
+    const ethS = isAmharic ? ethTimes.formattedAm : ethTimes.formattedEn;
+    const ethE = isAmharic ? ethTimee.formattedAm : ethTimee.formattedEn;
+    return `${s.name} · ${s12}–${e12} (${ethS} – ${ethE})`;
+}
+
 function dayShiftFor(
     member: AdminStaffMember,
     dayKey: string,
@@ -111,12 +138,16 @@ function mapRoleCode(code: string): Role {
             return "owner";
         case "MANAGER":
             return "manager";
+        case "STORE_MANAGER":
+            return "store_manager";
         case "CASHIER":
             return "cashier";
         case "WAITER":
             return "waiter";
         case "DISPATCHER":
             return "dispatcher";
+        case "DRIVER":
+            return "driver";
         case "STATION_OPERATOR":
             return "kitchen";
         default:
@@ -147,20 +178,20 @@ function getShiftTheme(shiftName: string) {
     const lower = shiftName.toLowerCase();
     if (lower.includes("morning")) {
         return {
-            border: "border-amber-300/80 dark:border-amber-700/50",
-            bg: "bg-amber-500/10 text-amber-900 dark:text-amber-200",
-            badge: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
+            border: "border-sky-300/80 dark:border-sky-700/50",
+            bg: "bg-sky-500/10 text-sky-900 dark:text-sky-200",
+            badge: "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300",
             icon: Sunrise,
-            iconColor: "text-amber-600 dark:text-amber-400",
+            iconColor: "text-sky-600 dark:text-sky-400",
         };
     }
     if (lower.includes("afternoon")) {
         return {
-            border: "border-orange-300/80 dark:border-orange-700/50",
-            bg: "bg-orange-500/10 text-orange-900 dark:text-orange-200",
-            badge: "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300",
+            border: "border-indigo-300/80 dark:border-indigo-700/50",
+            bg: "bg-indigo-500/10 text-indigo-900 dark:text-indigo-200",
+            badge: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300",
             icon: Sunset,
-            iconColor: "text-orange-600 dark:text-orange-400",
+            iconColor: "text-indigo-600 dark:text-indigo-400",
         };
     }
     if (lower.includes("night") || lower.includes("late")) {
@@ -206,8 +237,11 @@ function getAvatarColor(name: string): string {
 export default function StaffScheduleMatrix({
     basePath = "/manager/staff",
     multiBranch = false,
-    eyebrow = "Operations",
+    eyebrow,
 }: StaffScheduleMatrixProps) {
+    const locale = useLocale();
+    const isAmharic = locale.startsWith("am");
+    const t = useTranslations("staffSchedule");
     const dispatch = useAppDispatch();
     const [calendarMode, setCalendarMode] = useState<CalendarMode>(
         getSavedCalendarMode(),
@@ -273,7 +307,7 @@ export default function StaffScheduleMatrix({
                 date.getMonth() === now.getMonth() &&
                 date.getDate() === now.getDate();
 
-            const cellLabel = formatDayCellLabel(date, calendarMode, true);
+            const cellLabel = formatDayCellLabel(date, calendarMode, isAmharic);
 
             return {
                 ...dayObj,
@@ -283,20 +317,29 @@ export default function StaffScheduleMatrix({
                 isToday,
             };
         });
-    }, [weekOffset, calendarMode]);
+    }, [weekOffset, calendarMode, isAmharic]);
 
     const weekLabel = useMemo(() => {
         if (weekDays.length === 0) return "";
         const start = weekDays[0].fullDate;
         const end = weekDays[6].fullDate;
-        return formatWeekHeaderRange(start, end, calendarMode, true);
-    }, [weekDays, calendarMode]);
+        return formatWeekHeaderRange(start, end, calendarMode, isAmharic);
+    }, [weekDays, calendarMode, isAmharic]);
 
     // Filtered Staff
     const filteredStaff = useMemo(() => {
         return staffMembers.filter(m => {
             if (roleFilter !== "ALL") {
-                if (m.roleCode !== roleFilter) return false;
+                if (roleFilter === "MANAGER") {
+                    if (
+                        !["MANAGER", "OWNER_ADMIN", "STORE_MANAGER"].includes(
+                            m.roleCode,
+                        )
+                    )
+                        return false;
+                } else if (m.roleCode !== roleFilter) {
+                    return false;
+                }
             }
             if (shiftFilter !== "ALL") {
                 const hasShift = m.shiftCoverages.some(
@@ -323,7 +366,10 @@ export default function StaffScheduleMatrix({
             m => m.roleCode === "STATION_OPERATOR",
         );
         const managers = staffMembers.filter(
-            m => m.roleCode === "MANAGER" || m.roleCode === "OWNER_ADMIN",
+            m =>
+                m.roleCode === "MANAGER" ||
+                m.roleCode === "OWNER_ADMIN" ||
+                m.roleCode === "STORE_MANAGER",
         );
 
         // Shifts that have at least one cashier
@@ -367,9 +413,9 @@ export default function StaffScheduleMatrix({
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <PageHeader
                         compact
-                        eyebrow={eyebrow}
-                        title="HR"
-                        description="Weekly shift roster — desk coverage and floor assignments across the rotation."
+                        eyebrow={eyebrow || t("eyebrow")}
+                        title={t("title")}
+                        description={t("description")}
                     />
                     <div className="flex items-center gap-2.5">
                         <Button
@@ -378,7 +424,7 @@ export default function StaffScheduleMatrix({
                             className="gap-2 shadow-xs"
                         >
                             <Plus className="size-4" />
-                            Register Staff Member
+                            {t("registerStaff")}
                         </Button>
                     </div>
                 </div>
@@ -397,7 +443,7 @@ export default function StaffScheduleMatrix({
                             )}
                         >
                             <Building2 className="size-3.5" />
-                            All Branches
+                            {t("allBranches")}
                         </button>
                         {branches.map(branch => (
                             <button
@@ -422,13 +468,15 @@ export default function StaffScheduleMatrix({
                     <div className="rounded-2xl border border-hairline bg-card p-4 flex items-center justify-between">
                         <div>
                             <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                                Total Team
+                                {t("kpiTotalTeam")}
                             </p>
                             <p className="text-xl font-semibold text-foreground mt-1 tabular-nums">
-                                {analytics.totalStaff} Members
+                                {t("kpiTotalMembers", {
+                                    count: analytics.totalStaff,
+                                })}
                             </p>
                             <p className="text-[11px] text-muted-foreground mt-0.5">
-                                Across all active stations
+                                {t("kpiAcrossStations")}
                             </p>
                         </div>
                         <div className="flex size-10 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
@@ -439,19 +487,23 @@ export default function StaffScheduleMatrix({
                     <div className="rounded-2xl border border-hairline bg-card p-4 flex items-center justify-between">
                         <div>
                             <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                                Cashier Desk Coverage
+                                {t("kpiCashierCoverage")}
                             </p>
                             <div className="flex items-center gap-2 mt-1">
                                 <p className="text-xl font-semibold text-foreground tabular-nums">
-                                    {analytics.cashiersCount} Cashiers
+                                    {t("kpiCashiersCount", {
+                                        count: analytics.cashiersCount,
+                                    })}
                                 </p>
                                 <span className="rounded-md bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                    {analytics.coveredCashierRotations}/3
-                                    Rotations
+                                    {t("kpiRotationsCovered", {
+                                        covered:
+                                            analytics.coveredCashierRotations,
+                                    })}
                                 </span>
                             </div>
                             <p className="text-[11px] text-muted-foreground mt-0.5">
-                                Morning, Afternoon, & Night
+                                {t("kpiRotationsHint")}
                             </p>
                         </div>
                         <div className="flex size-10 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
@@ -462,13 +514,15 @@ export default function StaffScheduleMatrix({
                     <div className="rounded-2xl border border-hairline bg-card p-4 flex items-center justify-between">
                         <div>
                             <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                                Dining Floor Waitstaff
+                                {t("kpiWaitstaff")}
                             </p>
                             <p className="text-xl font-semibold text-foreground mt-1 tabular-nums">
-                                {analytics.waitersCount} Waiters
+                                {t("kpiWaitersCount", {
+                                    count: analytics.waitersCount,
+                                })}
                             </p>
                             <p className="text-[11px] text-muted-foreground mt-0.5">
-                                Assigned to floor table sections
+                                {t("kpiWaitersHint")}
                             </p>
                         </div>
                         <div className="flex size-10 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
@@ -479,13 +533,15 @@ export default function StaffScheduleMatrix({
                     <div className="rounded-2xl border border-hairline bg-card p-4 flex items-center justify-between">
                         <div>
                             <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                                Kitchen Stations
+                                {t("kpiKitchenStations")}
                             </p>
                             <p className="text-xl font-semibold text-foreground mt-1 tabular-nums">
-                                {analytics.kitchenCount} Operators
+                                {t("kpiOperatorsCount", {
+                                    count: analytics.kitchenCount,
+                                })}
                             </p>
                             <p className="text-[11px] text-muted-foreground mt-0.5">
-                                Hot prep, bar, pizza & pass
+                                {t("kpiKitchenHint")}
                             </p>
                         </div>
                         <div className="flex size-10 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
@@ -506,7 +562,7 @@ export default function StaffScheduleMatrix({
                             className="h-8 gap-1 px-2.5 text-xs font-semibold"
                         >
                             <ArrowLeft className="size-3.5" />
-                            Prev Week
+                            {t("prevWeek")}
                         </Button>
                         <div className="flex items-center gap-2 px-2">
                             <Calendar className="size-4 text-brand" />
@@ -515,7 +571,7 @@ export default function StaffScheduleMatrix({
                             </span>
                             {weekOffset === 0 && (
                                 <span className="rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 text-[10px] font-bold">
-                                    Current Week
+                                    {t("currentWeek")}
                                 </span>
                             )}
                         </div>
@@ -526,7 +582,7 @@ export default function StaffScheduleMatrix({
                             onClick={() => setWeekOffset(w => w + 1)}
                             className="h-8 gap-1 px-2.5 text-xs font-semibold"
                         >
-                            Next Week
+                            {t("nextWeek")}
                             <ArrowRight className="size-3.5" />
                         </Button>
                         {weekOffset !== 0 && (
@@ -537,7 +593,7 @@ export default function StaffScheduleMatrix({
                                 onClick={() => setWeekOffset(0)}
                                 className="h-8 px-2 text-xs font-semibold text-brand hover:bg-brand/10"
                             >
-                                Jump to Today
+                                {t("jumpToToday")}
                             </Button>
                         )}
                     </div>
@@ -558,10 +614,10 @@ export default function StaffScheduleMatrix({
                                         ? "bg-primary text-primary-foreground shadow-xs"
                                         : "text-muted-foreground hover:text-foreground",
                                 )}
-                                title="Ethiopian Calendar (ዓ.ም.)"
+                                title={t("ethiopianCalTitle")}
                             >
-                                <span className="text-xs">🇪🇹</span>
-                                <span>ኢትዮጵያ (ዓ.ም.)</span>
+                                <Calendar className="size-3.5" />
+                                <span>{t("ethiopianCal")}</span>
                             </button>
                             <button
                                 type="button"
@@ -575,10 +631,10 @@ export default function StaffScheduleMatrix({
                                         ? "bg-primary text-primary-foreground shadow-xs"
                                         : "text-muted-foreground hover:text-foreground",
                                 )}
-                                title="Gregorian Calendar (G.C.)"
+                                title={t("gregorianCalTitle")}
                             >
                                 <Globe className="size-3.5" />
-                                <span>G.C.</span>
+                                <span>{t("gregorianCal")}</span>
                             </button>
                         </div>
 
@@ -587,7 +643,7 @@ export default function StaffScheduleMatrix({
                             <Input
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
-                                placeholder="Search staff name..."
+                                placeholder={t("searchPlaceholder")}
                                 className="h-8 pl-8 text-xs"
                             />
                         </div>
@@ -596,14 +652,13 @@ export default function StaffScheduleMatrix({
                         <select
                             value={shiftFilter}
                             onChange={e => setShiftFilter(e.target.value)}
-                            aria-label="Filter by shift template"
+                            aria-label={t("allShiftWindows")}
                             className="h-8 rounded-lg border border-hairline bg-card px-2.5 text-xs text-foreground outline-none focus:ring-1 focus:ring-ring"
                         >
-                            <option value="ALL">All Shift Windows</option>
+                            <option value="ALL">{t("allShiftWindows")}</option>
                             {shiftDefs.map(s => (
                                 <option key={s.id} value={s.id}>
-                                    {s.name} ({s.startLocalTime}–
-                                    {s.endLocalTime})
+                                    {formatShiftLabelWithEth(s, isAmharic)}
                                 </option>
                             ))}
                         </select>
@@ -615,23 +670,33 @@ export default function StaffScheduleMatrix({
                     {[
                         {
                             id: "ALL",
-                            label: `All Staff (${staffMembers.length})`,
+                            label: t("tabAllStaff", {
+                                count: staffMembers.length,
+                            }),
                         },
                         {
                             id: "CASHIER",
-                            label: `Cashiers (${analytics.cashiersCount})`,
+                            label: t("tabCashiers", {
+                                count: analytics.cashiersCount,
+                            }),
                         },
                         {
                             id: "WAITER",
-                            label: `Waiters (${analytics.waitersCount})`,
+                            label: t("tabWaiters", {
+                                count: analytics.waitersCount,
+                            }),
                         },
                         {
                             id: "STATION_OPERATOR",
-                            label: `Kitchen (${analytics.kitchenCount})`,
+                            label: t("tabKitchen", {
+                                count: analytics.kitchenCount,
+                            }),
                         },
                         {
                             id: "MANAGER",
-                            label: `Managers (${analytics.managersCount})`,
+                            label: t("tabManagers", {
+                                count: analytics.managersCount,
+                            }),
                         },
                     ].map(tab => (
                         <button
@@ -656,17 +721,16 @@ export default function StaffScheduleMatrix({
                 <div className="rounded-2xl border border-hairline bg-card shadow-subtle overflow-hidden">
                     {staffLoading ? (
                         <div className="p-12 text-center text-xs text-muted-foreground">
-                            Loading schedule roster...
+                            {t("loading")}
                         </div>
                     ) : filteredStaff.length === 0 ? (
                         <div className="p-12 text-center space-y-2">
                             <Calendar className="size-8 text-muted-foreground/40 mx-auto" />
                             <p className="text-sm font-semibold text-foreground">
-                                No staff members match current filters.
+                                {t("emptyTitle")}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                                Try clearing your search or switching to another
-                                role tab.
+                                {t("emptyDesc")}
                             </p>
                         </div>
                     ) : (
@@ -675,7 +739,7 @@ export default function StaffScheduleMatrix({
                                 <thead>
                                     <tr className="border-b border-hairline bg-secondary/40 text-[11px] font-semibold text-muted-foreground">
                                         <th className="px-4 py-3 min-w-[200px]">
-                                            Team Member
+                                            {t("colTeamMember")}
                                         </th>
                                         {weekDays.map(day => (
                                             <th
@@ -701,17 +765,20 @@ export default function StaffScheduleMatrix({
                                                     </span>
                                                     {day.isToday && (
                                                         <span className="mt-0.5 rounded-full bg-brand text-brand-foreground px-1.5 py-0.2 text-[8px] font-extrabold uppercase tracking-wide">
-                                                            {calendarMode ===
-                                                            "ETHIOPIAN"
-                                                                ? "ዛሬ"
-                                                                : "Today"}
+                                                            {isAmharic
+                                                                ? t(
+                                                                      "todayBadgeAm",
+                                                                  )
+                                                                : t(
+                                                                      "todayBadge",
+                                                                  )}
                                                         </span>
                                                     )}
                                                 </div>
                                             </th>
                                         ))}
                                         <th className="px-4 py-3 text-right min-w-[90px]">
-                                            Days / Wk
+                                            {t("colDaysPerWeek")}
                                         </th>
                                     </tr>
                                 </thead>
@@ -779,7 +846,9 @@ export default function StaffScheduleMatrix({
                                                                         )
                                                                     }
                                                                     className="font-bold text-foreground hover:text-brand transition-colors truncate text-left cursor-pointer"
-                                                                    title="Click to edit shift & schedule"
+                                                                    title={t(
+                                                                        "clickToEdit",
+                                                                    )}
                                                                 >
                                                                     {
                                                                         member.name
@@ -814,19 +883,38 @@ export default function StaffScheduleMatrix({
                                                                               : member.roleCode ===
                                                                                   "STATION_OPERATOR"
                                                                                 ? "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300"
-                                                                                : "bg-secondary text-foreground",
+                                                                                : member.roleCode ===
+                                                                                    "STORE_MANAGER"
+                                                                                  ? "bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300"
+                                                                                  : "bg-secondary text-foreground",
                                                                     )}
                                                                 >
                                                                     {member.roleCode ===
                                                                     "CASHIER"
-                                                                        ? "Cashier"
+                                                                        ? t(
+                                                                              "roleCashier",
+                                                                          )
                                                                         : member.roleCode ===
                                                                             "WAITER"
-                                                                          ? "Waiter"
+                                                                          ? t(
+                                                                                "roleWaiter",
+                                                                            )
                                                                           : member.roleCode ===
                                                                               "STATION_OPERATOR"
-                                                                            ? "Kitchen"
-                                                                            : member.roleCode}
+                                                                            ? t(
+                                                                                  "roleKitchen",
+                                                                              )
+                                                                            : member.roleCode ===
+                                                                                "MANAGER"
+                                                                              ? t(
+                                                                                    "roleManager",
+                                                                                )
+                                                                              : member.roleCode ===
+                                                                                  "STORE_MANAGER"
+                                                                                ? t(
+                                                                                      "roleStoreManager",
+                                                                                  )
+                                                                                : member.roleCode}
                                                                 </span>
                                                                 {member.branchName && (
                                                                     <span className="text-[10px] text-muted-foreground">
@@ -854,7 +942,10 @@ export default function StaffScheduleMatrix({
                                                             ? (member.shiftCoverages.find(
                                                                   c =>
                                                                       c.shiftDefinitionId ===
-                                                                      dayPlan.shiftDefinitionId,
+                                                                          dayPlan.shiftDefinitionId &&
+                                                                      (c.dayCode ===
+                                                                          day.key ||
+                                                                          !c.dayCode),
                                                               ) ?? {
                                                                   shiftDefinitionId:
                                                                       dayPlan.shiftDefinitionId,
@@ -905,7 +996,7 @@ export default function StaffScheduleMatrix({
                                                                         title={
                                                                             calendarMode ===
                                                                             "ETHIOPIAN"
-                                                                                ? `${member.name} - ${shiftCoverage.shiftName} (${formatEthiopianLocalTime(shiftCoverage.startLocalTime).formattedAm} – ${formatEthiopianLocalTime(shiftCoverage.endLocalTime).formattedAm} / ${shiftCoverage.startLocalTime}–${shiftCoverage.endLocalTime})`
+                                                                                ? `${member.name} - ${shiftCoverage.shiftName} (${formatEthiopianLocalTime(shiftCoverage.startLocalTime)[isAmharic ? "formattedAm" : "formattedEn"]} – ${formatEthiopianLocalTime(shiftCoverage.endLocalTime)[isAmharic ? "formattedAm" : "formattedEn"]} / ${shiftCoverage.startLocalTime}–${shiftCoverage.endLocalTime})`
                                                                                 : `${member.name} - ${shiftCoverage.shiftName} (${shiftCoverage.startLocalTime}–${shiftCoverage.endLocalTime})`
                                                                         }
                                                                     >
@@ -932,24 +1023,29 @@ export default function StaffScheduleMatrix({
                                                                                     {
                                                                                         formatEthiopianLocalTime(
                                                                                             shiftCoverage.startLocalTime,
-                                                                                        )
-                                                                                            .formattedAm
+                                                                                        )[
+                                                                                            isAmharic
+                                                                                                ? "formattedAm"
+                                                                                                : "formattedEn"
+                                                                                        ]
                                                                                     }{" "}
                                                                                     –{" "}
                                                                                     {
                                                                                         formatEthiopianLocalTime(
                                                                                             shiftCoverage.endLocalTime,
-                                                                                        )
-                                                                                            .formattedAm
+                                                                                        )[
+                                                                                            isAmharic
+                                                                                                ? "formattedAm"
+                                                                                                : "formattedEn"
+                                                                                        ]
                                                                                     }
                                                                                 </span>
                                                                             ) : (
                                                                                 <span>
                                                                                     {
                                                                                         shiftCoverage.startLocalTime
-                                                                                    }
-
-                                                                                    –
+                                                                                    }{" "}
+                                                                                    –{" "}
                                                                                     {
                                                                                         shiftCoverage.endLocalTime
                                                                                     }
@@ -958,8 +1054,10 @@ export default function StaffScheduleMatrix({
                                                                         </div>
                                                                         {member.roleCode ===
                                                                             "CASHIER" && (
-                                                                            <span className="mt-1 inline-block rounded-md bg-amber-500/20 text-amber-900 dark:text-amber-200 px-1 py-0.2 text-[8px] font-bold">
-                                                                                Desk
+                                                                            <span className="mt-1 inline-block rounded-md bg-muted text-muted-foreground px-1 py-0.2 text-[8px] font-bold">
+                                                                                {t(
+                                                                                    "deskBadge",
+                                                                                )}
                                                                             </span>
                                                                         )}
                                                                         {member.roleCode ===
@@ -969,12 +1067,14 @@ export default function StaffScheduleMatrix({
                                                                                 ?.length >
                                                                                 0 && (
                                                                                 <span className="mt-1 inline-block rounded-md bg-blue-500/20 text-blue-900 dark:text-blue-200 px-1 py-0.2 text-[8px] font-bold">
-                                                                                    {
-                                                                                        shiftCoverage
-                                                                                            .tables
-                                                                                            .length
-                                                                                    }{" "}
-                                                                                    tbls
+                                                                                    {t(
+                                                                                        "tablesBadge",
+                                                                                        {
+                                                                                            count: shiftCoverage
+                                                                                                .tables
+                                                                                                .length,
+                                                                                        },
+                                                                                    )}
                                                                                 </span>
                                                                             )}
                                                                     </button>
@@ -993,20 +1093,23 @@ export default function StaffScheduleMatrix({
                                                                         className="w-full rounded-xl border border-dashed border-hairline bg-secondary/30 p-1.5 text-center hover:bg-secondary cursor-pointer"
                                                                     >
                                                                         <span className="text-[10px] font-semibold text-foreground">
-                                                                            On
-                                                                            Duty
+                                                                            {t(
+                                                                                "onDuty",
+                                                                            )}
                                                                         </span>
                                                                         <span className="block text-[8px] text-muted-foreground mt-0.5">
-                                                                            Set
-                                                                            Shift
-                                                                            +
+                                                                            {t(
+                                                                                "setShift",
+                                                                            )}
                                                                         </span>
                                                                     </button>
                                                                 )
                                                             ) : (
                                                                 <div className="py-2 text-center">
                                                                     <span className="rounded-full bg-secondary/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground/60">
-                                                                        Off
+                                                                        {t(
+                                                                            "offDuty",
+                                                                        )}
                                                                     </span>
                                                                 </div>
                                                             )}
@@ -1017,11 +1120,16 @@ export default function StaffScheduleMatrix({
                                                 {/* Total Working Days Column */}
                                                 <td className="px-4 py-3 text-right">
                                                     <span className="font-mono font-bold text-foreground">
-                                                        {workingDaysCount}d
+                                                        {t("daysCount", {
+                                                            count: workingDaysCount,
+                                                        })}
                                                     </span>
                                                     <span className="text-[10px] text-muted-foreground block">
-                                                        {workingDaysCount * 8}h
-                                                        est
+                                                        {t("hoursEstimated", {
+                                                            hours:
+                                                                workingDaysCount *
+                                                                8,
+                                                        })}
                                                     </span>
                                                 </td>
                                             </tr>
@@ -1039,73 +1147,76 @@ export default function StaffScheduleMatrix({
                         <div>
                             <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
                                 <Layers className="size-4 text-brand" />
-                                24-Hour Operational Rotation Breakdown
+                                {t("rotationTitle")}
                             </h3>
                             <p className="text-xs text-muted-foreground">
-                                Verification of Cash Desk Custody and Waiter
-                                Coverage across every working shift.
+                                {t("rotationDesc")}
                             </p>
                         </div>
                         <Link
                             href={`${basePath}/shifts`}
                             className="text-xs font-semibold text-brand hover:underline"
                         >
-                            Configure Shifts →
+                            {t("configureShifts")}
                         </Link>
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-3">
                         {/* Morning Shift */}
-                        <div className="rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-950/20 p-4">
+                        <div className="rounded-xl border border-sky-200 dark:border-sky-900/40 bg-sky-50/40 dark:bg-sky-950/20 p-4">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <Sunrise className="size-4 text-amber-600 dark:text-amber-400" />
+                                    <Sunrise className="size-4 text-sky-600 dark:text-sky-400" />
                                     <span className="text-xs font-bold text-foreground">
-                                        🌅 Morning Shift (07:00 – 15:00)
+                                        {t("morningShift")} · 7:00 AM–3:00 PM{" "}
+                                        {isAmharic
+                                            ? "(1:00 ጠዋት – 9:00 ከሰዓት)"
+                                            : ""}
                                     </span>
                                 </div>
                                 {analytics.morningCashier ? (
                                     <span className="flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 text-[9px] font-bold">
                                         <CheckCircle2 className="size-2.5" />
-                                        Cashier Set
+                                        {t("cashierSet")}
                                     </span>
                                 ) : (
-                                    <span className="flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 px-2 py-0.5 text-[9px] font-bold">
+                                    <span className="flex items-center gap-1 rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-[9px] font-bold">
                                         <AlertCircle className="size-2.5" />
-                                        Desk Unassigned
+                                        {t("deskUnassigned")}
                                     </span>
                                 )}
                             </div>
                             <p className="mt-2 text-[11px] text-muted-foreground leading-relaxed">
-                                Opening cash drawer count, breakfast & lunch
-                                coverage, and initial float custody.
+                                {t("morningDesc")}
                             </p>
                         </div>
 
                         {/* Afternoon Shift */}
-                        <div className="rounded-xl border border-orange-200 dark:border-orange-900/40 bg-orange-50/40 dark:bg-orange-950/20 p-4">
+                        <div className="rounded-xl border border-indigo-200 dark:border-indigo-900/40 bg-indigo-50/40 dark:bg-indigo-950/20 p-4">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <Sunset className="size-4 text-orange-600 dark:text-orange-400" />
+                                    <Sunset className="size-4 text-indigo-600 dark:text-indigo-400" />
                                     <span className="text-xs font-bold text-foreground">
-                                        🌇 Afternoon Shift (15:00 – 23:00)
+                                        {t("afternoonShift")} · 3:00 PM–11:00 PM{" "}
+                                        {isAmharic
+                                            ? "(9:00 ከሰዓት – 5:00 ማታ)"
+                                            : ""}
                                     </span>
                                 </div>
                                 {analytics.afternoonCashier ? (
                                     <span className="flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 text-[9px] font-bold">
                                         <CheckCircle2 className="size-2.5" />
-                                        Cashier Set
+                                        {t("cashierSet")}
                                     </span>
                                 ) : (
-                                    <span className="flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 px-2 py-0.5 text-[9px] font-bold">
+                                    <span className="flex items-center gap-1 rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-[9px] font-bold">
                                         <AlertCircle className="size-2.5" />
-                                        Desk Unassigned
+                                        {t("deskUnassigned")}
                                     </span>
                                 )}
                             </div>
                             <p className="mt-2 text-[11px] text-muted-foreground leading-relaxed">
-                                Dinner rush, high-volume digital reconciliation,
-                                and afternoon table turnovers.
+                                {t("afternoonDesc")}
                             </p>
                         </div>
 
@@ -1115,23 +1226,25 @@ export default function StaffScheduleMatrix({
                                 <div className="flex items-center gap-2">
                                     <Moon className="size-4 text-indigo-600 dark:text-indigo-400" />
                                     <span className="text-xs font-bold text-foreground">
-                                        🌙 Night Shift (23:00 – 07:00)
+                                        {t("nightShift")} · 11:00 PM–7:00 AM{" "}
+                                        {isAmharic
+                                            ? "(5:00 ማታ – 1:00 ጠዋት)"
+                                            : ""}
                                     </span>
                                 </div>
                                 {analytics.nightCashier ? (
                                     <span className="flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 text-[9px] font-bold">
                                         <CheckCircle2 className="size-2.5" />
-                                        Cashier Set
+                                        {t("cashierSet")}
                                     </span>
                                 ) : (
                                     <span className="flex items-center gap-1 rounded-full bg-secondary text-muted-foreground px-2 py-0.5 text-[9px] font-bold">
-                                        Optional / Late
+                                        {t("optionalLate")}
                                     </span>
                                 )}
                             </div>
                             <p className="mt-2 text-[11px] text-muted-foreground leading-relaxed">
-                                Overnight closing reconciliation, safe drop
-                                verification, and opening float prep.
+                                {t("nightDesc")}
                             </p>
                         </div>
                     </div>

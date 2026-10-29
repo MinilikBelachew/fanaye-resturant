@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%">
+  <defs>
+    <linearGradient id="milkCarton" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#E2EEF9" />
+      <stop offset="40%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#C5DBEF" />
+    </linearGradient>
+    <linearGradient id="milkBlue" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4B9CD3" />
+      <stop offset="100%" stop-color="#266DA3" />
+    </linearGradient>
+  </defs>
+  <circle cx="64" cy="64" r="58" fill="#F4FAFF" />
+  <!-- Carton Gable Top -->
+  <path d="M46 22 L82 22 L88 38 L40 38 Z" fill="url(#milkBlue)" />
+  <!-- Carton Body -->
+  <rect x="40" y="38" width="48" height="72" rx="4" fill="url(#milkCarton)" stroke="#ADCBE3" stroke-width="2" />
+  <!-- Blue Banner -->
+  <rect x="40" y="58" width="48" height="24" fill="url(#milkBlue)" />
+  <!-- Milk Drop Icon -->
+  <path d="M64 64 C64 64 58 71 58 75 C58 78 61 80 64 80 C67 80 70 78 70 75 C70 71 64 64 64 64 Z" fill="#FFFFFF" />
+</svg>

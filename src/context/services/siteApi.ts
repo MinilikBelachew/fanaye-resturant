@@ -42,6 +42,8 @@ export interface TenantSite {
     publishedAt?: string | null;
     publicPath: string;
     calendarPreference?: "ETHIOPIAN" | "GREGORIAN" | string;
+    autoApproveSupplyRequests?: boolean;
+    requireDriverForDispatch?: boolean;
 }
 
 export interface SiteResponse {
@@ -85,6 +87,8 @@ export interface UpdateSitePayload {
     profile?: Partial<TenantProfile>;
     draftData?: Record<string, unknown>;
     calendarPreference?: "ETHIOPIAN" | "GREGORIAN" | string;
+    autoApproveSupplyRequests?: boolean;
+    requireDriverForDispatch?: boolean;
 }
 
 export const siteApi = api.injectEndpoints({

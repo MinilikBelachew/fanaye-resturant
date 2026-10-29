@@ -77,6 +77,7 @@ export type SessionOrder = {
 export type SessionOrdersResponse = {
     tableSessionId?: string | null;
     roomSessionId?: string | null;
+    outsideOrderId?: string | null;
     sessionStatus: string;
     version: number;
     data: SessionOrder[];
@@ -85,8 +86,10 @@ export type SessionOrdersResponse = {
 export type ConfirmOrderRequest = {
     tableSessionId?: string;
     roomSessionId?: string;
+    outsideOrderId?: string;
     expectedTableSessionVersion?: number;
     expectedRoomSessionVersion?: number;
+    expectedOutsideOrderVersion?: number;
     items: Array<{
         menuItemId: string;
         quantity: number;

@@ -8,4 +8,3 @@ export default async function TenantDetailPage({
     const { tenantId } = await params;
     return <TenantDetailView tenantId={tenantId} />;
 }
-

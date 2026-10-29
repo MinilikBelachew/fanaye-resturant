@@ -1,11 +1,7 @@
-import FinancePlaceholder from "@/domains/finance/ui/FinancePlaceholder";
+"use client";
+
+import FinanceSummaryBoard from "@/domains/finance/ui/FinanceSummaryBoard";
 
 export default function OwnerFinanceOverviewPage() {
-    return (
-        <FinancePlaceholder
-            title="Finance overview"
-            description="Sales, cash, closes, and payroll in one place."
-            hint="Branch rollups for tender mix, open variances, and payroll due will land here."
-        />
-    );
+    return <FinanceSummaryBoard audience="owner" />;
 }

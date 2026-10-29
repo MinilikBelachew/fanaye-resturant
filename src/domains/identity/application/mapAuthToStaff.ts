@@ -30,6 +30,8 @@ export function mapRoleCodeToRole(
             return "dispatcher";
         case "RECEPTIONIST":
             return "receptionist";
+        case "DRIVER":
+            return "driver";
         case "STATION_OPERATOR": {
             const mapped = stationCode
                 ? STATION_CODE_TO_ROLE[stationCode.toUpperCase()]

@@ -86,10 +86,7 @@ export function toggleModifier(
     if (selected) {
         return current.filter(
             entry =>
-                !(
-                    entry.groupId === group.id &&
-                    entry.optionId === option.id
-                ),
+                !(entry.groupId === group.id && entry.optionId === option.id),
         );
     }
     return [...current, snapshot];

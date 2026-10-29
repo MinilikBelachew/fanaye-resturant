@@ -4,19 +4,32 @@ import { useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import {
+    Ban,
+    Calendar,
+    CalendarOff,
     Camera,
+    Clock,
     Clock3,
+    Copy,
     Eye,
     EyeOff,
     Lock,
+    Loader2,
     MapPin,
+    Moon,
     Phone,
     Plus,
+    RotateCcw,
+    Sun,
+    Sunrise,
+    Sunset,
     Trash2,
+    Truck,
     User,
     UtensilsCrossed,
     X,
 } from "lucide-react";
+import { formatEthiopianLocalTime } from "@/lib/ethiopian-calendar";
 import { useTranslations } from "next-intl";
 import { useAppDispatch, useAppSelector } from "@/context/hooks";
 import { closeAddEditStaff } from "@/context/slices/identitySlice";
@@ -25,12 +38,14 @@ import {
     useAdminShiftFloorQuery,
     useCreateAdminStaffMutation,
     useCreateShiftDefinitionMutation,
+    useDeleteAdminStaffMutation,
     useSetWaiterTableCoverageMutation,
     useUpdateAdminStaffMutation,
 } from "@/context/services/staffApi";
 import { useUploadMenuImageMutation } from "@/context/services/menuApi";
 import { useGetStationsQuery } from "@/context/services/stationsApi";
 import { filePublicUrl } from "@/domains/catalog/application/menuImages";
+import DiningTableVisualCard from "@/domains/identity/ui/DiningTableVisualCard";
 import { Button } from "@/components/ui/button";
 import {
     Form,
@@ -76,6 +91,28 @@ const DAY_LABEL_KEYS: Record<
     Sun: "daySun",
 };
 
+function format12HourTime(time24: string): string {
+    const [hStr, mStr] = time24.split(":");
+    const h = parseInt(hStr, 10) || 0;
+    const m = parseInt(mStr, 10) || 0;
+    const period = h >= 12 ? "PM" : "AM";
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    const mm = m < 10 ? `0${m}` : `${m}`;
+    return `${h12}:${mm} ${period}`;
+}
+
+function formatShiftOptionLabel(shift: {
+    name: string;
+    startLocalTime: string;
+    endLocalTime: string;
+}): string {
+    const start12 = format12HourTime(shift.startLocalTime);
+    const end12 = format12HourTime(shift.endLocalTime);
+    const ethStart = formatEthiopianLocalTime(shift.startLocalTime).formattedAm;
+    const ethEnd = formatEthiopianLocalTime(shift.endLocalTime).formattedAm;
+    return `${shift.name} · ${start12}–${end12} (${ethStart} – ${ethEnd})`;
+}
+
 export default function AddEditStaffSheet() {
     const t = useTranslations("managerStaff");
     const tCommon = useTranslations("common");
@@ -84,6 +121,9 @@ export default function AddEditStaffSheet() {
     const editingStaff = useAppSelector(state => state.identity.editingStaff);
     const serviceMode = useAppSelector(
         state => state.identity.session?.serviceMode,
+    );
+    const sessionRoleCode = useAppSelector(
+        state => state.identity.session?.roleCode,
     );
     const isEditMode = Boolean(editingStaff && editingStaff.name);
 
@@ -124,6 +164,12 @@ export default function AddEditStaffSheet() {
                 },
             ];
         }
+
+        const canManageStore =
+            !sessionRoleCode ||
+            sessionRoleCode === "OWNER_ADMIN" ||
+            editingStaff?.role === "store_manager";
+
         const baseRoles = [
             {
                 id: "waiter",
@@ -140,6 +186,21 @@ export default function AddEditStaffSheet() {
                 label: t("roleCashier"),
                 description: t("roleCashierDesc"),
             },
+            {
+                id: "driver",
+                label: "Driver / Transit",
+                description:
+                    "Inter-branch stock delivery & fleet transport across all branches",
+            },
+            ...(canManageStore
+                ? [
+                      {
+                          id: "store_manager",
+                          label: t("roleStoreManager"),
+                          description: t("roleStoreManagerDesc"),
+                      },
+                  ]
+                : []),
         ];
 
         const stationRoles = activeStations.map(st => ({
@@ -187,12 +248,14 @@ export default function AddEditStaffSheet() {
             ...baseRoles,
             ...(activeStations.length > 0 ? stationRoles : fallbackStations),
         ];
-    }, [activeStations, serviceMode, t]);
+    }, [activeStations, editingStaff?.role, serviceMode, sessionRoleCode, t]);
 
     const [saving, setSaving] = useState(false);
+    const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [setCoverage] = useSetWaiterTableCoverageMutation();
     const [createStaff] = useCreateAdminStaffMutation();
     const [updateStaffApi] = useUpdateAdminStaffMutation();
+    const [deleteStaffApi] = useDeleteAdminStaffMutation();
     const [uploadPhoto, { isLoading: uploadingPhoto }] =
         useUploadMenuImageMutation();
     const [createShift, { isLoading: creatingShift }] =
@@ -253,8 +316,12 @@ export default function AddEditStaffSheet() {
     const role = form.watch("role");
     const dayShiftByDay = form.watch("dayShiftByDay");
     const coverageShiftId = form.watch("coverageShiftId") || "";
-    const assignedTablesByShift = form.watch("assignedTablesByShift");
     const nameValue = form.watch("name");
+
+    const [coverageDayCode, setCoverageDayCode] = useState<string>("Mon");
+    const [tablesByShiftDay, setTablesByShiftDay] = useState<
+        Record<string, Record<string, string[]>>
+    >({});
 
     const usedShiftIds = useMemo(() => {
         return [
@@ -264,17 +331,23 @@ export default function AddEditStaffSheet() {
         ];
     }, [dayShiftByDay]);
 
-    const assignedTableIds = assignedTablesByShift?.[coverageShiftId] ?? [];
+    const assignedTableIds = useMemo(() => {
+        if (!coverageShiftId) return [];
+        return tablesByShiftDay[coverageShiftId]?.[coverageDayCode] ?? [];
+    }, [tablesByShiftDay, coverageShiftId, coverageDayCode]);
 
     const {
         data: shiftFloor,
         isFetching: floorLoading,
         isError: floorError,
-    } = useAdminShiftFloorQuery(coverageShiftId, {
-        skip: !isOpen || role !== "waiter" || !coverageShiftId,
-        pollingInterval:
-            isOpen && role === "waiter" && coverageShiftId ? 8000 : 0,
-    });
+    } = useAdminShiftFloorQuery(
+        { shiftId: coverageShiftId, dayCode: coverageDayCode },
+        {
+            skip: !isOpen || role !== "waiter" || !coverageShiftId,
+            pollingInterval:
+                isOpen && role === "waiter" && coverageShiftId ? 8000 : 0,
+        },
+    );
 
     const editingMembershipId =
         editingStaff && isUuid(editingStaff.id) ? editingStaff.id : null;
@@ -324,16 +397,54 @@ export default function AddEditStaffSheet() {
                     dayMap[row.dayCode] = row.shiftDefinitionId;
                 }
             }
-            const tablesByShift: Record<string, string[]> = {};
+            const initialTablesByShiftDay: Record<
+                string,
+                Record<string, string[]>
+            > = {};
             for (const coverage of member?.shiftCoverages ?? []) {
-                tablesByShift[coverage.shiftDefinitionId] = coverage.tables.map(
+                const sId = coverage.shiftDefinitionId;
+                if (!initialTablesByShiftDay[sId]) {
+                    initialTablesByShiftDay[sId] = {};
+                }
+                const dCode = coverage.dayCode || "Mon";
+                initialTablesByShiftDay[sId][dCode] = coverage.tables.map(
                     table => table.tableId,
                 );
             }
+            for (const sId of Object.keys(initialTablesByShiftDay)) {
+                const legacy = initialTablesByShiftDay[sId][""];
+                if (legacy && legacy.length > 0) {
+                    for (const day of WEEKDAYS) {
+                        if (
+                            !initialTablesByShiftDay[sId][day] ||
+                            initialTablesByShiftDay[sId][day].length === 0
+                        ) {
+                            initialTablesByShiftDay[sId][day] = [...legacy];
+                        }
+                    }
+                }
+            }
+            setTablesByShiftDay(initialTablesByShiftDay);
+
+            const flatMap: Record<string, string[]> = {};
+            for (const sId of Object.keys(initialTablesByShiftDay)) {
+                const set = new Set<string>();
+                for (const d of WEEKDAYS) {
+                    for (const id of initialTablesByShiftDay[sId]?.[d] || []) {
+                        set.add(id);
+                    }
+                }
+                flatMap[sId] = Array.from(set);
+            }
+
             const firstShift =
                 Object.values(dayMap).find(Boolean) ||
                 member?.shiftCoverages?.[0]?.shiftDefinitionId ||
                 "";
+
+            const initialDay =
+                WEEKDAYS.find(d => dayMap[d] === firstShift) || "Mon";
+            setCoverageDayCode(initialDay);
 
             form.reset({
                 name: editingStaff.name || "",
@@ -345,8 +456,10 @@ export default function AddEditStaffSheet() {
                 photoId: member?.photoId || "",
                 active: editingStaff.active !== false,
                 dayShiftByDay: dayMap,
-                assignedTablesByShift: tablesByShift,
+                assignedTablesByShift: flatMap,
                 coverageShiftId: firstShift,
+                licencePlate: (editingStaff as any).licencePlate || "",
+                vehicleDesc: (editingStaff as any).vehicleDesc || "",
             });
             setPhotoPreviewUrl(
                 member?.photoPath
@@ -355,6 +468,8 @@ export default function AddEditStaffSheet() {
             );
         } else {
             form.reset(staffFormDefaults);
+            setTablesByShiftDay({});
+            setCoverageDayCode("Mon");
             setPhotoPreviewUrl(null);
         }
     }, [
@@ -366,14 +481,24 @@ export default function AddEditStaffSheet() {
         editingMembershipId,
     ]);
 
+    // Keep coverageShiftId in sync with current day's assigned shift
     useEffect(() => {
         if (!isOpen || role !== "waiter") return;
-        const current = form.getValues("coverageShiftId");
-        if (current && usedShiftIds.includes(current)) return;
-        if (usedShiftIds[0]) {
+        const shiftForDay = dayShiftByDay?.[coverageDayCode];
+        if (shiftForDay && shiftForDay !== coverageShiftId) {
+            form.setValue("coverageShiftId", shiftForDay);
+        } else if (!shiftForDay && !coverageShiftId && usedShiftIds[0]) {
             form.setValue("coverageShiftId", usedShiftIds[0]);
         }
-    }, [isOpen, role, usedShiftIds, form]);
+    }, [
+        isOpen,
+        role,
+        coverageDayCode,
+        dayShiftByDay,
+        coverageShiftId,
+        usedShiftIds,
+        form,
+    ]);
 
     // New staff: default Mon–Sat to the first shift template once loaded
     useEffect(() => {
@@ -402,53 +527,230 @@ export default function AddEditStaffSheet() {
         [shifts, coverageShiftId],
     );
 
+    const morningShift = useMemo(
+        () =>
+            shifts.find(s => s.name.toLowerCase().includes("morn")) ??
+            shifts[0] ??
+            null,
+        [shifts],
+    );
+    const eveningShift = useMemo(
+        () =>
+            shifts.find(
+                s =>
+                    s.name.toLowerCase().includes("eve") ||
+                    s.name.toLowerCase().includes("night"),
+            ) ?? (shifts.length > 1 ? shifts[1] : null),
+        [shifts],
+    );
+
+    const scheduledWorkingDaysCount = useMemo(
+        () => WEEKDAYS.filter(d => Boolean(dayShiftByDay?.[d])).length,
+        [dayShiftByDay],
+    );
+
+    const totalWeeklyScheduledHours = useMemo(() => {
+        let total = 0;
+        for (const d of WEEKDAYS) {
+            const shiftId = dayShiftByDay?.[d];
+            if (!shiftId) continue;
+            const s = shifts.find(item => item.id === shiftId);
+            if (!s?.startLocalTime || !s?.endLocalTime) continue;
+            const [sh, sm] = s.startLocalTime.split(":").map(Number);
+            const [eh, em] = s.endLocalTime.split(":").map(Number);
+            const startMin = (sh || 0) * 60 + (sm || 0);
+            const endMin = (eh || 0) * 60 + (em || 0);
+            const diff =
+                endMin >= startMin
+                    ? endMin - startMin
+                    : 24 * 60 - startMin + endMin;
+            total += diff / 60;
+        }
+        return total;
+    }, [dayShiftByDay, shifts]);
+
+    function handleSelectDay(day: string) {
+        setCoverageDayCode(day);
+        const shiftId = form.getValues("dayShiftByDay")?.[day] || "";
+        if (shiftId) {
+            form.setValue("coverageShiftId", shiftId, { shouldDirty: true });
+        }
+    }
+
+    function handleSelectShiftForDay(shiftId: string) {
+        const nextMap = {
+            ...(form.getValues("dayShiftByDay") || {}),
+            [coverageDayCode]: shiftId,
+        };
+        form.setValue("dayShiftByDay", nextMap, {
+            shouldDirty: true,
+            shouldValidate: true,
+        });
+        form.setValue("coverageShiftId", shiftId, { shouldDirty: true });
+    }
+
+    function handleSetDayOff() {
+        const nextMap = {
+            ...(form.getValues("dayShiftByDay") || {}),
+            [coverageDayCode]: "",
+        };
+        form.setValue("dayShiftByDay", nextMap, {
+            shouldDirty: true,
+            shouldValidate: true,
+        });
+        form.setValue("coverageShiftId", "", { shouldDirty: true });
+    }
+
+    function handleApplyPreset(
+        daysToSet: ("Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun")[],
+        shiftIdToApply: string,
+    ) {
+        const nextMap: Record<string, string> = {
+            Mon: "",
+            Tue: "",
+            Wed: "",
+            Thu: "",
+            Fri: "",
+            Sat: "",
+            Sun: "",
+        };
+        for (const day of WEEKDAYS) {
+            if (daysToSet.includes(day)) {
+                nextMap[day] = shiftIdToApply;
+            }
+        }
+        form.setValue("dayShiftByDay", nextMap, {
+            shouldDirty: true,
+            shouldValidate: true,
+        });
+        if (shiftIdToApply) {
+            form.setValue("coverageShiftId", shiftIdToApply, {
+                shouldDirty: true,
+            });
+        } else {
+            form.setValue("coverageShiftId", "", {
+                shouldDirty: true,
+            });
+        }
+    }
+
     const assignmentStats = useMemo(() => {
         const tables = shiftFloor?.locations.flatMap(loc => loc.tables) ?? [];
         const assigned = tables.filter(
             table => table.assignedWaiterMembershipId,
         );
         const free = tables.length - assigned.length;
-        const mine = assigned.filter(
-            table =>
-                editingMembershipId &&
-                table.assignedWaiterMembershipId === editingMembershipId,
-        ).length;
+        const mine = assignedTableIds.length;
         return {
             total: tables.length,
             assigned: assigned.length,
             free,
             mine,
         };
-    }, [shiftFloor, editingMembershipId]);
+    }, [shiftFloor, assignedTableIds]);
 
     if (!isOpen) return null;
 
     function handleToggleTable(
         tableId: string,
-        ownerId: string | null,
-        ownerName: string | null,
+        ownerId?: string | null,
+        ownerName?: string | null,
     ) {
-        const shiftId = form.getValues("coverageShiftId");
-        if (!shiftId) return;
-        const byShift = { ...form.getValues("assignedTablesByShift") };
-        const current = byShift[shiftId] || [];
+        if (!coverageShiftId) return;
+        const current =
+            tablesByShiftDay[coverageShiftId]?.[coverageDayCode] ?? [];
         const ownedByOther =
             ownerId &&
             ownerId !== editingMembershipId &&
             !current.includes(tableId);
         if (ownedByOther) {
             const ok = confirm(
-                t("confirmTakeTable", {
-                    owner: ownerName || t("anotherWaiter"),
-                    waiter: nameValue.trim() || t("thisWaiter"),
-                }),
+                `Table is currently assigned to ${ownerName || "another waiter"} on ${coverageDayCode}. Reassign to ${nameValue?.trim() || "this waiter"}?`,
             );
             if (!ok) return;
         }
-        byShift[shiftId] = current.includes(tableId)
+        const next = current.includes(tableId)
             ? current.filter(id => id !== tableId)
             : [...current, tableId];
-        form.setValue("assignedTablesByShift", byShift, { shouldDirty: true });
+
+        const nextShiftMap = {
+            ...(tablesByShiftDay[coverageShiftId] ?? {}),
+            [coverageDayCode]: next,
+        };
+        const nextState = {
+            ...tablesByShiftDay,
+            [coverageShiftId]: nextShiftMap,
+        };
+        setTablesByShiftDay(nextState);
+
+        const flatMap: Record<string, string[]> = {};
+        for (const sId of Object.keys(nextState)) {
+            const set = new Set<string>();
+            for (const d of WEEKDAYS) {
+                for (const id of nextState[sId]?.[d] || []) {
+                    set.add(id);
+                }
+            }
+            flatMap[sId] = Array.from(set);
+        }
+        form.setValue("assignedTablesByShift", flatMap, { shouldDirty: true });
+    }
+
+    function handleCopyDayToAllDays() {
+        if (!coverageShiftId) return;
+        const current =
+            tablesByShiftDay[coverageShiftId]?.[coverageDayCode] ?? [];
+        const nextShiftMap = { ...(tablesByShiftDay[coverageShiftId] ?? {}) };
+        for (const day of WEEKDAYS) {
+            nextShiftMap[day] = [...current];
+        }
+        const nextState = {
+            ...tablesByShiftDay,
+            [coverageShiftId]: nextShiftMap,
+        };
+        setTablesByShiftDay(nextState);
+
+        const flatMap: Record<string, string[]> = {};
+        for (const sId of Object.keys(nextState)) {
+            const set = new Set<string>();
+            for (const d of WEEKDAYS) {
+                for (const id of nextState[sId]?.[d] || []) {
+                    set.add(id);
+                }
+            }
+            flatMap[sId] = Array.from(set);
+        }
+        form.setValue("assignedTablesByShift", flatMap, { shouldDirty: true });
+
+        toast.success(
+            "Copied to all days",
+            `${current.length} table(s) from ${coverageDayCode} copied to all days for this shift. Click Save to confirm.`,
+        );
+    }
+
+    function handleClearDayTables() {
+        if (!coverageShiftId) return;
+        const nextShiftMap = {
+            ...(tablesByShiftDay[coverageShiftId] ?? {}),
+            [coverageDayCode]: [],
+        };
+        const nextState = {
+            ...tablesByShiftDay,
+            [coverageShiftId]: nextShiftMap,
+        };
+        setTablesByShiftDay(nextState);
+
+        const flatMap: Record<string, string[]> = {};
+        for (const sId of Object.keys(nextState)) {
+            const set = new Set<string>();
+            for (const d of WEEKDAYS) {
+                for (const id of nextState[sId]?.[d] || []) {
+                    set.add(id);
+                }
+            }
+            flatMap[sId] = Array.from(set);
+        }
+        form.setValue("assignedTablesByShift", flatMap, { shouldDirty: true });
     }
 
     async function onSubmit(values: StaffFormValues) {
@@ -491,13 +793,48 @@ export default function AddEditStaffSheet() {
             }
 
             const dayShifts = dayShiftsFromForm(values.dayShiftByDay);
-            const tableCoverages =
-                values.role === "waiter"
-                    ? tableCoveragesFromForm(
-                          values.dayShiftByDay,
-                          values.assignedTablesByShift,
-                      )
-                    : undefined;
+            const tableCoverages: Array<{
+                shiftDefinitionId: string;
+                dayCode?: string;
+                applyToAllDays?: boolean;
+                tableIds: string[];
+            }> = [];
+
+            if (values.role === "waiter" && usedShiftIds.length > 0) {
+                for (const shiftId of usedShiftIds) {
+                    const shiftDays = WEEKDAYS.filter(
+                        d => values.dayShiftByDay?.[d] === shiftId,
+                    );
+                    const daysToProcess =
+                        shiftDays.length > 0 ? shiftDays : WEEKDAYS;
+                    const firstDayTables =
+                        tablesByShiftDay[shiftId]?.[daysToProcess[0]] ?? [];
+                    const allSame = daysToProcess.every(d => {
+                        const list = tablesByShiftDay[shiftId]?.[d] ?? [];
+                        return (
+                            list.length === firstDayTables.length &&
+                            list.every(id => firstDayTables.includes(id))
+                        );
+                    });
+
+                    if (allSame) {
+                        tableCoverages.push({
+                            shiftDefinitionId: shiftId,
+                            applyToAllDays: true,
+                            tableIds: firstDayTables,
+                        });
+                    } else {
+                        for (const day of daysToProcess) {
+                            tableCoverages.push({
+                                shiftDefinitionId: shiftId,
+                                dayCode: day,
+                                tableIds:
+                                    tablesByShiftDay[shiftId]?.[day] ?? [],
+                            });
+                        }
+                    }
+                }
+            }
 
             if (isEditMode && editingMembershipId) {
                 await updateStaffApi({
@@ -514,17 +851,23 @@ export default function AddEditStaffSheet() {
                         dayShifts,
                         stationCode,
                         preparationStationId,
-                        ...(tableCoverages ? { tableCoverages } : {}),
+                        ...(tableCoverages.length > 0
+                            ? { tableCoverages }
+                            : {}),
                         hireDate: values.hireDate || undefined,
                         photoId: values.photoId || null,
+                        licencePlate: values.licencePlate?.trim() || undefined,
+                        vehicleDesc: values.vehicleDesc?.trim() || undefined,
                     },
                 }).unwrap();
 
-                if (values.role === "waiter" && tableCoverages) {
+                if (values.role === "waiter" && tableCoverages.length > 0) {
                     for (const coverage of tableCoverages) {
                         await setCoverage({
                             membershipId: editingMembershipId,
                             shiftDefinitionId: coverage.shiftDefinitionId,
+                            dayCode: coverage.dayCode,
+                            applyToAllDays: coverage.applyToAllDays,
                             tableIds: coverage.tableIds,
                         }).unwrap();
                     }
@@ -532,13 +875,15 @@ export default function AddEditStaffSheet() {
                 toast.success(t("toastStaffUpdated"), values.name.trim());
                 dispatch(closeAddEditStaff());
             } else {
+                const isCentralRole =
+                    apiRole === "store_manager" || apiRole === "driver";
                 const targetBranchId =
-                    typeof window !== "undefined"
+                    !isCentralRole && typeof window !== "undefined"
                         ? sessionStorage.getItem(
                               "fanaye.staffTargetBranchId",
                           ) || undefined
                         : undefined;
-                await createStaff({
+                const created = await createStaff({
                     name: values.name.trim(),
                     role: apiRole,
                     phone: values.phone?.trim() || undefined,
@@ -548,13 +893,30 @@ export default function AddEditStaffSheet() {
                     dayShifts,
                     stationCode,
                     preparationStationId,
-                    ...(tableCoverages ? { tableCoverages } : {}),
+                    ...(tableCoverages.length > 0 ? { tableCoverages } : {}),
                     ...(targetBranchId ? { branchId: targetBranchId } : {}),
                     ...(values.hireDate ? { hireDate: values.hireDate } : {}),
                     ...(values.photoId ? { photoId: values.photoId } : {}),
+                    licencePlate: values.licencePlate?.trim() || undefined,
+                    vehicleDesc: values.vehicleDesc?.trim() || undefined,
                 }).unwrap();
                 if (typeof window !== "undefined") {
                     sessionStorage.removeItem("fanaye.staffTargetBranchId");
+                }
+                if (
+                    values.role === "waiter" &&
+                    created?.data?.id &&
+                    tableCoverages.length > 0
+                ) {
+                    for (const coverage of tableCoverages) {
+                        await setCoverage({
+                            membershipId: created.data.id,
+                            shiftDefinitionId: coverage.shiftDefinitionId,
+                            dayCode: coverage.dayCode,
+                            applyToAllDays: coverage.applyToAllDays,
+                            tableIds: coverage.tableIds,
+                        }).unwrap();
+                    }
                 }
                 toast.success(t("toastStaffRegistered"), values.name.trim());
                 dispatch(closeAddEditStaff());
@@ -574,19 +936,14 @@ export default function AddEditStaffSheet() {
             toast.error(t("toastNotOnServer"));
             return;
         }
-        if (!confirm(t("confirmRemove", { name: editingStaff.name ?? "" }))) {
-            return;
-        }
         setSaving(true);
         try {
-            await updateStaffApi({
-                membershipId: editingMembershipId,
-                body: { active: false },
-            }).unwrap();
-            toast.success(t("toastDeactivated"), editingStaff.name);
+            await deleteStaffApi(editingMembershipId).unwrap();
+            toast.success(t("toastStaffDeleted"), editingStaff.name);
+            setConfirmDeleteOpen(false);
             dispatch(closeAddEditStaff());
         } catch (err) {
-            toast.fromUnknown(err, t("toastDeactivateError"));
+            toast.fromUnknown(err, t("toastStaffDeleteError"));
         } finally {
             setSaving(false);
         }
@@ -599,10 +956,10 @@ export default function AddEditStaffSheet() {
                 onClick={() => dispatch(closeAddEditStaff())}
             />
 
-            <aside className="relative z-10 flex h-full w-full max-w-xl flex-col overflow-hidden border-l border-hairline bg-white shadow-2xl dark:bg-card">
+            <aside className="relative z-10 flex h-full w-full max-w-2xl lg:max-w-3xl flex-col overflow-hidden border-l border-hairline bg-white shadow-2xl dark:bg-card">
                 <div className="flex shrink-0 items-center justify-between border-b border-hairline px-6 py-4">
                     <div className="flex items-center gap-3">
-                        <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        <div className="flex size-10 items-center justify-center rounded-full bg-muted text-foreground">
                             <User className="size-5" />
                         </div>
                         <div>
@@ -937,21 +1294,35 @@ export default function AddEditStaffSheet() {
                                                             )
                                                         }
                                                         className={cn(
-                                                            "flex flex-col items-start rounded-[12px] border p-3 text-left transition-all",
+                                                            "flex flex-col items-start rounded-xl border p-3 text-left transition-all cursor-pointer",
                                                             selected
-                                                                ? "border-primary bg-primary/5 text-foreground"
-                                                                : "border-hairline bg-surface-ivory/50 text-slate-gray hover:bg-secondary",
+                                                                ? "border-zinc-300 bg-zinc-900 text-white dark:border-zinc-500 dark:bg-zinc-100 dark:text-zinc-950 font-medium shadow-xs"
+                                                                : "border-hairline bg-card/60 text-slate-gray hover:bg-muted",
                                                         )}
                                                     >
                                                         <div className="flex w-full items-center justify-between">
-                                                            <span className="text-[13px] font-semibold text-foreground">
+                                                            <span
+                                                                className={cn(
+                                                                    "text-[13px] font-semibold",
+                                                                    selected
+                                                                        ? "text-white dark:text-zinc-950"
+                                                                        : "text-foreground",
+                                                                )}
+                                                            >
                                                                 {entry.label}
                                                             </span>
                                                             {selected ? (
-                                                                <span className="size-2 rounded-full bg-primary" />
+                                                                <span className="size-2 rounded-full bg-white dark:bg-zinc-950" />
                                                             ) : null}
                                                         </div>
-                                                        <span className="mt-1 text-[11px] leading-tight text-slate-gray">
+                                                        <span
+                                                            className={cn(
+                                                                "mt-1 text-[11px] leading-tight",
+                                                                selected
+                                                                    ? "text-white/80 dark:text-zinc-950/80"
+                                                                    : "text-slate-gray",
+                                                            )}
+                                                        >
                                                             {entry.description}
                                                         </span>
                                                     </button>
@@ -964,129 +1335,205 @@ export default function AddEditStaffSheet() {
                             />
                         </div>
 
-                        {role === "waiter" || role === "cashier" ? (
-                            <div className="space-y-3 rounded-[16px] border border-primary/20 bg-primary/5 p-4">
-                                <div className="flex items-center gap-2">
-                                    {role === "waiter" ? (
-                                        <UtensilsCrossed className="size-4 text-primary" />
-                                    ) : (
-                                        <Clock3 className="size-4 text-primary" />
-                                    )}
-                                    <h4 className="text-[13px] font-semibold">
-                                        {role === "waiter"
-                                            ? t("shiftCoverageTitle")
-                                            : "Shift Schedule Window"}
-                                    </h4>
+                        {role === "driver" ? (
+                            <div className="space-y-4 rounded-2xl border border-primary/25 bg-primary/[0.04] p-4.5 dark:border-primary/30 dark:bg-primary/[0.07]">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex size-9 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-primary">
+                                        <Truck className="size-5" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-[14px] font-semibold text-foreground">
+                                            Driver Fleet & Transit Registration
+                                        </h4>
+                                        <p className="text-[12px] text-slate-gray">
+                                            Drivers operate company-wide across
+                                            all branches for inter-branch stock
+                                            transfers and warehouse pickups.
+                                        </p>
+                                    </div>
                                 </div>
-                                <p className="text-[12px] text-slate-gray">
-                                    {role === "waiter"
-                                        ? "Pick a shift window per day (e.g. Monday morning, Thursday afternoon). Tables are assigned per shift window."
-                                        : "Pick a shift window per day (e.g. Monday morning, Thursday afternoon)."}
-                                </p>
 
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pt-1">
+                                    <FormField
+                                        control={form.control}
+                                        name="licencePlate"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>
+                                                    Licence Plate{" "}
+                                                    <span className="text-primary">
+                                                        *
+                                                    </span>
+                                                </FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        placeholder="e.g. AA-3-B12345"
+                                                        className="h-10 rounded-[10px] font-mono uppercase tracking-wider"
+                                                        {...field}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="vehicleDesc"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>
+                                                    Vehicle Model & Type
+                                                </FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        placeholder="e.g. Toyota Hilux Van (White)"
+                                                        className="h-10 rounded-[10px]"
+                                                        {...field}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+
+                                <div className="rounded-xl border border-hairline bg-card/70 px-3.5 py-2.5 text-[12px] text-slate-gray flex items-center justify-between">
+                                    <span>
+                                        Assigned runs are delivered via the
+                                        mobile Driver Portal at{" "}
+                                        <span className="font-semibold text-foreground">
+                                            /driver
+                                        </span>
+                                        .
+                                    </span>
+                                </div>
+                            </div>
+                        ) : null}
+
+                        {role === "waiter" || role === "cashier" ? (
+                            <div className="space-y-4 rounded-2xl border border-hairline/80 bg-surface-ivory/40 p-4 dark:bg-card/40">
+                                {/* Header */}
                                 <div className="flex items-center justify-between">
-                                    <FormLabel>
-                                        {t("scheduledWorkingDays")}
-                                    </FormLabel>
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="flex size-8 items-center justify-center rounded-lg border border-hairline bg-card text-foreground">
+                                            {role === "waiter" ? (
+                                                <UtensilsCrossed className="size-4" />
+                                            ) : (
+                                                <Clock3 className="size-4" />
+                                            )}
+                                        </div>
+                                        <div>
+                                            <h4 className="text-[13px] font-semibold text-foreground">
+                                                {role === "waiter"
+                                                    ? "Weekly Schedule & Floor Tables"
+                                                    : "Shift Schedule Window"}
+                                            </h4>
+                                            <p className="text-[11px] text-slate-gray">
+                                                {role === "waiter"
+                                                    ? "Select a day, choose its shift, then assign floor tables."
+                                                    : "Select a day and choose its shift."}
+                                            </p>
+                                        </div>
+                                    </div>
                                     <button
                                         type="button"
                                         onClick={() => setShowNewShift(v => !v)}
-                                        className="inline-flex items-center gap-1 text-[12px] font-medium text-primary hover:underline"
+                                        className="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-card px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-muted transition-colors cursor-pointer"
                                     >
-                                        <Plus className="size-3.5" />
+                                        <Plus className="size-3" />
                                         {showNewShift
                                             ? tCommon("close")
                                             : t("newShift")}
                                     </button>
                                 </div>
 
-                                <FormField
-                                    control={form.control}
-                                    name="dayShiftByDay"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <div className="space-y-1.5">
-                                                {WEEKDAYS.map(day => (
-                                                    <div
-                                                        key={day}
-                                                        className="flex items-center gap-2"
-                                                    >
-                                                        <span className="w-10 shrink-0 text-[12px] font-medium text-foreground">
-                                                            {t(
-                                                                DAY_LABEL_KEYS[
-                                                                    day
-                                                                ],
-                                                            )}
-                                                        </span>
-                                                        <select
-                                                            value={
-                                                                field.value?.[
-                                                                    day
-                                                                ] || ""
-                                                            }
-                                                            onChange={e => {
-                                                                const next = {
-                                                                    ...field.value,
-                                                                    [day]: e
-                                                                        .target
-                                                                        .value,
-                                                                };
-                                                                field.onChange(
-                                                                    next,
-                                                                );
-                                                                if (
-                                                                    e.target
-                                                                        .value &&
-                                                                    role ===
-                                                                        "waiter"
-                                                                ) {
-                                                                    form.setValue(
-                                                                        "coverageShiftId",
-                                                                        e.target
-                                                                            .value,
-                                                                    );
-                                                                }
-                                                            }}
-                                                            className="h-9 flex-1 rounded-[10px] border border-input bg-card px-2.5 text-[12px]"
-                                                        >
-                                                            <option value="">
-                                                                Off
-                                                            </option>
-                                                            {shifts.map(
-                                                                shift => (
-                                                                    <option
-                                                                        key={
-                                                                            shift.id
-                                                                        }
-                                                                        value={
-                                                                            shift.id
-                                                                        }
-                                                                    >
-                                                                        {
-                                                                            shift.name
-                                                                        }{" "}
-                                                                        ·{" "}
-                                                                        {
-                                                                            shift.startLocalTime
-                                                                        }
-                                                                        –
-                                                                        {
-                                                                            shift.endLocalTime
-                                                                        }
-                                                                    </option>
-                                                                ),
-                                                            )}
-                                                        </select>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                                {/* Quick Preset Buttons */}
+                                {shifts.length > 0 ? (
+                                    <div className="flex flex-wrap items-center gap-1.5 pt-0.5 pb-1">
+                                        <span className="text-[11px] font-medium text-slate-gray">
+                                            Quick set:
+                                        </span>
+                                        {morningShift ? (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    handleApplyPreset(
+                                                        [
+                                                            "Mon",
+                                                            "Tue",
+                                                            "Wed",
+                                                            "Thu",
+                                                            "Fri",
+                                                            "Sat",
+                                                        ],
+                                                        morningShift.id,
+                                                    )
+                                                }
+                                                className="inline-flex items-center gap-1 rounded-md border border-hairline bg-card px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-muted transition-colors cursor-pointer"
+                                            >
+                                                <Sunrise className="size-3 text-amber-500" />
+                                                Mon–Sat {morningShift.name}
+                                            </button>
+                                        ) : null}
+                                        {morningShift ? (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    handleApplyPreset(
+                                                        [
+                                                            "Mon",
+                                                            "Tue",
+                                                            "Wed",
+                                                            "Thu",
+                                                            "Fri",
+                                                        ],
+                                                        morningShift.id,
+                                                    )
+                                                }
+                                                className="inline-flex items-center gap-1 rounded-md border border-hairline bg-card px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-muted transition-colors cursor-pointer"
+                                            >
+                                                <Sun className="size-3 text-amber-500" />
+                                                Mon–Fri {morningShift.name}
+                                            </button>
+                                        ) : null}
+                                        {eveningShift ? (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    handleApplyPreset(
+                                                        [
+                                                            "Mon",
+                                                            "Tue",
+                                                            "Wed",
+                                                            "Thu",
+                                                            "Fri",
+                                                            "Sat",
+                                                        ],
+                                                        eveningShift.id,
+                                                    )
+                                                }
+                                                className="inline-flex items-center gap-1 rounded-md border border-hairline bg-card px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-muted transition-colors cursor-pointer"
+                                            >
+                                                <Sunset className="size-3 text-indigo-400" />
+                                                Mon–Sat {eveningShift.name}
+                                            </button>
+                                        ) : null}
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                handleApplyPreset([], "")
+                                            }
+                                            className="inline-flex items-center gap-1 rounded-md border border-hairline bg-card px-2 py-0.5 text-[11px] font-medium text-slate-gray hover:text-foreground transition-colors cursor-pointer"
+                                        >
+                                            <Ban className="size-3 text-slate-gray" />
+                                            All Off
+                                        </button>
+                                    </div>
+                                ) : null}
 
+                                {/* New Shift Creation Form */}
                                 {showNewShift ? (
-                                    <div className="space-y-2.5 rounded-[12px] border border-dashed border-primary/40 bg-surface-ivory p-3.5 dark:bg-card">
+                                    <div className="space-y-2.5 rounded-xl border border-dashed border-hairline bg-card/60 p-3.5">
                                         <div className="flex items-center justify-between">
                                             <p className="text-[12px] font-semibold text-foreground">
                                                 {t("createShiftTitle")}
@@ -1222,223 +1669,439 @@ export default function AddEditStaffSheet() {
                                     </div>
                                 ) : null}
 
-                                {role === "waiter" &&
-                                usedShiftIds.length > 0 ? (
-                                    <div className="space-y-2">
-                                        <FormLabel>
-                                            {t("shiftWindow")} — tables
-                                        </FormLabel>
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {usedShiftIds.map(shiftId => {
-                                                const shift = shifts.find(
-                                                    s => s.id === shiftId,
-                                                );
-                                                const active =
-                                                    coverageShiftId === shiftId;
-                                                return (
-                                                    <button
-                                                        key={shiftId}
-                                                        type="button"
-                                                        onClick={() =>
-                                                            form.setValue(
-                                                                "coverageShiftId",
-                                                                shiftId,
-                                                            )
-                                                        }
+                                {/* Step 1: 7-Day Weekday Selector */}
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
+                                            1. Select Day
+                                        </span>
+                                        <span className="text-[11px] text-slate-gray">
+                                            {scheduledWorkingDaysCount} day
+                                            {scheduledWorkingDaysCount === 1
+                                                ? ""
+                                                : "s"}{" "}
+                                            scheduled
+                                        </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-7 gap-1.5">
+                                        {WEEKDAYS.map(day => {
+                                            const isDaySelected =
+                                                coverageDayCode === day;
+                                            const shiftId =
+                                                dayShiftByDay?.[day];
+                                            const assignedShift = shifts.find(
+                                                s => s.id === shiftId,
+                                            );
+                                            const count = shiftId
+                                                ? (
+                                                      tablesByShiftDay[
+                                                          shiftId
+                                                      ]?.[day] || []
+                                                  ).length
+                                                : 0;
+
+                                            return (
+                                                <button
+                                                    key={day}
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleSelectDay(day)
+                                                    }
+                                                    className={cn(
+                                                        "flex flex-col items-center justify-center rounded-xl border py-2 px-1 text-center transition-all cursor-pointer",
+                                                        isDaySelected
+                                                            ? "border-zinc-300 bg-zinc-900 text-white dark:border-zinc-500 dark:bg-zinc-100 dark:text-zinc-950 font-bold shadow-xs ring-1 ring-black/10 dark:ring-white/10"
+                                                            : "border-hairline bg-card hover:bg-muted text-muted-foreground",
+                                                    )}
+                                                >
+                                                    <span className="text-[12px] font-bold leading-tight">
+                                                        {day}
+                                                    </span>
+                                                    <span
                                                         className={cn(
-                                                            "rounded-full border px-3 py-1 text-[11px] font-medium transition-colors",
-                                                            active
-                                                                ? "border-primary bg-primary text-primary-foreground"
-                                                                : "border-hairline bg-card text-slate-gray hover:text-foreground",
+                                                            "mt-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium leading-none",
+                                                            isDaySelected
+                                                                ? "bg-white/20 text-white dark:bg-zinc-950/20 dark:text-zinc-950"
+                                                                : shiftId
+                                                                  ? "bg-muted text-foreground"
+                                                                  : "text-slate-400 dark:text-slate-500",
                                                         )}
                                                     >
-                                                        {shift?.name || "Shift"}{" "}
-                                                        ·{" "}
-                                                        {
-                                                            (
-                                                                assignedTablesByShift[
-                                                                    shiftId
-                                                                ] || []
-                                                            ).length
-                                                        }{" "}
-                                                        tables
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                        {selectedShift ? (
-                                            <p className="flex items-center gap-1.5 text-[12px] text-slate-gray">
-                                                <Clock3 className="size-3.5" />
-                                                {t("showingFloorFor", {
-                                                    name: selectedShift.name,
-                                                    start: selectedShift.startLocalTime,
-                                                    end: selectedShift.endLocalTime,
-                                                })}
-                                            </p>
-                                        ) : null}
+                                                        {!shiftId
+                                                            ? "Off"
+                                                            : role === "waiter"
+                                                              ? `${count} tbls`
+                                                              : assignedShift?.name?.slice(
+                                                                    0,
+                                                                    4,
+                                                                ) || "Set"}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
                                     </div>
-                                ) : null}
+                                </div>
 
-                                {role === "waiter" && coverageShiftId ? (
-                                    <div className="flex flex-wrap gap-2 text-[11px]">
-                                        <span className="rounded-full border border-hairline bg-card px-2.5 py-1">
-                                            {t("statsTables", {
-                                                count: assignmentStats.total,
-                                            })}
+                                {/* Step 2: Shift Selector for Current Day */}
+                                <div className="space-y-1.5 rounded-xl border border-hairline bg-card/60 p-3">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
+                                            2. Shift for {coverageDayCode}
                                         </span>
-                                        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-emerald-800">
-                                            {t("statsFree", {
-                                                count: assignmentStats.free,
-                                            })}
-                                        </span>
-                                        <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-800">
-                                            {t("statsAssigned", {
-                                                count: assignmentStats.assigned,
-                                            })}
-                                        </span>
-                                        <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-primary">
-                                            {t("statsSelected", {
-                                                count: assignedTableIds.length,
-                                            })}
+                                        <span className="text-[11px] text-slate-gray">
+                                            {dayShiftByDay?.[coverageDayCode]
+                                                ? "Shift active on this day"
+                                                : "Scheduled Day Off"}
                                         </span>
                                     </div>
-                                ) : null}
 
-                                {role === "waiter" && floorLoading ? (
-                                    <p className="text-[12px] text-slate-gray">
-                                        {t("loadingFloor")}
-                                    </p>
-                                ) : null}
-                                {role === "waiter" && floorError ? (
-                                    <p className="text-[12px] text-destructive">
-                                        {t("floorLoadError")}
-                                    </p>
-                                ) : null}
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                        {shifts.map(shift => {
+                                            const isCurrentShift =
+                                                (dayShiftByDay?.[
+                                                    coverageDayCode
+                                                ] || "") === shift.id;
+                                            const count = (
+                                                tablesByShiftDay[shift.id]?.[
+                                                    coverageDayCode
+                                                ] || []
+                                            ).length;
+                                            const isMorning =
+                                                shift.startLocalTime
+                                                    ? parseInt(
+                                                          shift.startLocalTime.split(
+                                                              ":",
+                                                          )[0],
+                                                          10,
+                                                      ) < 14
+                                                    : false;
 
-                                {role === "waiter" && shiftFloor ? (
-                                    <div className="space-y-3">
-                                        {shiftFloor.locations.map(location => (
-                                            <div key={location.id}>
-                                                <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-slate-gray uppercase">
-                                                    <MapPin className="size-3.5" />
-                                                    {location.name}
-                                                </p>
-                                                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                                                    {location.tables.map(
-                                                        table => {
-                                                            const selected =
-                                                                assignedTableIds.includes(
-                                                                    table.tableId,
-                                                                );
-                                                            const ownerId =
-                                                                table.assignedWaiterMembershipId;
-                                                            const ownerName =
-                                                                table.assignedWaiterName;
-                                                            const ownedByOther =
-                                                                Boolean(
-                                                                    ownerId &&
-                                                                        ownerId !==
-                                                                            editingMembershipId &&
-                                                                        !selected,
-                                                                );
-                                                            const ownedBySelf =
-                                                                Boolean(
-                                                                    ownerId &&
-                                                                        editingMembershipId &&
-                                                                        ownerId ===
-                                                                            editingMembershipId,
-                                                                );
-
-                                                            return (
-                                                                <button
-                                                                    key={
-                                                                        table.tableId
-                                                                    }
-                                                                    type="button"
-                                                                    onClick={() =>
-                                                                        handleToggleTable(
-                                                                            table.tableId,
-                                                                            ownerId,
-                                                                            ownerName,
-                                                                        )
-                                                                    }
-                                                                    className={cn(
-                                                                        "rounded-[12px] border px-2.5 py-2 text-left transition-all",
-                                                                        selected
-                                                                            ? "border-primary bg-primary text-primary-foreground"
-                                                                            : ownedByOther
-                                                                              ? "border-amber-300 bg-amber-50"
-                                                                              : "border-hairline bg-card hover:bg-secondary/60",
-                                                                    )}
-                                                                >
-                                                                    <div className="flex items-start justify-between gap-1">
-                                                                        <span className="text-[13px] font-semibold">
-                                                                            {table.displayNumber
-                                                                                ? `T-${table.displayNumber}`
-                                                                                : table.displayName}
-                                                                        </span>
-                                                                        {selected ? (
-                                                                            <span className="text-[10px] opacity-90">
-                                                                                {t(
-                                                                                    "tableMine",
-                                                                                )}
-                                                                            </span>
-                                                                        ) : null}
-                                                                    </div>
-                                                                    <span
-                                                                        className={cn(
-                                                                            "mt-1 block truncate text-[11px]",
-                                                                            selected
-                                                                                ? "text-primary-foreground/85"
-                                                                                : ownedByOther
-                                                                                  ? "text-amber-800"
-                                                                                  : ownedBySelf
-                                                                                    ? "text-primary"
-                                                                                    : "text-slate-gray",
-                                                                        )}
-                                                                    >
-                                                                        {selected
-                                                                            ? nameValue.trim() ||
-                                                                              t(
-                                                                                  "thisWaiter",
-                                                                              )
-                                                                            : ownerName
-                                                                              ? t(
-                                                                                    "tableAssigned",
-                                                                                    {
-                                                                                        name: ownerName,
-                                                                                    },
-                                                                                )
-                                                                              : t(
-                                                                                    "tableFree",
-                                                                                )}
-                                                                    </span>
-                                                                </button>
-                                                            );
-                                                        },
+                                            return (
+                                                <button
+                                                    key={shift.id}
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleSelectShiftForDay(
+                                                            shift.id,
+                                                        )
+                                                    }
+                                                    className={cn(
+                                                        "inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-medium transition-all cursor-pointer",
+                                                        isCurrentShift
+                                                            ? "border-zinc-300 bg-zinc-900 text-white dark:border-zinc-500 dark:bg-zinc-100 dark:text-zinc-950 font-bold shadow-xs"
+                                                            : "border-hairline bg-card hover:bg-muted text-muted-foreground",
                                                     )}
+                                                >
+                                                    {isMorning ? (
+                                                        <Sunrise
+                                                            className={cn(
+                                                                "size-3.5",
+                                                                isCurrentShift
+                                                                    ? "text-amber-300"
+                                                                    : "text-amber-500",
+                                                            )}
+                                                        />
+                                                    ) : (
+                                                        <Moon
+                                                            className={cn(
+                                                                "size-3.5",
+                                                                isCurrentShift
+                                                                    ? "text-indigo-200"
+                                                                    : "text-indigo-400",
+                                                            )}
+                                                        />
+                                                    )}
+                                                    <span>
+                                                        {shift.name} (
+                                                        {format12HourTime(
+                                                            shift.startLocalTime,
+                                                        )}
+                                                        –
+                                                        {format12HourTime(
+                                                            shift.endLocalTime,
+                                                        )}
+                                                        )
+                                                    </span>
+                                                    {role === "waiter" &&
+                                                    isCurrentShift ? (
+                                                        <span
+                                                            className={cn(
+                                                                "rounded-md px-1.5 py-0.5 text-[10px] font-semibold",
+                                                                isCurrentShift
+                                                                    ? "bg-white/20 text-white dark:bg-zinc-950/20 dark:text-zinc-950"
+                                                                    : "bg-muted text-foreground",
+                                                            )}
+                                                        >
+                                                            {count} tbls
+                                                        </span>
+                                                    ) : null}
+                                                </button>
+                                            );
+                                        })}
+                                        <button
+                                            type="button"
+                                            onClick={() => handleSetDayOff()}
+                                            className={cn(
+                                                "inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition-all cursor-pointer",
+                                                !dayShiftByDay?.[
+                                                    coverageDayCode
+                                                ]
+                                                    ? "border-zinc-300 bg-zinc-900 text-white dark:border-zinc-500 dark:bg-zinc-100 dark:text-zinc-950 font-bold shadow-xs"
+                                                    : "border-hairline bg-card hover:bg-muted text-muted-foreground",
+                                            )}
+                                        >
+                                            <Ban className="size-3.5 text-slate-gray" />
+                                            <span>Day Off</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Step 3: Table Assignment (Waiter only) */}
+                                {role === "waiter" ? (
+                                    !dayShiftByDay?.[coverageDayCode] ? (
+                                        <div className="flex flex-col items-center justify-center rounded-xl border border-hairline/80 bg-card/40 py-8 px-4 text-center">
+                                            <div className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground mb-2">
+                                                <CalendarOff className="size-5" />
+                                            </div>
+                                            <p className="text-[13px] font-semibold text-foreground">
+                                                {coverageDayCode} is a Scheduled
+                                                Day Off
+                                            </p>
+                                            <p className="text-[11px] text-slate-gray max-w-xs mt-1">
+                                                Select a shift above (e.g.
+                                                Morning or Evening) to assign
+                                                tables for {coverageDayCode}.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3 rounded-xl border border-hairline bg-card/60 p-3.5">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
+                                                    3. Table Assignment ·{" "}
+                                                    {coverageDayCode}{" "}
+                                                    {selectedShift?.name}
+                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={
+                                                            handleCopyDayToAllDays
+                                                        }
+                                                        className="inline-flex items-center gap-1 text-[11px] font-medium text-foreground hover:text-foreground/80 hover:underline cursor-pointer"
+                                                        title={`Copy ${coverageDayCode} tables to all working days`}
+                                                    >
+                                                        <Copy className="size-3" />
+                                                        Copy {coverageDayCode}{" "}
+                                                        to all
+                                                    </button>
+                                                    <span className="text-slate-300 dark:text-slate-600">
+                                                        ·
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={
+                                                            handleClearDayTables
+                                                        }
+                                                        className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-gray hover:text-destructive cursor-pointer"
+                                                        title={`Clear tables for ${coverageDayCode}`}
+                                                    >
+                                                        <RotateCcw className="size-3" />
+                                                        Clear {coverageDayCode}
+                                                    </button>
                                                 </div>
                                             </div>
-                                        ))}
-                                        <div className="flex flex-wrap gap-3 text-[11px] text-slate-gray">
-                                            <span className="inline-flex items-center gap-1.5">
-                                                <span className="size-2.5 rounded-sm border border-hairline bg-card" />
-                                                {t("legendFree")}
+
+                                            {/* Clean Neutral & Emerald Stats Pill Row */}
+                                            <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                                                <span className="rounded-full border border-hairline bg-card px-2.5 py-0.5 text-slate-gray">
+                                                    {t("statsTables", {
+                                                        count: assignmentStats.total,
+                                                    })}
+                                                </span>
+                                                <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 font-medium text-emerald-600 dark:text-emerald-400">
+                                                    {t("statsFree", {
+                                                        count: assignmentStats.free,
+                                                    })}
+                                                </span>
+                                                <span className="rounded-full border border-hairline bg-card px-2.5 py-0.5 text-slate-gray">
+                                                    {t("statsAssigned", {
+                                                        count: assignmentStats.assigned,
+                                                    })}
+                                                </span>
+                                                <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 font-semibold text-emerald-600 dark:text-emerald-400">
+                                                    {assignedTableIds.length}{" "}
+                                                    for{" "}
+                                                    {nameValue
+                                                        ?.trim()
+                                                        .split(" ")[0] ||
+                                                        "this waiter"}
+                                                </span>
+                                            </div>
+
+                                            {floorLoading ? (
+                                                <div className="flex items-center gap-2 py-2 text-[12px] text-slate-gray">
+                                                    <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
+                                                    <span>
+                                                        {t("loadingFloor")}
+                                                    </span>
+                                                </div>
+                                            ) : null}
+                                            {floorError ? (
+                                                <p className="py-1 text-[12px] text-destructive">
+                                                    {t("floorLoadError")}
+                                                </p>
+                                            ) : null}
+
+                                            {shiftFloor ? (
+                                                <div className="space-y-3 pt-1">
+                                                    {shiftFloor.locations.map(
+                                                        location => (
+                                                            <div
+                                                                key={
+                                                                    location.id
+                                                                }
+                                                            >
+                                                                <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-slate-gray uppercase">
+                                                                    <MapPin className="size-3.5" />
+                                                                    {
+                                                                        location.name
+                                                                    }
+                                                                </p>
+                                                                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                                                                    {location.tables.map(
+                                                                        table => {
+                                                                            const selected =
+                                                                                assignedTableIds.includes(
+                                                                                    table.tableId,
+                                                                                );
+                                                                            const ownerId =
+                                                                                table.assignedWaiterMembershipId;
+                                                                            const ownerName =
+                                                                                table.assignedWaiterName;
+                                                                            const ownedByOther =
+                                                                                Boolean(
+                                                                                    ownerId &&
+                                                                                        ownerId !==
+                                                                                            editingMembershipId &&
+                                                                                        !selected,
+                                                                                );
+                                                                            const ownedBySelf =
+                                                                                Boolean(
+                                                                                    ownerId &&
+                                                                                        editingMembershipId &&
+                                                                                        ownerId ===
+                                                                                            editingMembershipId,
+                                                                                );
+
+                                                                            return (
+                                                                                <DiningTableVisualCard
+                                                                                    key={
+                                                                                        table.tableId
+                                                                                    }
+                                                                                    tableId={
+                                                                                        table.tableId
+                                                                                    }
+                                                                                    displayName={
+                                                                                        table.displayName
+                                                                                    }
+                                                                                    displayNumber={
+                                                                                        table.displayNumber
+                                                                                    }
+                                                                                    selected={
+                                                                                        selected
+                                                                                    }
+                                                                                    ownedByOther={
+                                                                                        ownedByOther
+                                                                                    }
+                                                                                    ownedBySelf={
+                                                                                        ownedBySelf
+                                                                                    }
+                                                                                    ownerName={
+                                                                                        ownerName
+                                                                                    }
+                                                                                    currentWaiterName={
+                                                                                        nameValue
+                                                                                    }
+                                                                                    onToggle={() =>
+                                                                                        handleToggleTable(
+                                                                                            table.tableId,
+                                                                                            ownerId,
+                                                                                            ownerName,
+                                                                                        )
+                                                                                    }
+                                                                                    labels={{
+                                                                                        mine:
+                                                                                            "Assigned to " +
+                                                                                            (nameValue
+                                                                                                ?.trim()
+                                                                                                .split(
+                                                                                                    " ",
+                                                                                                )[0] ||
+                                                                                                "Waiter"),
+                                                                                        free: "Available",
+                                                                                        assigned:
+                                                                                            name =>
+                                                                                                "Taken by " +
+                                                                                                name.split(
+                                                                                                    " ",
+                                                                                                )[0],
+                                                                                        thisWaiter:
+                                                                                            nameValue?.trim() ||
+                                                                                            "Waiter",
+                                                                                    }}
+                                                                                />
+                                                                            );
+                                                                        },
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        ),
+                                                    )}
+
+                                                    <div className="flex flex-wrap gap-3 pt-1 text-[11px] text-slate-gray">
+                                                        <span className="inline-flex items-center gap-1.5">
+                                                            <span className="size-2.5 rounded-sm border border-hairline bg-card" />
+                                                            {t("legendFree")}
+                                                        </span>
+                                                        <span className="inline-flex items-center gap-1.5">
+                                                            <span className="size-2.5 rounded-sm bg-indigo-500" />
+                                                            {t("legendTaken")}
+                                                        </span>
+                                                        <span className="inline-flex items-center gap-1.5">
+                                                            <span className="size-2.5 rounded-sm bg-emerald-500" />
+                                                            {t(
+                                                                "legendSelected",
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                    )
+                                ) : null}
+
+                                {/* Weekly Hours Summary */}
+                                {scheduledWorkingDaysCount > 0 ? (
+                                    <div className="flex items-center justify-between rounded-xl border border-hairline/80 bg-card/60 px-3 py-2 text-[12px]">
+                                        <div className="flex items-center gap-1.5 font-medium text-foreground">
+                                            <Clock className="size-3.5 text-muted-foreground" />
+                                            <span>Weekly Schedule</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-[11px] text-slate-gray">
+                                            <span className="font-semibold text-foreground">
+                                                {scheduledWorkingDaysCount}{" "}
+                                                working days
                                             </span>
-                                            <span className="inline-flex items-center gap-1.5">
-                                                <span className="size-2.5 rounded-sm bg-amber-200" />
-                                                {t("legendTaken")}
-                                            </span>
-                                            <span className="inline-flex items-center gap-1.5">
-                                                <span className="size-2.5 rounded-sm bg-primary" />
-                                                {t("legendSelected")}
+                                            <span>•</span>
+                                            <span className="font-semibold text-foreground">
+                                                ~
+                                                {Math.round(
+                                                    totalWeeklyScheduledHours,
+                                                )}{" "}
+                                                scheduled hours
                                             </span>
                                         </div>
-                                        {!editingMembershipId ? (
-                                            <p className="text-[11px] text-slate-gray">
-                                                {t("newStaffCoverageNote")}
-                                            </p>
-                                        ) : null}
                                     </div>
                                 ) : null}
                             </div>
@@ -1450,11 +2113,9 @@ export default function AddEditStaffSheet() {
                             </h3>
 
                             {role !== "waiter" && role !== "cashier" ? (
-                                <FormField
-                                    control={form.control}
-                                    name="dayShiftByDay"
-                                    render={({ field }) => (
-                                        <FormItem>
+                                <div className="space-y-2.5">
+                                    <div className="flex items-center justify-between">
+                                        <div>
                                             <FormLabel>
                                                 {t("scheduledWorkingDays")}
                                             </FormLabel>
@@ -1462,70 +2123,212 @@ export default function AddEditStaffSheet() {
                                                 Optional weekly pattern — pick a
                                                 shift per day, or leave Off.
                                             </p>
-                                            <div className="space-y-1.5">
-                                                {WEEKDAYS.map(day => (
-                                                    <div
-                                                        key={day}
-                                                        className="flex items-center gap-2"
-                                                    >
-                                                        <span className="w-10 shrink-0 text-[12px] font-medium">
-                                                            {t(
-                                                                DAY_LABEL_KEYS[
-                                                                    day
-                                                                ],
-                                                            )}
-                                                        </span>
-                                                        <select
-                                                            value={
-                                                                field.value?.[
-                                                                    day
-                                                                ] || ""
-                                                            }
-                                                            onChange={e =>
-                                                                field.onChange({
-                                                                    ...field.value,
-                                                                    [day]: e
-                                                                        .target
-                                                                        .value,
-                                                                })
-                                                            }
-                                                            className="h-9 flex-1 rounded-[10px] border border-input bg-card px-2.5 text-[12px]"
-                                                        >
-                                                            <option value="">
-                                                                Off
-                                                            </option>
-                                                            {shifts.map(
-                                                                shift => (
-                                                                    <option
-                                                                        key={
-                                                                            shift.id
-                                                                        }
-                                                                        value={
-                                                                            shift.id
-                                                                        }
-                                                                    >
-                                                                        {
-                                                                            shift.name
-                                                                        }{" "}
-                                                                        ·{" "}
-                                                                        {
-                                                                            shift.startLocalTime
-                                                                        }
-                                                                        –
-                                                                        {
-                                                                            shift.endLocalTime
-                                                                        }
+                                        </div>
+                                    </div>
+
+                                    {/* 1-Click Quick Shift Presets */}
+                                    {shifts.length > 0 ? (
+                                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                                            <span className="text-[11px] font-medium text-slate-gray">
+                                                Presets:
+                                            </span>
+                                            {morningShift ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleApplyPreset(
+                                                            [
+                                                                "Mon",
+                                                                "Tue",
+                                                                "Wed",
+                                                                "Thu",
+                                                                "Fri",
+                                                                "Sat",
+                                                            ],
+                                                            morningShift.id,
+                                                        )
+                                                    }
+                                                    className="inline-flex items-center gap-1 rounded-md border border-hairline bg-surface-ivory px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                                                >
+                                                    <Sunrise className="size-3 text-amber-500" />
+                                                    Mon–Sat {morningShift.name}
+                                                </button>
+                                            ) : null}
+                                            {morningShift ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleApplyPreset(
+                                                            [
+                                                                "Mon",
+                                                                "Tue",
+                                                                "Wed",
+                                                                "Thu",
+                                                                "Fri",
+                                                            ],
+                                                            morningShift.id,
+                                                        )
+                                                    }
+                                                    className="inline-flex items-center gap-1 rounded-md border border-hairline bg-surface-ivory px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                                                >
+                                                    <Sun className="size-3 text-amber-500" />
+                                                    Mon–Fri {morningShift.name}
+                                                </button>
+                                            ) : null}
+                                            {eveningShift ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleApplyPreset(
+                                                            [
+                                                                "Mon",
+                                                                "Tue",
+                                                                "Wed",
+                                                                "Thu",
+                                                                "Fri",
+                                                                "Sat",
+                                                            ],
+                                                            eveningShift.id,
+                                                        )
+                                                    }
+                                                    className="inline-flex items-center gap-1 rounded-md border border-hairline bg-surface-ivory px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                                                >
+                                                    <Sunset className="size-3 text-indigo-400" />
+                                                    Mon–Sat {eveningShift.name}
+                                                </button>
+                                            ) : null}
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    handleApplyPreset([], "")
+                                                }
+                                                className="inline-flex items-center gap-1 rounded-md border border-hairline bg-surface-ivory px-2 py-0.5 text-[11px] font-medium text-slate-gray hover:text-foreground transition-colors"
+                                            >
+                                                <Ban className="size-3 text-slate-gray" />
+                                                All Off
+                                            </button>
+                                        </div>
+                                    ) : null}
+
+                                    <FormField
+                                        control={form.control}
+                                        name="dayShiftByDay"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <div className="space-y-1.5">
+                                                    {WEEKDAYS.map(day => {
+                                                        const selectedShiftIdForDay =
+                                                            field.value?.[
+                                                                day
+                                                            ] || "";
+                                                        const assignedShift =
+                                                            shifts.find(
+                                                                s =>
+                                                                    s.id ===
+                                                                    selectedShiftIdForDay,
+                                                            );
+                                                        const isMorning =
+                                                            assignedShift?.startLocalTime
+                                                                ? parseInt(
+                                                                      assignedShift.startLocalTime.split(
+                                                                          ":",
+                                                                      )[0],
+                                                                      10,
+                                                                  ) < 14
+                                                                : false;
+
+                                                        return (
+                                                            <div
+                                                                key={day}
+                                                                className="flex items-center gap-2 rounded-[10px] border border-hairline/60 bg-card/60 p-1.5 transition-colors"
+                                                            >
+                                                                <div className="flex w-16 shrink-0 items-center gap-1.5 pl-1">
+                                                                    {selectedShiftIdForDay ? (
+                                                                        isMorning ? (
+                                                                            <Sunrise className="size-3.5 shrink-0 text-amber-500" />
+                                                                        ) : (
+                                                                            <Moon className="size-3.5 shrink-0 text-indigo-400" />
+                                                                        )
+                                                                    ) : (
+                                                                        <Ban className="size-3.5 shrink-0 text-slate-gray/40" />
+                                                                    )}
+                                                                    <span className="text-[12px] font-semibold text-foreground">
+                                                                        {t(
+                                                                            DAY_LABEL_KEYS[
+                                                                                day
+                                                                            ],
+                                                                        )}
+                                                                    </span>
+                                                                </div>
+                                                                <select
+                                                                    value={
+                                                                        selectedShiftIdForDay
+                                                                    }
+                                                                    onChange={e =>
+                                                                        field.onChange(
+                                                                            {
+                                                                                ...field.value,
+                                                                                [day]: e
+                                                                                    .target
+                                                                                    .value,
+                                                                            },
+                                                                        )
+                                                                    }
+                                                                    className="h-8 flex-1 rounded-[8px] border border-input bg-card px-2 text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+                                                                >
+                                                                    <option value="">
+                                                                        Off
                                                                     </option>
-                                                                ),
-                                                            )}
-                                                        </select>
-                                                    </div>
-                                                ))}
+                                                                    {shifts.map(
+                                                                        shift => (
+                                                                            <option
+                                                                                key={
+                                                                                    shift.id
+                                                                                }
+                                                                                value={
+                                                                                    shift.id
+                                                                                }
+                                                                            >
+                                                                                {formatShiftOptionLabel(
+                                                                                    shift,
+                                                                                )}
+                                                                            </option>
+                                                                        ),
+                                                                    )}
+                                                                </select>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    {/* Weekly Scheduled Hours Summary */}
+                                    {scheduledWorkingDaysCount > 0 ? (
+                                        <div className="flex items-center justify-between rounded-xl border border-hairline/80 bg-surface-ivory/70 px-3 py-2 text-[12px] dark:bg-card">
+                                            <div className="flex items-center gap-1.5 font-medium text-foreground">
+                                                <Clock className="size-3.5 text-muted-foreground" />
+                                                <span>Weekly Schedule</span>
                                             </div>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                                            <div className="flex items-center gap-2 text-[11px] text-slate-gray">
+                                                <span className="font-semibold text-foreground">
+                                                    {scheduledWorkingDaysCount}{" "}
+                                                    working days
+                                                </span>
+                                                <span>•</span>
+                                                <span className="font-semibold text-foreground">
+                                                    ~
+                                                    {Math.round(
+                                                        totalWeeklyScheduledHours,
+                                                    )}{" "}
+                                                    scheduled hours
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ) : null}
+                                </div>
                             ) : null}
 
                             <Controller
@@ -1547,10 +2350,10 @@ export default function AddEditStaffSheet() {
                                                 field.onChange(!field.value)
                                             }
                                             className={cn(
-                                                "relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors",
+                                                "relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors cursor-pointer",
                                                 field.value
-                                                    ? "bg-primary"
-                                                    : "bg-zinc-300",
+                                                    ? "bg-emerald-600"
+                                                    : "bg-zinc-300 dark:bg-zinc-700",
                                             )}
                                         >
                                             <span
@@ -1573,8 +2376,8 @@ export default function AddEditStaffSheet() {
                     {isEditMode ? (
                         <button
                             type="button"
-                            onClick={handleDelete}
-                            className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[13px] font-medium text-red-600"
+                            onClick={() => setConfirmDeleteOpen(true)}
+                            className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[13px] font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                         >
                             <Trash2 className="size-4" />
                             {t("remove")}
@@ -1606,6 +2409,76 @@ export default function AddEditStaffSheet() {
                     </div>
                 </div>
             </aside>
+
+            {/* REMOVE / DELETE CONFIRMATION MODAL */}
+            {confirmDeleteOpen && editingStaff && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4 animate-in fade-in">
+                    <div
+                        className="fixed inset-0"
+                        onClick={() => !saving && setConfirmDeleteOpen(false)}
+                    />
+                    <div className="relative z-10 w-full max-w-sm rounded-[20px] border border-hairline bg-white dark:bg-card p-6 shadow-2xl animate-in zoom-in-95">
+                        <div className="flex items-start gap-3 mb-4">
+                            <div className="size-10 rounded-full bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
+                                <Trash2 className="size-5" />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="font-bold text-[16px] text-foreground">
+                                    {t("deleteStaffTitle")}
+                                </h3>
+                                <p className="text-[12px] text-slate-gray mt-0.5">
+                                    {editingStaff.name}
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                disabled={saving}
+                                onClick={() => setConfirmDeleteOpen(false)}
+                                className="size-7 rounded-full flex items-center justify-center text-slate-gray hover:bg-secondary"
+                            >
+                                <X className="size-4" />
+                            </button>
+                        </div>
+
+                        <p className="text-[13px] text-slate-gray leading-relaxed mb-6">
+                            {t("deleteStaffConfirmMsg", {
+                                name: editingStaff.name,
+                            })}
+                        </p>
+
+                        <div className="flex items-center justify-end gap-2.5">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                disabled={saving}
+                                onClick={() => setConfirmDeleteOpen(false)}
+                                className="h-9 rounded-xl text-[13px]"
+                            >
+                                {tCommon("cancel")}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                disabled={saving}
+                                onClick={() => void handleDelete()}
+                                className="h-9 rounded-xl bg-red-600 hover:bg-red-700 text-white text-[13px] font-semibold gap-1.5 shadow-sm"
+                            >
+                                {saving ? (
+                                    <>
+                                        <Loader2 className="size-3.5 animate-spin" />
+                                        <span>{t("deleting")}</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Trash2 className="size-3.5" />
+                                        <span>{t("deleteStaffButton")}</span>
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

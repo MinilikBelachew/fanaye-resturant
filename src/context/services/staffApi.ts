@@ -13,6 +13,8 @@ export type StaffDayShiftBody = {
 
 export type StaffTableCoverageBody = {
     shiftDefinitionId: string;
+    dayCode?: string;
+    applyToAllDays?: boolean;
     tableIds: string[];
 };
 
@@ -34,6 +36,8 @@ export type CreateAdminStaffBody = {
     branchId?: string;
     hireDate?: string;
     photoId?: string;
+    licencePlate?: string;
+    vehicleDesc?: string;
 };
 
 export type AdminStaffQueryArg = {
@@ -66,6 +70,8 @@ export type UpdateAdminStaffBody = {
     hrNotes?: string;
     annualLeaveBalanceDays?: number;
     photoId?: string | null;
+    licencePlate?: string;
+    vehicleDesc?: string;
 };
 
 export type AdminStaffDetail = AdminStaffMember & {
@@ -139,11 +145,20 @@ export const staffApi = api.injectEndpoints({
                 "Floor",
             ],
         }),
-        adminShiftFloor: builder.query<AdminShiftFloorResponse, string>({
-            query: shiftDefinitionId => ({
-                url: `/admin/shift-definitions/${shiftDefinitionId}/floor`,
-                method: "GET",
-            }),
+        adminShiftFloor: builder.query<
+            AdminShiftFloorResponse,
+            string | { shiftId: string; dayCode?: string }
+        >({
+            query: arg => {
+                const shiftId = typeof arg === "string" ? arg : arg.shiftId;
+                const dayCode =
+                    typeof arg === "string" ? undefined : arg.dayCode;
+                return {
+                    url: `/admin/shift-definitions/${shiftId}/floor`,
+                    method: "GET",
+                    params: dayCode ? { dayCode } : undefined,
+                };
+            },
             providesTags: ["Floor"],
         }),
         createAdminStaff: builder.mutation<
@@ -165,6 +180,16 @@ export const staffApi = api.injectEndpoints({
                 url: `/admin/staff/${membershipId}`,
                 method: "PATCH",
                 body,
+            }),
+            invalidatesTags: ["Floor"],
+        }),
+        deleteAdminStaff: builder.mutation<
+            { success: boolean; message: string },
+            string
+        >({
+            query: membershipId => ({
+                url: `/admin/staff/${membershipId}`,
+                method: "DELETE",
             }),
             invalidatesTags: ["Floor"],
         }),
@@ -206,18 +231,27 @@ export const staffApi = api.injectEndpoints({
             {
                 waiterMembershipId: string;
                 shiftDefinitionId: string;
+                dayCode?: string;
                 tableIds: string[];
             },
             {
                 membershipId: string;
                 shiftDefinitionId: string;
+                dayCode?: string;
+                applyToAllDays?: boolean;
                 tableIds: string[];
             }
         >({
-            query: ({ membershipId, shiftDefinitionId, tableIds }) => ({
+            query: ({
+                membershipId,
+                shiftDefinitionId,
+                dayCode,
+                applyToAllDays,
+                tableIds,
+            }) => ({
                 url: `/admin/staff/${membershipId}/table-coverage`,
                 method: "PUT",
-                body: { shiftDefinitionId, tableIds },
+                body: { shiftDefinitionId, dayCode, applyToAllDays, tableIds },
             }),
             invalidatesTags: ["Floor"],
         }),
@@ -252,6 +286,7 @@ export const useAdminStaffDetailQuery = staffApi.useAdminStaffDetailQuery;
 export const useAdminShiftFloorQuery = staffApi.useAdminShiftFloorQuery;
 export const useCreateAdminStaffMutation = staffApi.useCreateAdminStaffMutation;
 export const useUpdateAdminStaffMutation = staffApi.useUpdateAdminStaffMutation;
+export const useDeleteAdminStaffMutation = staffApi.useDeleteAdminStaffMutation;
 export const useCreateShiftDefinitionMutation =
     staffApi.useCreateShiftDefinitionMutation;
 export const useUpdateShiftDefinitionMutation =

@@ -7,6 +7,7 @@ import {
     roleAllowsPath,
 } from "@/domains/identity/application/homePath";
 import DispatcherShell from "@/components/layout/DispatcherShell";
+import DriverShell from "@/components/layout/DriverShell";
 import ResponsiveDeskShell from "@/components/layout/ResponsiveDeskShell";
 import WaiterShell from "@/components/layout/WaiterShell";
 import { SidebarUiProvider } from "@/components/layout/SidebarUi";
@@ -61,6 +62,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <WaiterShell>{children}</WaiterShell>
         ) : staff.role === "dispatcher" ? (
             <DispatcherShell>{children}</DispatcherShell>
+        ) : staff.role === "driver" ? (
+            <DriverShell>{children}</DriverShell>
         ) : (
             <ResponsiveDeskShell role={staff.role}>
                 {children}

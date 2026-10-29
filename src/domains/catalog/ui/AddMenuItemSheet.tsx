@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+    Check,
     Coffee,
     CookingPot,
     CupSoda,
     ImagePlus,
     Plus,
     Save,
+    Search,
     Trash2,
     Upload,
     UtensilsCrossed,
@@ -18,6 +20,7 @@ import {
     useAdminMenuMetaQuery,
     useAdminModifierGroupsQuery,
     useCreateAdminMenuItemMutation,
+    useDeleteAdminCategoryMutation,
     useMarkMenuItemSoldOutMutation,
     useUpdateAdminMenuItemMutation,
     useUploadMenuImageMutation,
@@ -27,6 +30,7 @@ import {
     useUpdateAdminQrMenuConfigMutation,
 } from "@/context/services/qrMenuApi";
 import { useListInventoryIngredientsQuery } from "@/context/services/inventoryApi";
+import { UnitPicker } from "@/domains/inventory/ui/UnitPicker";
 import { useGetStationsQuery } from "@/context/services/stationsApi";
 import {
     formatDietaryTagLabel,
@@ -59,6 +63,14 @@ interface AddMenuItemSheetProps {
     initialItem?: MenuItem | null;
 }
 
+type ConfirmDialogState = {
+    title: string;
+    body: string;
+    confirmLabel: string;
+    onConfirm: () => void | Promise<void>;
+    danger?: boolean;
+};
+
 function isPersistedId(id: string) {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
         id,
@@ -70,7 +82,6 @@ const DEFAULT_STATION_META: Record<
     {
         label: string;
         icon: typeof CookingPot;
-        categoryDefault: string;
         defaultPrepMin: number;
         color: string;
     }
@@ -78,28 +89,24 @@ const DEFAULT_STATION_META: Record<
     [STATION_IDS.kitchen]: {
         label: "Kitchen",
         icon: CookingPot,
-        categoryDefault: "Main Kitchen",
         defaultPrepMin: 12,
         color: "text-amber-600 bg-amber-500/10 border-amber-500/20",
     },
     [STATION_IDS.barista]: {
         label: "Barista",
         icon: Coffee,
-        categoryDefault: "Hot Drinks",
         defaultPrepMin: 5,
         color: "text-orange-600 bg-orange-500/10 border-orange-500/20",
     },
     [STATION_IDS.cakes]: {
         label: "Cakes",
         icon: UtensilsCrossed,
-        categoryDefault: "Cakes",
         defaultPrepMin: 4,
         color: "text-pink-600 bg-pink-500/10 border-pink-500/20",
     },
     [STATION_IDS.soft_drinks]: {
         label: "Soft Drinks",
         icon: CupSoda,
-        categoryDefault: "Soft Drinks",
         defaultPrepMin: 2,
         color: "text-blue-600 bg-blue-500/10 border-blue-500/20",
     },
@@ -144,6 +151,7 @@ export default function AddMenuItemSheet({
         useCreateAdminMenuItemMutation();
     const [updateItem, { isLoading: updating }] =
         useUpdateAdminMenuItemMutation();
+    const [deleteCategory] = useDeleteAdminCategoryMutation();
     const [markSoldOut] = useMarkMenuItemSoldOutMutation();
     const [uploadImage, { isLoading: uploading }] =
         useUploadMenuImageMutation();
@@ -167,7 +175,6 @@ export default function AddMenuItemSheet({
                 .map(st => ({
                     id: st.id,
                     name: st.name,
-                    category: st.category || st.name,
                     avgPrepMin:
                         st.avgPrepMin || st.defaultDelayThresholdMinutes || 10,
                 }));
@@ -185,7 +192,6 @@ export default function AddMenuItemSheet({
                     return {
                         id: backendMatch?.id || st.id,
                         name: st.name,
-                        category: st.category || st.name,
                         avgPrepMin: st.avgPrepMin || 10,
                     };
                 });
@@ -194,7 +200,6 @@ export default function AddMenuItemSheet({
         return (metaData?.data.stations ?? []).map(station => ({
             id: station.id,
             name: station.name,
-            category: station.name,
             avgPrepMin:
                 DEFAULT_STATION_META[
                     station.name.toLowerCase().includes("barista")
@@ -227,8 +232,14 @@ export default function AddMenuItemSheet({
     const [selectedLibraryIds, setSelectedLibraryIds] = useState<string[]>([]);
     const [modifierGroups, setModifierGroups] = useState<ModifierGroup[]>([]);
     const [recipeLines, setRecipeLines] = useState<
-        Array<{ ingredientId: string; quantityPerServing: string }>
+        Array<{
+            ingredientId: string;
+            quantityPerServing: string;
+            unit: string;
+        }>
     >([]);
+    const [recipeSearch, setRecipeSearch] = useState("");
+    const [recipePickerOpen, setRecipePickerOpen] = useState(false);
     const [newGroupName, setNewGroupName] = useState("");
     const [newGroupKind, setNewGroupKind] =
         useState<ModifierGroupKind>("included");
@@ -236,6 +247,34 @@ export default function AddMenuItemSheet({
     const [targetGroupId, setTargetGroupId] = useState<string | null>(null);
     const [optionName, setOptionName] = useState("");
     const [optionDelta, setOptionDelta] = useState<string>("0");
+    const [newCategoryName, setNewCategoryName] = useState("");
+    const [confirmDialog, setConfirmDialog] =
+        useState<ConfirmDialogState | null>(null);
+
+    const categories = useMemo(
+        () => metaData?.data.categories ?? [],
+        [metaData],
+    );
+
+    // Keep a freshly typed category visible even before it is saved.
+    const categoryOptions = useMemo(() => {
+        const names = categories.map(c => c.name);
+        if (category && !names.includes(category)) {
+            return [
+                ...categories,
+                { id: "__new__", name: category, sortOrder: -1 },
+            ];
+        }
+        return categories;
+    }, [categories, category]);
+
+    const filteredRecipeIngredients = useMemo(() => {
+        const q = recipeSearch.trim().toLowerCase();
+        if (!q) return ingredientOptions;
+        return ingredientOptions.filter(ing =>
+            ing.name.toLowerCase().includes(q),
+        );
+    }, [ingredientOptions, recipeSearch]);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -266,6 +305,7 @@ export default function AddMenuItemSheet({
                 (initialItem.recipeLines ?? []).map(line => ({
                     ingredientId: line.ingredientId,
                     quantityPerServing: String(line.quantityPerServing),
+                    unit: line.unit ?? "",
                 })),
             );
         } else {
@@ -273,7 +313,7 @@ export default function AddMenuItemSheet({
             setDescription("");
             setPrice("250");
             setStationId(defaultStationId);
-            setCategory(stations[0]?.name || "Kitchen");
+            setCategory(metaData?.data.categories[0]?.name || "");
             setExpectedPrepMinutes(stations[0]?.avgPrepMin || 12);
             setImageFileId(null);
             setUploadPreviewUrl(null);
@@ -289,6 +329,8 @@ export default function AddMenuItemSheet({
         setOptionName("");
         setOptionDelta("0");
         setTargetGroupId(null);
+        setRecipeSearch("");
+        setRecipePickerOpen(false);
     }, [initialItem, isOpen, stations, metaData]);
 
     useEffect(() => {
@@ -333,14 +375,39 @@ export default function AddMenuItemSheet({
         setStationId(newStationId);
         const matchingStation = stations.find(s => s.id === newStationId);
         if (matchingStation) {
-            setCategory(matchingStation.category || matchingStation.name);
             setExpectedPrepMinutes(matchingStation.avgPrepMin || 10);
         } else if (DEFAULT_STATION_META[newStationId]) {
-            setCategory(DEFAULT_STATION_META[newStationId].categoryDefault);
             setExpectedPrepMinutes(
                 DEFAULT_STATION_META[newStationId].defaultPrepMin,
             );
         }
+    }
+
+    function handleAddCategory() {
+        const name = newCategoryName.trim();
+        if (!name) return;
+        setCategory(name);
+        setNewCategoryName("");
+    }
+
+    async function handleDeleteCategory(id: string, name: string) {
+        if (id === "__new__") return;
+        setConfirmDialog({
+            title: "Remove Category",
+            body: `Are you sure you want to remove the category "${name}"? This will unassign it from all items.`,
+            confirmLabel: "Remove",
+            danger: true,
+            onConfirm: async () => {
+                try {
+                    await deleteCategory({ id }).unwrap();
+                    if (category === name) setCategory("");
+                    toast.success("Category removed", name);
+                    setConfirmDialog(null);
+                } catch (err) {
+                    toast.fromUnknown(err, "Could not remove category.");
+                }
+            },
+        });
     }
 
     function handleAddGroup() {
@@ -412,20 +479,53 @@ export default function AddMenuItemSheet({
         );
     }
 
+    function toggleRecipeIngredient(ingredientId: string, unit: string) {
+        setRecipeLines(rows => {
+            if (rows.some(r => r.ingredientId === ingredientId)) {
+                return rows.filter(r => r.ingredientId !== ingredientId);
+            }
+            return [
+                ...rows,
+                {
+                    ingredientId,
+                    quantityPerServing: "0.25",
+                    unit: unit ?? "",
+                },
+            ];
+        });
+    }
+
+    function updateRecipeLine(
+        index: number,
+        patch: Partial<{
+            quantityPerServing: string;
+            unit: string;
+        }>,
+    ) {
+        setRecipeLines(rows =>
+            rows.map((r, i) => (i === index ? { ...r, ...patch } : r)),
+        );
+    }
+
     function handleDeleteItem() {
         if (!initialItem) return;
-        if (
-            confirm(`Mark "${initialItem.name}" sold out / remove from floor?`)
-        ) {
-            void markSoldOut({ id: initialItem.id })
-                .then(() => {
-                    toast.success("Item marked sold out", initialItem.name);
-                    onClose();
-                })
-                .catch(err =>
-                    toast.fromUnknown(err, "Could not update menu item."),
-                );
-        }
+        setConfirmDialog({
+            title: "Mark Sold Out",
+            body: `Mark "${initialItem.name}" as sold out? It will be removed from the active floor menu.`,
+            confirmLabel: "Mark Sold Out",
+            danger: true,
+            onConfirm: () => {
+                void markSoldOut({ id: initialItem.id })
+                    .then(() => {
+                        toast.success("Item marked sold out", initialItem.name);
+                        setConfirmDialog(null);
+                        onClose();
+                    })
+                    .catch(err =>
+                        toast.fromUnknown(err, "Could not update menu item."),
+                    );
+            },
+        });
     }
 
     async function handleSubmit(e: React.FormEvent) {
@@ -458,6 +558,7 @@ export default function AddMenuItemSheet({
             preparationStationId: values.stationId,
             categoryName:
                 values.category ||
+                newCategoryName.trim() ||
                 stations.find(s => s.id === values.stationId)?.name ||
                 "Kitchen",
             expectedPrepMinutes: values.expectedPrepMinutes,
@@ -475,6 +576,7 @@ export default function AddMenuItemSheet({
                 .map(l => ({
                     ingredientId: l.ingredientId,
                     quantityPerServing: Number(l.quantityPerServing),
+                    ...(l.unit ? { unit: l.unit } : {}),
                 })),
         };
 
@@ -730,6 +832,99 @@ export default function AddMenuItemSheet({
 
                     <hr className="border-hairline" />
 
+                    {/* Category */}
+                    <div className="space-y-2.5">
+                        <div className="flex items-center justify-between gap-3">
+                            <label className="text-[13px] font-medium text-foreground">
+                                {t("category")}
+                            </label>
+                            <span className="text-[11px] text-slate-gray">
+                                {t("categoryHint")}
+                            </span>
+                        </div>
+
+                        {categoryOptions.length > 0 ? (
+                            <div className="flex flex-wrap gap-1.5">
+                                {categoryOptions.map(cat => (
+                                    <div
+                                        key={cat.id}
+                                        className={cn(
+                                            "group relative flex items-center overflow-hidden rounded-full border transition-colors",
+                                            category === cat.name
+                                                ? "border-brand bg-brand text-white"
+                                                : "border-hairline bg-secondary text-slate-gray hover:text-foreground",
+                                        )}
+                                    >
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setCategory(cat.name)
+                                            }
+                                            className="px-2.5 py-1 text-[11px] font-medium"
+                                        >
+                                            {cat.name}
+                                        </button>
+                                        {cat.id !== "__new__" && (
+                                            <button
+                                                type="button"
+                                                onClick={e => {
+                                                    e.stopPropagation();
+                                                    void handleDeleteCategory(
+                                                        cat.id,
+                                                        cat.name,
+                                                    );
+                                                }}
+                                                className={cn(
+                                                    "flex h-full w-0 items-center justify-center bg-black/10 transition-all group-hover:w-6",
+                                                    category === cat.name
+                                                        ? "text-white/80 hover:text-white"
+                                                        : "text-slate-gray hover:text-destructive",
+                                                )}
+                                            >
+                                                <X className="size-3" />
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-[12px] text-slate-gray">
+                                {t("categoryEmpty")}
+                            </p>
+                        )}
+
+                        <div className="flex gap-2">
+                            <Input
+                                value={newCategoryName}
+                                onChange={e =>
+                                    setNewCategoryName(e.target.value)
+                                }
+                                onKeyDown={e => {
+                                    if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        handleAddCategory();
+                                    }
+                                }}
+                                placeholder={t("categoryAddPlaceholder")}
+                                maxLength={120}
+                                className="h-9 flex-1 rounded-[10px] bg-card text-[12px]"
+                            />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={!newCategoryName.trim()}
+                                onClick={handleAddCategory}
+                                className="h-9 shrink-0 gap-1 shadow-none"
+                            >
+                                <Plus className="size-3.5" />
+                                {t("categoryAdd")}
+                            </Button>
+                        </div>
+                    </div>
+
+                    <hr className="border-hairline" />
+
                     {/* Fulfillment Station */}
                     <div className="space-y-2.5">
                         <div className="flex items-center justify-between">
@@ -959,34 +1154,127 @@ export default function AddMenuItemSheet({
                         )}
 
                         <div className="space-y-2.5 rounded-[14px] border border-hairline p-3.5">
-                            <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-start justify-between gap-2">
                                 <div>
                                     <p className="text-[13px] font-semibold">
                                         Recipe (per serving)
                                     </p>
                                     <p className="text-[11px] text-slate-gray">
-                                        Optional. Used to deduct inventory when
-                                        this dish is ordered.
+                                        Optional. Pick the ingredients used in
+                                        one serving — stock deducts
+                                        automatically when this dish is ordered.
                                     </p>
                                 </div>
                                 <Button
                                     type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                        setRecipeLines(rows => [
-                                            ...rows,
-                                            {
-                                                ingredientId: "",
-                                                quantityPerServing: "0.25",
-                                            },
-                                        ])
+                                    variant={
+                                        recipePickerOpen
+                                            ? "secondary"
+                                            : "outline"
                                     }
+                                    size="sm"
+                                    onClick={() => setRecipePickerOpen(v => !v)}
                                 >
                                     <Plus className="size-3.5" />
-                                    Add line
+                                    {recipePickerOpen
+                                        ? "Done"
+                                        : recipeLines.length > 0
+                                          ? `Add / edit (${recipeLines.length})`
+                                          : "Add ingredients"}
                                 </Button>
                             </div>
+
+                            {recipePickerOpen ? (
+                                <div className="overflow-hidden rounded-[12px] border border-hairline bg-card">
+                                    <div className="relative border-b border-hairline">
+                                        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-slate-gray" />
+                                        <input
+                                            value={recipeSearch}
+                                            onChange={e =>
+                                                setRecipeSearch(e.target.value)
+                                            }
+                                            placeholder="Search ingredients…"
+                                            className="h-9 w-full bg-transparent pr-2.5 pl-8 text-[12px] outline-none"
+                                        />
+                                    </div>
+                                    <div className="max-h-56 overflow-y-auto p-1.5">
+                                        {filteredRecipeIngredients.length ===
+                                        0 ? (
+                                            <p className="px-2 py-3 text-[12px] text-slate-gray">
+                                                No ingredients match.
+                                            </p>
+                                        ) : (
+                                            filteredRecipeIngredients.map(
+                                                ing => {
+                                                    const checked =
+                                                        recipeLines.some(
+                                                            r =>
+                                                                r.ingredientId ===
+                                                                ing.id,
+                                                        );
+                                                    return (
+                                                        <div
+                                                            key={ing.id}
+                                                            role="button"
+                                                            tabIndex={0}
+                                                            onClick={() =>
+                                                                toggleRecipeIngredient(
+                                                                    ing.id,
+                                                                    ing.unit,
+                                                                )
+                                                            }
+                                                            onKeyDown={e => {
+                                                                if (
+                                                                    e.key ===
+                                                                        "Enter" ||
+                                                                    e.key ===
+                                                                        " "
+                                                                ) {
+                                                                    e.preventDefault();
+                                                                    toggleRecipeIngredient(
+                                                                        ing.id,
+                                                                        ing.unit,
+                                                                    );
+                                                                }
+                                                            }}
+                                                            className={cn(
+                                                                "flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-secondary",
+                                                                checked &&
+                                                                    "bg-brand/5",
+                                                            )}
+                                                        >
+                                                            <span
+                                                                className={cn(
+                                                                    "flex size-4 shrink-0 items-center justify-center rounded-[4px] border transition-colors",
+                                                                    checked
+                                                                        ? "border-primary bg-primary text-primary-foreground"
+                                                                        : "border-hairline bg-background",
+                                                                )}
+                                                            >
+                                                                {checked ? (
+                                                                    <Check
+                                                                        className="size-3"
+                                                                        strokeWidth={
+                                                                            3
+                                                                        }
+                                                                    />
+                                                                ) : null}
+                                                            </span>
+                                                            <span className="min-w-0 flex-1 truncate text-[12px] font-medium">
+                                                                {ing.name}
+                                                            </span>
+                                                            <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] text-slate-gray">
+                                                                {ing.unit}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                },
+                                            )
+                                        )}
+                                    </div>
+                                </div>
+                            ) : null}
+
                             {recipeLines.length === 0 ? (
                                 <p className="text-[12px] text-slate-gray">
                                     No recipe lines — stock will not deplete for
@@ -994,80 +1282,73 @@ export default function AddMenuItemSheet({
                                 </p>
                             ) : (
                                 <div className="space-y-2">
-                                    {recipeLines.map((line, index) => (
-                                        <div
-                                            key={`${line.ingredientId}-${index}`}
-                                            className="flex flex-wrap items-center gap-2"
-                                        >
-                                            <select
-                                                value={line.ingredientId}
-                                                onChange={e =>
-                                                    setRecipeLines(rows =>
-                                                        rows.map((r, i) =>
-                                                            i === index
-                                                                ? {
-                                                                      ...r,
-                                                                      ingredientId:
-                                                                          e
-                                                                              .target
-                                                                              .value,
-                                                                  }
-                                                                : r,
-                                                        ),
-                                                    )
-                                                }
-                                                className="h-9 min-w-[10rem] flex-1 rounded-lg border border-hairline bg-background px-2 text-[12px]"
+                                    {recipeLines.map((line, index) => {
+                                        const ingredient =
+                                            ingredientOptions.find(
+                                                i => i.id === line.ingredientId,
+                                            );
+                                        return (
+                                            <div
+                                                key={line.ingredientId}
+                                                className="flex flex-wrap items-center gap-2 rounded-lg border border-hairline bg-card px-2 py-1.5"
                                             >
-                                                <option value="">
-                                                    Ingredient…
-                                                </option>
-                                                {ingredientOptions.map(ing => (
-                                                    <option
-                                                        key={ing.id}
-                                                        value={ing.id}
-                                                    >
-                                                        {ing.name} ({ing.unit})
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <input
-                                                type="number"
-                                                min={0}
-                                                step="0.01"
-                                                value={line.quantityPerServing}
-                                                onChange={e =>
-                                                    setRecipeLines(rows =>
-                                                        rows.map((r, i) =>
-                                                            i === index
-                                                                ? {
-                                                                      ...r,
-                                                                      quantityPerServing:
-                                                                          e
-                                                                              .target
-                                                                              .value,
-                                                                  }
-                                                                : r,
-                                                        ),
-                                                    )
-                                                }
-                                                className="h-9 w-24 rounded-lg border border-hairline bg-background px-2 text-[12px]"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    setRecipeLines(rows =>
-                                                        rows.filter(
-                                                            (_, i) =>
-                                                                i !== index,
-                                                        ),
-                                                    )
-                                                }
-                                                className="rounded-lg p-2 text-slate-gray hover:bg-secondary"
-                                            >
-                                                <Trash2 className="size-3.5" />
-                                            </button>
-                                        </div>
-                                    ))}
+                                                <span className="min-w-[8rem] flex-1 truncate text-[12px] font-medium">
+                                                    {ingredient?.name ??
+                                                        "Ingredient"}
+                                                </span>
+                                                <input
+                                                    type="number"
+                                                    min={0}
+                                                    step="0.01"
+                                                    value={
+                                                        line.quantityPerServing
+                                                    }
+                                                    onChange={e =>
+                                                        updateRecipeLine(
+                                                            index,
+                                                            {
+                                                                quantityPerServing:
+                                                                    e.target
+                                                                        .value,
+                                                            },
+                                                        )
+                                                    }
+                                                    className="h-9 w-24 rounded-lg border border-hairline bg-background px-2 text-[12px]"
+                                                />
+                                                <UnitPicker
+                                                    compact
+                                                    baseUnit={
+                                                        ingredient?.unit ?? ""
+                                                    }
+                                                    value={
+                                                        line.unit ||
+                                                        ingredient?.unit ||
+                                                        ""
+                                                    }
+                                                    onChange={v =>
+                                                        updateRecipeLine(
+                                                            index,
+                                                            { unit: v },
+                                                        )
+                                                    }
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setRecipeLines(rows =>
+                                                            rows.filter(
+                                                                (_, i) =>
+                                                                    i !== index,
+                                                            ),
+                                                        )
+                                                    }
+                                                    className="rounded-lg p-2 text-slate-gray hover:bg-secondary"
+                                                >
+                                                    <Trash2 className="size-3.5" />
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
@@ -1323,6 +1604,44 @@ export default function AddMenuItemSheet({
                     <p className="border-t border-hairline px-5 py-2 text-[12px] text-red-600">
                         {submitError}
                     </p>
+                ) : null}
+
+                {/* Confirm Dialog */}
+                {confirmDialog ? (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-[2px]">
+                        <div className="w-full max-w-sm space-y-4 rounded-2xl border border-hairline bg-card p-5 shadow-xl animate-in fade-in zoom-in duration-200">
+                            <div>
+                                <h3 className="text-[15px] font-semibold text-foreground">
+                                    {confirmDialog.title}
+                                </h3>
+                                <p className="mt-2 text-[13px] leading-relaxed text-slate-gray">
+                                    {confirmDialog.body}
+                                </p>
+                            </div>
+                            <div className="flex justify-end gap-2 pt-2">
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => setConfirmDialog(null)}
+                                    className="h-9 rounded-lg text-[13px]"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={() =>
+                                        void confirmDialog.onConfirm()
+                                    }
+                                    className={cn(
+                                        "h-9 rounded-lg px-5 text-[13px] text-white",
+                                        confirmDialog.danger
+                                            ? "bg-rose-600 hover:bg-rose-700"
+                                            : "bg-brand hover:bg-brand-deep",
+                                    )}
+                                >
+                                    {confirmDialog.confirmLabel}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
                 ) : null}
             </div>
         </div>

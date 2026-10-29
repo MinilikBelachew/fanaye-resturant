@@ -8,6 +8,7 @@ import {
     LayoutGrid,
     LogIn,
     LogOut,
+    UtensilsCrossed,
     Wallet,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -190,6 +191,23 @@ export default function WaiterShiftPage() {
         () => weeklyPlan.find(row => row.dayCode === todayDayCode) ?? null,
         [weeklyPlan, todayDayCode],
     );
+    const todayTables = useMemo(() => {
+        if (shift?.assignedTables && shift.assignedTables.length > 0) {
+            return shift.assignedTables;
+        }
+        if (todayPlan?.tables && todayPlan.tables.length > 0) {
+            return todayPlan.tables;
+        }
+        if (myTables.length > 0) {
+            return myTables.map(t => ({
+                tableId: t.tableId,
+                displayName: t.displayName,
+                displayNumber: t.displayNumber,
+                locationName: t.locationName,
+            }));
+        }
+        return [];
+    }, [shift?.assignedTables, todayPlan?.tables, myTables]);
     const assignedShiftName =
         session?.definitionName ||
         todayPlan?.definitionName ||
@@ -367,7 +385,7 @@ export default function WaiterShiftPage() {
                         </Badge>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-hairline pt-3.5 text-[13px]">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 border-t border-hairline pt-3.5 text-[13px]">
                         <div>
                             <p className="text-[11px] font-medium uppercase tracking-wide text-slate-gray">
                                 {t("todayDate")}
@@ -396,6 +414,37 @@ export default function WaiterShiftPage() {
                                     {plannedWindow.eth}
                                 </p>
                             ) : null}
+                        </div>
+                        <div>
+                            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-gray flex items-center gap-1">
+                                <UtensilsCrossed className="size-3" />
+                                {t("shiftTables")}
+                            </p>
+                            {todayTables.length > 0 ? (
+                                <div className="mt-1 space-y-1">
+                                    <div className="flex flex-wrap gap-1">
+                                        {todayTables.map(t => (
+                                            <span
+                                                key={t.tableId}
+                                                className="inline-flex items-center gap-1 rounded-md border border-hairline bg-muted/60 px-1.5 py-0.5 text-[11px] font-medium text-foreground"
+                                                title={`${t.displayName} (${t.locationName})`}
+                                            >
+                                                <span className="size-1.5 rounded-full bg-emerald-500" />
+                                                {t.displayNumber ||
+                                                    t.displayName}
+                                            </span>
+                                        ))}
+                                    </div>
+                                    <p className="text-[11px] text-slate-gray">
+                                        {todayTables.length} table
+                                        {todayTables.length === 1 ? "" : "s"}
+                                    </p>
+                                </div>
+                            ) : (
+                                <p className="mt-0.5 text-[12px] text-slate-gray">
+                                    {t("noTablesAssigned")}
+                                </p>
+                            )}
                         </div>
                         <div>
                             <p className="font-normal text-foreground">
@@ -471,6 +520,98 @@ export default function WaiterShiftPage() {
                     </div>
                 </div>
 
+                {/* Assigned Tables for Today's Shift Card Grid */}
+                {todayTables.length > 0 ? (
+                    <div className="rounded-[20px] border border-hairline bg-card p-5">
+                        <div className="mb-3.5 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2.5">
+                                <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                    <UtensilsCrossed className="size-4" />
+                                </div>
+                                <div>
+                                    <p className="text-[14px] font-medium text-foreground">
+                                        {t("assignedTablesForShift", {
+                                            shift: assignedShiftName,
+                                        })}
+                                    </p>
+                                    <p className="text-[11px] text-slate-gray">
+                                        {t("assignedTablesHint", {
+                                            count: todayTables.length,
+                                        })}{" "}
+                                        ({todayDayCode})
+                                    </p>
+                                </div>
+                            </div>
+                            <Link
+                                href="/waiter/tables"
+                                className="text-[12px] font-medium text-foreground hover:underline cursor-pointer"
+                            >
+                                {t("viewOnFloor")} →
+                            </Link>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
+                            {todayTables.map(t => {
+                                const liveTable = myTables.find(
+                                    mt => mt.tableId === t.tableId,
+                                );
+                                const hasActiveSession = Boolean(
+                                    liveTable?.tableSessionId,
+                                );
+
+                                return (
+                                    <Link
+                                        key={t.tableId}
+                                        href={`/waiter/tables/${t.tableId}`}
+                                        className="group flex flex-col justify-between rounded-xl border border-hairline bg-secondary/30 p-2.5 hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-secondary/60 transition-all cursor-pointer"
+                                    >
+                                        <div className="flex items-start justify-between gap-1.5">
+                                            <span className="flex size-7 items-center justify-center rounded-lg bg-card border border-hairline text-[12px] font-bold text-foreground group-hover:bg-muted">
+                                                {t.displayNumber ||
+                                                    t.displayName}
+                                            </span>
+                                            <span
+                                                className={cn(
+                                                    "size-2 rounded-full mt-1 shrink-0",
+                                                    hasActiveSession
+                                                        ? "bg-emerald-500 ring-2 ring-emerald-500/20"
+                                                        : "bg-slate-300 dark:bg-slate-600",
+                                                )}
+                                                title={
+                                                    hasActiveSession
+                                                        ? "Active order in progress"
+                                                        : "Free table"
+                                                }
+                                            />
+                                        </div>
+                                        <div className="mt-2 min-w-0">
+                                            <p className="truncate text-[11px] font-medium text-foreground">
+                                                {t.displayName}
+                                            </p>
+                                            <p className="truncate text-[10px] text-slate-gray">
+                                                {t.locationName}
+                                            </p>
+                                        </div>
+                                        <div className="mt-2 border-t border-hairline/60 pt-1 text-[10px]">
+                                            {hasActiveSession ? (
+                                                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                                                    Active (
+                                                    {liveTable?.guestCount ?? 1}{" "}
+                                                    guests)
+                                                </span>
+                                            ) : (
+                                                <span className="text-slate-gray">
+                                                    Available
+                                                </span>
+                                            )}
+                                        </div>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    </div>
+                ) : null}
+
                 <div className="rounded-[16px] border border-hairline bg-card p-3 sm:p-4">
                     <div className="mb-2.5 flex items-center justify-between gap-2">
                         <div>
@@ -526,19 +667,78 @@ export default function WaiterShiftPage() {
                                                 )}
                                             >
                                                 {cell.row ? (
-                                                    <div className="space-y-0.5">
-                                                        <p className="text-[11px] font-medium leading-snug text-foreground">
-                                                            {
-                                                                cell.row
-                                                                    .definitionName
-                                                            }
-                                                        </p>
-                                                        <p className="text-[10px] leading-snug text-slate-gray">
-                                                            {cell.window?.greg}
-                                                        </p>
-                                                        <p className="text-[10px] leading-snug text-slate-gray">
-                                                            {cell.window?.eth}
-                                                        </p>
+                                                    <div className="space-y-1.5">
+                                                        <div className="space-y-0.5">
+                                                            <p className="text-[11px] font-medium leading-snug text-foreground">
+                                                                {
+                                                                    cell.row
+                                                                        .definitionName
+                                                                }
+                                                            </p>
+                                                            <p className="text-[10px] leading-snug text-slate-gray">
+                                                                {
+                                                                    cell.window
+                                                                        ?.greg
+                                                                }
+                                                            </p>
+                                                            <p className="text-[10px] leading-snug text-slate-gray">
+                                                                {
+                                                                    cell.window
+                                                                        ?.eth
+                                                                }
+                                                            </p>
+                                                        </div>
+
+                                                        {/* Tables assigned for this day's shift */}
+                                                        {cell.row.tables &&
+                                                        cell.row.tables.length >
+                                                            0 ? (
+                                                            <div className="border-t border-hairline/60 pt-1.5 space-y-1">
+                                                                <div className="flex items-center gap-1 text-[10px] font-medium text-slate-gray">
+                                                                    <UtensilsCrossed className="size-2.5" />
+                                                                    <span>
+                                                                        {
+                                                                            cell
+                                                                                .row
+                                                                                .tables
+                                                                                .length
+                                                                        }{" "}
+                                                                        tbl
+                                                                        {cell
+                                                                            .row
+                                                                            .tables
+                                                                            .length ===
+                                                                        1
+                                                                            ? ""
+                                                                            : "s"}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex flex-wrap gap-1">
+                                                                    {cell.row.tables.map(
+                                                                        t => (
+                                                                            <span
+                                                                                key={
+                                                                                    t.tableId
+                                                                                }
+                                                                                className="inline-flex items-center rounded-md border border-hairline bg-secondary px-1.5 py-0.5 text-[9px] font-medium text-foreground"
+                                                                                title={`${t.displayName} (${t.locationName})`}
+                                                                            >
+                                                                                {t.displayNumber ||
+                                                                                    t.displayName}
+                                                                            </span>
+                                                                        ),
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="border-t border-hairline/60 pt-1">
+                                                                <span className="text-[10px] text-slate-gray/60 italic">
+                                                                    {t(
+                                                                        "noTablesAssigned",
+                                                                    )}
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 ) : (
                                                     <p className="text-[10px] text-slate-gray/70">

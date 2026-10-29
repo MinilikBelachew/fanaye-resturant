@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import {
     useListInventoryBalancesQuery,
     useListInventoryIngredientsQuery,
+    useListInventoryUnitConversionsQuery,
     useListProductionBatchesQuery,
     usePostProductionBatchMutation,
 } from "@/context/services/inventoryApi";
@@ -15,6 +16,8 @@ import {
     QtyLineCard,
     parsePositiveQty,
 } from "@/domains/inventory/ui/InventoryFormControls";
+import { UnitPicker } from "@/domains/inventory/ui/UnitPicker";
+import { toBaseQtyClient } from "@/domains/inventory/application/unitMath";
 import { formatEtb, formatQty } from "@/lib/money";
 import { toast } from "@/lib/toast";
 import { Loader2 } from "lucide-react";
@@ -23,6 +26,7 @@ type ProduceInput = {
     ingredientId: string;
     name: string;
     unit: string;
+    typedUnit: string;
     unitCost: number;
     quantity: string;
     onHandQty: number;
@@ -50,6 +54,18 @@ export default function InventoryProductionPanel({
             { page: 1, limit: 20, locationId: locationId || undefined },
             { skip: !locationId },
         );
+    const { data: conversionsRes } = useListInventoryUnitConversionsQuery();
+    const conversionRows = useMemo(
+        () =>
+            (conversionsRes?.data ?? [])
+                .filter(c => c.status === "ACTIVE")
+                .map(c => ({
+                    fromUnit: c.fromUnit,
+                    toUnit: c.toUnit,
+                    factor: c.factor,
+                })),
+        [conversionsRes?.data],
+    );
     const [postBatch, posting] = usePostProductionBatchMutation();
 
     const stockRows = stockRes?.data ?? [];
@@ -58,6 +74,7 @@ export default function InventoryProductionPanel({
 
     const [outputIngredientId, setOutputIngredientId] = useState("");
     const [outputQuantity, setOutputQuantity] = useState("");
+    const [outputUnit, setOutputUnit] = useState("");
     const [expectedOutputQuantity, setExpectedOutputQuantity] = useState("");
     const [outputItemKind, setOutputItemKind] = useState<
         "PRODUCED" | "FINISHED"
@@ -83,50 +100,78 @@ export default function InventoryProductionPanel({
                 map.set(line.ingredientId, t("errQtyRequired"));
                 continue;
             }
-            if (qty != null && qty > line.onHandQty) {
-                map.set(
-                    line.ingredientId,
-                    t("errNotEnoughAtLocation", {
-                        name: line.name,
-                        have: formatQty(line.onHandQty),
-                        need: formatQty(qty),
-                        unit: line.unit,
-                    }),
+            if (qty != null) {
+                const baseQty = toBaseQtyClient(
+                    qty,
+                    line.typedUnit,
+                    line.unit,
+                    conversionRows,
                 );
+                if (baseQty == null) {
+                    map.set(line.ingredientId, t("errUnitMismatch"));
+                    continue;
+                }
+                if (baseQty > line.onHandQty) {
+                    map.set(
+                        line.ingredientId,
+                        t("errNotEnoughAtLocation", {
+                            name: line.name,
+                            have: formatQty(line.onHandQty),
+                            need: formatQty(baseQty),
+                            unit: line.unit,
+                        }),
+                    );
+                }
             }
         }
         return map;
-    }, [inputs, triedSubmit, t]);
+    }, [inputs, triedSubmit, conversionRows, t]);
 
     const validInputs = useMemo(
         () =>
             inputs
-                .map(i => ({
-                    ingredientId: i.ingredientId,
-                    quantity: parsePositiveQty(i.quantity),
-                    onHandQty: i.onHandQty,
-                    unitCost: i.unitCost,
-                }))
+                .map(i => {
+                    const quantity = parsePositiveQty(i.quantity);
+                    if (quantity == null) return null;
+                    const baseQty = toBaseQtyClient(
+                        quantity,
+                        i.typedUnit,
+                        i.unit,
+                        conversionRows,
+                    );
+                    if (baseQty == null || baseQty > i.onHandQty) return null;
+                    return {
+                        ingredientId: i.ingredientId,
+                        quantity,
+                        baseQty,
+                        typedUnit: i.typedUnit,
+                        unit: i.unit,
+                        unitCost: i.unitCost,
+                    };
+                })
                 .filter(
                     (
                         i,
                     ): i is {
                         ingredientId: string;
                         quantity: number;
-                        onHandQty: number;
+                        baseQty: number;
+                        typedUnit: string;
+                        unit: string;
                         unitCost: number;
-                    } => i.quantity != null && i.quantity <= i.onHandQty,
+                    } => i != null,
                 ),
-        [inputs],
+        [inputs, conversionRows],
     );
 
+    const outputIngredient = catalog.find(i => i.id === outputIngredientId);
     const outputQty = parsePositiveQty(outputQuantity);
     const expectedQty = parsePositiveQty(expectedOutputQuantity);
 
     const yieldPreview = useMemo(() => {
         if (outputQty == null || validInputs.length === 0) return null;
         const inputCostTotal = validInputs.reduce(
-            (sum, i) => sum + i.quantity * i.unitCost,
+            (sum, i) => sum + i.baseQty * i.unitCost,
             0,
         );
         const outputUnitCost = outputQty > 0 ? inputCostTotal / outputQty : 0;
@@ -134,7 +179,7 @@ export default function InventoryProductionPanel({
         if (expectedQty != null) {
             yieldPercent = (outputQty / expectedQty) * 100;
         } else if (validInputs.length === 1) {
-            yieldPercent = (outputQty / validInputs[0].quantity) * 100;
+            yieldPercent = (outputQty / validInputs[0].baseQty) * 100;
         }
         return { inputCostTotal, outputUnitCost, yieldPercent };
     }, [expectedQty, outputQty, validInputs]);
@@ -164,6 +209,7 @@ export default function InventoryProductionPanel({
                     ingredientId: row.ingredientId,
                     name: row.name,
                     unit: row.unit,
+                    typedUnit: row.unit,
                     unitCost: Number(row.unitCost) || 0,
                     quantity: "",
                     onHandQty: Number(row.onHandQty) || 0,
@@ -196,6 +242,11 @@ export default function InventoryProductionPanel({
                 locationId,
                 outputIngredientId,
                 outputQuantity: outputQty,
+                ...(outputUnit &&
+                outputIngredient &&
+                outputUnit !== outputIngredient.unit
+                    ? { outputUnit }
+                    : {}),
                 ...(expectedQty != null
                     ? { expectedOutputQuantity: expectedQty }
                     : {}),
@@ -204,6 +255,7 @@ export default function InventoryProductionPanel({
                 inputs: validInputs.map(i => ({
                     ingredientId: i.ingredientId,
                     quantity: i.quantity,
+                    ...(i.typedUnit !== i.unit ? { unit: i.typedUnit } : {}),
                 })),
             }).unwrap();
             const y = res.data.yieldPercent;
@@ -218,6 +270,7 @@ export default function InventoryProductionPanel({
             );
             setInputs([]);
             setOutputQuantity("");
+            setOutputUnit("");
             setExpectedOutputQuantity("");
             setNote("");
             setTriedSubmit(false);
@@ -276,6 +329,8 @@ export default function InventoryProductionPanel({
                             }))}
                             onChange={v => {
                                 setOutputIngredientId(v);
+                                const ing = catalog.find(i => i.id === v);
+                                setOutputUnit(ing?.unit ?? "");
                                 setInputs(prev =>
                                     prev.filter(l => l.ingredientId !== v),
                                 );
@@ -288,7 +343,7 @@ export default function InventoryProductionPanel({
                         />
                     </div>
 
-                    <div className="grid gap-2 sm:grid-cols-3">
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                         <label className="block space-y-1 text-[12px]">
                             <span className="font-medium text-slate-gray">
                                 {t("fieldOutputQty")}
@@ -310,6 +365,19 @@ export default function InventoryProductionPanel({
                                 </span>
                             ) : null}
                         </label>
+                        <div className="space-y-1 text-[12px]">
+                            <span className="font-medium text-slate-gray">
+                                {t("colUnit")}
+                            </span>
+                            <UnitPicker
+                                baseUnit={outputIngredient?.unit ?? ""}
+                                value={
+                                    outputUnit || outputIngredient?.unit || ""
+                                }
+                                onChange={setOutputUnit}
+                                disabled={!outputIngredient}
+                            />
+                        </div>
                         <label className="block space-y-1 text-[12px]">
                             <span className="font-medium text-slate-gray">
                                 {t("fieldExpectedQty")}
@@ -390,7 +458,36 @@ export default function InventoryProductionPanel({
                                     })}
                                     quantity={line.quantity}
                                     unit={line.unit}
-                                    max={line.onHandQty}
+                                    unitNode={
+                                        <UnitPicker
+                                            compact
+                                            baseUnit={line.unit}
+                                            value={line.typedUnit}
+                                            onChange={v =>
+                                                setInputs(prev =>
+                                                    prev.map(l =>
+                                                        l.ingredientId ===
+                                                        line.ingredientId
+                                                            ? {
+                                                                  ...l,
+                                                                  typedUnit: v,
+                                                              }
+                                                            : l,
+                                                    ),
+                                                )
+                                            }
+                                        />
+                                    }
+                                    max={
+                                        line.typedUnit !== line.unit
+                                            ? (toBaseQtyClient(
+                                                  line.onHandQty,
+                                                  line.unit,
+                                                  line.typedUnit,
+                                                  conversionRows,
+                                              ) ?? undefined)
+                                            : line.onHandQty
+                                    }
                                     quantityPlaceholder={t("fieldQuantity")}
                                     removeLabel={t("removeLine")}
                                     error={lineErrors.get(line.ingredientId)}
@@ -524,7 +621,8 @@ export default function InventoryProductionPanel({
                                                 {formatQty(
                                                     batch.outputQuantity,
                                                 )}{" "}
-                                                {batch.output.unit}
+                                                {batch.outputUnit ??
+                                                    batch.output.unit}
                                             </span>
                                             {batch.outputUnitCost > 0 ? (
                                                 <span className="mt-0.5 block text-[11px] text-slate-gray">
@@ -544,7 +642,7 @@ export default function InventoryProductionPanel({
                                             {batch.inputs
                                                 .map(
                                                     i =>
-                                                        `${i.ingredient.name} ${formatQty(i.quantity)}${i.ingredient.unit}`,
+                                                        `${i.ingredient.name} ${formatQty(i.quantity)}${i.unit ?? i.ingredient.unit}`,
                                                 )
                                                 .join(", ")}
                                         </td>

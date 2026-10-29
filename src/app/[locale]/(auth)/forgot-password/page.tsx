@@ -2,12 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import {
-    AlertCircle,
-    ArrowLeft,
-    CheckCircle2,
-    Mail,
-} from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -109,7 +104,9 @@ export default function ForgotPasswordPage() {
                                     <Input
                                         type="text"
                                         value={identifier}
-                                        onChange={e => setIdentifier(e.target.value)}
+                                        onChange={e =>
+                                            setIdentifier(e.target.value)
+                                        }
                                         placeholder={t("placeholder")}
                                         className="h-11 pl-10 rounded-[12px] text-[14px]"
                                         required

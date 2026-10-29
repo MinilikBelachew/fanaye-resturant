@@ -12,6 +12,7 @@ import {
     Info,
     Leaf,
     Loader2,
+    MessageSquarePlus,
     Minus,
     Plus,
     QrCode,
@@ -19,6 +20,7 @@ import {
     Send,
     ShoppingBag,
     Sparkles,
+    Star,
     Utensils,
     Wifi,
     X,
@@ -31,6 +33,7 @@ import {
     PublicMenuItem,
     PublicModifierOption,
 } from "@/context/services/qrMenuApi";
+import { useSubmitTableFeedbackMutation } from "@/context/services/feedbackApi";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,6 +80,8 @@ export default function GuestTableOrderingPage({
         useSubmitGuestOrderMutation();
     const [submitService, { isLoading: isSubmittingService }] =
         useSubmitServiceRequestMutation();
+    const [submitFeedback, { isLoading: isSubmittingFeedback }] =
+        useSubmitTableFeedbackMutation();
 
     // Search & Filters
     const [search, setSearch] = useState("");
@@ -92,6 +97,11 @@ export default function GuestTableOrderingPage({
     const [cartOpen, setCartOpen] = useState(false);
     const [serviceModalOpen, setServiceModalOpen] = useState(false);
     const [wifiModalOpen, setWifiModalOpen] = useState(false);
+    const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+    const [feedbackRating, setFeedbackRating] = useState(0);
+    const [feedbackComment, setFeedbackComment] = useState("");
+    const [feedbackName, setFeedbackName] = useState("");
+    const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
     const [customerCount, setCustomerCount] = useState(2);
     const [orderNotes, setOrderNotes] = useState("");
 
@@ -286,6 +296,39 @@ export default function GuestTableOrderingPage({
         }
     }
 
+    async function handleSubmitFeedback() {
+        if (feedbackRating < 1) {
+            toast.error("Please pick a star rating first.");
+            return;
+        }
+        try {
+            await submitFeedback({
+                slug,
+                tableId,
+                body: {
+                    rating: feedbackRating,
+                    comment: feedbackComment.trim() || undefined,
+                    customerName: feedbackName.trim() || undefined,
+                },
+            }).unwrap();
+            setFeedbackSubmitted(true);
+            toast.success(
+                "Thank you for your feedback!",
+                "Your comments help us serve you better.",
+            );
+        } catch (err: any) {
+            toast.error(
+                err?.data?.message ||
+                    "Could not send your feedback right now. Please try again.",
+            );
+        }
+    }
+
+    function openFeedback() {
+        setFeedbackModalOpen(true);
+        setFeedbackSubmitted(false);
+    }
+
     if (isLoading) {
         return (
             <div className="flex min-h-svh flex-col items-center justify-center gap-3 bg-slate-950 p-6 text-white">
@@ -361,6 +404,14 @@ export default function GuestTableOrderingPage({
 
                         {/* Wi-Fi & Bell Actions */}
                         <div className="flex items-center gap-2">
+                            <button
+                                onClick={openFeedback}
+                                className="flex size-9 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md hover:bg-white/30 transition-colors"
+                                title="Leave feedback"
+                            >
+                                <Star className="size-4" />
+                            </button>
+
                             {config?.wifiSsid ? (
                                 <button
                                     onClick={() => setWifiModalOpen(true)}
@@ -632,6 +683,31 @@ export default function GuestTableOrderingPage({
                         </div>
                     )}
                 </main>
+
+                {/* Share Your Feedback — available with or without ordering */}
+                <section className="mt-5 px-4 sm:px-0">
+                    <div className="flex flex-col items-center gap-3 rounded-3xl border border-amber-500/30 bg-gradient-to-br from-amber-50 to-white p-6 text-center shadow-xs dark:border-amber-500/25 dark:from-amber-500/10 dark:to-slate-900">
+                        <div className="flex size-12 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                            <MessageSquarePlus className="size-6" />
+                        </div>
+                        <div>
+                            <h2 className="text-sm font-black text-slate-900 dark:text-slate-50">
+                                How was your experience?
+                            </h2>
+                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                Share a rating and a comment — it goes straight
+                                to management. No order needed.
+                            </p>
+                        </div>
+                        <Button
+                            onClick={openFeedback}
+                            className="rounded-full bg-amber-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-amber-700"
+                        >
+                            <Star className="size-3.5" />
+                            <span>Leave Feedback</span>
+                        </Button>
+                    </div>
+                </section>
             </div>
 
             {/* Floating Bottom Cart Bar */}
@@ -1083,6 +1159,128 @@ export default function GuestTableOrderingPage({
                         >
                             Done
                         </Button>
+                    </div>
+                </div>
+            ) : null}
+
+            {/* Guest Feedback Modal */}
+            {feedbackModalOpen ? (
+                <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-xs p-0 sm:items-center sm:p-4 animate-in fade-in duration-200">
+                    <div className="relative w-full max-w-sm rounded-t-[32px] sm:rounded-[32px] bg-white p-6 shadow-2xl dark:bg-slate-900 dark:text-slate-100">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
+                            <div>
+                                <h3 className="text-base font-black text-slate-900 flex items-center gap-2 dark:text-slate-50">
+                                    <MessageSquarePlus className="size-4 text-amber-600 dark:text-amber-400" />
+                                    Share Your Feedback
+                                </h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                    {table?.displayName}
+                                    {table?.locationName
+                                        ? ` · ${table.locationName}`
+                                        : ""}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setFeedbackModalOpen(false)}
+                                className="flex size-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                            >
+                                <X className="size-4" />
+                            </button>
+                        </div>
+
+                        {feedbackSubmitted ? (
+                            <div className="py-8 text-center">
+                                <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
+                                    <CheckCircle2 className="size-7" />
+                                </div>
+                                <h4 className="mt-3 text-sm font-black text-slate-900 dark:text-slate-50">
+                                    Thank you!
+                                </h4>
+                                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                    Your feedback has been shared with the
+                                    management.
+                                </p>
+                                <Button
+                                    onClick={() => setFeedbackModalOpen(false)}
+                                    className="mt-5 w-full rounded-xl bg-slate-900 text-xs font-bold text-white dark:bg-amber-500 dark:text-slate-950"
+                                >
+                                    Done
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="mt-4 space-y-4">
+                                <div className="text-center">
+                                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                                        How would you rate us?
+                                    </p>
+                                    <div className="mt-2 flex items-center justify-center gap-1.5">
+                                        {[1, 2, 3, 4, 5].map(star => (
+                                            <button
+                                                key={star}
+                                                onClick={() =>
+                                                    setFeedbackRating(star)
+                                                }
+                                                className="p-0.5 transition-transform active:scale-90"
+                                                aria-label={`${star} star`}
+                                            >
+                                                <Star
+                                                    className={`size-8 ${
+                                                        star <= feedbackRating
+                                                            ? "fill-amber-500 text-amber-500"
+                                                            : "text-slate-300 dark:text-slate-600"
+                                                    }`}
+                                                />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                        Your name (optional)
+                                    </label>
+                                    <Input
+                                        value={feedbackName}
+                                        onChange={e =>
+                                            setFeedbackName(e.target.value)
+                                        }
+                                        placeholder="e.g. Selam"
+                                        className="mt-1 text-xs dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                        Your comment (optional)
+                                    </label>
+                                    <textarea
+                                        value={feedbackComment}
+                                        onChange={e =>
+                                            setFeedbackComment(e.target.value)
+                                        }
+                                        rows={3}
+                                        placeholder="Tell us what you loved or what we can improve…"
+                                        className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/40 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                                    />
+                                </div>
+
+                                <Button
+                                    onClick={handleSubmitFeedback}
+                                    disabled={
+                                        isSubmittingFeedback ||
+                                        feedbackRating < 1
+                                    }
+                                    className="w-full gap-2 rounded-2xl bg-amber-600 py-6 text-sm font-bold text-white hover:bg-amber-700 shadow-md disabled:opacity-60"
+                                >
+                                    {isSubmittingFeedback ? (
+                                        <Loader2 className="size-4 animate-spin" />
+                                    ) : (
+                                        <Send className="size-4" />
+                                    )}
+                                    <span>Submit Feedback</span>
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 </div>
             ) : null}

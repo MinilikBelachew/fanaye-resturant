@@ -96,9 +96,7 @@ export function withTableLocations(tables: DiningTable[]): DiningTable[] {
         return {
             ...table,
             locationId:
-                table.locationId ??
-                fresh?.locationId ??
-                TABLE_LOCATIONS[0].id,
+                table.locationId ?? fresh?.locationId ?? TABLE_LOCATIONS[0].id,
         };
     });
 }

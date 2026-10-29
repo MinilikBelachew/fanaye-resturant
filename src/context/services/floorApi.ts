@@ -116,10 +116,14 @@ export const floorApi = api.injectEndpoints({
             }),
             providesTags: ["Floor"],
         }),
-        adminFloorLayout: builder.query<AdminFloorLayoutResponse, void>({
-            query: () => ({
+        adminFloorLayout: builder.query<
+            AdminFloorLayoutResponse,
+            { shiftId?: string } | void
+        >({
+            query: arg => ({
                 url: "/admin/floor-layout",
                 method: "GET",
+                params: arg?.shiftId ? { shiftId: arg.shiftId } : undefined,
             }),
             providesTags: ["Floor"],
         }),

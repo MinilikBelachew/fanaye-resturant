@@ -10,10 +10,7 @@ export const toast = {
     info(message: string, description?: string) {
         sonnerToast.message(message, description ? { description } : undefined);
     },
-    fromUnknown(
-        err: unknown,
-        fallback = "Something went wrong. Try again.",
-    ) {
+    fromUnknown(err: unknown, fallback = "Something went wrong. Try again.") {
         if (err && typeof err === "object") {
             const data = (err as { data?: { message?: string; code?: string } })
                 .data;

@@ -18,6 +18,8 @@ export function homePathForRole(role: Role): string {
             return "/dispatcher";
         case "receptionist":
             return "/receptionist";
+        case "driver":
+            return "/driver";
         case "kitchen":
             return "/kitchen";
         case "barista":
@@ -50,6 +52,9 @@ export function roleAllowsPath(role: Role, pathname: string): boolean {
     }
     if (role === "receptionist") {
         return rest.startsWith("/receptionist");
+    }
+    if (role === "driver") {
+        return rest.startsWith("/driver");
     }
     if (role === "super_admin") {
         return rest.startsWith("/super-admin");

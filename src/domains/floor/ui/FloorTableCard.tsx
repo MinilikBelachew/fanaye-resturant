@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
     BellRing,
     ChefHat,
@@ -30,6 +31,7 @@ export default function FloorTableCard({
     footerAction,
     extraStatus,
     isVip,
+    imageSrc,
     onClick,
 }: {
     tableNumber: string;
@@ -43,6 +45,7 @@ export default function FloorTableCard({
     footerAction: string;
     extraStatus?: string | null;
     isVip?: boolean;
+    imageSrc?: string;
     onClick: () => void;
 }) {
     const tCommon = useTranslations("common");
@@ -123,6 +126,23 @@ export default function FloorTableCard({
                                 </span>
                             </div>
                         ) : null}
+                    </div>
+                </div>
+
+                {/* DINING TABLE IMAGE */}
+                <div className="relative mt-3 h-28 w-full overflow-hidden rounded-xl border border-hairline/80 bg-neutral-900/40">
+                    <Image
+                        src={imageSrc || "/images/dining_table_round.jpg"}
+                        alt={`Table ${tableNumber}`}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 25vw"
+                        className="object-cover object-center transition-transform duration-500 ease-out group-hover:scale-105"
+                    />
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex items-center gap-1.5 rounded-full border border-white/20 bg-black/70 px-2.5 py-0.5 shadow-md backdrop-blur-md">
+                        <span className="text-[11px] font-bold text-white tracking-wide">
+                            #{tableNumber}
+                        </span>
                     </div>
                 </div>
 

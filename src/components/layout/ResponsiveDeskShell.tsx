@@ -22,6 +22,7 @@ const NAV_LABEL_KEYS: Record<string, string> = {
     Dashboard: "dashboard",
     "Live Ops": "liveOps",
     "Live Operations": "liveOps",
+    "Fresh Prep": "freshPrep",
     Tenants: "tenants",
     "Staff Directory": "staffDirectory",
     "Platform Audit": "audit",

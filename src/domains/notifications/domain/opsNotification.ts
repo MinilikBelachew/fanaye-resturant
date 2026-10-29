@@ -53,6 +53,8 @@ export function isNotificationVisibleForRole(
             type === "item.delayed" ||
             type === "production.exception" ||
             type === "leave.request.decided" ||
+            type === "material.issue.returned" ||
+            normalized === "MATERIAL_ISSUE_RETURNED" ||
             normalized === "TICKET_QUEUED" ||
             normalized === "TICKET_UNACKNOWLEDGED" ||
             normalized === "ITEM_DELAYED" ||
@@ -67,6 +69,8 @@ export function isNotificationVisibleForRole(
             type === "cash_drop.pending" ||
             type === "cash_drop.resolved" ||
             type === "leave.request.decided" ||
+            type === "material.issue.returned" ||
+            normalized === "MATERIAL_ISSUE_RETURNED" ||
             normalized === "BILL_REQUEST_CREATED" ||
             normalized === "CASH_DROP_PENDING" ||
             normalized === "LEAVE_REQUEST_DECIDED" ||
@@ -86,6 +90,8 @@ export function isNotificationVisibleForRole(
             type === "production.exception" ||
             type === "menu.item.availability" ||
             type === "leave.request.decided" ||
+            type === "material.issue.returned" ||
+            normalized === "MATERIAL_ISSUE_RETURNED" ||
             normalized === "BILL_READY" ||
             normalized === "GUEST_ORDER_PLACED" ||
             normalized === "ITEM_READY" ||
@@ -112,6 +118,8 @@ export function isNotificationVisibleForRole(
     if (role === "store_manager") {
         return (
             type === "leave.request.decided" ||
+            type === "material.issue.returned" ||
+            normalized === "MATERIAL_ISSUE_RETURNED" ||
             normalized === "LEAVE_REQUEST_DECIDED"
         );
     }
@@ -129,6 +137,8 @@ export function isNotificationVisibleForRole(
             type === "menu.item.availability" ||
             type === "leave.request.created" ||
             type === "leave.request.decided" ||
+            type === "material.issue.returned" ||
+            normalized === "MATERIAL_ISSUE_RETURNED" ||
             type.startsWith("approval") ||
             type.startsWith("cash_drop") ||
             type.startsWith("bill.") ||
@@ -265,6 +275,21 @@ export function notificationHref(
         case "leave.request.created":
             if (role === "owner") return "/owner/staff/leave";
             if (role === "manager") return "/manager/staff/leave";
+            return null;
+        case "material.issue.returned":
+        case "MATERIAL_ISSUE_RETURNED":
+            if (
+                role === "kitchen" ||
+                role === "barista" ||
+                role === "cakes" ||
+                role === "soft_drinks"
+            ) {
+                return role === "soft_drinks"
+                    ? "/soft-drinks/materials"
+                    : `/${role}/materials`;
+            }
+            if (role === "manager" || role === "owner")
+                return "/manager/outside";
             return null;
         case "leave.request.decided":
             if (role === "waiter") return "/waiter/leave";

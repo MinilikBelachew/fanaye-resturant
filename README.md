@@ -35,12 +35,14 @@ Before you begin, ensure you have the following installed:
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/jasurumarov/nextjs-boilerplate.git
 cd nextjs-boilerplate
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 # or
@@ -50,6 +52,7 @@ pnpm install
 ```
 
 3. Run the development server:
+
 ```bash
 npm run dev
 # or
@@ -111,18 +114,18 @@ nextjs-boilerplate/
 
 ## 🛠️ Available Scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint |
-| `npm run lint:fix` | Fix ESLint errors automatically |
-| `npm run lint:strict` | Run ESLint with zero warnings tolerance |
-| `npm run format` | Format code with Prettier |
-| `npm run format:check` | Check code formatting |
-| `npm run type-check` | Run TypeScript type checking |
-| `npm run check-all` | Run all checks (types, lint, format) |
+| Script                 | Description                             |
+| ---------------------- | --------------------------------------- |
+| `npm run dev`          | Start development server                |
+| `npm run build`        | Build for production                    |
+| `npm run start`        | Start production server                 |
+| `npm run lint`         | Run ESLint                              |
+| `npm run lint:fix`     | Fix ESLint errors automatically         |
+| `npm run lint:strict`  | Run ESLint with zero warnings tolerance |
+| `npm run format`       | Format code with Prettier               |
+| `npm run format:check` | Check code formatting                   |
+| `npm run type-check`   | Run TypeScript type checking            |
+| `npm run check-all`    | Run all checks (types, lint, format)    |
 
 ## 🔧 Configuration
 
@@ -138,17 +141,20 @@ NEXT_PUBLIC_API_URL=your_api_url
 ### Internationalization
 
 The boilerplate supports three languages out of the box:
+
 - English (en)
 - Russian (ru)
 - Uzbek (uz)
 
 To add a new language:
+
 1. Add translation file in `src/locales/[language].json`
 2. Update locale configuration in `src/i18n/routing.ts`
 
 ### Styling
 
 This project uses:
+
 - **Tailwind CSS v4** for utility-first styling
 - **Shadcn UI** for pre-built components
 - **CSS Variables** for theming
@@ -166,6 +172,7 @@ This project enforces code quality through:
 - **Lint-staged** - Run linters on staged files only
 
 All commits are automatically checked for:
+
 - TypeScript errors
 - ESLint violations
 - Prettier formatting
@@ -180,6 +187,7 @@ npx shadcn@latest add [component-name]
 ```
 
 Available components include:
+
 - Button
 - Input
 - Form
@@ -191,6 +199,7 @@ Available components include:
 ## 🔐 Authentication
 
 Pre-configured authentication pages:
+
 - `/sign-in` - Sign in page
 - `/sign-up` - Sign up page
 
@@ -218,6 +227,7 @@ Contributions are welcome! Please follow these steps:
 5. Open a Pull Request
 
 Please make sure to:
+
 - Follow the existing code style
 - Run `npm run check-all` before committing
 - Write clear commit messages
@@ -228,6 +238,7 @@ Please make sure to:
 ### Component Structure
 
 Follow Atomic Design principles:
+
 - **Atoms**: Basic building blocks (buttons, inputs)
 - **Molecules**: Simple combinations of atoms
 - **Organisms**: Complex UI components
@@ -242,6 +253,7 @@ Follow Atomic Design principles:
 ### State Management
 
 Use Redux Toolkit for global state:
+
 - Create slices in `src/context/slices/`
 - Define API services in `src/context/services/`
 - Use typed hooks from `src/context/hooks.ts`
@@ -251,11 +263,13 @@ Use Redux Toolkit for global state:
 This boilerplate uses **RTK Query** (built into Redux Toolkit) for data fetching and caching:
 
 **✅ No Extra Dependencies**
+
 - RTK Query comes bundled with Redux Toolkit
 - No need to install additional libraries like Axios, React Query, or SWR
 - Reduces bundle size and dependency management complexity
 
 **✅ Powerful Features Out of the Box**
+
 - Automatic caching and request deduplication
 - Automatic re-fetching on focus/reconnection
 - Optimistic updates support
@@ -263,6 +277,7 @@ This boilerplate uses **RTK Query** (built into Redux Toolkit) for data fetching
 - TypeScript support with automatic type inference
 
 **✅ Seamless Integration**
+
 - Works perfectly with existing Redux slices
 - Shares the same store and middleware
 - Consistent state management patterns across the app
@@ -271,29 +286,30 @@ This boilerplate uses **RTK Query** (built into Redux Toolkit) for data fetching
 
 ```typescript
 // src/context/services/authApi.ts
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export const authApi = createApi({
-  reducerPath: 'authApi',
-  baseQuery: fetchBaseQuery({ baseUrl: '/api' }),
-  endpoints: (builder) => ({
-    login: builder.mutation({
-      query: (credentials) => ({
-        url: '/login',
-        method: 'POST',
-        body: credentials,
-      }),
+    reducerPath: "authApi",
+    baseQuery: fetchBaseQuery({ baseUrl: "/api" }),
+    endpoints: builder => ({
+        login: builder.mutation({
+            query: credentials => ({
+                url: "/login",
+                method: "POST",
+                body: credentials,
+            }),
+        }),
+        getUser: builder.query({
+            query: userId => `/users/${userId}`,
+        }),
     }),
-    getUser: builder.query({
-      query: (userId) => `/users/${userId}`,
-    }),
-  }),
 });
 
 export const { useLoginMutation, useGetUserQuery } = authApi;
 ```
 
 In components:
+
 ```typescript
 const { data, isLoading, error } = useGetUserQuery(userId);
 const [login, { isLoading }] = useLoginMutation();
@@ -326,4 +342,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ⭐️ If you find this boilerplate helpful, please consider giving it a star!
 
 **Happy Coding! 🚀**
-

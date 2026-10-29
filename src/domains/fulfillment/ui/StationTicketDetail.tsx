@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useAppSelector } from "@/context/hooks";
 import {
     useStationOrderItemQuery,
@@ -7,6 +8,7 @@ import {
 } from "@/context/services/stationsApi";
 import StationTicketActions from "@/domains/fulfillment/ui/StationTicketActions";
 import TicketExtras from "@/domains/fulfillment/ui/TicketExtras";
+import IssueMaterialsModal from "@/domains/outside-orders/ui/IssueMaterialsModal";
 import { homePathForRole } from "@/domains/identity/application/homePath";
 import type { StationRole } from "@/domains/identity/domain/role";
 import { stationStateLabel } from "@/domains/fulfillment/domain/stationTicket";
@@ -14,6 +16,8 @@ import { lineTotal } from "@/domains/ordering/application/mapWaiterMenu";
 import { Link } from "@/i18n/navigation";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { Boxes } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function StationTicketDetail({
     role,
@@ -22,6 +26,7 @@ export default function StationTicketDetail({
     role: StationRole;
     itemId: string;
 }) {
+    const [issueModalOpen, setIssueModalOpen] = useState(false);
     const stationId = useAppSelector(
         state => state.identity.session?.stationId,
     );
@@ -74,11 +79,13 @@ export default function StationTicketDetail({
             <div className="mt-3 flex items-start justify-between gap-3">
                 <div>
                     <p className="text-[13px] text-slate-gray">
-                        {ticket.tableDisplayName
-                            .toLowerCase()
-                            .startsWith("call")
-                            ? ticket.tableDisplayName
-                            : `Table ${ticket.tableDisplayName}`}{" "}
+                        {ticket.outsideOrderId
+                            ? `Outside Order · ${ticket.tableDisplayName}`
+                            : ticket.tableDisplayName
+                                    .toLowerCase()
+                                    .startsWith("call")
+                              ? ticket.tableDisplayName
+                              : `Table ${ticket.tableDisplayName}`}{" "}
                         · {ticket.waiter.displayName}
                         {ticket.tableDisplayName
                             .toLowerCase()
@@ -160,6 +167,32 @@ export default function StationTicketDetail({
                         {ticket.exceptionReason}
                     </p>
                 ) : null}
+
+                {/* Material Assignment for Outside Orders */}
+                {ticket.outsideOrderId && (
+                    <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-xs font-medium text-amber-900">
+                                    Outside Delivery Order
+                                </p>
+                                <p className="text-[11px] text-amber-700 mt-0.5">
+                                    Assign returnable materials for delivery
+                                </p>
+                            </div>
+                            <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => setIssueModalOpen(true)}
+                                className="h-8 text-xs bg-amber-600 hover:bg-amber-700 gap-1.5"
+                            >
+                                <Boxes className="size-3" />
+                                Assign Materials
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
                 <div className="mt-6">
                     <StationTicketActions
                         ticket={ticket}
@@ -167,6 +200,19 @@ export default function StationTicketDetail({
                     />
                 </div>
             </article>
+
+            {/* Material Issue Modal */}
+            {issueModalOpen && ticket.outsideOrderId ? (
+                <IssueMaterialsModal
+                    outsideOrderId={ticket.outsideOrderId}
+                    destinationName={ticket.tableDisplayName}
+                    onClose={() => setIssueModalOpen(false)}
+                    onSuccess={() => {
+                        setIssueModalOpen(false);
+                        // Optionally refetch ticket data
+                    }}
+                />
+            ) : null}
         </div>
     );
 }

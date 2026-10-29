@@ -121,6 +121,12 @@ export const api = createApi({
         "Branches",
         "Inventory",
         "Rooms",
+        "Feedback",
+        "MenuEngineering",
+        "MenuEngineeringTargets",
+        "OutsideOrders",
+        "Materials",
+        "Finance",
     ],
     endpoints: () => ({}),
 });

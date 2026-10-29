@@ -1,4 +1,7 @@
-import type { FloorLocation, FloorTable } from "@/domains/floor/domain/floorApi";
+import type {
+    FloorLocation,
+    FloorTable,
+} from "@/domains/floor/domain/floorApi";
 
 export function tableNumber(table: FloorTable) {
     return table.displayNumber ?? table.displayName.replace(/^Table\s+/i, "");

@@ -6,6 +6,7 @@ export type StationTicketModifier = {
 export type StationTicket = {
     orderItemId: string;
     tableSessionId: string;
+    outsideOrderId?: string | null;
     tableDisplayName: string;
     itemName: string;
     quantity: number;
