@@ -35,13 +35,21 @@ export async function POST(req: NextRequest) {
             billNumber: bill.billNumber || "N/A",
             date: bill.generatedAt
                 ? new Date(bill.generatedAt).toLocaleString([], {
+                      timeZone: "Africa/Addis_Ababa",
                       year: "numeric",
                       month: "short",
                       day: "numeric",
                       hour: "2-digit",
                       minute: "2-digit",
                   })
-                : new Date().toLocaleString(),
+                : new Date().toLocaleString([], {
+                      timeZone: "Africa/Addis_Ababa",
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                  }),
             table: table || "",
             waiter: waiter || "",
             cashier: cashier || "",

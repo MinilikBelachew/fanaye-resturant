@@ -81,13 +81,21 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
     const displayCashier = cashierName || tReceipt("cashier");
     const generatedTime = bill.generatedAt
         ? new Date(bill.generatedAt).toLocaleString([], {
+              timeZone: "Africa/Addis_Ababa",
               year: "numeric",
               month: "short",
               day: "numeric",
               hour: "2-digit",
               minute: "2-digit",
           })
-        : new Date().toLocaleString();
+        : new Date().toLocaleString([], {
+              timeZone: "Africa/Addis_Ababa",
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+          });
 
     async function handleExportPdf() {
         if (!receiptRef.current) return;
