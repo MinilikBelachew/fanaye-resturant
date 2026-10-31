@@ -4203,7 +4203,9 @@
             "cash": "Cash",
             "cashDesc": "Drops, received, variance, undropped",
             "stations": "Stations",
-            "stationsDesc": "Prep speed, delays, and tickets"
+            "stationsDesc": "Prep speed, delays, and tickets",
+            "fb": "Food & Beverage",
+            "fbDesc": "Food vs beverage sales, plate cost, margins, and spoilage"
         },
         "waiters": {
             "cardSales": "Net sales",

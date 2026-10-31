@@ -74,6 +74,27 @@ export const menuApi = api.injectEndpoints({
             }),
             invalidatesTags: ["Menu"],
         }),
+        updateAdminModifierGroup: builder.mutation<
+            { data: AdminModifierGroup },
+            { id: string; body: CreateAdminModifierGroupBody }
+        >({
+            query: ({ id, body }) => ({
+                url: `/admin/modifier-groups/${id}`,
+                method: "PATCH",
+                body,
+            }),
+            invalidatesTags: ["Menu"],
+        }),
+        deleteAdminModifierGroup: builder.mutation<
+            { success: boolean },
+            { id: string }
+        >({
+            query: ({ id }) => ({
+                url: `/admin/modifier-groups/${id}`,
+                method: "DELETE",
+            }),
+            invalidatesTags: ["Menu"],
+        }),
         createAdminMenuItem: builder.mutation<
             { data: AdminMenuItem },
             CreateAdminMenuItemBody
@@ -194,6 +215,8 @@ export const {
     useUpdateDefaultVipPercentMutation,
     useAdminModifierGroupsQuery,
     useCreateAdminModifierGroupMutation,
+    useUpdateAdminModifierGroupMutation,
+    useDeleteAdminModifierGroupMutation,
     useCreateAdminMenuItemMutation,
     useUpdateAdminMenuItemMutation,
     useUploadMenuImageMutation,

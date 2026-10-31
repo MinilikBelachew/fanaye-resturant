@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createId } from "@/lib/ids";
 import { formatEtb } from "@/lib/money";
+import { ServingGroupType, formatInstructionWithTray } from "@/domains/fulfillment/application/servingGroup";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 
@@ -38,6 +39,9 @@ type BasketLine = {
     menuItemId: string;
     quantity: number;
     instruction: string;
+    servingGroup?: ServingGroupType;
+    itemInstructions?: string[];
+    itemServingGroups?: ServingGroupType[];
     modifiers: SelectedModifier[];
 };
 
@@ -47,6 +51,9 @@ function emptyLine(item: MenuItem): BasketLine {
         menuItemId: item.id,
         quantity: 1,
         instruction: "",
+        servingGroup: "separate",
+        itemInstructions: [""],
+        itemServingGroups: ["separate"],
         modifiers: [],
     };
 }
@@ -175,13 +182,7 @@ export default function AddOrderMenu({
             setEditingId(existing.id);
             return;
         }
-        setLines(current =>
-            current.map(line =>
-                line.id === existing.id
-                    ? { ...line, quantity: line.quantity + 1 }
-                    : line,
-            ),
-        );
+        changeLineQty(existing.id, 1);
     }
 
     function openCustomize(item: MenuItem) {
@@ -203,18 +204,7 @@ export default function AddOrderMenu({
             return;
         }
         if (!existing) return;
-        const nextQty = existing.quantity + delta;
-        if (nextQty <= 0) {
-            setLines(current =>
-                current.filter(line => line.id !== existing.id),
-            );
-            return;
-        }
-        setLines(current =>
-            current.map(line =>
-                line.id === existing.id ? { ...line, quantity: nextQty } : line,
-            ),
-        );
+        changeLineQty(existing.id, delta);
     }
 
     function changeLineQty(lineId: string, delta: number) {
@@ -225,10 +215,81 @@ export default function AddOrderMenu({
             if (nextQty <= 0) {
                 return current.filter(l => l.id !== lineId);
             }
-            return current.map(l =>
-                l.id === lineId ? { ...l, quantity: nextQty } : l,
-            );
+            return current.map(l => {
+                if (l.id !== lineId) return l;
+                let nextInstructions = l.itemInstructions ? [...l.itemInstructions] : [l.instruction];
+                let nextServingGroups = l.itemServingGroups ? [...l.itemServingGroups] : [l.servingGroup ?? "separate"];
+                while (nextInstructions.length < nextQty) {
+                    nextInstructions.push("");
+                }
+                while (nextServingGroups.length < nextQty) {
+                    nextServingGroups.push(l.servingGroup ?? "separate");
+                }
+                if (nextInstructions.length > nextQty) {
+                    nextInstructions = nextInstructions.slice(0, nextQty);
+                }
+                if (nextServingGroups.length > nextQty) {
+                    nextServingGroups = nextServingGroups.slice(0, nextQty);
+                }
+                return {
+                    ...l,
+                    quantity: nextQty,
+                    itemInstructions: nextInstructions,
+                    itemServingGroups: nextServingGroups,
+                };
+            });
         });
+    }
+
+    function setPieceInstruction(lineId: string, index: number, instruction: string) {
+        setLines(current =>
+            current.map(line => {
+                if (line.id !== lineId) return line;
+                const nextInstructions = line.itemInstructions
+                    ? [...line.itemInstructions]
+                    : Array.from({ length: line.quantity }, (_, i) => (i === 0 ? line.instruction : ""));
+                while (nextInstructions.length < line.quantity) {
+                    nextInstructions.push("");
+                }
+                nextInstructions[index] = instruction;
+                return {
+                    ...line,
+                    instruction: index === 0 ? instruction : line.instruction,
+                    itemInstructions: nextInstructions,
+                };
+            }),
+        );
+    }
+
+    function setPieceServingGroup(lineId: string, index: number, group: ServingGroupType) {
+        setLines(current =>
+            current.map(line => {
+                if (line.id !== lineId) return line;
+                const nextServingGroups = line.itemServingGroups
+                    ? [...line.itemServingGroups]
+                    : Array.from({ length: line.quantity }, () => line.servingGroup ?? "separate");
+                while (nextServingGroups.length < line.quantity) {
+                    nextServingGroups.push(line.servingGroup ?? "separate");
+                }
+                nextServingGroups[index] = group;
+                return {
+                    ...line,
+                    itemServingGroups: nextServingGroups,
+                };
+            }),
+        );
+    }
+
+    function setAllServingGroup(group: ServingGroupType) {
+        setLines(current =>
+            current.map(line => ({
+                ...line,
+                servingGroup: group,
+                itemServingGroups: line.itemServingGroups
+                    ? line.itemServingGroups.map(() => group)
+                    : undefined,
+            })),
+        );
     }
 
     function removeLine(lineId: string) {
@@ -256,6 +317,41 @@ export default function AddOrderMenu({
             setError("Finish options on each dish before sending.");
             return;
         }
+
+        const finalItems: Array<{
+            menuItemId: string;
+            quantity: number;
+            modifierOptionIds: string[];
+            specialInstruction?: string;
+        }> = [];
+
+        for (const line of lines) {
+            const hasIndividualCustomization =
+                line.quantity > 1 &&
+                (Boolean(line.itemInstructions?.some(inst => inst && inst.trim() !== "")) ||
+                 Boolean(line.itemServingGroups?.some(sg => sg && sg !== (line.servingGroup || "separate"))));
+
+            if (hasIndividualCustomization) {
+                for (let i = 0; i < line.quantity; i++) {
+                    const pieceInstruction = line.itemInstructions?.[i] ?? (i === 0 ? line.instruction : "");
+                    const pieceServing = line.itemServingGroups?.[i] ?? line.servingGroup ?? "separate";
+                    finalItems.push({
+                        menuItemId: line.menuItemId,
+                        quantity: 1,
+                        modifierOptionIds: line.modifiers.map(entry => entry.optionId),
+                        specialInstruction: formatInstructionWithTray(pieceServing, pieceInstruction) || undefined,
+                    });
+                }
+            } else {
+                finalItems.push({
+                    menuItemId: line.menuItemId,
+                    quantity: line.quantity,
+                    modifierOptionIds: line.modifiers.map(entry => entry.optionId),
+                    specialInstruction: formatInstructionWithTray(line.servingGroup || "separate", line.instruction) || undefined,
+                });
+            }
+        }
+
         try {
             await confirmOrder({
                 ...(outsideOrderId
@@ -272,14 +368,7 @@ export default function AddOrderMenu({
                             tableSessionId: tableSessionId!,
                             expectedTableSessionVersion: expectedVersion,
                         }),
-                items: lines.map(line => ({
-                    menuItemId: line.menuItemId,
-                    quantity: line.quantity,
-                    modifierOptionIds: line.modifiers.map(
-                        entry => entry.optionId,
-                    ),
-                    specialInstruction: line.instruction.trim() || undefined,
-                })),
+                items: finalItems,
             }).unwrap();
             onClose();
         } catch (err) {
@@ -704,6 +793,18 @@ export default function AddOrderMenu({
                                 ),
                             )
                         }
+                        onServingGroupChange={(lineId, servingGroup) =>
+                            setLines(current =>
+                                current.map(line =>
+                                    line.id === lineId
+                                        ? { ...line, servingGroup }
+                                        : line,
+                                ),
+                            )
+                        }
+                        onPieceInstructionChange={setPieceInstruction}
+                        onPieceServingGroupChange={setPieceServingGroup}
+                        onSetAllServingGroup={setAllServingGroup}
                         onSubmit={commit}
                     />
                 </aside>
@@ -772,6 +873,18 @@ export default function AddOrderMenu({
                                     ),
                                 )
                             }
+                            onServingGroupChange={(lineId, servingGroup) =>
+                                setLines(current =>
+                                    current.map(line =>
+                                        line.id === lineId
+                                            ? { ...line, servingGroup }
+                                            : line,
+                                    ),
+                                )
+                            }
+                            onPieceInstructionChange={setPieceInstruction}
+                            onPieceServingGroupChange={setPieceServingGroup}
+                            onSetAllServingGroup={setAllServingGroup}
                             onCloseMobile={() => setMobileTicketOpen(false)}
                             onSubmit={commit}
                         />
@@ -840,6 +953,10 @@ function OrderTicketContent({
     onClearAll,
     onEditLine,
     onInstructionChange,
+    onServingGroupChange,
+    onPieceInstructionChange,
+    onPieceServingGroupChange,
+    onSetAllServingGroup,
     onCloseMobile,
     onSubmit,
 }: {
@@ -857,6 +974,10 @@ function OrderTicketContent({
     onClearAll: () => void;
     onEditLine: (line: BasketLine) => void;
     onInstructionChange: (lineId: string, instruction: string) => void;
+    onServingGroupChange: (lineId: string, group: ServingGroupType) => void;
+    onPieceInstructionChange: (lineId: string, index: number, instruction: string) => void;
+    onPieceServingGroupChange: (lineId: string, index: number, group: ServingGroupType) => void;
+    onSetAllServingGroup: (group: ServingGroupType) => void;
     onCloseMobile?: () => void;
     onSubmit: () => void;
 }) {
@@ -866,57 +987,94 @@ function OrderTicketContent({
     return (
         <div className="flex h-full min-h-0 flex-1 flex-col">
             {/* Header */}
-            <div className="flex shrink-0 items-center justify-between border-b border-hairline bg-secondary/30 px-5 py-3.5">
-                <div className="flex items-center gap-2">
-                    <Receipt
-                        className={cn(
-                            "size-4",
-                            isDispatcher
-                                ? "text-emerald-600 dark:text-emerald-300"
-                                : "text-brand",
-                        )}
-                    />
-                    <h3 className="text-[14px] font-semibold text-foreground">
-                        {isDispatcher
-                            ? `${tableLabel} order`
-                            : `${tableLabel} Ticket`}
-                    </h3>
-                    {isVip ? (
-                        <span className="rounded-full border border-amber-500/35 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-700 dark:text-amber-400">
-                            VIP
+            <div className="shrink-0 border-b border-hairline bg-secondary/30">
+                <div className="flex items-center justify-between gap-2 px-5 py-3.5">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <Receipt
+                            className={cn(
+                                "size-4 shrink-0",
+                                isDispatcher
+                                    ? "text-emerald-600 dark:text-emerald-300"
+                                    : "text-brand",
+                            )}
+                        />
+                        <h3 className="truncate text-[14px] font-semibold text-foreground">
+                            {isDispatcher
+                                ? `${tableLabel} order`
+                                : `${tableLabel} Ticket`}
+                        </h3>
+                        {isVip ? (
+                            <span className="rounded-full border border-amber-500/35 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-700 dark:text-amber-400 shrink-0">
+                                VIP
+                            </span>
+                        ) : null}
+                        <span
+                            className={cn(
+                                "rounded-full px-2 py-0.5 text-[11px] font-medium shrink-0",
+                                isDispatcher
+                                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                                    : "bg-brand/10 text-brand",
+                            )}
+                        >
+                            {pieceCount} {pieceCount === 1 ? "item" : "items"}
                         </span>
-                    ) : null}
-                    <span
-                        className={cn(
-                            "rounded-full px-2 py-0.5 text-[11px] font-medium",
-                            isDispatcher
-                                ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                                : "bg-brand/10 text-brand",
-                        )}
-                    >
-                        {pieceCount} {pieceCount === 1 ? "item" : "items"}
-                    </span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                        {lines.length > 0 ? (
+                            <button
+                                type="button"
+                                onClick={onClearAll}
+                                className="text-[12px] font-medium text-slate-gray hover:text-destructive transition-colors cursor-pointer"
+                            >
+                                Clear
+                            </button>
+                        ) : null}
+                        {onCloseMobile ? (
+                            <button
+                                type="button"
+                                onClick={onCloseMobile}
+                                className="p-1 text-slate-gray hover:text-foreground md:hidden"
+                            >
+                                <X className="size-5" />
+                            </button>
+                        ) : null}
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    {lines.length > 0 ? (
-                        <button
-                            type="button"
-                            onClick={onClearAll}
-                            className="text-[12px] font-medium text-slate-gray hover:text-destructive"
-                        >
-                            Clear
-                        </button>
-                    ) : null}
-                    {onCloseMobile ? (
-                        <button
-                            type="button"
-                            onClick={onCloseMobile}
-                            className="p-1 text-slate-gray hover:text-foreground md:hidden"
-                        >
-                            <X className="size-5" />
-                        </button>
-                    ) : null}
-                </div>
+
+                {/* Sub-toolbar for whole table batch plating (only when 2+ items) */}
+                {lines.length > 1 && !isDispatcher ? (
+                    <div className="flex items-center justify-between border-t border-hairline/60 bg-secondary/40 px-5 py-2">
+                        <span className="text-[11px] font-medium text-slate-gray">
+                            Table Serving:
+                        </span>
+                        <div className="inline-flex rounded-lg border border-hairline bg-card p-0.5 shadow-2xs">
+                            <button
+                                type="button"
+                                onClick={() => onSetAllServingGroup("separate")}
+                                className={cn(
+                                    "rounded-md px-2.5 py-1 text-[11px] font-medium transition-all cursor-pointer",
+                                    lines.every(l => !l.servingGroup || l.servingGroup === "separate")
+                                        ? "bg-secondary text-foreground font-semibold shadow-2xs border border-hairline"
+                                        : "text-slate-gray hover:text-foreground",
+                                )}
+                            >
+                                🍽️ All Separate
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => onSetAllServingGroup("tray1")}
+                                className={cn(
+                                    "rounded-md px-2.5 py-1 text-[11px] font-medium transition-all cursor-pointer",
+                                    lines.every(l => l.servingGroup === "tray1")
+                                        ? "bg-amber-500/20 text-amber-950 dark:text-amber-200 border border-amber-500/40 font-semibold shadow-2xs"
+                                        : "text-slate-gray hover:text-foreground",
+                                )}
+                            >
+                                🍱 Shared Platter
+                            </button>
+                        </div>
+                    </div>
+                ) : null}
             </div>
 
             {/* Ticket line items list */}
@@ -950,7 +1108,7 @@ function OrderTicketContent({
                         return (
                             <div
                                 key={line.id}
-                                className="relative flex flex-col justify-between gap-2 rounded-[16px] border border-hairline bg-background p-3.5 shadow-xs transition-colors hover:border-brand/30"
+                                className="relative flex flex-col justify-between gap-2.5 rounded-[16px] border border-hairline bg-card p-3.5 shadow-2xs transition-colors hover:border-brand/30"
                             >
                                 <div className="flex items-start justify-between gap-2">
                                     <div className="min-w-0 flex-1">
@@ -968,18 +1126,140 @@ function OrderTicketContent({
                                     </span>
                                 </div>
 
-                                <Input
-                                    value={line.instruction}
-                                    onChange={e =>
-                                        onInstructionChange(
-                                            line.id,
-                                            e.target.value,
-                                        )
-                                    }
-                                    placeholder={t("stationNotePlaceholder")}
-                                    maxLength={240}
-                                    className="h-8 rounded-lg border-hairline bg-secondary/30 px-2.5 text-[12px] placeholder:text-slate-gray/70"
-                                />
+                                {line.quantity === 1 ? (
+                                    <>
+                                        {/* Plating Selector (Subtle Segmented Pill) */}
+                                        {!isDispatcher ? (
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className="text-[11px] font-medium text-slate-gray">
+                                                    Plating
+                                                </span>
+                                                <div className="inline-flex rounded-md border border-hairline bg-secondary/30 p-0.5">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => onServingGroupChange(line.id, "separate")}
+                                                        className={cn(
+                                                            "rounded px-2.5 py-0.5 text-[10.5px] font-medium transition-all cursor-pointer",
+                                                            (!line.servingGroup || line.servingGroup === "separate")
+                                                                ? "bg-card text-foreground shadow-2xs border border-hairline font-semibold"
+                                                                : "text-slate-gray hover:text-foreground",
+                                                        )}
+                                                    >
+                                                        🍽️ Separate
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => onServingGroupChange(line.id, "tray1")}
+                                                        className={cn(
+                                                            "rounded px-2.5 py-0.5 text-[10.5px] font-medium transition-all cursor-pointer",
+                                                            line.servingGroup === "tray1"
+                                                                ? "bg-amber-500/20 text-amber-950 dark:text-amber-200 border border-amber-500/40 shadow-2xs font-semibold"
+                                                                : "text-slate-gray hover:text-foreground",
+                                                        )}
+                                                    >
+                                                        🍱 Tray 1
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => onServingGroupChange(line.id, "tray2")}
+                                                        className={cn(
+                                                            "rounded px-2.5 py-0.5 text-[10.5px] font-medium transition-all cursor-pointer",
+                                                            line.servingGroup === "tray2"
+                                                                ? "bg-orange-500/20 text-orange-950 dark:text-orange-200 border border-orange-500/40 shadow-2xs font-semibold"
+                                                                : "text-slate-gray hover:text-foreground",
+                                                        )}
+                                                    >
+                                                        🍱 Tray 2
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : null}
+
+                                        <Input
+                                            value={line.instruction}
+                                            onChange={e =>
+                                                onInstructionChange(
+                                                    line.id,
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder={t("stationNotePlaceholder")}
+                                            maxLength={240}
+                                            className="h-8 rounded-lg border-hairline bg-secondary/30 px-2.5 text-[12px] placeholder:text-slate-gray/70"
+                                        />
+                                    </>
+                                ) : (
+                                    <div className="space-y-2 rounded-xl bg-secondary/20 p-2.5 border border-hairline/60">
+                                        <div className="flex items-center justify-between px-0.5">
+                                            <span className="text-[11px] font-semibold text-foreground">
+                                                Per-item notes & plating ({line.quantity}×)
+                                            </span>
+                                            <span className="text-[10px] text-muted-foreground">
+                                                Custom instructions
+                                            </span>
+                                        </div>
+                                        {Array.from({ length: line.quantity }).map((_, idx) => {
+                                            const pieceNote = line.itemInstructions?.[idx] ?? (idx === 0 ? line.instruction : "");
+                                            const pieceServing = line.itemServingGroups?.[idx] ?? line.servingGroup ?? "separate";
+                                            return (
+                                                <div key={idx} className="flex flex-col gap-1.5 rounded-lg bg-card p-2 border border-hairline shadow-2xs">
+                                                    <div className="flex items-center justify-between gap-1.5">
+                                                        <span className="text-[11px] font-bold text-foreground">
+                                                            #{idx + 1}
+                                                        </span>
+                                                        {!isDispatcher ? (
+                                                            <div className="inline-flex rounded border border-hairline bg-secondary/40 p-0.5">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => onPieceServingGroupChange(line.id, idx, "separate")}
+                                                                    className={cn(
+                                                                        "rounded px-2 py-0.5 text-[9.5px] font-medium transition-all cursor-pointer",
+                                                                        pieceServing === "separate"
+                                                                            ? "bg-card text-foreground shadow-2xs border border-hairline font-semibold"
+                                                                            : "text-slate-gray hover:text-foreground",
+                                                                    )}
+                                                                >
+                                                                    🍽️ Plate
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => onPieceServingGroupChange(line.id, idx, "tray1")}
+                                                                    className={cn(
+                                                                        "rounded px-2 py-0.5 text-[9.5px] font-medium transition-all cursor-pointer",
+                                                                        pieceServing === "tray1"
+                                                                            ? "bg-amber-500/20 text-amber-950 dark:text-amber-200 border border-amber-500/40 shadow-2xs font-semibold"
+                                                                            : "text-slate-gray hover:text-foreground",
+                                                                    )}
+                                                                >
+                                                                    🍱 Tray 1
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => onPieceServingGroupChange(line.id, idx, "tray2")}
+                                                                    className={cn(
+                                                                        "rounded px-2 py-0.5 text-[9.5px] font-medium transition-all cursor-pointer",
+                                                                        pieceServing === "tray2"
+                                                                            ? "bg-orange-500/20 text-orange-950 dark:text-orange-200 border border-orange-500/40 shadow-2xs font-semibold"
+                                                                            : "text-slate-gray hover:text-foreground",
+                                                                    )}
+                                                                >
+                                                                    🍱 Tray 2
+                                                                </button>
+                                                            </div>
+                                                        ) : null}
+                                                    </div>
+                                                    <Input
+                                                        value={pieceNote}
+                                                        onChange={e => onPieceInstructionChange(line.id, idx, e.target.value)}
+                                                        placeholder={`Note for #${idx + 1} (e.g. no onion, extra cheese)`}
+                                                        maxLength={240}
+                                                        className="h-7 rounded-md border-hairline bg-secondary/20 px-2 text-[11.5px] placeholder:text-slate-gray/60"
+                                                    />
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
 
                                 <div className="flex items-center justify-between pt-0.5">
                                     {/* Stepper */}

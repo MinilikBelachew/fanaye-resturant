@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
     Activity,
     Check,
@@ -26,6 +27,7 @@ import {
     type AuditCategory,
     type AuditEventRow,
 } from "@/context/services/auditApi";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -57,16 +59,104 @@ const DATE_PRESETS = [
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 
 export default function ManagerAuditPage() {
+    return (
+        <Suspense
+            fallback={
+                <DashboardFrame>
+                    <div className="flex items-center justify-center py-20 text-slate-gray">
+                        <Activity className="size-5 animate-pulse" />
+                    </div>
+                </DashboardFrame>
+            }
+        >
+            <ManagerAuditContent />
+        </Suspense>
+    );
+}
+
+function ManagerAuditContent() {
     const t = useTranslations("managerAudit");
     const tCommon = useTranslations("common");
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
 
-    const [selectedCategory, setSelectedCategory] =
-        useState<CategoryFilter>("all");
-    const [dateFilter, setDateFilter] = useState<DateFilter>("7days");
-    const [searchQuery, setSearchQuery] = useState("");
-    const [page, setPage] = useState(1);
-    const [limit, setLimit] = useState(25);
+    const categoryParam = searchParams.get("category");
+    const dateParam = searchParams.get("date");
+    const qParam = searchParams.get("q");
+    const pageParam = searchParams.get("page");
+    const limitParam = searchParams.get("limit");
+
+    const selectedCategory: CategoryFilter =
+        CATEGORY_TABS.some(c => c.id === categoryParam)
+            ? (categoryParam as CategoryFilter)
+            : "all";
+
+    const dateFilter: DateFilter =
+        DATE_PRESETS.some(d => d.id === dateParam)
+            ? (dateParam as DateFilter)
+            : "7days";
+
+    const page = Number(pageParam) > 0 ? Number(pageParam) : 1;
+    const limit = PAGE_SIZE_OPTIONS.includes(Number(limitParam) as any)
+        ? (Number(limitParam) as (typeof PAGE_SIZE_OPTIONS)[number])
+        : 25;
+
+    const [searchQuery, setSearchQuery] = useState(qParam ?? "");
     const [copiedId, setCopiedId] = useState<string | null>(null);
+
+    const updateUrl = useCallback(
+        (updates: {
+            category?: CategoryFilter;
+            date?: DateFilter;
+            q?: string;
+            page?: number;
+            limit?: number;
+        }) => {
+            const params = new URLSearchParams(searchParams.toString());
+            if (updates.category !== undefined) {
+                if (updates.category === "all") params.delete("category");
+                else params.set("category", updates.category);
+            }
+            if (updates.date !== undefined) {
+                if (updates.date === "7days") params.delete("date");
+                else params.set("date", updates.date);
+            }
+            if (updates.q !== undefined) {
+                if (updates.q.trim()) params.set("q", updates.q.trim());
+                else params.delete("q");
+            }
+            if (updates.page !== undefined) {
+                if (updates.page <= 1) params.delete("page");
+                else params.set("page", String(updates.page));
+            }
+            if (updates.limit !== undefined) {
+                if (updates.limit === 25) params.delete("limit");
+                else params.set("limit", String(updates.limit));
+            }
+            const qs = params.toString();
+            router.replace(`${pathname}${qs ? `?${qs}` : ""}`, {
+                scroll: false,
+            });
+        },
+        [pathname, router, searchParams],
+    );
+
+    // Sync input when URL param q changes externally
+    useEffect(() => {
+        setSearchQuery(qParam ?? "");
+    }, [qParam]);
+
+    // Debounce pushing search query to URL
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            const currentQ = qParam ?? "";
+            if (searchQuery.trim() !== currentQ) {
+                updateUrl({ q: searchQuery, page: 1 });
+            }
+        }, 350);
+        return () => clearTimeout(timer);
+    }, [searchQuery, qParam, updateUrl]);
 
     // Compute start / end ISO timestamps based on dateFilter
     const { startDate, endDate } = useMemo(() => {
@@ -277,9 +367,9 @@ export default function ManagerAuditPage() {
             totalPages: Math.max(paginationMeta?.totalPages ?? 1, 1),
             total: paginationMeta?.total ?? events.length,
             limit: paginationMeta?.limit ?? limit,
-            onPageChange: (newPage: number) => setPage(newPage),
+            onPageChange: (newPage: number) => updateUrl({ page: newPage }),
         }),
-        [paginationMeta, page, limit, events.length],
+        [paginationMeta, page, limit, events.length, updateUrl],
     );
 
     return (
@@ -375,9 +465,9 @@ export default function ManagerAuditPage() {
             </div>
 
             {/* Quick Date Filters & Category Bar */}
-            <div className="flex flex-col gap-3 rounded-[16px] border border-hairline bg-card p-3 shadow-xs lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-3 rounded-[16px] border border-hairline bg-card p-2.5 shadow-2xs lg:flex-row lg:items-center lg:justify-between">
                 {/* Category Pills */}
-                <div className="flex flex-wrap items-center gap-1">
+                <div className="flex flex-wrap items-center gap-1.5">
                     {CATEGORY_TABS.map(tab => {
                         const isSelected = selectedCategory === tab.id;
                         return (
@@ -385,14 +475,16 @@ export default function ManagerAuditPage() {
                                 key={tab.id}
                                 type="button"
                                 onClick={() => {
-                                    setSelectedCategory(tab.id);
-                                    setPage(1);
+                                    updateUrl({
+                                        category: tab.id,
+                                        page: 1,
+                                    });
                                 }}
                                 className={cn(
-                                    "rounded-full px-3 py-1.5 text-[12px] font-medium transition-all cursor-pointer",
+                                    "rounded-xl px-3 py-1.5 text-[12px] font-medium transition-all cursor-pointer",
                                     isSelected
                                         ? "bg-foreground text-background font-semibold shadow-xs"
-                                        : "text-slate-gray hover:text-foreground hover:bg-secondary",
+                                        : "text-slate-gray hover:text-foreground hover:bg-secondary/70",
                                 )}
                             >
                                 {t(tab.labelKey)}
@@ -409,13 +501,15 @@ export default function ManagerAuditPage() {
                                 key={preset.id}
                                 type="button"
                                 onClick={() => {
-                                    setDateFilter(preset.id);
-                                    setPage(1);
+                                    updateUrl({
+                                        date: preset.id,
+                                        page: 1,
+                                    });
                                 }}
                                 className={cn(
                                     "rounded-lg px-2.5 py-1 text-[11.5px] font-medium transition-all cursor-pointer",
                                     dateFilter === preset.id
-                                        ? "bg-white text-foreground shadow-xs dark:bg-card font-semibold"
+                                        ? "bg-card text-foreground shadow-2xs border border-hairline/60 font-semibold"
                                         : "text-slate-gray hover:text-foreground",
                                 )}
                             >
@@ -428,10 +522,12 @@ export default function ManagerAuditPage() {
                         aria-label={t("rowsPerPageAria")}
                         value={limit}
                         onChange={e => {
-                            setLimit(Number(e.target.value));
-                            setPage(1);
+                            updateUrl({
+                                limit: Number(e.target.value),
+                                page: 1,
+                            });
                         }}
-                        className="h-8 rounded-xl border border-hairline bg-card px-2.5 text-[12px] text-foreground outline-none cursor-pointer"
+                        className="h-8 rounded-xl border border-hairline bg-card px-2.5 text-[12px] text-foreground outline-none cursor-pointer hover:bg-secondary/40 transition-colors"
                     >
                         {PAGE_SIZE_OPTIONS.map(size => (
                             <option key={size} value={size}>
@@ -457,7 +553,6 @@ export default function ManagerAuditPage() {
                 searchQuery={searchQuery}
                 onSearchChange={query => {
                     setSearchQuery(query);
-                    setPage(1);
                 }}
                 serverSide={true}
                 pagination={pagination}
@@ -479,10 +574,13 @@ export default function ManagerAuditPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => {
-                                    setSelectedCategory("all");
-                                    setDateFilter("today");
                                     setSearchQuery("");
-                                    setPage(1);
+                                    updateUrl({
+                                        category: "all",
+                                        date: "today",
+                                        q: "",
+                                        page: 1,
+                                    });
                                 }}
                                 className="mt-4 rounded-xl text-[12.5px]"
                             >

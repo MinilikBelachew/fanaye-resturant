@@ -73,7 +73,7 @@ export default function StationTicketActions({
                 );
             }}
         >
-            Ready to serve
+            {compact ? "Ready" : "Ready to serve"}
         </Button>
     );
 

@@ -360,6 +360,41 @@ export type FinanceInventoryItemUsageArgs = {
     branchId?: string;
 };
 
+export type IngredientOrderLine = {
+    ledgerId: string;
+    date: string;
+    time: string;
+    menuItemId: string | null;
+    menuItemName: string;
+    orderedQty: number;
+    ingredientQtyUsed: number;
+    ingredientUnit: string;
+    costAtTime: string;
+    tableId: string | null;
+    tableDisplayName: string | null;
+    waiterName: string | null;
+    orderId: string | null;
+};
+
+export type IngredientOrdersData = {
+    ingredientId: string;
+    ingredientName: string;
+    unit: string;
+    from: string;
+    to: string;
+    data: IngredientOrderLine[];
+};
+
+export type FinanceInventoryItemOrdersArgs = {
+    audience: FinanceAudience;
+    ingredientId: string;
+    period?: FinancePeriod;
+    from?: string;
+    to?: string;
+    date?: string;
+    branchId?: string;
+};
+
 export const financeApi = api.injectEndpoints({
     overrideExisting: true,
     endpoints: builder => ({
@@ -468,6 +503,31 @@ export const financeApi = api.injectEndpoints({
             }),
             providesTags: ["Finance"],
         }),
+        getFinanceInventoryItemOrders: builder.query<
+            IngredientOrdersData,
+            FinanceInventoryItemOrdersArgs
+        >({
+            query: ({
+                audience,
+                ingredientId,
+                period,
+                from,
+                to,
+                date,
+                branchId,
+            }) => ({
+                url: `/${audience}/finance/inventory/items/${ingredientId}/orders`,
+                method: "GET",
+                params: {
+                    ...(period ? { period } : {}),
+                    ...(from ? { from } : {}),
+                    ...(to ? { to } : {}),
+                    ...(date ? { date } : {}),
+                    ...(branchId ? { branchId } : {}),
+                },
+            }),
+            providesTags: ["Finance"],
+        }),
         createFinanceEntry: builder.mutation<
             FinanceEntryMutationResult,
             { audience: FinanceAudience; body: CreateFinanceEntryBody }
@@ -544,6 +604,7 @@ export const {
     useGetFinanceCategoriesQuery,
     useGetFinanceInventoryItemsQuery,
     useGetFinanceInventoryItemUsageQuery,
+    useGetFinanceInventoryItemOrdersQuery,
     useCreateFinanceEntryMutation,
     useUpdateFinanceEntryMutation,
     useVoidFinanceEntryMutation,

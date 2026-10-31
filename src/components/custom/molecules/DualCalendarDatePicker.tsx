@@ -46,6 +46,8 @@ export interface DualCalendarDatePickerProps {
      * `popover` — floats above content (absolute + high z-index). Parent should be `relative`.
      */
     variant?: "inline" | "popover";
+    /** Alignment when variant="popover" ('left' | 'right'). Default: 'left' */
+    align?: "left" | "right";
     /** Called when backdrop is clicked (popover only). */
     onDismiss?: () => void;
 }
@@ -103,6 +105,7 @@ export default function DualCalendarDatePicker({
     applyLabel,
     clearLabel,
     variant = "inline",
+    align = "left",
     onDismiss,
 }: DualCalendarDatePickerProps) {
     const isPopover = variant === "popover";
@@ -561,7 +564,12 @@ export default function DualCalendarDatePicker({
                     onClick={onDismiss}
                 />
             ) : null}
-            <div className="absolute left-0 top-full z-[70] mt-1.5">
+            <div
+                className={cn(
+                    "absolute top-full z-[70] mt-1.5",
+                    align === "right" ? "right-0" : "left-0",
+                )}
+            >
                 {panel}
             </div>
         </>

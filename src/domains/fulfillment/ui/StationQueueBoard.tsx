@@ -24,6 +24,9 @@ import {
 } from "@/domains/fulfillment/application/queueFilter";
 import StationStatusSelect from "@/domains/fulfillment/ui/StationStatusSelect";
 import StationTicketActions from "@/domains/fulfillment/ui/StationTicketActions";
+import TableOrderCard, { TableGroupData } from "@/domains/fulfillment/ui/TableOrderCard";
+import GroupedStationTable from "@/domains/fulfillment/ui/GroupedStationTable";
+import { parseServingGroup } from "@/domains/fulfillment/application/servingGroup";
 import type { StationRole } from "@/domains/identity/domain/role";
 import {
     homePathForRole,
@@ -435,8 +438,8 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                     const modifiers = row.ticket.modifiers
                         .map(entry => entry.name)
                         .join(" · ");
-                    const note = row.ticket.specialInstruction?.trim();
-                    if (!modifiers && !note) {
+                    const { trayLabel, isSharedTray, cleanInstruction } = parseServingGroup(row.ticket.specialInstruction);
+                    if (!modifiers && !cleanInstruction && !isSharedTray) {
                         return (
                             <span className="text-slate-gray">
                                 {tStations("asListed")}
@@ -444,15 +447,24 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                         );
                     }
                     return (
-                        <div className="space-y-0.5">
+                        <div className="space-y-1">
+                            {isSharedTray ? (
+                                <span className="inline-flex items-center gap-1 rounded bg-amber-500/20 text-amber-950 dark:text-amber-200 border border-amber-500/40 px-1.5 py-0.2 text-[10.5px] font-bold uppercase tracking-wider">
+                                    🍱 {trayLabel}
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center gap-1 rounded bg-secondary text-slate-gray border border-hairline px-1.5 py-0.2 text-[10px] font-medium uppercase tracking-wider">
+                                    🍽️ Separate
+                                </span>
+                            )}
                             {modifiers ? (
                                 <p className="text-[13px] text-foreground">
                                     {modifiers}
                                 </p>
                             ) : null}
-                            {note ? (
+                            {cleanInstruction ? (
                                 <p className="text-[12px] font-semibold text-amber-700 dark:text-amber-300">
-                                    {tStations("notePrefix")}: {note}
+                                    {tStations("notePrefix")}: {cleanInstruction}
                                 </p>
                             ) : null}
                         </div>
@@ -555,6 +567,57 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
         ],
         [role, tStations, tCommon, workflowMode],
     );
+
+    // Group tickets into Table Order Cards (Option A) - Must be before early returns for React Hook rules
+    const tableGroups = useMemo(() => {
+        const map = new Map<string, TableGroupData>();
+        for (const row of rows) {
+            const t = row.ticket;
+            const key =
+                t.tableSessionId ||
+                t.outsideOrderId ||
+                t.tableDisplayName;
+            let group = map.get(key);
+            if (!group) {
+                group = {
+                    key,
+                    tableDisplayName: t.tableDisplayName,
+                    waiterName: t.waiter?.displayName || "Server",
+                    tableSessionId: t.tableSessionId,
+                    outsideOrderId: t.outsideOrderId,
+                    maxElapsedSeconds: 0,
+                    isDelayed: false,
+                    hasFresh: false,
+                    tray1Items: [],
+                    tray2Items: [],
+                    tray3Items: [],
+                    separateItems: [],
+                    allTickets: [],
+                };
+                map.set(key, group);
+            }
+            group.allTickets.push(t);
+            if (t.elapsedSeconds > group.maxElapsedSeconds) {
+                group.maxElapsedSeconds = t.elapsedSeconds;
+            }
+            if (t.delayed) group.isDelayed = true;
+            if (isFreshTicket(t)) group.hasFresh = true;
+
+            const parsed = parseServingGroup(t.specialInstruction);
+            if (parsed.rawTray?.toLowerCase().includes("1") || parsed.rawTray?.toLowerCase().includes("shared")) {
+                group.tray1Items.push(t);
+            } else if (parsed.rawTray?.toLowerCase().includes("2")) {
+                group.tray2Items.push(t);
+            } else if (parsed.rawTray?.toLowerCase().includes("3")) {
+                group.tray3Items.push(t);
+            } else {
+                group.separateItems.push(t);
+            }
+        }
+        return Array.from(map.values()).sort(
+            (a, b) => b.maxElapsedSeconds - a.maxElapsedSeconds,
+        );
+    }, [rows]);
 
     const emptyLabel = tStations("noTickets");
 
@@ -812,38 +875,23 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
             </div>
 
             {view === "table" ? (
-                <DataTable
-                    columns={columns}
-                    data={rows}
-                    rowKey={row => row.ticket.orderItemId}
-                    empty={emptyLabel}
-                    searchPlaceholder="Search tickets..."
-                    searchText={row =>
-                        [
-                            row.ticket.itemName,
-                            row.ticket.tableDisplayName,
-                            row.ticket.waiter.displayName,
-                            row.extras,
-                            stationStateLabel(row.ticket.state),
-                        ].join(" ")
-                    }
-                    rowClassName={row =>
-                        isFreshTicket(row.ticket)
-                            ? "border-l-4 border-l-brand bg-brand/5 hover:bg-brand/10"
-                            : undefined
-                    }
+                <GroupedStationTable
+                    tableGroups={tableGroups}
+                    role={role}
+                    workflowMode={workflowMode}
+                    emptyLabel={emptyLabel}
                 />
             ) : rows.length === 0 ? (
                 <div className="rounded-[16px] border border-hairline bg-card p-10 text-center text-slate-gray">
                     {emptyLabel}
                 </div>
             ) : (
-                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                    {rows.map(row => (
-                        <TicketCard
-                            key={row.ticket.orderItemId}
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                    {tableGroups.map(group => (
+                        <TableOrderCard
+                            key={group.key}
+                            group={group}
                             role={role}
-                            ticket={row.ticket}
                             workflowMode={workflowMode}
                         />
                     ))}

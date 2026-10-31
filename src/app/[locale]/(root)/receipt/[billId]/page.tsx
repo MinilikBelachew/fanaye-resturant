@@ -13,6 +13,8 @@ type PublicReceipt = {
     currencyCode: string;
     restaurantName: string;
     branchName: string;
+    address?: string | null;
+    phone?: string | null;
     tableName: string | null;
     isVip?: boolean;
     subtotal: string;
@@ -106,8 +108,6 @@ export default function PublicReceiptPage({
     }
 
     const total = Number(receipt.total || 0);
-    const vat = (total * 0.15) / 1.15;
-    const net = total - vat;
     const paid = Number(receipt.amountPaid || 0);
     const isPaid =
         receipt.status === "PAID" ||
@@ -125,17 +125,26 @@ export default function PublicReceiptPage({
         <div className="min-h-svh bg-zinc-100 px-4 py-8">
             <div className="mx-auto w-full max-w-md overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
                 <div className="border-b border-zinc-100 bg-zinc-50 px-5 py-4 text-center">
-                    <div className="mx-auto mb-2 flex justify-center">
-                        <GoldenClocheLogo className="size-10" />
-                    </div>
                     <h1 className="text-[18px] font-semibold tracking-tight text-zinc-900">
                         {receipt.restaurantName}
                     </h1>
+                    
                     <p className="mt-0.5 text-[12px] text-zinc-500">
                         {receipt.branchName}
                         {receipt.tableName ? ` · ${receipt.tableName}` : ""}
                         {receipt.isVip ? " · VIP" : ""}
                     </p>
+                    {receipt.address ? (
+                        <p className="mt-0.5 text-[11px] text-zinc-500">
+                            {receipt.address}
+                        </p>
+                    ) : null}
+                    {receipt.phone ? (
+                        <p className="text-[11px] text-zinc-500">
+                            Tel: {receipt.phone}
+                        </p>
+                    ) : null}
+
                 </div>
 
                 <div className="space-y-4 px-5 py-5">
@@ -188,30 +197,20 @@ export default function PublicReceiptPage({
                     </div>
 
                     <div className="space-y-1.5 text-[13px]">
-                        <div className="flex justify-between text-zinc-500">
-                            <span>Net</span>
-                            <span className="tabular-nums">
-                                {formatEtb(net)}
-                            </span>
-                        </div>
-                        <div className="flex justify-between text-zinc-500">
-                            <span>VAT (15%)</span>
-                            <span className="tabular-nums">
-                                {formatEtb(vat)}
-                            </span>
-                        </div>
                         <div className="flex justify-between border-t border-zinc-200 pt-2 text-[15px] font-semibold text-zinc-950">
                             <span>Total</span>
                             <span className="tabular-nums">
                                 {formatEtb(total)}
                             </span>
                         </div>
-                        <div className="flex justify-between text-zinc-500">
-                            <span>Paid</span>
-                            <span className="tabular-nums">
-                                {formatEtb(paid)}
-                            </span>
-                        </div>
+                        {paid > 0 ? (
+                            <div className="flex justify-between text-zinc-500">
+                                <span>Paid</span>
+                                <span className="tabular-nums">
+                                    {formatEtb(paid)}
+                                </span>
+                            </div>
+                        ) : null}
                     </div>
 
                     {receipt.payments.length > 0 ? (
@@ -240,9 +239,14 @@ export default function PublicReceiptPage({
                         </div>
                     ) : null}
 
-                    <p className="pt-1 text-center text-[12px] text-zinc-500">
-                        Thank you for dining with us.
-                    </p>
+                    <div className="pt-3 border-t border-zinc-100 flex items-center justify-between">
+                        <p className="text-[10px] font-bold tracking-wider uppercase text-zinc-600 font-mono">
+                            *** FOR INTERNAL USE ONLY ***
+                        </p>
+                        <p className="text-[11px] text-zinc-400">
+                            Thank you for dining with us.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

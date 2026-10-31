@@ -12,6 +12,8 @@ interface ExportPdfOptions {
     format?: "a4" | "receipt";
     /** Scale the capture to fit a single A4 page (no multi-page split). */
     fitSinglePage?: boolean;
+    /** Width in mm for thermal receipt export (defaults to 80, can be 58). */
+    receiptWidthMm?: number;
 }
 
 /**
@@ -32,12 +34,15 @@ export async function exportElementToPdf(
         isReceipt = false,
         format = "a4",
         fitSinglePage = false,
+        receiptWidthMm: customReceiptWidthMm,
     } = options;
+
+    const receiptWidthMm = customReceiptWidthMm || (format === "receipt" || isReceipt ? 80 : 80);
 
     toast.info(
         "Generating PDF...",
         isReceipt
-            ? "Rendering 80mm thermal POS receipt..."
+            ? `Rendering ${receiptWidthMm}mm thermal POS receipt...`
             : "Rendering pixel-perfect vector menu via browser engine...",
     );
 
@@ -81,14 +86,14 @@ export async function exportElementToPdf(
         let pdf: jsPDF;
 
         if (isReceipt || format === "receipt") {
-            // Thermal 80mm continuous slip dimensions (never slice across multiple pages)
-            const receiptWidthMm = 80;
+            // Thermal continuous slip dimensions (never slice across multiple pages)
+            const targetWidthMm = customReceiptWidthMm || 80;
             const receiptHeightMm =
-                Math.ceil((img.height * receiptWidthMm) / img.width) + 8;
+                Math.ceil((img.height * targetWidthMm) / img.width) + 8;
             pdf = new jsPDF({
                 orientation: "portrait",
                 unit: "mm",
-                format: [receiptWidthMm, receiptHeightMm],
+                format: [targetWidthMm, receiptHeightMm],
                 compress: true,
             });
             pdf.addImage(
@@ -96,7 +101,7 @@ export async function exportElementToPdf(
                 "PNG",
                 0,
                 4,
-                receiptWidthMm,
+                targetWidthMm,
                 receiptHeightMm - 8,
             );
         } else {

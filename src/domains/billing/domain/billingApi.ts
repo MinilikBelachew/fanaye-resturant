@@ -13,6 +13,10 @@ export type Bill = {
     isVip?: boolean;
     tableSessionId: string;
     billNumber: string;
+    restaurantName?: string;
+    branchName?: string;
+    address?: string | null;
+    phone?: string | null;
     status: string;
     currencyCode: string;
     subtotal: string;

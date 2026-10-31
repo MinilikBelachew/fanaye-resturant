@@ -37,6 +37,7 @@ import { tableNumber } from "@/domains/floor/application/groupFloor";
 import AddOrderMenu from "@/domains/floor/ui/AddOrderMenu";
 import WaiterMarkServedButton from "@/domains/floor/ui/WaiterMarkServedButton";
 import WaiterOrderItemActions from "@/domains/floor/ui/WaiterOrderItemActions";
+import { parseServingGroup } from "@/domains/fulfillment/application/servingGroup";
 import { lineTotal } from "@/domains/ordering/application/mapWaiterMenu";
 import WaiterPaymentPanel from "@/domains/payments/ui/WaiterPaymentPanel";
 import { CashierReceiptModal } from "@/domains/payments/ui/CashierReceiptModal";
@@ -607,14 +608,14 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                                     tWaiter,
                                                     (item as any).delayed,
                                                 );
+                                                const { trayLabel, isSharedTray, cleanInstruction } = parseServingGroup(item.specialInstruction);
                                                 const extras = [
                                                     item.modifiers
                                                         .map(
                                                             entry => entry.name,
                                                         )
                                                         .join(" · "),
-                                                    item.specialInstruction ??
-                                                        "",
+                                                    cleanInstruction,
                                                 ]
                                                     .filter(Boolean)
                                                     .join(" · ");
@@ -638,6 +639,15 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                                                             item.itemName
                                                                         }
                                                                     </span>
+                                                                    {isSharedTray ? (
+                                                                        <span className="inline-flex items-center gap-1 rounded bg-amber-500/20 text-amber-950 dark:text-amber-200 border border-amber-500/40 px-1.5 py-0.2 text-[10px] font-bold uppercase tracking-wider">
+                                                                            🍱 {trayLabel}
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="inline-flex items-center gap-1 rounded bg-secondary text-slate-gray border border-hairline px-1.5 py-0.2 text-[9.5px] font-medium uppercase tracking-wider">
+                                                                            🍽️ Separate
+                                                                        </span>
+                                                                    )}
                                                                 </div>
 
                                                                 <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[12px]">

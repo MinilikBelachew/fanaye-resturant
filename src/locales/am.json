@@ -4114,7 +4114,9 @@
             "cash": "Cash",
             "cashDesc": "Drops, received, variance, undropped",
             "stations": "Stations",
-            "stationsDesc": "Prep speed, delays, and tickets"
+            "stationsDesc": "Prep speed, delays, and tickets",
+            "fb": "ምግብና መጠጥ (F&B)",
+            "fbDesc": "የምግብ እና መጠጥ ሽያጭ፣ የወጪ እና ትርፍ ንጽጽር"
         },
         "waiters": {
             "cardSales": "Net sales",

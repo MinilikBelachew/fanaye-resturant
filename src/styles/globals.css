@@ -246,3 +246,19 @@
         }
     }
 }
+
+@media print {
+    /* Hide all background website elements, headers, sidebars */
+    header,
+    nav,
+    aside,
+    footer,
+    .no-print {
+        display: none !important;
+    }
+
+    body {
+        background: #fff !important;
+        color: #000 !important;
+    }
+}
