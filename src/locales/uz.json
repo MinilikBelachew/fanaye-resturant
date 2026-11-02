@@ -1221,6 +1221,8 @@
         "cancel": "Bekor qilish",
         "delete": "O'chirish",
         "colDishDescription": "Dish & Description",
+        "colCategory": "Kategoriya",
+        "category": "Kategoriya",
         "colStation": "Station",
         "colPrice": "Price",
         "colPrep": "Prep",
@@ -1735,7 +1737,8 @@
         "cutHere": "CUT HERE",
         "downloadSvgTitle": "Download SVG Vector",
         "exportPdfCardTitle": "Export PDF For This Card",
-        "restaurantFallback": "Your Restaurant"
+        "restaurantFallback": "Your Restaurant",
+        "vectorPdf": "Vektorli PDF (Chop etish)"
     },
     "printMenuStudio": {
         "templatePickerTitle": "Menu templates",

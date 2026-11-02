@@ -14,6 +14,7 @@ import {
     Layers,
     Loader2,
     Palette,
+    Printer,
     Scissors,
     Sparkles,
     Wifi,
@@ -108,6 +109,10 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
         return pages;
     }, [filteredTables, cardsPerPage]);
 
+    function handlePrintVectorPdf() {
+        window.print();
+    }
+
     async function handleExportPdf() {
         setIsExportingPdf(true);
         try {
@@ -118,13 +123,13 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                 await exportElementsToMultiPagePdf(Array.from(pageElements), {
                     filename: `${slug}-all-table-qr-stand-cards.pdf`,
                     orientation: pdfOrientation,
-                    scale: 2.5,
+                    scale: 6.0,
                 });
             } else if (cardsContainerRef.current) {
                 await exportElementToPdf(cardsContainerRef.current, {
                     filename: `${slug}-all-table-qr-stand-cards.pdf`,
                     orientation: pdfOrientation,
-                    scale: 2.5,
+                    scale: 6.0,
                 });
             }
         } finally {
@@ -143,7 +148,7 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
             try {
                 await exportElementToPdf(cardEl, {
                     filename: `${slug}-table-${name}-qr-card.pdf`,
-                    scale: 2.5,
+                    scale: 6.0,
                 });
             } finally {
                 setIsExportingPdf(false);
@@ -375,6 +380,9 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                         left: 0;
                         top: 0;
                         width: 100% !important;
+                        max-height: none !important;
+                        height: auto !important;
+                        overflow: visible !important;
                         margin: 0 !important;
                         padding: 0 !important;
                         background: white !important;
@@ -424,6 +432,17 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                                 {isExportingPdf
                                     ? t("generatingPdf")
                                     : t("exportPdf")}
+                            </Button>
+
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handlePrintVectorPdf}
+                                className="gap-1.5 shadow-none border-amber-600/30 text-amber-700 hover:bg-amber-50 hover:text-amber-800 dark:border-amber-500/30 dark:text-amber-400 dark:hover:bg-amber-950/40"
+                                title="Opens browser print dialog. Choose 'Save as PDF' to generate an infinite-resolution Vector PDF."
+                            >
+                                <Printer className="size-3.5" />
+                                {t("vectorPdf")}
                             </Button>
 
                             <Button
@@ -643,7 +662,7 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                 {/* Cards Grid (Interactive Screen Preview) */}
                 <div
                     ref={cardsContainerRef}
-                    className={`flex-1 overflow-y-auto p-6 grid gap-6 print:p-4 bg-white ${
+                    className={`flex-1 overflow-y-auto p-6 grid gap-6 print:p-4 print:overflow-visible print:h-auto print:max-h-none bg-white ${
                         layout === "large"
                             ? "grid-cols-1 max-w-xl mx-auto print:max-w-none print:grid-cols-1"
                             : layout === "compact"

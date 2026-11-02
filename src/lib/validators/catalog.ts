@@ -1,8 +1,17 @@
 import { z } from "zod";
 
 export const menuItemFormSchema = z.object({
-    name: z.string().trim().min(1, "Item name is required."),
-    description: z.string().trim().optional().or(z.literal("")),
+    name: z
+        .string()
+        .trim()
+        .min(1, "Item name is required.")
+        .max(100, "Item name must be 100 characters or less."),
+    description: z
+        .string()
+        .trim()
+        .max(300, "Description must be 300 characters or less.")
+        .optional()
+        .or(z.literal("")),
     price: z
         .string()
         .trim()

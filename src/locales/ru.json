@@ -1221,6 +1221,8 @@
         "cancel": "Отмена",
         "delete": "Удалить",
         "colDishDescription": "Dish & Description",
+        "colCategory": "Категория",
+        "category": "Категория",
         "colStation": "Station",
         "colPrice": "Price",
         "colPrep": "Prep",
@@ -1735,7 +1737,8 @@
         "cutHere": "CUT HERE",
         "downloadSvgTitle": "Download SVG Vector",
         "exportPdfCardTitle": "Export PDF For This Card",
-        "restaurantFallback": "Your Restaurant"
+        "restaurantFallback": "Your Restaurant",
+        "vectorPdf": "Векторный PDF (Печать)"
     },
     "printMenuStudio": {
         "templatePickerTitle": "Menu templates",

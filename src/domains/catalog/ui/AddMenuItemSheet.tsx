@@ -218,7 +218,9 @@ export default function AddMenuItemSheet({
     const [price, setPrice] = useState<string>("250");
     const [stationId, setStationId] = useState<string>("");
     const [category, setCategory] = useState("Kitchen");
-    const [expectedPrepMinutes, setExpectedPrepMinutes] = useState<number>(12);
+    const [expectedPrepMinutes, setExpectedPrepMinutes] = useState<number | "">(
+        12,
+    );
     const [imageFileId, setImageFileId] = useState<string | null>(null);
     const [uploadPreviewUrl, setUploadPreviewUrl] = useState<string | null>(
         null,
@@ -536,7 +538,8 @@ export default function AddMenuItemSheet({
             price,
             stationId,
             category,
-            expectedPrepMinutes,
+            expectedPrepMinutes:
+                expectedPrepMinutes === "" ? 10 : expectedPrepMinutes,
             available,
         });
         if (!parsed.success) {
@@ -672,12 +675,25 @@ export default function AddMenuItemSheet({
                     {/* Item Details */}
                     <div className="space-y-3.5">
                         <div>
-                            <label className="text-[13px] font-medium text-foreground">
-                                {t("itemName")}{" "}
-                                <span className="text-destructive">*</span>
-                            </label>
+                            <div className="flex items-center justify-between">
+                                <label className="text-[13px] font-medium text-foreground">
+                                    {t("itemName")}{" "}
+                                    <span className="text-destructive">*</span>
+                                </label>
+                                <span
+                                    className={cn(
+                                        "text-[11px]",
+                                        name.length >= 80
+                                            ? "font-semibold text-destructive"
+                                            : "text-slate-gray",
+                                    )}
+                                >
+                                    {name.length}/80
+                                </span>
+                            </div>
                             <Input
                                 required
+                                maxLength={80}
                                 value={name}
                                 onChange={e => setName(e.target.value)}
                                 placeholder={t("itemNamePlaceholder")}
@@ -686,10 +702,23 @@ export default function AddMenuItemSheet({
                         </div>
 
                         <div>
-                            <label className="text-[13px] font-medium text-foreground">
-                                {t("description")}
-                            </label>
+                            <div className="flex items-center justify-between">
+                                <label className="text-[13px] font-medium text-foreground">
+                                    {t("description")}
+                                </label>
+                                <span
+                                    className={cn(
+                                        "text-[11px]",
+                                        description.length >= 250
+                                            ? "font-semibold text-destructive"
+                                            : "text-slate-gray",
+                                    )}
+                                >
+                                    {description.length}/250
+                                </span>
+                            </div>
                             <textarea
+                                maxLength={250}
                                 value={description}
                                 onChange={e => setDescription(e.target.value)}
                                 rows={2}
@@ -730,11 +759,30 @@ export default function AddMenuItemSheet({
                                         min="1"
                                         max="120"
                                         value={expectedPrepMinutes}
-                                        onChange={e =>
-                                            setExpectedPrepMinutes(
-                                                Number(e.target.value) || 5,
-                                            )
-                                        }
+                                        onChange={e => {
+                                            const val = e.target.value;
+                                            if (val === "") {
+                                                setExpectedPrepMinutes("");
+                                            } else {
+                                                const num = parseInt(val, 10);
+                                                setExpectedPrepMinutes(
+                                                    isNaN(num) ? "" : num,
+                                                );
+                                            }
+                                        }}
+                                        onBlur={() => {
+                                            if (
+                                                expectedPrepMinutes === "" ||
+                                                Number(expectedPrepMinutes) < 1
+                                            ) {
+                                                setExpectedPrepMinutes(5);
+                                            } else if (
+                                                Number(expectedPrepMinutes) >
+                                                120
+                                            ) {
+                                                setExpectedPrepMinutes(120);
+                                            }
+                                        }}
                                         className="h-10 rounded-[10px] bg-card text-[13px]"
                                     />
                                     <div className="flex gap-1 shrink-0">
@@ -747,7 +795,9 @@ export default function AddMenuItemSheet({
                                                 }
                                                 className={cn(
                                                     "rounded-full border px-2 py-1 text-[11px] font-medium transition-colors",
-                                                    expectedPrepMinutes === min
+                                                    Number(
+                                                        expectedPrepMinutes,
+                                                    ) === min
                                                         ? "border-brand bg-brand text-white"
                                                         : "border-hairline bg-secondary text-slate-gray hover:text-foreground",
                                                 )}

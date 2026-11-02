@@ -1434,6 +1434,8 @@
         "cancel": "አቋርጥ",
         "delete": "ሰርዝ",
         "colDishDescription": "ምግብ እና መግለጫ",
+        "colCategory": "ምድብ",
+        "category": "ምድብ",
         "colStation": "ጣቢያ",
         "colPrice": "ዋጋ",
         "colPrep": "ዝግጅት",
@@ -1689,7 +1691,8 @@
         "cutHere": "እዚህ ይቁረጡ",
         "downloadSvgTitle": "SVG ቬክተር አውርድ",
         "exportPdfCardTitle": "ለዚህ ካርድ PDF ላክ",
-        "restaurantFallback": "ረስቶራንትዎ"
+        "restaurantFallback": "ረስቶራንትዎ",
+        "vectorPdf": "ቬክተር ፒዲኤፍ (ማተሚያ)"
     },
     "printMenuStudio": {
         "templatePickerTitle": "Menu templates",

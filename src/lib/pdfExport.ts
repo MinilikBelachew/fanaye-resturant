@@ -37,7 +37,8 @@ export async function exportElementToPdf(
         receiptWidthMm: customReceiptWidthMm,
     } = options;
 
-    const receiptWidthMm = customReceiptWidthMm || (format === "receipt" || isReceipt ? 80 : 80);
+    const receiptWidthMm =
+        customReceiptWidthMm || (format === "receipt" || isReceipt ? 80 : 80);
 
     toast.info(
         "Generating PDF...",
@@ -178,7 +179,7 @@ export async function exportElementsToMultiPagePdf(
     const {
         filename = "table-qr-stand-cards.pdf",
         orientation = "portrait",
-        scale = 2.5,
+        scale = 6.0,
     } = options;
 
     if (!elements.length) return false;

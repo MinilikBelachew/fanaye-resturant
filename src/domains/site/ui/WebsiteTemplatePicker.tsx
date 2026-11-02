@@ -14,6 +14,11 @@ const TEMPLATE_I18N_KEYS: Record<
     WebsiteTemplateId,
     { name: string; tagline: string; vibe: string }
 > = {
+    "foodly-modern": {
+        name: "foodlyModern_name",
+        tagline: "foodlyModern_tagline",
+        vibe: "foodlyModern_vibe",
+    },
     "harbor-bistro": {
         name: "harborBistro_name",
         tagline: "harborBistro_tagline",
@@ -61,6 +66,61 @@ function TemplateMock({
     const ink = isDark ? "#f8fafc" : isMono ? "#09090b" : "#1c1917";
     const paper = isDark ? "#0b1120" : isFineDining ? "#f6f1e8" : "#ffffff";
     const mute = isDark ? "rgba(248,250,252,0.45)" : "rgba(28,25,23,0.35)";
+
+    if (templateId === "foodly-modern") {
+        return (
+            <div
+                className="relative aspect-[16/11] overflow-hidden p-2.5 flex flex-col justify-between"
+                style={{ background: "#F9FAFB" }}
+            >
+                <div className="flex items-center justify-between rounded-xl bg-white p-2 shadow-xs border border-gray-100">
+                    <div className="flex items-center gap-1.5 flex-1">
+                        <span
+                            className="size-2 rounded-full"
+                            style={{ background: accent }}
+                        />
+                        <span className="h-1.5 w-16 rounded-full bg-gray-200" />
+                    </div>
+                    <span
+                        className="rounded-lg px-2 py-0.5 text-[7px] font-semibold text-slate-900 shadow-xs"
+                        style={{ background: accent }}
+                    >
+                        {menuLabel}
+                    </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-1 flex-1">
+                    <div className="relative overflow-hidden rounded-xl border border-gray-100 bg-white p-1.5 shadow-xs flex flex-col justify-between">
+                        <img
+                            src={previewImage}
+                            alt=""
+                            className="h-12 w-full rounded-lg object-cover"
+                        />
+                        <div className="mt-1 space-y-1">
+                            <span className="block h-1.5 w-14 rounded-full bg-gray-800" />
+                            <span
+                                className="block h-1 w-8 rounded-full"
+                                style={{ background: accent }}
+                            />
+                        </div>
+                    </div>
+                    <div className="relative overflow-hidden rounded-xl border border-gray-100 bg-white p-1.5 shadow-xs flex flex-col justify-between">
+                        <div className="h-12 w-full rounded-lg bg-gray-100 flex items-center justify-center">
+                            <span className="text-[8px] font-medium text-gray-400">
+                                Featured
+                            </span>
+                        </div>
+                        <div className="mt-1 space-y-1">
+                            <span className="block h-1.5 w-12 rounded-full bg-gray-800" />
+                            <span
+                                className="block h-1 w-6 rounded-full"
+                                style={{ background: accent }}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     if (isGarden) {
         return (
@@ -258,7 +318,7 @@ export default function WebsiteTemplatePicker({
     tenantName: string;
     busy?: boolean;
     onApply: (id: WebsiteTemplateId, action: "customize" | "publish") => void;
-    onScratch: () => void;
+    onScratch?: () => void;
     onCancel?: () => void;
 }) {
     const t = useTranslations("websiteStudio");
@@ -347,23 +407,6 @@ export default function WebsiteTemplatePicker({
                         </button>
                     );
                 })}
-
-                <button
-                    type="button"
-                    disabled={busy}
-                    onClick={onScratch}
-                    className="flex min-h-[220px] flex-col items-center justify-center gap-2.5 rounded-[20px] border border-dashed border-hairline bg-surface-ivory/30 dark:bg-card/30 text-center transition-all hover:border-brand/40 hover:bg-card disabled:opacity-50 cursor-pointer"
-                >
-                    <span className="flex size-10 items-center justify-center rounded-full border border-hairline bg-card">
-                        <Sparkles className="size-4 text-brand" />
-                    </span>
-                    <span className="text-[13px] font-normal text-foreground">
-                        {t("startFromScratch")}
-                    </span>
-                    <span className="max-w-[200px] px-4 text-[11px] leading-relaxed text-slate-gray font-normal">
-                        {t("startFromScratchDesc")}
-                    </span>
-                </button>
             </div>
 
             <div className="sticky bottom-3 z-10 overflow-hidden rounded-[18px] border border-hairline bg-card/95 backdrop-blur-md">

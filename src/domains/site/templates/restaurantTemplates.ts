@@ -2,6 +2,7 @@ import type { Data } from "@puckeditor/core";
 import type { SiteTheme, TenantProfile } from "@/context/services/siteApi";
 
 export type WebsiteTemplateId =
+    | "foodly-modern"
     | "harbor-bistro"
     | "ember-kitchen"
     | "garden-table"
@@ -57,6 +58,24 @@ const IMG = {
 };
 
 export const WEBSITE_TEMPLATES: WebsiteTemplate[] = [
+    {
+        id: "foodly-modern",
+        name: "Foodly Modern",
+        tagline: "Modern food ordering experience",
+        vibe: "Clean menu grid, yellow CTA, filters sidebar, search bar — modern food delivery style",
+        previewImage: IMG.harborFood,
+        accent: "#FDB913",
+        theme: {
+            primaryColor: "#FDB913",
+            accentColor: "#1F2937",
+            backgroundColor: "#F9FAFB",
+            textColor: "#1F2937",
+            backgroundType: "solid",
+            fontDisplay: "Inter, system-ui, sans-serif",
+            fontBody: "Inter, system-ui, sans-serif",
+            borderRadius: "xl",
+        },
+    },
     {
         id: "harbor-bistro",
         name: "Fine Dining",
@@ -254,6 +273,76 @@ export function buildScratchDraft(tenantName: string): Data {
     } as Data;
 }
 
+export interface SectionVisibility {
+    showHero?: boolean;
+    showMenu?: boolean;
+    showAbout?: boolean;
+    showGallery?: boolean;
+    showFeatures?: boolean;
+    showTestimonials?: boolean;
+    showHours?: boolean;
+    showCtaBanner?: boolean;
+    showContact?: boolean;
+    showFooter?: boolean;
+}
+
+export const DEFAULT_SECTION_VISIBILITY: Required<SectionVisibility> = {
+    showHero: true,
+    showMenu: true,
+    showAbout: true,
+    showGallery: true,
+    showFeatures: true,
+    showTestimonials: true,
+    showHours: true,
+    showCtaBanner: true,
+    showContact: true,
+    showFooter: true,
+};
+
+export interface TemplateDraftOptions {
+    sections?: SectionVisibility;
+    customHeadline?: string;
+    customTagline?: string;
+    heroImageUrl?: string;
+    menuData?: unknown[];
+}
+
+function filterTemplateSections(
+    content: Array<{ type: string; props: Record<string, unknown> }>,
+    sections?: SectionVisibility,
+): Array<{ type: string; props: Record<string, unknown> }> {
+    if (!sections) return content;
+    return content.filter(block => {
+        if (block.type === "Hero" && sections.showHero === false) return false;
+        if (block.type === "Menu" && sections.showMenu === false) return false;
+        if (block.type === "About" && sections.showAbout === false)
+            return false;
+        if (
+            (block.type === "Gallery" ||
+                block.type === "Carousel" ||
+                block.type === "Arrangement") &&
+            sections.showGallery === false
+        )
+            return false;
+        if (block.type === "Features" && sections.showFeatures === false)
+            return false;
+        if (
+            block.type === "Testimonials" &&
+            sections.showTestimonials === false
+        )
+            return false;
+        if (block.type === "Hours" && sections.showHours === false)
+            return false;
+        if (block.type === "CtaBanner" && sections.showCtaBanner === false)
+            return false;
+        if (block.type === "Contact" && sections.showContact === false)
+            return false;
+        if (block.type === "Footer" && sections.showFooter === false)
+            return false;
+        return true;
+    });
+}
+
 export type TemplateDraftProfile = Pick<
     TenantProfile,
     | "tagline"
@@ -271,6 +360,8 @@ export function buildTemplateDraft(
     templateId: WebsiteTemplateId,
     tenantName: string,
     profile?: TemplateDraftProfile | null,
+    menuDataOrOptions?: unknown[] | TemplateDraftOptions,
+    maybeOptions?: TemplateDraftOptions,
 ): Data {
     const year = new Date().getFullYear();
     const name = tenantName || "Restaurant";
@@ -301,554 +392,713 @@ export function buildTemplateDraft(
         },
     };
 
-    switch (templateId) {
-        case "harbor-bistro":
-            return {
-                root: { props: { title: name } },
-                content: [
-                    {
-                        type: "Header",
-                        props: {
-                            id: uid("header"),
-                            showPhone: Boolean(profile?.phone?.trim()),
-                            linksLabel:
-                                "Menu,Categories,Offers,Reservations,Contact",
-                            navAlign: "split",
-                            ctaLabel: "Order now",
-                            ctaHref: "#menu",
-                            size: "md",
-                            sticky: true,
-                        },
-                    },
-                    {
-                        type: "Hero",
-                        props: {
-                            id: uid("hero"),
-                            layout: "imageRight",
-                            headline: "Delicious food, served fresh.",
-                            subheadline: `${tagline} ${story}`,
-                            ctaLabel: "Order now",
-                            ctaHref: "#menu",
-                            secondaryCtaLabel: "Explore menu",
-                            secondaryCtaHref: "#menu",
-                            imageUrl: IMG.harborFood,
-                            size: "lg",
-                            overlay: "soft",
-                        },
-                    },
-                    {
-                        type: "Features",
-                        props: {
-                            id: uid("perks"),
-                            title: "",
-                            subtitle: "",
-                            items: "Fresh daily|Ingredients prepped every morning\nFast table service|From order to plate without the wait\nSecure payment|Cash, bank transfer & Telebirr\nAlways here|Friendly floor support when you need it",
-                            columns: "4",
-                            size: "sm",
-                        },
-                    },
-                    {
-                        type: "Features",
-                        props: {
-                            id: uid("cuisines"),
-                            title: "Explore by cuisine",
-                            subtitle: "Browse the kitchen by mood",
-                            items: "Grill & fire|Charred plates & house sauces\nPasta & bowls|Comfort classics, done clean\nSpice route|Warm spices & bold sides\nStreet favorites|Crispy, shareable, fast\nSweet finish|Cakes, gelato & bakery",
-                            columns: "3",
-                            size: "md",
-                        },
-                    },
-                    {
-                        type: "Menu",
-                        props: {
-                            id: uid("menu"),
-                            title: "Popular dishes",
-                            subtitle: "Guest favorites from today’s kitchen",
-                            categoryFilter: "all",
-                            layout: "cards",
-                            columns: "4",
-                            showImages: true,
-                            imageSize: "md",
-                            size: "md",
-                        },
-                    },
-                    {
-                        type: "Features",
-                        props: {
-                            id: "offers",
-                            title: "Today’s offers",
-                            subtitle: "Worth claiming before you sit",
-                            items: "First visit welcome|Ask your waiter for the house welcome plate when you open a new table.\nFamily table special|Shareable combos for groups — perfect for weekends and celebrations.",
-                            columns: "2",
-                            size: "md",
-                        },
-                    },
-                    {
-                        type: "About",
-                        props: {
-                            id: uid("about"),
-                            layout: "imageLeft",
-                            title: `About ${name}`,
-                            body: story,
-                            imageUrl: IMG.harborDining,
-                            stats: placeLine
-                                ? `Location|${placeLine}\nService|Dine-in & table QR order\nReservations|Recommended`
-                                : "Service|Dine-in & table QR order\nReservations|Recommended\nGuests|Families & date nights",
-                            size: "md",
-                        },
-                    },
-                    hoursBlock("Hours", hoursRows),
-                    contactBlock(
-                        placeLine ? `Visit ${name}` : "Reservations & contact",
-                    ),
-                    {
-                        type: "CtaBanner",
-                        props: {
-                            id: uid("cta"),
-                            title: "Hungry? Start with the menu.",
-                            body: "Scan your table QR to order, or reserve a spot and walk in ready.",
-                            ctaLabel: "View menu",
-                            ctaHref: "#menu",
-                            size: "md",
-                        },
-                    },
-                    {
-                        type: "Footer",
-                        props: {
-                            id: uid("footer"),
-                            layout: "brandLinks",
-                            note: `© ${year} ${name}${placeLine ? ` · ${placeLine}` : ""}.`,
-                            links: "Menu|#menu\nOffers|#offers\nHours|#hours\nContact|#contact",
-                            columns: "3",
-                            size: "md",
-                            showSocial: true,
-                            instagram: profile?.instagram || "",
-                            facebook: profile?.facebook || "",
-                            tiktok: profile?.tiktok || "",
-                        },
-                    },
-                ],
-            } as Data;
+    const options: TemplateDraftOptions | undefined =
+        menuDataOrOptions &&
+        typeof menuDataOrOptions === "object" &&
+        !Array.isArray(menuDataOrOptions)
+            ? (menuDataOrOptions as TemplateDraftOptions)
+            : maybeOptions;
 
-        case "ember-kitchen":
-            return {
-                root: { props: { title: name } },
-                content: [
-                    {
-                        type: "Header",
-                        props: {
-                            id: uid("header"),
-                            showPhone: true,
-                            linksLabel: "Menu,About,Gallery,Contact",
-                            navAlign: "center",
-                            size: "md",
-                            sticky: true,
-                        },
-                    },
-                    {
-                        type: "Hero",
-                        props: {
-                            id: uid("hero"),
-                            layout: "overlay",
-                            headline: `${name}`,
-                            subheadline:
-                                "Fire, slow cuts, and candlelight. Dinner that starts after dark.",
-                            ctaLabel: "Tonight’s menu",
-                            ctaHref: "#menu",
-                            secondaryCtaLabel: "Book a night",
-                            secondaryCtaHref: "#contact",
-                            imageUrl: IMG.ember,
-                            size: "lg",
-                            overlay: "heavy",
-                        },
-                    },
-                    {
-                        type: "Carousel",
-                        props: {
-                            id: uid("carousel"),
-                            title: "On the pass",
-                            imageUrls: galleryUrls(
-                                IMG.emberPlate,
-                                IMG.gallery3,
-                                IMG.ember,
-                            ),
-                            captions: "Ember grill\nChef’s cut\nLate service",
-                            variant: "full",
-                            height: "md",
-                            interval: "5",
-                            showArrows: true,
-                            showDots: true,
-                            size: "md",
-                        },
-                    },
-                    {
-                        type: "Menu",
-                        props: {
-                            id: uid("menu"),
-                            title: "Fire & plate",
-                            subtitle: "Pulled live from your menu catalog",
-                            categoryFilter: "all",
-                            layout: "list",
-                            columns: "2",
-                            showImages: true,
-                            imageSize: "sm",
-                            size: "md",
-                        },
-                    },
-                    {
-                        type: "About",
-                        props: {
-                            id: uid("about"),
-                            layout: "imageLeft",
-                            title: "Crafted over flame",
-                            body: `At ${name}, the grill is the heart of the house. We source carefully, sear boldly, and plate with restraint — so every bite lands.`,
-                            imageUrl: IMG.emberPlate,
-                            stats: "Grill hours|6pm–late\nCuts|Prime\nBar|Full",
-                            size: "md",
-                        },
-                    },
-                    {
-                        type: "Testimonials",
-                        props: {
-                            id: uid("testimonials"),
-                            title: "Word of mouth",
-                            items: `Best night out this year.|Yonas\nThe dry-aged cut was perfect.|Helen\nDark, loud, delicious.|Alex`,
-                            size: "md",
-                        },
-                    },
-                    amenitiesBlock(
-                        "House details",
-                        "Reservations|Recommended on weekends — message us for booths.\nDress code|Smart casual. Jackets welcome, sneakers fine.\nBar & lounge|Full bar opens with the kitchen.",
-                    ),
-                    hoursBlock(
-                        "Evening hours",
-                        "Tue–Thu|17:00 – 23:00\nFri–Sat|17:00 – 00:30\nSun|17:00 – 22:00\nMonday|Closed",
-                    ),
-                    {
-                        type: "CtaBanner",
-                        props: {
-                            id: uid("cta"),
-                            title: "Request a table",
-                            body: "Evenings fill fast on weekends — message us for a booth or bar seat.",
-                            ctaLabel: "Contact",
-                            ctaHref: "#contact",
-                            size: "md",
-                        },
-                    },
-                    contactBlock("Arrive after dusk"),
-                    commonFooter,
-                ],
-            } as Data;
+    const rawMenuData = Array.isArray(menuDataOrOptions)
+        ? menuDataOrOptions
+        : options?.menuData;
 
-        case "garden-table": {
-            const gardenTagline =
-                profile?.tagline?.trim() ||
-                "Fresh & delicious food for every taste.";
-            const gardenStory =
-                profile?.story?.trim() ||
-                `${name} cooks what the market brings — crisp greens, fire-roasted vegetables, and desserts that still taste like fruit.`;
-            return {
-                root: { props: { title: name } },
-                content: [
-                    // No top Header — cards stand alone like the pebble layout.
-                    {
-                        type: "Hero",
-                        props: {
-                            id: uid("hero"),
-                            layout: "imageRight",
-                            headline: gardenTagline.toUpperCase(),
-                            subheadline: gardenStory,
-                            ctaLabel: "Order now",
-                            ctaHref: "#menu",
-                            secondaryCtaLabel: "View menu",
-                            secondaryCtaHref: "#menu",
-                            imageUrl: IMG.harborFood,
-                            size: "lg",
-                            overlay: "soft",
+    const rawDraft: Data = (() => {
+        switch (templateId) {
+            case "foodly-modern":
+                return {
+                    root: { props: { title: name } },
+                    content: [
+                        {
+                            type: "Header",
+                            props: {
+                                id: uid("header"),
+                                showPhone: true,
+                                linksLabel:
+                                    "Home,Menu,Categories,About,Contact",
+                                navAlign: "foodly",
+                                ctaLabel: "Order Now",
+                                ctaHref: "#menu",
+                                size: "md",
+                                sticky: true,
+                            },
                         },
-                    },
-                    {
-                        type: "Features",
-                        props: {
-                            id: uid("pill"),
-                            title: "",
-                            subtitle: "",
-                            layout: "pillBar",
-                            items: "Breakfast|Light starts & warm bread\nLunch|Bowls, salads, grill plates\nDinner|Shared tables after dark\nDrinks|Fresh juices & soft sips",
-                            columns: "4",
-                            size: "sm",
+                        {
+                            type: "Hero",
+                            props: {
+                                id: uid("hero"),
+                                layout: "centered",
+                                headline: "Full Menu & Online Ordering",
+                                subheadline: `${
+                                    rawMenuData?.length || 78
+                                } dishes made fresh to order, served hot at the table or ready for pickup`,
+                                ctaLabel: "View Menu",
+                                ctaHref: "#menu",
+                                secondaryCtaLabel: "Search Dishes",
+                                secondaryCtaHref: "#menu",
+                                imageUrl: IMG.harborFood,
+                                size: "sm",
+                                overlay: "none",
+                            },
                         },
-                    },
-                    {
-                        type: "Arrangement",
-                        props: {
-                            id: uid("arrangement"),
-                            title: "",
-                            imageUrls: galleryUrls(
-                                IMG.gardenSalad,
-                                IMG.harborPlate,
-                                IMG.garden,
-                                IMG.gallery1,
-                            ),
-                            warmTitle: "Taste the season",
-                            warmBody:
-                                "Bright plates and soft lighting for unhurried meals.",
-                            warmCtaLabel: "See menu",
-                            warmCtaHref: "#menu",
-                            darkTitle: "Reserve tonight",
-                            darkBody: placeLine
-                                ? `Find us at ${placeLine}. Ask for a patio table or a quiet corner.`
-                                : "Ask for a patio table or a quiet corner inside.",
-                            darkCtaLabel: "Contact",
-                            darkCtaHref: "#contact",
-                            size: "md",
+                        {
+                            type: "Features",
+                            props: {
+                                id: uid("perks"),
+                                title: "Fast, Fresh & Delicious",
+                                subtitle: "Care in every dish we prepare",
+                                items: "Fresh Daily|Ingredients sourced every single morning\nFast Service|From order to table in minutes\nDigital Menu|Browse and order seamlessly\nFriendly Hospitality|Always here with a warm smile",
+                                columns: "4",
+                                size: "sm",
+                            },
                         },
-                    },
-                    {
-                        type: "Menu",
-                        props: {
-                            id: uid("menu"),
-                            title: "From the menu",
-                            subtitle: "Live sample dishes from your kitchen",
-                            categoryFilter: "all",
-                            layout: "cards",
-                            columns: "3",
-                            showImages: true,
-                            imageSize: "md",
-                            size: "md",
+                        {
+                            type: "Menu",
+                            props: {
+                                id: uid("menu"),
+                                title: "Our Full Menu",
+                                subtitle: "Select dishes to start your order",
+                                categoryFilter: "all",
+                                layout: "foodly",
+                                columns: "4",
+                                showImages: true,
+                                imageSize: "lg",
+                                showFilters: true,
+                                showSearch: true,
+                                size: "full",
+                            },
                         },
-                    },
-                    hoursBlock("Hours", hoursRows),
-                    contactBlock(placeLine ? `Visit ${name}` : "Visit us"),
-                    {
-                        type: "Footer",
-                        props: {
-                            id: uid("footer"),
-                            layout: "brandLinks",
-                            note: `© ${year} ${name}${placeLine ? ` · ${placeLine}` : ""}.`,
-                            links: "Menu|#menu\nHours|#hours\nContact|#contact",
-                            columns: "3",
-                            size: "md",
-                            showSocial: true,
-                            instagram: profile?.instagram || "",
-                            facebook: profile?.facebook || "",
-                            tiktok: profile?.tiktok || "",
+                        {
+                            type: "About",
+                            props: {
+                                id: uid("about"),
+                                layout: "imageLeft",
+                                title: `About ${name}`,
+                                body: story,
+                                imageUrl: IMG.harborDining,
+                                stats: placeLine
+                                    ? `Location|${placeLine}\nService|Dine-in, Takeaway & QR\nReservations|Available`
+                                    : "Service|Dine-in, Takeaway & QR\nReservations|Available\nGuests|Families & groups",
+                                size: "md",
+                            },
                         },
-                    },
-                ],
-            } as Data;
+                        hoursBlock("Operating Hours", hoursRows),
+                        contactBlock(
+                            placeLine ? `Visit ${name}` : "Contact & Location",
+                        ),
+                        {
+                            type: "Footer",
+                            props: {
+                                id: uid("footer"),
+                                layout: "columns",
+                                note: `© ${year} ${name}. All rights reserved.`,
+                                links: "Company|#about\nExplore|#menu\nSupport|#contact\nLegal|#terms",
+                                columns: "4",
+                                size: "md",
+                                showSocial: true,
+                                instagram: profile?.instagram || "",
+                                facebook: profile?.facebook || "",
+                                tiktok: profile?.tiktok || "",
+                            },
+                        },
+                    ],
+                } as Data;
+
+            case "harbor-bistro":
+                return {
+                    root: { props: { title: name } },
+                    content: [
+                        {
+                            type: "Header",
+                            props: {
+                                id: uid("header"),
+                                showPhone: Boolean(profile?.phone?.trim()),
+                                linksLabel:
+                                    "Menu,Categories,Offers,Reservations,Contact",
+                                navAlign: "split",
+                                ctaLabel: "Order now",
+                                ctaHref: "#menu",
+                                size: "md",
+                                sticky: true,
+                            },
+                        },
+                        {
+                            type: "Hero",
+                            props: {
+                                id: uid("hero"),
+                                layout: "imageRight",
+                                headline: "Delicious food, served fresh.",
+                                subheadline: `${tagline} ${story}`,
+                                ctaLabel: "Order now",
+                                ctaHref: "#menu",
+                                secondaryCtaLabel: "Explore menu",
+                                secondaryCtaHref: "#menu",
+                                imageUrl: IMG.harborFood,
+                                size: "lg",
+                                overlay: "soft",
+                            },
+                        },
+                        {
+                            type: "Features",
+                            props: {
+                                id: uid("perks"),
+                                title: "",
+                                subtitle: "",
+                                items: "Fresh daily|Ingredients prepped every morning\nFast table service|From order to plate without the wait\nSecure payment|Cash, bank transfer & Telebirr\nAlways here|Friendly floor support when you need it",
+                                columns: "4",
+                                size: "sm",
+                            },
+                        },
+                        {
+                            type: "Features",
+                            props: {
+                                id: uid("cuisines"),
+                                title: "Explore by cuisine",
+                                subtitle: "Browse the kitchen by mood",
+                                items: "Grill & fire|Charred plates & house sauces\nPasta & bowls|Comfort classics, done clean\nSpice route|Warm spices & bold sides\nStreet favorites|Crispy, shareable, fast\nSweet finish|Cakes, gelato & bakery",
+                                columns: "3",
+                                size: "md",
+                            },
+                        },
+                        {
+                            type: "Menu",
+                            props: {
+                                id: uid("menu"),
+                                title: "Popular dishes",
+                                subtitle:
+                                    "Guest favorites from today’s kitchen",
+                                categoryFilter: "all",
+                                layout: "cards",
+                                columns: "4",
+                                showImages: true,
+                                imageSize: "md",
+                                size: "md",
+                            },
+                        },
+                        {
+                            type: "Features",
+                            props: {
+                                id: "offers",
+                                title: "Today’s offers",
+                                subtitle: "Worth claiming before you sit",
+                                items: "First visit welcome|Ask your waiter for the house welcome plate when you open a new table.\nFamily table special|Shareable combos for groups — perfect for weekends and celebrations.",
+                                columns: "2",
+                                size: "md",
+                            },
+                        },
+                        {
+                            type: "About",
+                            props: {
+                                id: uid("about"),
+                                layout: "imageLeft",
+                                title: `About ${name}`,
+                                body: story,
+                                imageUrl: IMG.harborDining,
+                                stats: placeLine
+                                    ? `Location|${placeLine}\nService|Dine-in & table QR order\nReservations|Recommended`
+                                    : "Service|Dine-in & table QR order\nReservations|Recommended\nGuests|Families & date nights",
+                                size: "md",
+                            },
+                        },
+                        hoursBlock("Hours", hoursRows),
+                        contactBlock(
+                            placeLine
+                                ? `Visit ${name}`
+                                : "Reservations & contact",
+                        ),
+                        {
+                            type: "CtaBanner",
+                            props: {
+                                id: uid("cta"),
+                                title: "Hungry? Start with the menu.",
+                                body: "Scan your table QR to order, or reserve a spot and walk in ready.",
+                                ctaLabel: "View menu",
+                                ctaHref: "#menu",
+                                size: "md",
+                            },
+                        },
+                        {
+                            type: "Footer",
+                            props: {
+                                id: uid("footer"),
+                                layout: "brandLinks",
+                                note: `© ${year} ${name}${placeLine ? ` · ${placeLine}` : ""}.`,
+                                links: "Menu|#menu\nOffers|#offers\nHours|#hours\nContact|#contact",
+                                columns: "3",
+                                size: "md",
+                                showSocial: true,
+                                instagram: profile?.instagram || "",
+                                facebook: profile?.facebook || "",
+                                tiktok: profile?.tiktok || "",
+                            },
+                        },
+                    ],
+                } as Data;
+
+            case "ember-kitchen":
+                return {
+                    root: { props: { title: name } },
+                    content: [
+                        {
+                            type: "Header",
+                            props: {
+                                id: uid("header"),
+                                showPhone: true,
+                                linksLabel: "Menu,About,Gallery,Contact",
+                                navAlign: "center",
+                                size: "md",
+                                sticky: true,
+                            },
+                        },
+                        {
+                            type: "Hero",
+                            props: {
+                                id: uid("hero"),
+                                layout: "overlay",
+                                headline: `${name}`,
+                                subheadline:
+                                    "Fire, slow cuts, and candlelight. Dinner that starts after dark.",
+                                ctaLabel: "Tonight’s menu",
+                                ctaHref: "#menu",
+                                secondaryCtaLabel: "Book a night",
+                                secondaryCtaHref: "#contact",
+                                imageUrl: IMG.ember,
+                                size: "lg",
+                                overlay: "heavy",
+                            },
+                        },
+                        {
+                            type: "Carousel",
+                            props: {
+                                id: uid("carousel"),
+                                title: "On the pass",
+                                imageUrls: galleryUrls(
+                                    IMG.emberPlate,
+                                    IMG.gallery3,
+                                    IMG.ember,
+                                ),
+                                captions:
+                                    "Ember grill\nChef’s cut\nLate service",
+                                variant: "full",
+                                height: "md",
+                                interval: "5",
+                                showArrows: true,
+                                showDots: true,
+                                size: "md",
+                            },
+                        },
+                        {
+                            type: "Menu",
+                            props: {
+                                id: uid("menu"),
+                                title: "Fire & plate",
+                                subtitle: "Pulled live from your menu catalog",
+                                categoryFilter: "all",
+                                layout: "list",
+                                columns: "2",
+                                showImages: true,
+                                imageSize: "sm",
+                                size: "md",
+                            },
+                        },
+                        {
+                            type: "About",
+                            props: {
+                                id: uid("about"),
+                                layout: "imageLeft",
+                                title: "Crafted over flame",
+                                body: `At ${name}, the grill is the heart of the house. We source carefully, sear boldly, and plate with restraint — so every bite lands.`,
+                                imageUrl: IMG.emberPlate,
+                                stats: "Grill hours|6pm–late\nCuts|Prime\nBar|Full",
+                                size: "md",
+                            },
+                        },
+                        {
+                            type: "Testimonials",
+                            props: {
+                                id: uid("testimonials"),
+                                title: "Word of mouth",
+                                items: `Best night out this year.|Yonas\nThe dry-aged cut was perfect.|Helen\nDark, loud, delicious.|Alex`,
+                                size: "md",
+                            },
+                        },
+                        amenitiesBlock(
+                            "House details",
+                            "Reservations|Recommended on weekends — message us for booths.\nDress code|Smart casual. Jackets welcome, sneakers fine.\nBar & lounge|Full bar opens with the kitchen.",
+                        ),
+                        hoursBlock(
+                            "Evening hours",
+                            "Tue–Thu|17:00 – 23:00\nFri–Sat|17:00 – 00:30\nSun|17:00 – 22:00\nMonday|Closed",
+                        ),
+                        {
+                            type: "CtaBanner",
+                            props: {
+                                id: uid("cta"),
+                                title: "Request a table",
+                                body: "Evenings fill fast on weekends — message us for a booth or bar seat.",
+                                ctaLabel: "Contact",
+                                ctaHref: "#contact",
+                                size: "md",
+                            },
+                        },
+                        contactBlock("Arrive after dusk"),
+                        commonFooter,
+                    ],
+                } as Data;
+
+            case "garden-table": {
+                const gardenTagline =
+                    profile?.tagline?.trim() ||
+                    "Fresh & delicious food for every taste.";
+                const gardenStory =
+                    profile?.story?.trim() ||
+                    `${name} cooks what the market brings — crisp greens, fire-roasted vegetables, and desserts that still taste like fruit.`;
+                return {
+                    root: { props: { title: name } },
+                    content: [
+                        // No top Header — cards stand alone like the pebble layout.
+                        {
+                            type: "Hero",
+                            props: {
+                                id: uid("hero"),
+                                layout: "imageRight",
+                                headline: gardenTagline.toUpperCase(),
+                                subheadline: gardenStory,
+                                ctaLabel: "Order now",
+                                ctaHref: "#menu",
+                                secondaryCtaLabel: "View menu",
+                                secondaryCtaHref: "#menu",
+                                imageUrl: IMG.harborFood,
+                                size: "lg",
+                                overlay: "soft",
+                            },
+                        },
+                        {
+                            type: "Features",
+                            props: {
+                                id: uid("pill"),
+                                title: "",
+                                subtitle: "",
+                                layout: "pillBar",
+                                items: "Breakfast|Light starts & warm bread\nLunch|Bowls, salads, grill plates\nDinner|Shared tables after dark\nDrinks|Fresh juices & soft sips",
+                                columns: "4",
+                                size: "sm",
+                            },
+                        },
+                        {
+                            type: "Arrangement",
+                            props: {
+                                id: uid("arrangement"),
+                                title: "",
+                                imageUrls: galleryUrls(
+                                    IMG.gardenSalad,
+                                    IMG.harborPlate,
+                                    IMG.garden,
+                                    IMG.gallery1,
+                                ),
+                                warmTitle: "Taste the season",
+                                warmBody:
+                                    "Bright plates and soft lighting for unhurried meals.",
+                                warmCtaLabel: "See menu",
+                                warmCtaHref: "#menu",
+                                darkTitle: "Reserve tonight",
+                                darkBody: placeLine
+                                    ? `Find us at ${placeLine}. Ask for a patio table or a quiet corner.`
+                                    : "Ask for a patio table or a quiet corner inside.",
+                                darkCtaLabel: "Contact",
+                                darkCtaHref: "#contact",
+                                size: "md",
+                            },
+                        },
+                        {
+                            type: "Menu",
+                            props: {
+                                id: uid("menu"),
+                                title: "From the menu",
+                                subtitle:
+                                    "Live sample dishes from your kitchen",
+                                categoryFilter: "all",
+                                layout: "cards",
+                                columns: "3",
+                                showImages: true,
+                                imageSize: "md",
+                                size: "md",
+                            },
+                        },
+                        hoursBlock("Hours", hoursRows),
+                        contactBlock(placeLine ? `Visit ${name}` : "Visit us"),
+                        {
+                            type: "Footer",
+                            props: {
+                                id: uid("footer"),
+                                layout: "brandLinks",
+                                note: `© ${year} ${name}${placeLine ? ` · ${placeLine}` : ""}.`,
+                                links: "Menu|#menu\nHours|#hours\nContact|#contact",
+                                columns: "3",
+                                size: "md",
+                                showSocial: true,
+                                instagram: profile?.instagram || "",
+                                facebook: profile?.facebook || "",
+                                tiktok: profile?.tiktok || "",
+                            },
+                        },
+                    ],
+                } as Data;
+            }
+
+            case "coffee-house":
+                return {
+                    root: { props: { title: name } },
+                    content: [
+                        {
+                            type: "Header",
+                            props: {
+                                id: uid("header"),
+                                showPhone: true,
+                                linksLabel: "Menu,About,Gallery,Contact",
+                                navAlign: "split",
+                                size: "sm",
+                                sticky: true,
+                            },
+                        },
+                        {
+                            type: "Hero",
+                            props: {
+                                id: uid("hero"),
+                                layout: "split",
+                                headline: name,
+                                subheadline:
+                                    "Roast, brew, gather. Specialty coffee and bakery for slow mornings.",
+                                ctaLabel: "Order from menu",
+                                ctaHref: "#menu",
+                                secondaryCtaLabel: "Find us",
+                                secondaryCtaHref: "#contact",
+                                imageUrl: IMG.coffee,
+                                size: "lg",
+                                overlay: "light",
+                            },
+                        },
+                        {
+                            type: "Menu",
+                            props: {
+                                id: uid("menu"),
+                                title: "Brew & bite",
+                                subtitle: "Your live coffee and food catalog",
+                                categoryFilter: "all",
+                                layout: "cards",
+                                columns: "3",
+                                showImages: true,
+                                imageSize: "md",
+                                size: "md",
+                            },
+                        },
+                        {
+                            type: "Features",
+                            props: {
+                                id: uid("features"),
+                                title: "The ritual",
+                                subtitle: "",
+                                items: "Single-origin|Transparent sourcing and careful roasting.\nHouse bakery|Pastries baked before the doors open.\nWi‑Fi & work|Quiet corners for meetings and study.",
+                                columns: "3",
+                                size: "md",
+                            },
+                        },
+                        {
+                            type: "About",
+                            props: {
+                                id: uid("about"),
+                                layout: "imageLeft",
+                                title: "Our house",
+                                body: `${name} is built around the Ethiopian coffee ceremony spirit — hospitality first, then a perfect cup.`,
+                                imageUrl: IMG.coffeeCup,
+                                stats: "Roasts weekly|3\nSeats|48\nPastries|Daily",
+                                size: "md",
+                            },
+                        },
+                        {
+                            type: "Gallery",
+                            props: {
+                                id: uid("gallery"),
+                                title: "Inside",
+                                imageUrls: galleryUrls(
+                                    IMG.coffee,
+                                    IMG.coffeeCup,
+                                    IMG.gallery2,
+                                    IMG.gallery1,
+                                ),
+                                columns: "4",
+                                size: "md",
+                            },
+                        },
+                        amenitiesBlock(
+                            "Café extras",
+                            "Wi‑Fi|Fast and free for guests who stay to work.\nRetail beans|Take home the roast of the week.\nTakeaway|Cups and pastry boxes ready at the counter.",
+                        ),
+                        {
+                            type: "CtaBanner",
+                            props: {
+                                id: uid("cta"),
+                                title: "Grab a cup today",
+                                body: "Dine in or take away — beans and brew to go.",
+                                ctaLabel: "See hours",
+                                ctaHref: "#hours",
+                                size: "md",
+                            },
+                        },
+                        hoursBlock(
+                            "Café hours",
+                            "Mon–Fri|07:00 – 20:00\nSat–Sun|08:00 – 21:00",
+                        ),
+                        contactBlock("Come through"),
+                        commonFooter,
+                    ],
+                } as Data;
+
+            case "urban-plate":
+                return {
+                    root: { props: { title: name } },
+                    content: [
+                        {
+                            type: "Header",
+                            props: {
+                                id: uid("header"),
+                                showPhone: true,
+                                linksLabel: "Menu,Features,About,Contact",
+                                navAlign: "split",
+                                size: "sm",
+                                sticky: true,
+                            },
+                        },
+                        {
+                            type: "Hero",
+                            props: {
+                                id: uid("hero"),
+                                layout: "split",
+                                headline: name.toUpperCase(),
+                                subheadline:
+                                    "Fast flavor. Sharp design. City plates that don’t waste your time.",
+                                ctaLabel: "Menu",
+                                ctaHref: "#menu",
+                                secondaryCtaLabel: "Call",
+                                secondaryCtaHref: "#contact",
+                                imageUrl: IMG.urban,
+                                size: "lg",
+                                overlay: "light",
+                            },
+                        },
+                        {
+                            type: "Menu",
+                            props: {
+                                id: uid("menu"),
+                                title: "Menu",
+                                subtitle:
+                                    "Live from your menu — always current",
+                                categoryFilter: "all",
+                                layout: "list",
+                                columns: "2",
+                                showImages: true,
+                                imageSize: "sm",
+                                size: "md",
+                            },
+                        },
+                        {
+                            type: "Features",
+                            props: {
+                                id: uid("features"),
+                                title: "Built for speed",
+                                subtitle: "",
+                                items: "Quick service|From order to table without the wait.\nQR friendly|Guests can browse while they sit.\nTakeaway ready|Packaging that travels.",
+                                columns: "3",
+                                size: "md",
+                            },
+                        },
+                        {
+                            type: "About",
+                            props: {
+                                id: uid("about"),
+                                layout: "imageRight",
+                                title: "City kitchen",
+                                body: `${name} keeps the menu tight and the energy high — bold flavors for lunch rushes and late nights alike.`,
+                                imageUrl: IMG.urbanDish,
+                                stats: "Avg wait|12 min\nSignature|Bowls\nDelivery|Partners",
+                                size: "md",
+                            },
+                        },
+                        {
+                            type: "Testimonials",
+                            props: {
+                                id: uid("testimonials"),
+                                title: "Locals",
+                                items: `Lunch here every Thursday.|Kidist\nClean flavors, zero fluff.|Ben\nThe spicy bowl hits.|Nati`,
+                                size: "md",
+                            },
+                        },
+                        amenitiesBlock(
+                            "Quick info",
+                            "Takeaway|Packaging ready for office and commute.\nQR menu|Scan at the table once you’re seated.\nAllergen notes|Ask staff — we flag common allergens on request.",
+                        ),
+                        hoursBlock(
+                            "Service hours",
+                            "Mon–Thu|10:00 – 22:00\nFri–Sat|10:00 – 23:00\nSun|11:00 – 21:00",
+                        ),
+                        {
+                            type: "CtaBanner",
+                            props: {
+                                id: uid("cta"),
+                                title: "Order now",
+                                body: "Walk in, take away, or scan the QR when you sit.",
+                                ctaLabel: "View menu",
+                                ctaHref: "#menu",
+                                size: "md",
+                            },
+                        },
+                        contactBlock("Location"),
+                        commonFooter,
+                    ],
+                } as Data;
         }
+    })();
 
-        case "coffee-house":
-            return {
-                root: { props: { title: name } },
-                content: [
-                    {
-                        type: "Header",
-                        props: {
-                            id: uid("header"),
-                            showPhone: true,
-                            linksLabel: "Menu,About,Gallery,Contact",
-                            navAlign: "split",
-                            size: "sm",
-                            sticky: true,
-                        },
-                    },
-                    {
-                        type: "Hero",
-                        props: {
-                            id: uid("hero"),
-                            layout: "split",
-                            headline: name,
-                            subheadline:
-                                "Roast, brew, gather. Specialty coffee and bakery for slow mornings.",
-                            ctaLabel: "Order from menu",
-                            ctaHref: "#menu",
-                            secondaryCtaLabel: "Find us",
-                            secondaryCtaHref: "#contact",
-                            imageUrl: IMG.coffee,
-                            size: "lg",
-                            overlay: "light",
-                        },
-                    },
-                    {
-                        type: "Menu",
-                        props: {
-                            id: uid("menu"),
-                            title: "Brew & bite",
-                            subtitle: "Your live coffee and food catalog",
-                            categoryFilter: "all",
-                            layout: "cards",
-                            columns: "3",
-                            showImages: true,
-                            imageSize: "md",
-                            size: "md",
-                        },
-                    },
-                    {
-                        type: "Features",
-                        props: {
-                            id: uid("features"),
-                            title: "The ritual",
-                            subtitle: "",
-                            items: "Single-origin|Transparent sourcing and careful roasting.\nHouse bakery|Pastries baked before the doors open.\nWi‑Fi & work|Quiet corners for meetings and study.",
-                            columns: "3",
-                            size: "md",
-                        },
-                    },
-                    {
-                        type: "About",
-                        props: {
-                            id: uid("about"),
-                            layout: "imageLeft",
-                            title: "Our house",
-                            body: `${name} is built around the Ethiopian coffee ceremony spirit — hospitality first, then a perfect cup.`,
-                            imageUrl: IMG.coffeeCup,
-                            stats: "Roasts weekly|3\nSeats|48\nPastries|Daily",
-                            size: "md",
-                        },
-                    },
-                    {
-                        type: "Gallery",
-                        props: {
-                            id: uid("gallery"),
-                            title: "Inside",
-                            imageUrls: galleryUrls(
-                                IMG.coffee,
-                                IMG.coffeeCup,
-                                IMG.gallery2,
-                                IMG.gallery1,
-                            ),
-                            columns: "4",
-                            size: "md",
-                        },
-                    },
-                    amenitiesBlock(
-                        "Café extras",
-                        "Wi‑Fi|Fast and free for guests who stay to work.\nRetail beans|Take home the roast of the week.\nTakeaway|Cups and pastry boxes ready at the counter.",
-                    ),
-                    {
-                        type: "CtaBanner",
-                        props: {
-                            id: uid("cta"),
-                            title: "Grab a cup today",
-                            body: "Dine in or take away — beans and brew to go.",
-                            ctaLabel: "See hours",
-                            ctaHref: "#hours",
-                            size: "md",
-                        },
-                    },
-                    hoursBlock(
-                        "Café hours",
-                        "Mon–Fri|07:00 – 20:00\nSat–Sun|08:00 – 21:00",
-                    ),
-                    contactBlock("Come through"),
-                    commonFooter,
-                ],
-            } as Data;
+    let content = (rawDraft.content || []) as Array<{
+        type: string;
+        props: Record<string, unknown>;
+    }>;
 
-        case "urban-plate":
-            return {
-                root: { props: { title: name } },
-                content: [
-                    {
-                        type: "Header",
-                        props: {
-                            id: uid("header"),
-                            showPhone: true,
-                            linksLabel: "Menu,Features,About,Contact",
-                            navAlign: "split",
-                            size: "sm",
-                            sticky: true,
-                        },
-                    },
-                    {
-                        type: "Hero",
-                        props: {
-                            id: uid("hero"),
-                            layout: "split",
-                            headline: name.toUpperCase(),
-                            subheadline:
-                                "Fast flavor. Sharp design. City plates that don’t waste your time.",
-                            ctaLabel: "Menu",
-                            ctaHref: "#menu",
-                            secondaryCtaLabel: "Call",
-                            secondaryCtaHref: "#contact",
-                            imageUrl: IMG.urban,
-                            size: "lg",
-                            overlay: "light",
-                        },
-                    },
-                    {
-                        type: "Menu",
-                        props: {
-                            id: uid("menu"),
-                            title: "Menu",
-                            subtitle: "Live from your menu — always current",
-                            categoryFilter: "all",
-                            layout: "list",
-                            columns: "2",
-                            showImages: true,
-                            imageSize: "sm",
-                            size: "md",
-                        },
-                    },
-                    {
-                        type: "Features",
-                        props: {
-                            id: uid("features"),
-                            title: "Built for speed",
-                            subtitle: "",
-                            items: "Quick service|From order to table without the wait.\nQR friendly|Guests can browse while they sit.\nTakeaway ready|Packaging that travels.",
-                            columns: "3",
-                            size: "md",
-                        },
-                    },
-                    {
-                        type: "About",
-                        props: {
-                            id: uid("about"),
-                            layout: "imageRight",
-                            title: "City kitchen",
-                            body: `${name} keeps the menu tight and the energy high — bold flavors for lunch rushes and late nights alike.`,
-                            imageUrl: IMG.urbanDish,
-                            stats: "Avg wait|12 min\nSignature|Bowls\nDelivery|Partners",
-                            size: "md",
-                        },
-                    },
-                    {
-                        type: "Testimonials",
-                        props: {
-                            id: uid("testimonials"),
-                            title: "Locals",
-                            items: `Lunch here every Thursday.|Kidist\nClean flavors, zero fluff.|Ben\nThe spicy bowl hits.|Nati`,
-                            size: "md",
-                        },
-                    },
-                    amenitiesBlock(
-                        "Quick info",
-                        "Takeaway|Packaging ready for office and commute.\nQR menu|Scan at the table once you’re seated.\nAllergen notes|Ask staff — we flag common allergens on request.",
-                    ),
-                    hoursBlock(
-                        "Service hours",
-                        "Mon–Thu|10:00 – 22:00\nFri–Sat|10:00 – 23:00\nSun|11:00 – 21:00",
-                    ),
-                    {
-                        type: "CtaBanner",
-                        props: {
-                            id: uid("cta"),
-                            title: "Order now",
-                            body: "Walk in, take away, or scan the QR when you sit.",
-                            ctaLabel: "View menu",
-                            ctaHref: "#menu",
-                            size: "md",
-                        },
-                    },
-                    contactBlock("Location"),
-                    commonFooter,
-                ],
-            } as Data;
+    if (options?.sections) {
+        content = filterTemplateSections(content, options.sections);
     }
+
+    if (
+        options?.heroImageUrl ||
+        options?.customHeadline ||
+        options?.customTagline
+    ) {
+        content = content.map(block => {
+            if (block.type === "Hero") {
+                return {
+                    ...block,
+                    props: {
+                        ...block.props,
+                        ...(options.heroImageUrl
+                            ? { imageUrl: options.heroImageUrl }
+                            : {}),
+                        ...(options.customHeadline
+                            ? { headline: options.customHeadline }
+                            : {}),
+                        ...(options.customTagline
+                            ? { subheadline: options.customTagline }
+                            : {}),
+                    },
+                };
+            }
+            return block;
+        });
+    }
+
+    return {
+        ...rawDraft,
+        content,
+    };
 }
 
 export function getTemplate(id: WebsiteTemplateId) {

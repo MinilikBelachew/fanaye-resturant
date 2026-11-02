@@ -10,6 +10,7 @@ interface QrCodeSvgProps {
     bgColor?: string;
     id?: string;
     className?: string;
+    errorCorrectionLevel?: "L" | "M" | "Q" | "H";
 }
 
 export const QrCodeSvg: React.FC<QrCodeSvgProps> = ({
@@ -19,11 +20,12 @@ export const QrCodeSvg: React.FC<QrCodeSvgProps> = ({
     bgColor = "#ffffff",
     id,
     className = "",
+    errorCorrectionLevel = "H",
 }) => {
     const { pathData, viewBoxSize } = useMemo(() => {
         try {
             const qr = QRCode.create(value || "https://example.com", {
-                errorCorrectionLevel: "M",
+                errorCorrectionLevel,
             });
             const moduleCount = qr.modules.size;
             const margin = 2;
@@ -42,7 +44,7 @@ export const QrCodeSvg: React.FC<QrCodeSvgProps> = ({
         } catch {
             return { pathData: "", viewBoxSize: 33 };
         }
-    }, [value]);
+    }, [value, errorCorrectionLevel]);
 
     return (
         <svg

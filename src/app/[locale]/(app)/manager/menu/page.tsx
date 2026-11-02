@@ -24,6 +24,7 @@ import {
 } from "@/context/services/menuApi";
 import { adminMenuItemToCatalog } from "@/domains/catalog/application/mapAdminMenu";
 import type { MenuItem } from "@/domains/catalog/domain/menu";
+import { DEFAULT_STATIONS } from "@/domains/fulfillment/domain/station";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +42,26 @@ import { cn } from "@/lib/utils";
 import { MenuCatalogSkeleton } from "@/components/custom/molecules/Skeletons";
 import { useTranslations } from "next-intl";
 
+function resolveStationName(
+    stationId: string,
+    stationsList: Array<{ id: string; name: string }>,
+): string {
+    const fromMeta = stationsList.find(s => s.id === stationId);
+    if (fromMeta) return fromMeta.name;
+    const fromDefault = DEFAULT_STATIONS.find(
+        s => s.id === stationId || s.code === stationId,
+    );
+    if (fromDefault) return fromDefault.name;
+    if (stationId === "kitchen" || stationId === "station-kitchen")
+        return "Kitchen";
+    if (stationId === "barista" || stationId === "station-barista")
+        return "Barista";
+    if (stationId === "cakes" || stationId === "station-cakes") return "Cakes";
+    if (stationId === "soft_drinks" || stationId === "station-soft-drinks")
+        return "Soft Drinks";
+    return stationId || "Kitchen";
+}
+
 export default function ManagerMenuPage() {
     const t = useTranslations("manager");
     const { data: metaData } = useAdminMenuMetaQuery();
@@ -51,6 +72,12 @@ export default function ManagerMenuPage() {
     const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
     const [detailItem, setDetailItem] = useState<MenuItem | null>(null);
     const [deletingItem, setDeletingItem] = useState<MenuItem | null>(null);
+    const [hoveredDesc, setHoveredDesc] = useState<{
+        name: string;
+        text: string;
+        x: number;
+        y: number;
+    } | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedStation, setSelectedStation] = useState<string>("all");
     const deferredSearch = useDeferredValue(searchQuery.trim());
@@ -130,6 +157,7 @@ export default function ManagerMenuPage() {
                 id: "dish",
                 header: t("colDishDescription"),
                 sortValue: row => row.name,
+                className: "max-w-[280px] sm:max-w-[340px]",
                 cell: row => (
                     <div className="flex items-center gap-3">
                         {row.image ? (
@@ -145,15 +173,30 @@ export default function ManagerMenuPage() {
                                 {row.category.slice(0, 2).toUpperCase()}
                             </div>
                         )}
-                        <div className="min-w-0">
+                        <div className="min-w-0 max-w-[220px] sm:max-w-[280px] md:max-w-[340px]">
                             <button
                                 type="button"
                                 onClick={() => handleOpenDetail(row)}
-                                className="text-left font-semibold text-foreground hover:text-brand hover:underline"
+                                className="block w-full truncate text-left font-semibold text-foreground hover:text-brand hover:underline"
                             >
                                 {row.name}
                             </button>
-                            <p className="truncate text-[12px] text-slate-gray">
+                            <p
+                                className="truncate text-[12px] text-slate-gray cursor-help transition-colors hover:text-foreground"
+                                title={row.description || undefined}
+                                onMouseEnter={e => {
+                                    if (!row.description) return;
+                                    const rect =
+                                        e.currentTarget.getBoundingClientRect();
+                                    setHoveredDesc({
+                                        name: row.name,
+                                        text: row.description,
+                                        x: rect.left,
+                                        y: rect.bottom + 6,
+                                    });
+                                }}
+                                onMouseLeave={() => setHoveredDesc(null)}
+                            >
                                 {row.description}
                             </p>
                         </div>
@@ -161,10 +204,30 @@ export default function ManagerMenuPage() {
                 ),
             },
             {
+                id: "category",
+                header: t("colCategory"),
+                sortValue: row => row.category,
+                cell: row => (
+                    <Badge
+                        variant="outline"
+                        className="font-normal text-[11px]"
+                    >
+                        {row.category || "General"}
+                    </Badge>
+                ),
+            },
+            {
                 id: "station",
                 header: t("colStation"),
-                sortValue: row => row.category,
-                cell: row => <Badge variant="outline">{row.category}</Badge>,
+                sortValue: row => resolveStationName(row.stationId, stations),
+                cell: row => (
+                    <Badge
+                        variant="secondary"
+                        className="bg-secondary/80 font-medium text-[11px] text-foreground"
+                    >
+                        {resolveStationName(row.stationId, stations)}
+                    </Badge>
+                ),
             },
             {
                 id: "price",
@@ -233,7 +296,7 @@ export default function ManagerMenuPage() {
             },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [t],
+        [t, stations],
     );
 
     return (
@@ -409,7 +472,10 @@ export default function ManagerMenuPage() {
                                     <h2 className="text-[22px] leading-tight font-semibold">
                                         {item.name}
                                     </h2>
-                                    <p className="mt-1.5 line-clamp-2 text-[13px] text-white/75">
+                                    <p
+                                        className="mt-1.5 line-clamp-2 text-[13px] text-white/75"
+                                        title={item.description || undefined}
+                                    >
                                         {item.description}
                                     </p>
                                     {item.modifierGroups.length > 0 ? (
@@ -573,6 +639,35 @@ export default function ManagerMenuPage() {
                             </Button>
                         </div>
                     </div>
+                </div>
+            ) : null}
+            {hoveredDesc ? (
+                <div
+                    className="pointer-events-none fixed z-50 max-w-sm rounded-xl border border-hairline bg-popover/95 p-3 text-[12px] text-popover-foreground shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150"
+                    style={{
+                        top: Math.min(
+                            hoveredDesc.y,
+                            typeof window !== "undefined"
+                                ? window.innerHeight - 150
+                                : hoveredDesc.y,
+                        ),
+                        left: Math.max(
+                            12,
+                            Math.min(
+                                hoveredDesc.x,
+                                typeof window !== "undefined"
+                                    ? window.innerWidth - 360
+                                    : hoveredDesc.x,
+                            ),
+                        ),
+                    }}
+                >
+                    <p className="mb-1 text-[11px] font-semibold text-foreground">
+                        {hoveredDesc.name}
+                    </p>
+                    <p className="whitespace-pre-wrap break-words text-[12px] leading-relaxed text-slate-gray">
+                        {hoveredDesc.text}
+                    </p>
                 </div>
             ) : null}
         </DashboardFrame>

@@ -1,6 +1,19 @@
 "use client";
 
-import { createContext, useContext } from "react";
+import { createContext, useContext, useState, useMemo } from "react";
+import {
+    Search,
+    ShoppingBag,
+    User,
+    Heart,
+    Star,
+    Clock,
+    Plus,
+    Check,
+    ChevronDown,
+    SlidersHorizontal,
+    UtensilsCrossed,
+} from "lucide-react";
 import type { Config } from "@puckeditor/core";
 import type { PublicMenuItem, SiteTheme } from "@/context/services/siteApi";
 import { filePublicUrl } from "@/domains/catalog/application/mapAdminMenu";
@@ -149,6 +162,7 @@ export interface SiteRenderContextValue {
     tiktok?: string | null;
     telegram?: string | null;
     menuItems: PublicMenuItem[];
+    viewport?: "desktop" | "tablet" | "mobile";
 }
 
 export const SiteRenderContext = createContext<SiteRenderContextValue>({
@@ -450,6 +464,566 @@ function MenuItemPrice({
     );
 }
 
+export const FOODLY_SAMPLE_ITEMS: Array<
+    PublicMenuItem & {
+        rating?: number;
+        reviews?: number;
+        prepTime?: string;
+        badge?: "NEW" | "BESTSELLER";
+    }
+> = [
+    {
+        id: "foodly-1",
+        name: "Cheesy Beef Burger",
+        description: "Double patty, cheddar, house sauce",
+        price: 8.99,
+        currencyCode: "ETB",
+        categoryId: "burgers",
+        categoryName: "Burgers",
+        soldOut: false,
+        rating: 4.7,
+        reviews: 86,
+        prepTime: "12-15 min",
+        badge: "NEW",
+        imageUrl:
+            "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=600&auto=format&fit=crop",
+    },
+    {
+        id: "foodly-2",
+        name: "Pepperoni Supreme",
+        description: "Loaded pepperoni, mozzarella, basil",
+        price: 12.49,
+        currencyCode: "ETB",
+        categoryId: "pizza",
+        categoryName: "Pizza",
+        soldOut: false,
+        rating: 4.8,
+        reviews: 64,
+        prepTime: "18-22 min",
+        badge: "NEW",
+        imageUrl:
+            "https://images.unsplash.com/photo-1628840042765-356cda07504e?q=80&w=600&auto=format&fit=crop",
+    },
+    {
+        id: "foodly-3",
+        name: "Crispy Wing Box",
+        description: "8pc spicy buffalo wings, ranch dip",
+        price: 9.99,
+        currencyCode: "ETB",
+        categoryId: "chicken",
+        categoryName: "Chicken",
+        soldOut: false,
+        rating: 4.6,
+        reviews: 102,
+        prepTime: "15-18 min",
+        imageUrl:
+            "https://images.unsplash.com/photo-1567620832903-9fc6debc209f?q=80&w=600&auto=format&fit=crop",
+    },
+    {
+        id: "foodly-4",
+        name: "Cold Brew Cooler",
+        description: "Iced cold brew, vanilla foam",
+        price: 4.49,
+        currencyCode: "ETB",
+        categoryId: "drinks",
+        categoryName: "Drinks",
+        soldOut: false,
+        rating: 4.9,
+        reviews: 41,
+        prepTime: "5-8 min",
+        imageUrl:
+            "https://images.unsplash.com/photo-1517701604599-bb29b565090c?q=80&w=600&auto=format&fit=crop",
+    },
+    {
+        id: "foodly-5",
+        name: "Classic Cheeseburger",
+        description: "Beef patty, cheddar, pickles",
+        price: 8.99,
+        currencyCode: "ETB",
+        categoryId: "burgers",
+        categoryName: "Burgers",
+        soldOut: false,
+        rating: 4.8,
+        reviews: 412,
+        prepTime: "12-15 min",
+        badge: "BESTSELLER",
+        imageUrl:
+            "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?q=80&w=600&auto=format&fit=crop",
+    },
+    {
+        id: "foodly-6",
+        name: "Margherita Pizza",
+        description: "San marzano tomato, fresh mozzarella",
+        price: 11.49,
+        currencyCode: "ETB",
+        categoryId: "pizza",
+        categoryName: "Pizza",
+        soldOut: false,
+        rating: 4.7,
+        reviews: 289,
+        prepTime: "20-25 min",
+        imageUrl:
+            "https://images.unsplash.com/photo-1604382355076-af4b0eb60143?q=80&w=600&auto=format&fit=crop",
+    },
+    {
+        id: "foodly-7",
+        name: "Loaded Fries",
+        description: "Cheese sauce, bacon bits, jalapeños",
+        price: 4.99,
+        currencyCode: "ETB",
+        categoryId: "sides",
+        categoryName: "Sides",
+        soldOut: false,
+        rating: 4.6,
+        reviews: 198,
+        prepTime: "10-12 min",
+        imageUrl:
+            "https://images.unsplash.com/photo-1576107232684-1279f3908594?q=80&w=600&auto=format&fit=crop",
+    },
+    {
+        id: "foodly-8",
+        name: "Chocolate Shake",
+        description: "Rich chocolate, whipped cream",
+        price: 5.49,
+        currencyCode: "ETB",
+        categoryId: "desserts",
+        categoryName: "Desserts",
+        soldOut: false,
+        rating: 4.9,
+        reviews: 156,
+        prepTime: "5-8 min",
+        imageUrl:
+            "https://images.unsplash.com/photo-1572490122747-3968b75cc699?q=80&w=600&auto=format&fit=crop",
+    },
+];
+
+function FoodlyMenuSection({
+    title,
+    subtitle,
+    categoryFilter,
+    size,
+}: {
+    title?: string;
+    subtitle?: string;
+    categoryFilter?: string;
+    size?: string;
+}) {
+    const ctx = getSiteRender();
+    const isMobile = ctx.viewport === "mobile";
+    const isTablet = ctx.viewport === "tablet";
+
+    const baseItems =
+        ctx.menuItems && ctx.menuItems.length > 0
+            ? ctx.menuItems
+            : FOODLY_SAMPLE_ITEMS;
+
+    const [searchQuery, setSearchQuery] = useState("");
+    const [selectedCat, setSelectedCat] = useState("all");
+    const [sortBy, setSortBy] = useState<
+        "popular" | "price-asc" | "price-desc"
+    >("popular");
+    const [portionSize, setPortionSize] = useState<
+        "regular" | "large" | "family"
+    >("regular");
+    const [favorites, setFavorites] = useState<Set<string>>(
+        new Set(["foodly-1"]),
+    );
+    const [cartCount, setCartCount] = useState(2);
+
+    const categories = useMemo(() => {
+        const set = new Set<string>();
+        baseItems.forEach(i => {
+            if (i.categoryName) set.add(i.categoryName);
+        });
+        return ["ALL", ...Array.from(set)];
+    }, [baseItems]);
+
+    const filteredItems = useMemo(() => {
+        return baseItems
+            .filter(item => {
+                if (
+                    selectedCat !== "all" &&
+                    item.categoryName.toLowerCase() !==
+                        selectedCat.toLowerCase()
+                ) {
+                    return false;
+                }
+                if (searchQuery.trim()) {
+                    const q = searchQuery.toLowerCase();
+                    const matchName = item.name.toLowerCase().includes(q);
+                    const matchDesc = item.description
+                        ?.toLowerCase()
+                        .includes(q);
+                    if (!matchName && !matchDesc) return false;
+                }
+                return true;
+            })
+            .sort((a, b) => {
+                if (sortBy === "price-asc") return a.price - b.price;
+                if (sortBy === "price-desc") return b.price - a.price;
+                return 0;
+            });
+    }, [baseItems, selectedCat, searchQuery, sortBy]);
+
+    return (
+        <section id="menu" className="px-4 py-8 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-7xl">
+                {/* Header Breadcrumbs + Title + Search Bar */}
+                <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                    <div>
+                        <div className="mb-1.5 flex items-center gap-1.5 text-xs text-slate-400">
+                            <span className="hover:text-slate-600 cursor-pointer">
+                                Home
+                            </span>
+                            <span>/</span>
+                            <span className="font-semibold text-slate-800">
+                                {title || "Full Menu"}
+                            </span>
+                        </div>
+                        <h1
+                            className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl"
+                            style={{ fontFamily: "var(--site-font-display)" }}
+                        >
+                            {title || "Full Menu"}
+                        </h1>
+                        <p className="mt-1 text-xs sm:text-sm text-slate-500">
+                            {subtitle ||
+                                `${filteredItems.length} dishes made fresh to order, delivered to your door`}
+                        </p>
+                    </div>
+
+                    {/* Search Bar matching Foodly Image */}
+                    <div className="flex w-full items-center md:w-auto">
+                        <div className="relative flex w-full items-center rounded-full border border-slate-200/90 bg-white p-1 shadow-xs md:w-80">
+                            <Search className="ml-3 size-4 shrink-0 text-slate-400" />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                placeholder="Search burgers, pizza, drinks..."
+                                className="w-full bg-transparent px-3 py-1 text-xs text-slate-800 outline-none placeholder:text-slate-400"
+                            />
+                            <button
+                                type="button"
+                                className="rounded-full px-4 py-1.5 text-xs font-bold text-slate-900 shadow-xs transition-opacity hover:opacity-90"
+                                style={{
+                                    background:
+                                        ctx.theme.primaryColor || "#FDB913",
+                                }}
+                            >
+                                Search
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Main Content Area */}
+                <div className="flex items-start gap-8">
+                    {/* Left Filters Sidebar (Desktop) */}
+                    {!isMobile && !isTablet && (
+                        <aside className="w-56 shrink-0 space-y-6 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs xl:w-60">
+                            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                <span className="text-sm font-bold text-slate-900">
+                                    Filters
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setSelectedCat("all");
+                                        setSearchQuery("");
+                                    }}
+                                    className="text-xs font-medium text-slate-400 hover:text-slate-800"
+                                >
+                                    Clear all
+                                </button>
+                            </div>
+
+                            {/* Category Filter */}
+                            <div>
+                                <p className="mb-2.5 text-xs font-bold text-slate-800">
+                                    Category
+                                </p>
+                                <div className="space-y-1">
+                                    {categories.map(cat => {
+                                        const isCatActive =
+                                            selectedCat.toLowerCase() ===
+                                            cat.toLowerCase();
+                                        return (
+                                            <button
+                                                key={cat}
+                                                type="button"
+                                                onClick={() =>
+                                                    setSelectedCat(
+                                                        cat.toLowerCase(),
+                                                    )
+                                                }
+                                                className={`flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs font-medium transition-colors ${
+                                                    isCatActive
+                                                        ? "bg-amber-50/80 font-bold text-slate-900"
+                                                        : "text-slate-600 hover:bg-slate-50"
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <span
+                                                        className={`flex size-4 items-center justify-center rounded text-[10px] ${
+                                                            isCatActive
+                                                                ? "bg-[#FDB913] text-slate-900 font-bold"
+                                                                : "border border-slate-300"
+                                                        }`}
+                                                    >
+                                                        {isCatActive ? "✓" : ""}
+                                                    </span>
+                                                    <span>{cat}</span>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Price Range */}
+                            <div className="border-t border-slate-100 pt-4">
+                                <p className="mb-2 text-xs font-bold text-slate-800">
+                                    Price Range
+                                </p>
+                                <div className="mb-1.5 flex items-center justify-between text-xs font-semibold text-slate-500">
+                                    <span>$3</span>
+                                    <span className="font-bold text-slate-800">
+                                        $35
+                                    </span>
+                                </div>
+                                <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                                    <div
+                                        className="absolute inset-y-0 left-1/4 right-1/4 rounded-full"
+                                        style={{
+                                            background:
+                                                ctx.theme.primaryColor ||
+                                                "#FDB913",
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Portion Size */}
+                            <div className="border-t border-slate-100 pt-4">
+                                <p className="mb-2 text-xs font-bold text-slate-800">
+                                    Portion Size
+                                </p>
+                                <div className="grid grid-cols-3 gap-1">
+                                    {(
+                                        ["regular", "large", "family"] as const
+                                    ).map(p => (
+                                        <button
+                                            key={p}
+                                            type="button"
+                                            onClick={() => setPortionSize(p)}
+                                            className={`rounded-lg py-1.5 text-center text-[11px] font-semibold capitalize transition-all ${
+                                                portionSize === p
+                                                    ? "bg-[#FDB913] text-slate-900 shadow-xs"
+                                                    : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                                            }`}
+                                        >
+                                            {p}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </aside>
+                    )}
+
+                    {/* Right Dishes Grid Container */}
+                    <div className="min-w-0 flex-1">
+                        {/* Mobile / Tablet Horizontal Category Pills */}
+                        {(isMobile || isTablet) && (
+                            <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                                {categories.map(cat => {
+                                    const isCatActive =
+                                        selectedCat.toLowerCase() ===
+                                        cat.toLowerCase();
+                                    return (
+                                        <button
+                                            key={cat}
+                                            type="button"
+                                            onClick={() =>
+                                                setSelectedCat(
+                                                    cat.toLowerCase(),
+                                                )
+                                            }
+                                            className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${
+                                                isCatActive
+                                                    ? "bg-[#FDB913] text-slate-900 shadow-xs"
+                                                    : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                                            }`}
+                                        >
+                                            {cat}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {/* Top Meta Bar */}
+                        <div className="mb-4 flex items-center justify-between">
+                            <p className="text-xs font-bold text-slate-800">
+                                {filteredItems.length} Menu Items
+                            </p>
+                            <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                                <span>Sort by:</span>
+                                <select
+                                    value={sortBy}
+                                    onChange={e =>
+                                        setSortBy(e.target.value as any)
+                                    }
+                                    className="cursor-pointer bg-transparent font-semibold text-slate-900 outline-none"
+                                >
+                                    <option value="popular">Popular</option>
+                                    <option value="price-asc">
+                                        Price: Low to High
+                                    </option>
+                                    <option value="price-desc">
+                                        Price: High to Low
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Cards Grid: 4 cols on desktop, 2-3 on tablet, 1-2 on mobile */}
+                        <div
+                            className={`grid gap-4 ${
+                                isMobile
+                                    ? "grid-cols-1 sm:grid-cols-2"
+                                    : isTablet
+                                      ? "grid-cols-2 lg:grid-cols-3"
+                                      : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                            }`}
+                        >
+                            {filteredItems.map(item => {
+                                const isFav = favorites.has(item.id);
+                                const meta = item as any;
+                                return (
+                                    <div
+                                        key={item.id}
+                                        className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-xs transition-all duration-200 hover:shadow-md"
+                                    >
+                                        {/* Top Badge & Heart */}
+                                        <div className="mb-2 flex items-center justify-between">
+                                            {meta.badge ? (
+                                                <span
+                                                    className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${
+                                                        meta.badge === "NEW"
+                                                            ? "bg-[#FDB913] text-slate-900"
+                                                            : "bg-amber-500 text-white"
+                                                    }`}
+                                                >
+                                                    {meta.badge}
+                                                </span>
+                                            ) : (
+                                                <span />
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const next = new Set(
+                                                        favorites,
+                                                    );
+                                                    if (next.has(item.id))
+                                                        next.delete(item.id);
+                                                    else next.add(item.id);
+                                                    setFavorites(next);
+                                                }}
+                                                className="flex size-7 items-center justify-center rounded-full bg-slate-50 transition-colors hover:bg-slate-100"
+                                            >
+                                                <Heart
+                                                    className={`size-3.5 ${
+                                                        isFav
+                                                            ? "fill-red-500 text-red-500"
+                                                            : "text-slate-400"
+                                                    }`}
+                                                />
+                                            </button>
+                                        </div>
+
+                                        {/* Dish Image */}
+                                        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-slate-50">
+                                            <img
+                                                src={
+                                                    resolveImage(
+                                                        item.imageUrl,
+                                                    ) ||
+                                                    "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=600&auto=format&fit=crop"
+                                                }
+                                                alt={item.name}
+                                                className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                            />
+                                        </div>
+
+                                        {/* Title & Desc */}
+                                        <div className="mt-3 flex-1">
+                                            <h3 className="line-clamp-1 text-sm font-bold text-slate-900">
+                                                {item.name}
+                                            </h3>
+                                            <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">
+                                                {item.description ||
+                                                    "Made fresh to order with authentic ingredients"}
+                                            </p>
+
+                                            {/* Rating & Prep Time */}
+                                            <div className="mt-2 flex items-center gap-3 text-[11px] text-slate-500">
+                                                <div className="flex items-center gap-1 font-semibold text-slate-800">
+                                                    <Star className="size-3 fill-amber-400 text-amber-400" />
+                                                    <span>
+                                                        {meta.rating || "4.7"}
+                                                    </span>
+                                                    <span className="font-normal text-slate-400">
+                                                        ({meta.reviews || "86"})
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <Clock className="size-3 text-slate-400" />
+                                                    <span>
+                                                        {meta.prepTime ||
+                                                            "12-15 min"}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Price & Add Button */}
+                                        <div className="mt-3.5 flex items-center justify-between border-t border-slate-100 pt-2.5">
+                                            <span className="text-sm font-bold text-slate-900">
+                                                {formatEtb(
+                                                    item.price,
+                                                    item.currencyCode,
+                                                )}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setCartCount(c => c + 1)
+                                                }
+                                                className="flex size-7 items-center justify-center rounded-full text-slate-900 shadow-xs transition-transform active:scale-95"
+                                                style={{
+                                                    background:
+                                                        ctx.theme
+                                                            .primaryColor ||
+                                                        "#FDB913",
+                                                }}
+                                                title="Add to order"
+                                            >
+                                                <Plus className="size-4 stroke-[3]" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+}
+
 export const sitePuckConfig = {
     components: {
         Header: {
@@ -603,7 +1177,98 @@ export const sitePuckConfig = {
                             borderBottom: "1px solid rgba(0,0,0,.05)",
                         }}
                     >
-                        {align === "brandCenter" ? (
+                        {align === "foodly" ? (
+                            <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2 sm:px-6">
+                                <div className="flex shrink-0 items-center gap-2.5">
+                                    {ctx.theme.logoUrl ? (
+                                        <img
+                                            src={resolveImage(
+                                                ctx.theme.logoUrl,
+                                            )}
+                                            alt=""
+                                            className="size-9 rounded-full object-cover"
+                                        />
+                                    ) : (
+                                        <div
+                                            className="flex size-9 items-center justify-center rounded-xl font-black text-sm text-white shadow-xs"
+                                            style={{
+                                                background:
+                                                    ctx.theme.primaryColor ||
+                                                    "#FDB913",
+                                            }}
+                                        >
+                                            🍴
+                                        </div>
+                                    )}
+                                    <span className="flex items-center gap-1 text-base font-extrabold tracking-tight text-slate-900">
+                                        {ctx.tenantName}
+                                    </span>
+                                </div>
+                                <nav className="hidden items-center gap-6 text-xs font-semibold text-slate-600 lg:flex">
+                                    <a
+                                        href="#home"
+                                        className="transition-colors hover:text-slate-900"
+                                    >
+                                        Home
+                                    </a>
+                                    <a
+                                        href="#menu"
+                                        className="border-b-2 pb-0.5 font-bold text-slate-900"
+                                        style={{
+                                            borderColor:
+                                                ctx.theme.primaryColor ||
+                                                "#FDB913",
+                                        }}
+                                    >
+                                        Menu
+                                    </a>
+                                    <a
+                                        href="#about"
+                                        className="transition-colors hover:text-slate-900"
+                                    >
+                                        About
+                                    </a>
+                                    <a
+                                        href="#hours"
+                                        className="transition-colors hover:text-slate-900"
+                                    >
+                                        Hours
+                                    </a>
+                                    <a
+                                        href="#contact"
+                                        className="transition-colors hover:text-slate-900"
+                                    >
+                                        Contact
+                                    </a>
+                                </nav>
+                                <div className="flex shrink-0 items-center gap-3">
+                                    <div className="relative flex size-8 cursor-pointer items-center justify-center rounded-full text-slate-700 hover:bg-slate-100">
+                                        <ShoppingBag className="size-4" />
+                                        <span
+                                            className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full text-[9px] font-bold text-slate-900"
+                                            style={{
+                                                background:
+                                                    ctx.theme.primaryColor ||
+                                                    "#FDB913",
+                                            }}
+                                        >
+                                            2
+                                        </span>
+                                    </div>
+                                    <a
+                                        href="#menu"
+                                        className="rounded-full px-4 py-1.5 text-xs font-bold text-slate-900 shadow-xs transition-opacity hover:opacity-90"
+                                        style={{
+                                            background:
+                                                ctx.theme.primaryColor ||
+                                                "#FDB913",
+                                        }}
+                                    >
+                                        Order Now
+                                    </a>
+                                </div>
+                            </div>
+                        ) : align === "brandCenter" ? (
                             <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-4">
                                 <div className="justify-self-start">{logo}</div>
                                 <div className="hidden justify-self-center md:block">
@@ -617,15 +1282,17 @@ export const sitePuckConfig = {
                                 </div>
                             </div>
                         ) : align === "split" ? (
-                            <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
-                                {logo}
-                                <div className="flex items-center gap-4">
-                                    {navLinks}
+                            <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
+                                <div className="shrink-0">{logo}</div>
+                                <div className="flex shrink-0 items-center gap-3">
+                                    <div className="hidden items-center gap-6 lg:flex">
+                                        {navLinks}
+                                    </div>
                                     {ctaLabel ? headerCta : null}
                                     {!ctaLabel && showPhone && ctx.phone ? (
                                         <a
                                             href={`tel:${ctx.phone}`}
-                                            className="rounded-full px-3 py-1.5 text-sm text-white"
+                                            className="shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs"
                                             style={{
                                                 background:
                                                     ctx.theme.primaryColor,
@@ -949,7 +1616,14 @@ export const sitePuckConfig = {
                             background: `radial-gradient(ellipse 70% 80% at 85% 40%, ${ctx.theme.primaryColor}22 0%, transparent 55%), ${ctx.theme.backgroundColor}`,
                         }}
                     >
-                        <div className="relative mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2">
+                        <div
+                            className={`relative mx-auto grid max-w-6xl items-center gap-6 lg:gap-10 ${
+                                ctx.viewport === "mobile" ||
+                                ctx.viewport === "tablet"
+                                    ? "grid-cols-1"
+                                    : "grid-cols-1 lg:grid-cols-2"
+                            }`}
+                        >
                             <div className={imageFirst ? "order-2" : "order-1"}>
                                 {copy}
                             </div>
@@ -965,7 +1639,7 @@ export const sitePuckConfig = {
                                             alt=""
                                             className="aspect-[4/5] w-full object-cover sm:aspect-[5/4]"
                                         />
-                                        <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3 rounded-2xl border border-white/70 bg-white/95 px-4 py-3 shadow-sm backdrop-blur-sm">
+                                        <div className="absolute bottom-2.5 left-2.5 right-2.5 sm:bottom-4 sm:left-4 sm:right-4 flex items-center justify-between gap-2 rounded-xl sm:rounded-2xl border border-white/70 bg-white/95 px-3 py-2 sm:px-4 sm:py-3 shadow-sm backdrop-blur-sm">
                                             <div className="min-w-0">
                                                 <p className="truncate text-sm font-medium text-neutral-900">
                                                     {ctx.tenantName}
@@ -1080,6 +1754,16 @@ export const sitePuckConfig = {
                 size,
             }) => {
                 const ctx = getSiteRender();
+                if (layout === "foodly" || layout === "grid") {
+                    return (
+                        <FoodlyMenuSection
+                            title={title}
+                            subtitle={subtitle}
+                            categoryFilter={categoryFilter}
+                            size={size}
+                        />
+                    );
+                }
                 const rawItems =
                     ctx.menuItems && ctx.menuItems.length > 0
                         ? ctx.menuItems
