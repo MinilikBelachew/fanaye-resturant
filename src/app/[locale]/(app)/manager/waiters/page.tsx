@@ -199,34 +199,49 @@ export default function ManagerWaitersPage() {
             ) : (
                 <div className="mt-6 space-y-5">
                     {expiredSessions.length > 0 ? (
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-amber-900 dark:text-amber-200">
+                        <div className="flex flex-col gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-amber-900 dark:text-amber-200">
                             <div className="flex items-center gap-2.5">
                                 <AlertTriangle className="size-5 shrink-0 text-amber-600 dark:text-amber-400" />
                                 <div>
                                     <p className="text-sm font-semibold">
                                         {expiredSessions.length} Unclosed
                                         Expired Shift
-                                        {expiredSessions.length > 1 ? "s" : ""}{" "}
+                                        {expiredSessions.length > 1
+                                            ? "s"
+                                            : ""}{" "}
                                         Detected
                                     </p>
                                     <p className="text-xs text-amber-800/80 dark:text-amber-300/80">
                                         Staff shift hours have ended without
                                         clocking out. Resolve open tables and
-                                        cash to keep tomorrow morning clear.
+                                        cash drawers to clear register stations
+                                        for next shift.
                                     </p>
                                 </div>
                             </div>
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                className="border-amber-500/40 bg-white/80 dark:bg-slate-900 text-xs font-semibold shrink-0"
-                                onClick={() => {
-                                    setForceClockOutSession(expiredSessions[0]);
-                                    setIsForceModalOpen(true);
-                                }}
-                            >
-                                Resolve {expiredSessions[0].staffName}
-                            </Button>
+                            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-amber-500/20">
+                                {expiredSessions.map(exp => (
+                                    <Button
+                                        key={exp.shiftSessionId}
+                                        size="sm"
+                                        variant="outline"
+                                        className="border-amber-500/40 bg-white/80 dark:bg-slate-900 text-xs font-semibold"
+                                        onClick={() => {
+                                            setForceClockOutSession(exp);
+                                            setIsForceModalOpen(true);
+                                        }}
+                                    >
+                                        <LogOut className="mr-1.5 size-3 text-amber-600" />
+                                        Resolve {exp.staffName} (
+                                        {exp.roleName ||
+                                            exp.roleCode ||
+                                            (exp.hasCashierDrawer
+                                                ? "Cashier"
+                                                : "Staff")}
+                                        )
+                                    </Button>
+                                ))}
+                            </div>
                         </div>
                     ) : null}
 

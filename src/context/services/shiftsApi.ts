@@ -1,3 +1,24 @@
+export type ManagerForceCloseCashierDrawerRequest = {
+    shiftSessionId: string;
+    reason: string;
+    countedCashAmount?: number;
+    depositToSafe?: boolean;
+    cashNotes?: string;
+};
+
+export type ManagerForceCloseCashierResponse = {
+    success: boolean;
+    message: string;
+    shiftSessionId: string;
+    cashierName: string;
+    drawerStatus: string;
+    expectedCash: string;
+    countedCash: string;
+    variance: string;
+    safeDepositAmount: string;
+    clockOutAt: string;
+};
+
 export type ManagerForceClockOutRequest = {
     shiftSessionId: string;
     reason: string;
@@ -40,6 +61,10 @@ export type ActiveShiftSummary = {
         openedAt: string;
     }>;
     undroppedCash: string;
+    hasCashierDrawer?: boolean;
+    cashierDrawerStatus?: string;
+    drawerExpectedCash?: string;
+    drawerOpeningFloat?: string;
 };
 
 import type {
@@ -164,6 +189,17 @@ export const shiftsApi = api.injectEndpoints({
             }),
             invalidatesTags: ["Shift", "Floor", "Cash", "Order"],
         }),
+        managerForceCloseCashierDrawer: builder.mutation<
+            ManagerForceCloseCashierResponse,
+            ManagerForceCloseCashierDrawerRequest
+        >({
+            query: body => ({
+                url: "/shifts/manager/force-close-cashier-drawer",
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: ["Shift", "Floor", "Cash", "Order"],
+        }),
         deleteShiftDefinition: builder.mutation<{ success: boolean }, string>({
             query: id => ({
                 url: `/admin/shift-definitions/${id}`,
@@ -192,5 +228,7 @@ export const useManagerActiveSessionsQuery =
     shiftsApi.useManagerActiveSessionsQuery;
 export const useManagerForceClockOutMutation =
     shiftsApi.useManagerForceClockOutMutation;
+export const useManagerForceCloseCashierDrawerMutation =
+    shiftsApi.useManagerForceCloseCashierDrawerMutation;
 export const useDeleteShiftDefinitionMutation =
     shiftsApi.useDeleteShiftDefinitionMutation;
