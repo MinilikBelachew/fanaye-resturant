@@ -27,8 +27,12 @@ interface DirectBluetoothPrintButtonProps {
 // Cache connected Bluetooth device across prints in this browser session
 let cachedBleDevice: any = null;
 let cachedCharacteristic: any = null;
+// Cache connected Serial port across prints on PC
+let cachedSerialPort: any = null;
 
-export const DirectBluetoothPrintButton: React.FC<DirectBluetoothPrintButtonProps> = ({
+export const DirectBluetoothPrintButton: React.FC<
+    DirectBluetoothPrintButtonProps
+> = ({
     bill,
     paperWidth = "58mm",
     tableDisplayName,
@@ -39,22 +43,32 @@ export const DirectBluetoothPrintButton: React.FC<DirectBluetoothPrintButtonProp
 }) => {
     const [printing, setPrinting] = useState(false);
     const [success, setSuccess] = useState(false);
-    const [printMode, setPrintMode] = useState<"bluetooth" | "station">("station");
+    const [printMode, setPrintMode] = useState<"bluetooth" | "station">(
+        "station",
+    );
     const [port, setPort] = useState("COM9");
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [tempPort, setTempPort] = useState("COM9");
-    const [tempMode, setTempMode] = useState<"bluetooth" | "station">("station");
+    const [tempMode, setTempMode] = useState<"bluetooth" | "station">(
+        "station",
+    );
     const [bleDeviceName, setBleDeviceName] = useState<string | null>(null);
+    const [serialConnected, setSerialConnected] = useState(false);
 
     // Load saved settings from station localStorage
     useEffect(() => {
         if (typeof window !== "undefined") {
             const savedPort = localStorage.getItem("pos_station_printer_port");
-            const savedMode = localStorage.getItem("pos_printer_mode") as "bluetooth" | "station";
-            
+            const savedMode = localStorage.getItem("pos_printer_mode") as
+                | "bluetooth"
+                | "station";
+
             // Auto-detect if on mobile/tablet and Bluetooth is available
-            const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-            const hasBle = typeof navigator !== "undefined" && "bluetooth" in navigator;
+            const isMobile = /Android|iPhone|iPad|iPod/i.test(
+                navigator.userAgent,
+            );
+            const hasBle =
+                typeof navigator !== "undefined" && "bluetooth" in navigator;
 
             if (savedMode) {
                 setPrintMode(savedMode);
@@ -72,6 +86,19 @@ export const DirectBluetoothPrintButton: React.FC<DirectBluetoothPrintButtonProp
             if (cachedBleDevice && cachedBleDevice.name) {
                 setBleDeviceName(cachedBleDevice.name);
             }
+
+            // Check if a USB/Serial port was previously granted
+            if (typeof navigator !== "undefined" && "serial" in navigator) {
+                (navigator as any).serial
+                    .getPorts()
+                    .then((ports: any[]) => {
+                        if (ports && ports.length > 0) {
+                            cachedSerialPort = ports[0];
+                            setSerialConnected(true);
+                        }
+                    })
+                    .catch(() => {});
+            }
         }
     }, []);
 
@@ -82,13 +109,18 @@ export const DirectBluetoothPrintButton: React.FC<DirectBluetoothPrintButtonProp
         localStorage.setItem("pos_station_printer_port", cleanPort);
         localStorage.setItem("pos_printer_mode", tempMode);
         setSettingsOpen(false);
-        toast.success("Settings Saved", `Mode: ${tempMode.toUpperCase()} (${tempMode === "bluetooth" ? "Wireless" : cleanPort})`);
+        toast.success(
+            "Settings Saved",
+            `Mode: ${tempMode.toUpperCase()} (${tempMode === "bluetooth" ? "Wireless" : cleanPort})`,
+        );
     }
 
-    // Direct Web Bluetooth Printer Connection & Sender
+    // Direct Web Bluetooth Printer Connection & Sender (PWA / Mobile / Wireless)
     async function printViaWebBluetooth(): Promise<boolean> {
         if (typeof navigator === "undefined" || !("bluetooth" in navigator)) {
-            throw new Error("Web Bluetooth is not supported on this browser. Use Chrome on Android, Windows, or Mac.");
+            throw new Error(
+                "Web Bluetooth is not supported on this browser. Use Chrome on Android, Windows, or Mac.",
+            );
         }
 
         // Standard 58mm/80mm Thermal Printer Bluetooth GATT Service & Characteristic UUIDs
@@ -104,7 +136,10 @@ export const DirectBluetoothPrintButton: React.FC<DirectBluetoothPrintButtonProp
 
         // If not already connected, request device
         if (!device || !device.gatt?.connected || !char) {
-            toast.info("Pairing Printer", "Select your printer (e.g. MPT-II) from the list...");
+            toast.info(
+                "Pairing Printer",
+                "Select your printer (e.g. MPT-II) from the list...",
+            );
             const nav = navigator as any;
             device = await nav.bluetooth.requestDevice({
                 filters: [
@@ -140,26 +175,36 @@ export const DirectBluetoothPrintButton: React.FC<DirectBluetoothPrintButtonProp
             }
 
             if (!targetService) {
-                throw new Error("Could not find printer write service on this Bluetooth device.");
+                throw new Error(
+                    "Could not find printer write service on this Bluetooth device.",
+                );
             }
 
             // Find writeable characteristic
             const chars = await targetService.getCharacteristics();
-            char = chars.find((c: any) => c.properties.write || c.properties.writeWithoutResponse) || chars[0];
+            char =
+                chars.find(
+                    (c: any) =>
+                        c.properties.write || c.properties.writeWithoutResponse,
+                ) || chars[0];
 
             if (!char) {
-                throw new Error("No write characteristic found on Bluetooth printer.");
+                throw new Error(
+                    "No write characteristic found on Bluetooth printer.",
+                );
             }
 
             cachedCharacteristic = char;
         }
 
         // Build raw ESC/POS byte buffer
-        const lines = (bill.lines || []).map((l: { quantity: number; itemName: string; lineTotal: string }) => ({
-            quantity: l.quantity,
-            itemName: l.itemName,
-            total: Number(l.lineTotal || 0).toLocaleString(),
-        }));
+        const lines = (bill.lines || []).map(
+            (l: { quantity: number; itemName: string; lineTotal: string }) => ({
+                quantity: l.quantity,
+                itemName: l.itemName,
+                total: Number(l.lineTotal || 0).toLocaleString(),
+            }),
+        );
 
         const bytes = encodeReceiptToEscPos({
             restaurantName,
@@ -208,7 +253,120 @@ export const DirectBluetoothPrintButton: React.FC<DirectBluetoothPrintButtonProp
         return true;
     }
 
-    // Station Server Port Print (via /api/print)
+    // Direct Web Serial Printer Connection & Sender (for PC via USB/COM)
+    async function printViaWebSerial(): Promise<boolean> {
+        if (typeof navigator === "undefined" || !("serial" in navigator)) {
+            throw new Error(
+                "Web Serial is not supported on this browser. Please use Google Chrome or Microsoft Edge on PC.",
+            );
+        }
+
+        const nav = navigator as any;
+        let portObj = cachedSerialPort;
+
+        if (!portObj) {
+            const grantedPorts = await nav.serial.getPorts();
+            if (grantedPorts && grantedPorts.length > 0) {
+                portObj = grantedPorts[0];
+            } else {
+                toast.info(
+                    "Select Printer",
+                    "Choose your USB/Serial POS printer from the list...",
+                );
+                portObj = await nav.serial.requestPort();
+            }
+            cachedSerialPort = portObj;
+            setSerialConnected(true);
+        }
+
+        if (!portObj.writable) {
+            await portObj.open({
+                baudRate: 9600,
+                dataBits: 8,
+                stopBits: 1,
+                parity: "none",
+            });
+        }
+
+        const lines = (bill.lines || []).map(
+            (l: { quantity: number; itemName: string; lineTotal: string }) => ({
+                quantity: l.quantity,
+                itemName: l.itemName,
+                total: Number(l.lineTotal || 0).toLocaleString(),
+            }),
+        );
+
+        const bytes = encodeReceiptToEscPos({
+            restaurantName,
+            branchName,
+            billNumber: bill.billNumber || "N/A",
+            date: bill.generatedAt
+                ? new Date(bill.generatedAt).toLocaleString([], {
+                      timeZone: "Africa/Addis_Ababa",
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                  })
+                : new Date().toLocaleString([], {
+                      timeZone: "Africa/Addis_Ababa",
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                  }),
+            table: tableDisplayName || "",
+            waiter: waiterName || "",
+            cashier: cashierName || "",
+            lines,
+            total: Number(bill.total || bill.subtotal || 0).toLocaleString(),
+            status: (bill.status || "PAID").toUpperCase(),
+            qrData: bill.billId ? `receipt/${bill.billId}` : bill.billNumber,
+            paperWidth,
+        });
+
+        try {
+            const writer = portObj.writable.getWriter();
+            try {
+                await writer.write(bytes);
+            } finally {
+                writer.releaseLock();
+            }
+        } catch (writeErr: any) {
+            // If writer failed due to broken pipe/stale port, retry once with fresh port connection
+            cachedSerialPort = null;
+            setSerialConnected(false);
+            try {
+                await portObj.close();
+            } catch {}
+            const granted = await nav.serial.getPorts();
+            if (granted && granted.length > 0) {
+                portObj = granted[0];
+                await portObj.open({
+                    baudRate: 9600,
+                    dataBits: 8,
+                    stopBits: 1,
+                    parity: "none",
+                });
+                cachedSerialPort = portObj;
+                setSerialConnected(true);
+                const retryWriter = portObj.writable.getWriter();
+                try {
+                    await retryWriter.write(bytes);
+                } finally {
+                    retryWriter.releaseLock();
+                }
+            } else {
+                throw writeErr;
+            }
+        }
+
+        return true;
+    }
+
+    // Station Server Port Print (via /api/print fallback)
     async function printViaStationApi(): Promise<boolean> {
         const res = await fetch("/api/print", {
             method: "POST",
@@ -227,7 +385,9 @@ export const DirectBluetoothPrintButton: React.FC<DirectBluetoothPrintButtonProp
 
         const data = await res.json();
         if (!res.ok || data.error) {
-            throw new Error(data.error || "Failed to print receipt via station port");
+            throw new Error(
+                data.error || "Failed to print receipt via station port",
+            );
         }
         return true;
     }
@@ -240,22 +400,48 @@ export const DirectBluetoothPrintButton: React.FC<DirectBluetoothPrintButtonProp
             if (printMode === "bluetooth") {
                 await printViaWebBluetooth();
                 setSuccess(true);
-                toast.success("Receipt Printed!", "Direct wireless Bluetooth output successful");
+                toast.success(
+                    "Receipt Printed!",
+                    "Direct wireless Bluetooth output successful",
+                );
             } else {
-                await printViaStationApi();
-                setSuccess(true);
-                toast.success("Receipt Printed!", `Sent to station port ${port}`);
+                // Station PC Mode: prefer client-side Web Serial on PC
+                if (typeof navigator !== "undefined" && "serial" in navigator) {
+                    await printViaWebSerial();
+                    setSuccess(true);
+                    toast.success(
+                        "Receipt Printed!",
+                        "Direct USB/Serial output successful",
+                    );
+                } else {
+                    await printViaStationApi();
+                    setSuccess(true);
+                    toast.success(
+                        "Receipt Printed!",
+                        `Sent to station port ${port}`,
+                    );
+                }
             }
 
             setTimeout(() => setSuccess(false), 3000);
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : String(err);
-            
+
             // If Bluetooth fails on desktop, prompt fallback option
-            if (printMode === "bluetooth" && (msg.includes("User cancelled") || msg.includes("not supported"))) {
-                toast.info("Bluetooth Cancelled", "You can switch to Station Port mode in settings if using PC.");
+            if (
+                printMode === "bluetooth" &&
+                (msg.includes("User cancelled") ||
+                    msg.includes("not supported"))
+            ) {
+                toast.info(
+                    "Bluetooth Cancelled",
+                    "You can switch to Station Port mode in settings if using PC.",
+                );
             } else {
-                toast.error("Print Error", msg || "Make sure the printer is turned on and paired.");
+                toast.error(
+                    "Print Error",
+                    msg || "Make sure the printer is turned on and paired.",
+                );
             }
         } finally {
             setPrinting(false);
@@ -265,11 +451,42 @@ export const DirectBluetoothPrintButton: React.FC<DirectBluetoothPrintButtonProp
     async function handlePairBleOnly() {
         try {
             await printViaWebBluetooth();
-            toast.success("Printer Connected!", `Linked to ${bleDeviceName || "MPT-II"}`);
+            toast.success(
+                "Printer Connected!",
+                `Linked to ${bleDeviceName || "MPT-II"}`,
+            );
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : String(err);
             if (!msg.includes("cancelled")) {
                 toast.error("Bluetooth Pair Failed", msg);
+            }
+        }
+    }
+
+    async function handlePairSerialOnly() {
+        try {
+            if (typeof navigator === "undefined" || !("serial" in navigator)) {
+                toast.error(
+                    "Not Supported",
+                    "Web Serial requires Google Chrome or Microsoft Edge on PC.",
+                );
+                return;
+            }
+            const nav = navigator as any;
+            const selected = await nav.serial.requestPort();
+            cachedSerialPort = selected;
+            setSerialConnected(true);
+            toast.success(
+                "Printer Connected!",
+                "USB/Serial printer paired successfully.",
+            );
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            if (
+                !msg.includes("cancelled") &&
+                !msg.includes("No port selected")
+            ) {
+                toast.error("Pair Failed", msg);
             }
         }
     }
@@ -289,7 +506,7 @@ export const DirectBluetoothPrintButton: React.FC<DirectBluetoothPrintButtonProp
                     title={
                         printMode === "bluetooth"
                             ? `Wireless Direct Print (Bluetooth: ${bleDeviceName || "Ready"})`
-                            : `Station Port Print (${port})`
+                            : `Station Port Print (${serialConnected ? "USB Ready" : port})`
                     }
                 >
                     {printing ? (
@@ -304,10 +521,10 @@ export const DirectBluetoothPrintButton: React.FC<DirectBluetoothPrintButtonProp
                     {printing
                         ? "Printing..."
                         : success
-                        ? "Printed!"
-                        : printMode === "bluetooth"
-                        ? "Direct Wireless POS"
-                        : "Direct POS Print"}
+                          ? "Printed!"
+                          : printMode === "bluetooth"
+                            ? "Direct Wireless POS"
+                            : "Direct POS Print"}
                 </Button>
 
                 <Button
@@ -357,7 +574,8 @@ export const DirectBluetoothPrintButton: React.FC<DirectBluetoothPrintButtonProp
                                         <span>Web Bluetooth</span>
                                     </div>
                                     <p className="text-[10px] font-normal text-slate-500">
-                                        Best for Tablets, Phones, & Laptops. No apps or servers required.
+                                        Best for Tablets, Phones, & Laptops. No
+                                        apps or servers required.
                                     </p>
                                 </button>
 
@@ -375,7 +593,8 @@ export const DirectBluetoothPrintButton: React.FC<DirectBluetoothPrintButtonProp
                                         <span>Station Port</span>
                                     </div>
                                     <p className="text-[10px] font-normal text-slate-500">
-                                        Best for Cashier Counter PCs (USB or Bluetooth COM port).
+                                        Best for Cashier Counter PCs (USB or
+                                        Bluetooth COM port).
                                     </p>
                                 </button>
                             </div>
@@ -385,13 +604,17 @@ export const DirectBluetoothPrintButton: React.FC<DirectBluetoothPrintButtonProp
                         {tempMode === "bluetooth" ? (
                             <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
                                 <p className="text-[11px] text-slate-700 font-medium">
-                                    Wireless Direct Mode connects this tablet or browser directly to your portable thermal printer.
+                                    Wireless Direct Mode connects this tablet or
+                                    browser directly to your portable thermal
+                                    printer.
                                 </p>
                                 <div className="flex items-center justify-between pt-1">
                                     <span className="text-[11px] text-slate-500">
                                         Status:{" "}
                                         <strong className="text-slate-800">
-                                            {bleDeviceName ? `Linked to ${bleDeviceName}` : "Not paired yet"}
+                                            {bleDeviceName
+                                                ? `Linked to ${bleDeviceName}`
+                                                : "Not paired yet"}
                                         </strong>
                                     </span>
                                     <Button
@@ -406,20 +629,44 @@ export const DirectBluetoothPrintButton: React.FC<DirectBluetoothPrintButtonProp
                                 </div>
                             </div>
                         ) : (
-                            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-                                <label className="block text-[11px] font-semibold text-slate-700">
-                                    Station Port Name (e.g. COM9, COM3, COM4):
-                                </label>
-                                <input
-                                    type="text"
-                                    value={tempPort}
-                                    onChange={e => setTempPort(e.target.value)}
-                                    placeholder="COM9"
-                                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs uppercase font-mono font-bold text-slate-900 focus:outline-emerald-600"
-                                />
-                                <p className="text-[10px] text-slate-400">
-                                    Saved locally for this computer station.
-                                </p>
+                            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-[11px] font-semibold text-slate-800">
+                                            Direct PC Printer Connection
+                                        </p>
+                                        <p className="text-[10px] text-slate-500">
+                                            Connects directly from your PC
+                                            browser (Chrome/Edge).
+                                        </p>
+                                    </div>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        type="button"
+                                        onClick={handlePairSerialOnly}
+                                        className="h-7 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 shrink-0"
+                                    >
+                                        <Printer className="size-3 mr-1" />
+                                        {serialConnected
+                                            ? "Change Port"
+                                            : "Select Port"}
+                                    </Button>
+                                </div>
+                                <div className="pt-1 border-t border-slate-200/80">
+                                    <label className="block text-[10px] font-medium text-slate-500 mb-1">
+                                        Station Port Name (fallback):
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={tempPort}
+                                        onChange={e =>
+                                            setTempPort(e.target.value)
+                                        }
+                                        placeholder="COM9"
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs uppercase font-mono font-bold text-slate-900 focus:outline-emerald-600"
+                                    />
+                                </div>
                             </div>
                         )}
                     </div>

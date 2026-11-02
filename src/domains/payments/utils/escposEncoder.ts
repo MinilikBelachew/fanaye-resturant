@@ -98,7 +98,7 @@ export function encodeReceiptToEscPos(data: ReceiptPrintData): Uint8Array {
     // 9. ESC a 1 (Center Footer & QR Code)
     bytes.push(0x1b, 0x61, 0x01);
 
-    // Hardware ESC/POS QR Code
+    /* Hardware ESC/POS QR Code (Commented out)
     if (data.qrData) {
         const qrBytes = encoder.encode(data.qrData);
         const len = qrBytes.length + 3;
@@ -121,6 +121,7 @@ export function encodeReceiptToEscPos(data: ReceiptPrintData): Uint8Array {
         addAscii("Scan to verify receipt\n");
     }
 
+    */
     addAscii("THANK YOU FOR DINING WITH US!\n");
     addAscii("*** FOR INTERNAL USE ONLY ***\n");
 
@@ -129,4 +130,3 @@ export function encodeReceiptToEscPos(data: ReceiptPrintData): Uint8Array {
 
     return new Uint8Array(bytes);
 }
-

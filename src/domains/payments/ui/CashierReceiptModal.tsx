@@ -62,12 +62,16 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
     const sessionBranchName = session?.branchName;
     const effectiveBranchName =
         bill?.branchName ||
-        (branchName && branchName !== "Bole Medhanialem Branch" ? branchName : null) ||
+        (branchName && branchName !== "Bole Medhanialem Branch"
+            ? branchName
+            : null) ||
         sessionBranchName ||
         "Main Branch";
     const effectiveRestaurantName =
         bill?.restaurantName ||
-        (restaurantName && restaurantName !== "Restaurant & Lounge" ? restaurantName : null) ||
+        (restaurantName && restaurantName !== "Restaurant & Lounge"
+            ? restaurantName
+            : null) ||
         "Restaurant";
     const effectiveAddress = bill?.address || null;
     const effectivePhone = bill?.phone || null;
@@ -113,14 +117,18 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
     }
 
     function handlePrint() {
-        const receiptEl = receiptRef.current || document.getElementById("pos-thermal-receipt");
+        const receiptEl =
+            receiptRef.current ||
+            document.getElementById("pos-thermal-receipt");
         if (!receiptEl) {
             window.print();
             return;
         }
 
         // Clean up any stale print iframe
-        const staleFrame = document.getElementById("receipt-thermal-print-frame");
+        const staleFrame = document.getElementById(
+            "receipt-thermal-print-frame",
+        );
         if (staleFrame) staleFrame.remove();
 
         const iframe = document.createElement("iframe");
@@ -144,8 +152,12 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
         const pageMm = paperWidth === "58mm" ? "58mm" : "80mm";
 
         // Calculate exact receipt height in mm (1px ~= 0.2646mm) so Chrome doesn't produce an endless page
-        const renderedHeightPx = receiptEl.scrollHeight || receiptEl.offsetHeight || 480;
-        const calculatedHeightMm = Math.max(90, Math.ceil(renderedHeightPx * 0.265) + 4);
+        const renderedHeightPx =
+            receiptEl.scrollHeight || receiptEl.offsetHeight || 480;
+        const calculatedHeightMm = Math.max(
+            90,
+            Math.ceil(renderedHeightPx * 0.265) + 4,
+        );
 
         frameDoc.open();
         frameDoc.write(`<!DOCTYPE html>
@@ -485,7 +497,6 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
                                     Tel: {effectivePhone}
                                 </p>
                             ) : null}
-
                         </div>
 
                         {/* Bill & Metadata Info */}
@@ -596,6 +607,7 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
 
                         {/* Barcode / QR Code Slip Verification */}
                         <div className="pt-4 pb-2 text-center flex flex-col items-center">
+                            {/* QR Code commented out
                             <div className="p-1.5 bg-white rounded-lg border border-slate-300/80 print:border-none print:p-0 inline-flex items-center justify-center">
                                 <QrCodeSvg
                                     value={receiptVerifyUrl}
@@ -606,6 +618,7 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
                             <p className="text-[8.5px] font-semibold tracking-wider text-slate-500 mt-2 font-mono uppercase">
                                 Scan to verify or view e-receipt
                             </p>
+                            */}
                             <p className="text-[11px] font-bold text-slate-900 mt-1.5 font-sans">
                                 {tReceipt("thankYou")}
                             </p>

@@ -113,7 +113,7 @@ try {
     # Footer Center: ESC a 1
     $b.AddRange([byte[]]@(0x1B, 0x61, 0x01))
 
-    # Native ESC/POS Hardware QR Code
+    <# Native ESC/POS Hardware QR Code (Commented out)
     if ($data.qrData) {
         $qrBytes = [System.Text.Encoding]::ASCII.GetBytes($data.qrData)
         $len = $qrBytes.Length + 3
@@ -134,6 +134,7 @@ try {
         $b.AddRange([System.Text.Encoding]::ASCII.GetBytes("Scan to verify receipt`n"))
     }
 
+    #>
     $b.AddRange([System.Text.Encoding]::ASCII.GetBytes("THANK YOU FOR DINING WITH US!`n"))
     $b.AddRange([System.Text.Encoding]::ASCII.GetBytes("*** FOR INTERNAL USE ONLY ***`n`n"))
     
