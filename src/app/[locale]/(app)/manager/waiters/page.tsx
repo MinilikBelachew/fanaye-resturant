@@ -8,6 +8,8 @@ import {
     UserRound,
     Wallet,
     LayoutGrid,
+    AlertTriangle,
+    LogOut,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
@@ -27,6 +29,11 @@ import {
 } from "@/lib/ethiopian-calendar";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { ManagerForceClockOutModal } from "@/domains/floor/ui/ManagerForceClockOutModal";
+import {
+    useManagerActiveSessionsQuery,
+    type ActiveShiftSummary,
+} from "@/context/services/shiftsApi";
 
 export default function ManagerWaitersPage() {
     const locale = useLocale();
@@ -37,6 +44,11 @@ export default function ManagerWaitersPage() {
     const tCommon = useTranslations("common");
 
     const [period, setPeriod] = useState<WaiterPeriod>("day");
+    const { data: activeSessions, refetch: refetchSessions } =
+        useManagerActiveSessionsQuery(undefined, { pollingInterval: 15000 });
+    const [forceClockOutSession, setForceClockOutSession] =
+        useState<ActiveShiftSummary | null>(null);
+    const [isForceModalOpen, setIsForceModalOpen] = useState(false);
     const [customRange, setCustomRange] = useState<{
         from?: string;
         to?: string;
@@ -80,6 +92,17 @@ export default function ManagerWaitersPage() {
 
     const rows = data?.data ?? [];
     const summary = data?.summary;
+    const candidateWaiters = useMemo(() => {
+        return rows.map(r => ({
+            staffMembershipId: r.waiterMembershipId,
+            name: r.waiterName,
+        }));
+    }, [rows]);
+
+    const expiredSessions = useMemo(() => {
+        return activeSessions?.filter(s => s.isExpired) ?? [];
+    }, [activeSessions]);
+
     const sorted = useMemo(
         () =>
             [...rows].sort((a, b) => {
@@ -175,6 +198,38 @@ export default function ManagerWaitersPage() {
                 <p className="mt-6 text-slate-gray">{t("error")}</p>
             ) : (
                 <div className="mt-6 space-y-5">
+                    {expiredSessions.length > 0 ? (
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-amber-900 dark:text-amber-200">
+                            <div className="flex items-center gap-2.5">
+                                <AlertTriangle className="size-5 shrink-0 text-amber-600 dark:text-amber-400" />
+                                <div>
+                                    <p className="text-sm font-semibold">
+                                        {expiredSessions.length} Unclosed
+                                        Expired Shift
+                                        {expiredSessions.length > 1 ? "s" : ""}{" "}
+                                        Detected
+                                    </p>
+                                    <p className="text-xs text-amber-800/80 dark:text-amber-300/80">
+                                        Staff shift hours have ended without
+                                        clocking out. Resolve open tables and
+                                        cash to keep tomorrow morning clear.
+                                    </p>
+                                </div>
+                            </div>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-amber-500/40 bg-white/80 dark:bg-slate-900 text-xs font-semibold shrink-0"
+                                onClick={() => {
+                                    setForceClockOutSession(expiredSessions[0]);
+                                    setIsForceModalOpen(true);
+                                }}
+                            >
+                                Resolve {expiredSessions[0].staffName}
+                            </Button>
+                        </div>
+                    ) : null}
+
                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                         <SummaryCard
                             label={t("cardWaiters")}
@@ -427,6 +482,16 @@ export default function ManagerWaitersPage() {
                     </div>
                 </div>
             )}
+            <ManagerForceClockOutModal
+                open={isForceModalOpen}
+                onOpenChange={setIsForceModalOpen}
+                session={forceClockOutSession}
+                candidates={candidateWaiters}
+                onSuccess={() => {
+                    void refetch();
+                    void refetchSessions();
+                }}
+            />
         </DashboardFrame>
     );
 }

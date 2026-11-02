@@ -1,3 +1,47 @@
+export type ManagerForceClockOutRequest = {
+    shiftSessionId: string;
+    reason: string;
+    reassignTablesToMembershipId?: string;
+    closeOpenTables?: boolean;
+    cashHandling?: "DROP_TO_SAFE" | "FLAG_AS_SHORTAGE" | "NONE";
+    cashNotes?: string;
+};
+
+export type ManagerForceClockOutResponse = {
+    success: boolean;
+    message: string;
+    shiftSessionId: string;
+    staffName: string;
+    clockOutAt: string;
+    tablesTransferredCount: number;
+    tablesClosedCount: number;
+    cashHandledAmount: string;
+    cashHandling: string;
+};
+
+export type ActiveShiftSummary = {
+    shiftSessionId: string;
+    staffMembershipId: string;
+    staffName: string;
+    roleCode?: string;
+    roleName?: string;
+    clockInAt: string;
+    scheduledStartAt?: string | null;
+    scheduledEndAt?: string | null;
+    isExpired: boolean;
+    lateByMinutes: number;
+    openTablesCount: number;
+    openTables: Array<{
+        sessionTableId: string;
+        tableId: string;
+        tableName: string;
+        locationName?: string;
+        guestCount?: number | null;
+        openedAt: string;
+    }>;
+    undroppedCash: string;
+};
+
 import type {
     ClockInRequest,
     ClockOutRequest,
@@ -102,6 +146,24 @@ export const shiftsApi = api.injectEndpoints({
             }),
             invalidatesTags: ["Shift"],
         }),
+        managerActiveSessions: builder.query<ActiveShiftSummary[], void>({
+            query: () => ({
+                url: "/shifts/manager/active-sessions",
+                method: "GET",
+            }),
+            providesTags: ["Shift"],
+        }),
+        managerForceClockOut: builder.mutation<
+            ManagerForceClockOutResponse,
+            ManagerForceClockOutRequest
+        >({
+            query: body => ({
+                url: "/shifts/manager/force-clock-out",
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: ["Shift", "Floor", "Cash", "Order"],
+        }),
         deleteShiftDefinition: builder.mutation<{ success: boolean }, string>({
             query: id => ({
                 url: `/admin/shift-definitions/${id}`,
@@ -126,5 +188,9 @@ export const useCreateShiftDefinitionMutation =
     shiftsApi.useCreateShiftDefinitionMutation;
 export const useUpdateShiftDefinitionMutation =
     shiftsApi.useUpdateShiftDefinitionMutation;
+export const useManagerActiveSessionsQuery =
+    shiftsApi.useManagerActiveSessionsQuery;
+export const useManagerForceClockOutMutation =
+    shiftsApi.useManagerForceClockOutMutation;
 export const useDeleteShiftDefinitionMutation =
     shiftsApi.useDeleteShiftDefinitionMutation;
