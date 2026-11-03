@@ -1,6 +1,5 @@
 "use client";
 import { RestorchLogo } from "@/components/common/RestorchLogo";
-import { RestorchBrandVideo } from "@/components/common/RestorchBrandVideo";
 
 import { useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
@@ -381,422 +380,376 @@ export default function SignInPage() {
                 <LocaleSwitcher />
             </div>
 
-            {/* Split Screen Container for Desktop / Tablet */}
-            <div className="w-full max-w-5xl my-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center px-2 sm:px-4">
-                {/* Left Brand Video Showcase (Desktop / Large POS) */}
-                <div className="hidden lg:flex lg:col-span-7 flex-col justify-center space-y-4">
-                    <RestorchBrandVideo
-                        className="aspect-video w-full shadow-2xl rounded-2xl"
-                        badgeText="Live Restaurant Mesh OS"
-                    />
-                    <div className="space-y-1 px-1">
-                        <div className="flex items-center gap-2">
-                            <span className="size-2 rounded-full bg-emerald-500 animate-ping" />
-                            <span className="text-[11px] font-mono font-semibold tracking-wider uppercase text-muted-foreground">
-                                Real-Time Mesh Active
-                            </span>
-                        </div>
-                        <h2 className="text-xl font-bold tracking-tight text-foreground">
-                            Sub-Second Live Operations
-                        </h2>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                            Synchronized kitchen display, floor tables, barista
-                            routing, and 100% verified waiter cash custody.
-                        </p>
-                    </div>
+            {/* Centered Compact Card Container */}
+            <div className="w-full max-w-[340px] sm:max-w-[360px] my-auto">
+                {/* Header Text */}
+                <div className="text-center mb-3">
+                    <h1 className="text-[20px] sm:text-[22px] font-bold tracking-tight text-foreground">
+                        {t("welcomeBack")}
+                    </h1>
+                    <p className="mt-0.5 text-[12px] text-slate-gray">
+                        {t("subTitle")}
+                    </p>
                 </div>
 
-                {/* Right Column: Centered Auth Card */}
-                <div className="w-full max-w-[360px] mx-auto lg:col-span-5">
-                    {/* Header Text */}
-                    <div className="text-center mb-3">
-                        <h1 className="text-[20px] sm:text-[22px] font-bold tracking-tight text-foreground">
-                            {t("welcomeBack")}
-                        </h1>
-                        <p className="mt-0.5 text-[12px] text-slate-gray">
-                            {t("subTitle")}
-                        </p>
-                    </div>
-
-                    {/* Mode Segmented Tab Switcher */}
-                    <div className="grid grid-cols-2 gap-1 rounded-xl bg-surface-ivory/80 dark:bg-card border border-hairline p-1 mb-3 shadow-xs">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setMode("pin");
-                                setError("");
-                                setPin("");
-                            }}
-                            className={cn(
-                                "flex items-center justify-center gap-1.5 rounded-lg py-1.5 px-2 text-[12px] font-semibold transition-all",
-                                mode === "pin"
-                                    ? "bg-white dark:bg-accent text-foreground shadow-xs border border-hairline/60"
-                                    : "text-slate-gray hover:text-foreground",
-                            )}
-                        >
-                            <KeyRound
-                                className={cn(
-                                    "size-3.5",
-                                    mode === "pin" ? "text-primary" : "",
-                                )}
-                            />
-                            <span>{t("staffPinTab")}</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setMode("credentials");
-                                setError("");
-                            }}
-                            className={cn(
-                                "flex items-center justify-center gap-1.5 rounded-lg py-1.5 px-2 text-[12px] font-semibold transition-all",
-                                mode === "credentials"
-                                    ? "bg-white dark:bg-accent text-foreground shadow-xs border border-hairline/60"
-                                    : "text-slate-gray hover:text-foreground",
-                            )}
-                        >
-                            <ShieldCheck
-                                className={cn(
-                                    "size-3.5",
-                                    mode === "credentials"
-                                        ? "text-primary"
-                                        : "",
-                                )}
-                            />
-                            <span>{t("managerTab")}</span>
-                        </button>
-                    </div>
-
-                    {/* Main Auth Card */}
-                    <div className="rounded-[20px] border border-hairline bg-white dark:bg-card p-4 sm:p-5 shadow-lg shadow-black/[0.03]">
-                        {/* Error Banner */}
-                        {error && (
-                            <div className="mb-3 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50/95 dark:border-red-950 dark:bg-red-950/40 py-2 px-3 text-[12px] text-red-700 dark:text-red-400 animate-in fade-in slide-in-from-top-1">
-                                <AlertCircle className="size-3.5 shrink-0" />
-                                <span className="leading-tight font-medium">
-                                    {error}
-                                </span>
-                            </div>
+                {/* Mode Segmented Tab Switcher */}
+                <div className="grid grid-cols-2 gap-1 rounded-xl bg-surface-ivory/80 dark:bg-card border border-hairline p-1 mb-3 shadow-xs">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setMode("pin");
+                            setError("");
+                            setPin("");
+                        }}
+                        className={cn(
+                            "flex items-center justify-center gap-1.5 rounded-lg py-1.5 px-2 text-[12px] font-semibold transition-all",
+                            mode === "pin"
+                                ? "bg-white dark:bg-accent text-foreground shadow-xs border border-hairline/60"
+                                : "text-slate-gray hover:text-foreground",
                         )}
+                    >
+                        <KeyRound
+                            className={cn(
+                                "size-3.5",
+                                mode === "pin" ? "text-primary" : "",
+                            )}
+                        />
+                        <span>{t("staffPinTab")}</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setMode("credentials");
+                            setError("");
+                        }}
+                        className={cn(
+                            "flex items-center justify-center gap-1.5 rounded-lg py-1.5 px-2 text-[12px] font-semibold transition-all",
+                            mode === "credentials"
+                                ? "bg-white dark:bg-accent text-foreground shadow-xs border border-hairline/60"
+                                : "text-slate-gray hover:text-foreground",
+                        )}
+                    >
+                        <ShieldCheck
+                            className={cn(
+                                "size-3.5",
+                                mode === "credentials" ? "text-primary" : "",
+                            )}
+                        />
+                        <span>{t("managerTab")}</span>
+                    </button>
+                </div>
 
-                        {mode === "pin" ? (
-                            !configuredTenantId || isPairingManual ? (
-                                /* EXACT RESTAURANT TERMINAL PAIRING INTERFACE */
-                                <form
-                                    onSubmit={handleVerifyAndPair}
-                                    className="space-y-4"
-                                >
-                                    <div className="flex items-center justify-between pb-2.5 border-b border-hairline">
-                                        <div>
-                                            <h2 className="text-[13px] font-bold text-foreground">
-                                                Pair This Terminal
-                                            </h2>
-                                            <p className="text-[11.5px] text-slate-gray">
-                                                Enter your restaurant name or
-                                                code
-                                            </p>
-                                        </div>
-                                        <Store className="size-4 text-slate-gray" />
-                                    </div>
+                {/* Main Auth Card */}
+                <div className="rounded-[20px] border border-hairline bg-white dark:bg-card p-4 sm:p-5 shadow-lg shadow-black/[0.03]">
+                    {/* Error Banner */}
+                    {error && (
+                        <div className="mb-3 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50/95 dark:border-red-950 dark:bg-red-950/40 py-2 px-3 text-[12px] text-red-700 dark:text-red-400 animate-in fade-in slide-in-from-top-1">
+                            <AlertCircle className="size-3.5 shrink-0" />
+                            <span className="leading-tight font-medium">
+                                {error}
+                            </span>
+                        </div>
+                    )}
 
-                                    <div className="space-y-1.5">
-                                        <label className="text-[11px] font-semibold text-slate-gray uppercase tracking-wider block">
-                                            Restaurant Name or Slug
-                                        </label>
-                                        <div className="relative">
-                                            <Building2 className="absolute left-3 top-2.5 size-3.5 text-slate-gray" />
-                                            <Input
-                                                value={pairingInput}
-                                                onChange={e => {
-                                                    setPairingInput(
-                                                        e.target.value,
-                                                    );
-                                                    if (error) setError("");
-                                                }}
-                                                placeholder="e.g. Acme Coffee or acme-coffee"
-                                                className="h-9 pl-9 rounded-[10px] text-[13px]"
-                                                autoFocus
-                                                disabled={isVerifyingTenant}
-                                            />
-                                        </div>
-                                        <p className="text-[10.5px] text-slate-gray/80 leading-normal">
-                                            Must be entered accurately to
-                                            connect this device.
+                    {mode === "pin" ? (
+                        !configuredTenantId || isPairingManual ? (
+                            /* EXACT RESTAURANT TERMINAL PAIRING INTERFACE */
+                            <form
+                                onSubmit={handleVerifyAndPair}
+                                className="space-y-4"
+                            >
+                                <div className="flex items-center justify-between pb-2.5 border-b border-hairline">
+                                    <div>
+                                        <h2 className="text-[13px] font-bold text-foreground">
+                                            Pair This Terminal
+                                        </h2>
+                                        <p className="text-[11.5px] text-slate-gray">
+                                            Enter your restaurant name or code
                                         </p>
                                     </div>
+                                    <Store className="size-4 text-slate-gray" />
+                                </div>
 
-                                    <div className="pt-1 space-y-2">
+                                <div className="space-y-1.5">
+                                    <label className="text-[11px] font-semibold text-slate-gray uppercase tracking-wider block">
+                                        Restaurant Name or Slug
+                                    </label>
+                                    <div className="relative">
+                                        <Building2 className="absolute left-3 top-2.5 size-3.5 text-slate-gray" />
+                                        <Input
+                                            value={pairingInput}
+                                            onChange={e => {
+                                                setPairingInput(e.target.value);
+                                                if (error) setError("");
+                                            }}
+                                            placeholder="e.g. Acme Coffee or acme-coffee"
+                                            className="h-9 pl-9 rounded-[10px] text-[13px]"
+                                            autoFocus
+                                            disabled={isVerifyingTenant}
+                                        />
+                                    </div>
+                                    <p className="text-[10.5px] text-slate-gray/80 leading-normal">
+                                        Must be entered accurately to connect
+                                        this device.
+                                    </p>
+                                </div>
+
+                                <div className="pt-1 space-y-2">
+                                    <Button
+                                        type="submit"
+                                        disabled={
+                                            !pairingInput.trim() ||
+                                            isVerifyingTenant
+                                        }
+                                        className="w-full h-9 rounded-xl font-semibold text-[12px] flex items-center justify-center gap-1.5 cursor-pointer"
+                                    >
+                                        {isVerifyingTenant ? (
+                                            <>
+                                                <RefreshCw className="size-3.5 animate-spin" />
+                                                <span>
+                                                    Verifying Restaurant...
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span>Pair Terminal</span>
+                                                <ArrowRight className="size-3.5" />
+                                            </>
+                                        )}
+                                    </Button>
+
+                                    {configuredTenantId && (
                                         <Button
-                                            type="submit"
-                                            disabled={
-                                                !pairingInput.trim() ||
-                                                isVerifyingTenant
-                                            }
-                                            className="w-full h-9 rounded-xl font-semibold text-[12px] flex items-center justify-center gap-1.5 cursor-pointer"
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            disabled={isVerifyingTenant}
+                                            onClick={() => {
+                                                setIsPairingManual(false);
+                                                setError("");
+                                            }}
+                                            className="w-full h-8 text-[11.5px] text-slate-gray hover:text-foreground rounded-xl"
                                         >
-                                            {isVerifyingTenant ? (
-                                                <>
-                                                    <RefreshCw className="size-3.5 animate-spin" />
-                                                    <span>
-                                                        Verifying Restaurant...
-                                                    </span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <span>Pair Terminal</span>
-                                                    <ArrowRight className="size-3.5" />
-                                                </>
-                                            )}
+                                            Cancel (Keep {configuredTenantName})
                                         </Button>
+                                    )}
+                                </div>
+                            </form>
+                        ) : (
+                            /* PAIRED STAFF PIN PAD INTERFACE */
+                            <div className="space-y-3.5">
+                                {/* Paired Restaurant Pill Header */}
+                                <div className="flex items-center justify-between pb-2 border-b border-hairline">
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                        <Store className="size-3.5 text-slate-gray shrink-0" />
+                                        <span className="text-[12.5px] font-semibold text-foreground truncate">
+                                            {configuredTenantName}
+                                        </span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleUnpairTerminal}
+                                        className="text-[11px] text-slate-gray hover:text-foreground hover:underline transition-colors shrink-0 flex items-center gap-1"
+                                        title="Switch or pair another restaurant on this device"
+                                    >
+                                        <ArrowLeftRight className="size-3" />
+                                        <span>Switch</span>
+                                    </button>
+                                </div>
 
-                                        {configuredTenantId && (
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                disabled={isVerifyingTenant}
-                                                onClick={() => {
-                                                    setIsPairingManual(false);
-                                                    setError("");
-                                                }}
-                                                className="w-full h-8 text-[11.5px] text-slate-gray hover:text-foreground rounded-xl"
-                                            >
-                                                Cancel (Keep{" "}
-                                                {configuredTenantName})
-                                            </Button>
+                                {/* PIN Dots Indicator */}
+                                <div className="flex flex-col items-center justify-center pt-0.5">
+                                    <div
+                                        className={cn(
+                                            "flex items-center gap-3 py-1.5 px-3 rounded-xl bg-surface-ivory/50 dark:bg-secondary/30 transition-transform",
+                                            shake &&
+                                                "animate-bounce text-red-500",
                                         )}
-                                    </div>
-                                </form>
-                            ) : (
-                                /* PAIRED STAFF PIN PAD INTERFACE */
-                                <div className="space-y-3.5">
-                                    {/* Paired Restaurant Pill Header */}
-                                    <div className="flex items-center justify-between pb-2 border-b border-hairline">
-                                        <div className="flex items-center gap-1.5 min-w-0">
-                                            <Store className="size-3.5 text-slate-gray shrink-0" />
-                                            <span className="text-[12.5px] font-semibold text-foreground truncate">
-                                                {configuredTenantName}
-                                            </span>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={handleUnpairTerminal}
-                                            className="text-[11px] text-slate-gray hover:text-foreground hover:underline transition-colors shrink-0 flex items-center gap-1"
-                                            title="Switch or pair another restaurant on this device"
-                                        >
-                                            <ArrowLeftRight className="size-3" />
-                                            <span>Switch</span>
-                                        </button>
-                                    </div>
-
-                                    {/* PIN Dots Indicator */}
-                                    <div className="flex flex-col items-center justify-center pt-0.5">
-                                        <div
-                                            className={cn(
-                                                "flex items-center gap-3 py-1.5 px-3 rounded-xl bg-surface-ivory/50 dark:bg-secondary/30 transition-transform",
-                                                shake &&
-                                                    "animate-bounce text-red-500",
-                                            )}
-                                        >
-                                            {Array.from({
-                                                length: Math.min(
-                                                    6,
-                                                    Math.max(4, maxPinDots),
-                                                ),
-                                            }).map((_, idx) => {
-                                                const filled = idx < pin.length;
-                                                return (
-                                                    <div
-                                                        key={idx}
-                                                        className={cn(
-                                                            "size-3 sm:size-3.5 rounded-full border-2 transition-all duration-150",
-                                                            filled
-                                                                ? "bg-primary border-primary scale-110 shadow-xs shadow-primary/40"
-                                                                : "border-slate-300 dark:border-slate-700 bg-transparent",
-                                                        )}
-                                                    />
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-
-                                    {/* Keypad Buttons Grid */}
-                                    <div className="grid grid-cols-3 gap-1.5 sm:gap-2 max-w-[280px] mx-auto">
-                                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(
-                                            num => (
-                                                <button
-                                                    key={num}
-                                                    type="button"
-                                                    onClick={() =>
-                                                        handleKeypadPress(
-                                                            String(num),
-                                                        )
-                                                    }
-                                                    disabled={isPinLoading}
-                                                    className="h-11 sm:h-12 rounded-[14px] border border-hairline bg-surface-ivory/60 dark:bg-secondary/40 text-[18px] sm:text-[19px] font-semibold text-foreground hover:bg-primary/10 hover:border-primary/40 hover:text-primary active:scale-95 transition-all flex items-center justify-center select-none shadow-2xs disabled:opacity-50"
-                                                >
-                                                    {num}
-                                                </button>
+                                    >
+                                        {Array.from({
+                                            length: Math.min(
+                                                6,
+                                                Math.max(4, maxPinDots),
                                             ),
-                                        )}
+                                        }).map((_, idx) => {
+                                            const filled = idx < pin.length;
+                                            return (
+                                                <div
+                                                    key={idx}
+                                                    className={cn(
+                                                        "size-3 sm:size-3.5 rounded-full border-2 transition-all duration-150",
+                                                        filled
+                                                            ? "bg-primary border-primary scale-110 shadow-xs shadow-primary/40"
+                                                            : "border-slate-300 dark:border-slate-700 bg-transparent",
+                                                    )}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Keypad Buttons Grid */}
+                                <div className="grid grid-cols-3 gap-1.5 sm:gap-2 max-w-[280px] mx-auto">
+                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
                                         <button
-                                            type="button"
-                                            onClick={handleClear}
-                                            disabled={
-                                                isPinLoading || pin.length === 0
-                                            }
-                                            className="h-11 sm:h-12 rounded-[14px] border border-hairline bg-surface-ivory/40 dark:bg-secondary/20 text-[12px] font-semibold text-slate-gray hover:text-foreground hover:bg-secondary active:scale-95 transition-all flex items-center justify-center select-none disabled:opacity-30"
-                                        >
-                                            {t("clear")}
-                                        </button>
-                                        <button
+                                            key={num}
                                             type="button"
                                             onClick={() =>
-                                                handleKeypadPress("0")
+                                                handleKeypadPress(String(num))
                                             }
                                             disabled={isPinLoading}
                                             className="h-11 sm:h-12 rounded-[14px] border border-hairline bg-surface-ivory/60 dark:bg-secondary/40 text-[18px] sm:text-[19px] font-semibold text-foreground hover:bg-primary/10 hover:border-primary/40 hover:text-primary active:scale-95 transition-all flex items-center justify-center select-none shadow-2xs disabled:opacity-50"
                                         >
-                                            0
+                                            {num}
                                         </button>
-                                        <button
-                                            type="button"
-                                            onClick={handleBackspace}
-                                            disabled={
-                                                isPinLoading || pin.length === 0
-                                            }
-                                            className="h-11 sm:h-12 rounded-[14px] border border-hairline bg-surface-ivory/40 dark:bg-secondary/20 text-slate-gray hover:text-foreground hover:bg-secondary active:scale-95 transition-all flex items-center justify-center select-none disabled:opacity-30"
-                                            title={t("backspace")}
-                                        >
-                                            <Delete className="size-4.5" />
-                                        </button>
-                                    </div>
-
-                                    {/* Submit Button */}
-                                    <Button
+                                    ))}
+                                    <button
                                         type="button"
-                                        onClick={() => void handlePinSubmit()}
+                                        onClick={handleClear}
                                         disabled={
-                                            isPinLoading || pin.length < 4
+                                            isPinLoading || pin.length === 0
                                         }
-                                        className="w-full h-10 rounded-xl bg-primary text-primary-foreground hover:bg-primary-deep text-[13px] font-semibold shadow-sm shadow-primary/20 transition-all disabled:opacity-50 cursor-pointer"
+                                        className="h-11 sm:h-12 rounded-[14px] border border-hairline bg-surface-ivory/40 dark:bg-secondary/20 text-[12px] font-semibold text-slate-gray hover:text-foreground hover:bg-secondary active:scale-95 transition-all flex items-center justify-center select-none disabled:opacity-30"
                                     >
-                                        {isPinLoading ? (
-                                            <span className="flex items-center gap-1.5">
-                                                <span className="size-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                                                <span>{t("signingIn")}</span>
-                                            </span>
-                                        ) : (
-                                            <span className="flex items-center gap-1.5">
-                                                <KeyRound className="size-3.5" />
-                                                <span>{t("quickLogin")}</span>
-                                            </span>
-                                        )}
-                                    </Button>
-                                </div>
-                            )
-                        ) : (
-                            /* MANAGER / ADMIN CREDENTIALS INTERFACE */
-                            <form
-                                onSubmit={handleCredentialsLogin}
-                                className="space-y-3"
-                            >
-                                <div className="space-y-1">
-                                    <label className="text-[12px] font-medium text-foreground">
-                                        {t("emailOrPhone")}
-                                    </label>
-                                    <div className="relative">
-                                        <Mail className="absolute left-3 top-2.5 size-3.5 text-slate-gray" />
-                                        <Input
-                                            type="text"
-                                            value={identifier}
-                                            onChange={e => {
-                                                setIdentifier(e.target.value);
-                                                if (error) setError("");
-                                            }}
-                                            placeholder={t("emailPlaceholder")}
-                                            className="h-9 pl-9 rounded-[10px] text-[13px]"
-                                            autoComplete="username"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-1">
-                                    <label className="text-[12px] font-medium text-foreground">
-                                        {t("password")}
-                                    </label>
-                                    <div className="relative">
-                                        <Lock className="absolute left-3 top-2.5 size-3.5 text-slate-gray" />
-                                        <Input
-                                            type={
-                                                showPassword
-                                                    ? "text"
-                                                    : "password"
-                                            }
-                                            value={password}
-                                            onChange={e => {
-                                                setPassword(e.target.value);
-                                                if (error) setError("");
-                                            }}
-                                            placeholder={t(
-                                                "passwordPlaceholder",
-                                            )}
-                                            className="h-9 pl-9 pr-9 rounded-[10px] text-[13px]"
-                                            autoComplete="current-password"
-                                            required
-                                        />
-                                        <button
-                                            type="button"
-                                            tabIndex={-1}
-                                            onClick={() =>
-                                                setShowPassword(v => !v)
-                                            }
-                                            className="absolute right-3 top-2.5 z-10 flex size-5 cursor-pointer items-center justify-center text-slate-gray hover:text-foreground transition-colors"
-                                            title={
-                                                showPassword
-                                                    ? "Hide Password"
-                                                    : "Show Password"
-                                            }
-                                        >
-                                            {showPassword ? (
-                                                <EyeOff className="size-3.5" />
-                                            ) : (
-                                                <Eye className="size-3.5" />
-                                            )}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <label className="flex items-center gap-2 cursor-pointer pt-0.5 text-[12px] text-slate-gray select-none">
-                                    <input
-                                        type="checkbox"
-                                        checked={rememberMe}
-                                        onChange={e =>
-                                            setRememberMe(e.target.checked)
+                                        {t("clear")}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleKeypadPress("0")}
+                                        disabled={isPinLoading}
+                                        className="h-11 sm:h-12 rounded-[14px] border border-hairline bg-surface-ivory/60 dark:bg-secondary/40 text-[18px] sm:text-[19px] font-semibold text-foreground hover:bg-primary/10 hover:border-primary/40 hover:text-primary active:scale-95 transition-all flex items-center justify-center select-none shadow-2xs disabled:opacity-50"
+                                    >
+                                        0
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleBackspace}
+                                        disabled={
+                                            isPinLoading || pin.length === 0
                                         }
-                                        className="size-3.5 rounded border-hairline text-primary focus:ring-primary"
-                                    />
-                                    <span>{t("rememberMe")}</span>
-                                </label>
+                                        className="h-11 sm:h-12 rounded-[14px] border border-hairline bg-surface-ivory/40 dark:bg-secondary/20 text-slate-gray hover:text-foreground hover:bg-secondary active:scale-95 transition-all flex items-center justify-center select-none disabled:opacity-30"
+                                        title={t("backspace")}
+                                    >
+                                        <Delete className="size-4.5" />
+                                    </button>
+                                </div>
 
+                                {/* Submit Button */}
                                 <Button
-                                    type="submit"
-                                    disabled={isCredLoading}
-                                    className="mt-1 h-10 w-full rounded-xl bg-primary text-primary-foreground hover:bg-primary-deep text-[13px] font-semibold transition-all shadow-sm shadow-primary/20"
+                                    type="button"
+                                    onClick={() => void handlePinSubmit()}
+                                    disabled={isPinLoading || pin.length < 4}
+                                    className="w-full h-10 rounded-xl bg-primary text-primary-foreground hover:bg-primary-deep text-[13px] font-semibold shadow-sm shadow-primary/20 transition-all disabled:opacity-50 cursor-pointer"
                                 >
-                                    {isCredLoading ? (
+                                    {isPinLoading ? (
                                         <span className="flex items-center gap-1.5">
                                             <span className="size-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                                             <span>{t("signingIn")}</span>
                                         </span>
                                     ) : (
-                                        t("signInBtn")
+                                        <span className="flex items-center gap-1.5">
+                                            <KeyRound className="size-3.5" />
+                                            <span>{t("quickLogin")}</span>
+                                        </span>
                                     )}
                                 </Button>
-                            </form>
-                        )}
-                    </div>
+                            </div>
+                        )
+                    ) : (
+                        /* MANAGER / ADMIN CREDENTIALS INTERFACE */
+                        <form
+                            onSubmit={handleCredentialsLogin}
+                            className="space-y-3"
+                        >
+                            <div className="space-y-1">
+                                <label className="text-[12px] font-medium text-foreground">
+                                    {t("emailOrPhone")}
+                                </label>
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-2.5 size-3.5 text-slate-gray" />
+                                    <Input
+                                        type="text"
+                                        value={identifier}
+                                        onChange={e => {
+                                            setIdentifier(e.target.value);
+                                            if (error) setError("");
+                                        }}
+                                        placeholder={t("emailPlaceholder")}
+                                        className="h-9 pl-9 rounded-[10px] text-[13px]"
+                                        autoComplete="username"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-[12px] font-medium text-foreground">
+                                    {t("password")}
+                                </label>
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-2.5 size-3.5 text-slate-gray" />
+                                    <Input
+                                        type={
+                                            showPassword ? "text" : "password"
+                                        }
+                                        value={password}
+                                        onChange={e => {
+                                            setPassword(e.target.value);
+                                            if (error) setError("");
+                                        }}
+                                        placeholder={t("passwordPlaceholder")}
+                                        className="h-9 pl-9 pr-9 rounded-[10px] text-[13px]"
+                                        autoComplete="current-password"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        tabIndex={-1}
+                                        onClick={() => setShowPassword(v => !v)}
+                                        className="absolute right-3 top-2.5 z-10 flex size-5 cursor-pointer items-center justify-center text-slate-gray hover:text-foreground transition-colors"
+                                        title={
+                                            showPassword
+                                                ? "Hide Password"
+                                                : "Show Password"
+                                        }
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff className="size-3.5" />
+                                        ) : (
+                                            <Eye className="size-3.5" />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <label className="flex items-center gap-2 cursor-pointer pt-0.5 text-[12px] text-slate-gray select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={rememberMe}
+                                    onChange={e =>
+                                        setRememberMe(e.target.checked)
+                                    }
+                                    className="size-3.5 rounded border-hairline text-primary focus:ring-primary"
+                                />
+                                <span>{t("rememberMe")}</span>
+                            </label>
+
+                            <Button
+                                type="submit"
+                                disabled={isCredLoading}
+                                className="mt-1 h-10 w-full rounded-xl bg-primary text-primary-foreground hover:bg-primary-deep text-[13px] font-semibold transition-all shadow-sm shadow-primary/20"
+                            >
+                                {isCredLoading ? (
+                                    <span className="flex items-center gap-1.5">
+                                        <span className="size-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                                        <span>{t("signingIn")}</span>
+                                    </span>
+                                ) : (
+                                    t("signInBtn")
+                                )}
+                            </Button>
+                        </form>
+                    )}
                 </div>
             </div>
 

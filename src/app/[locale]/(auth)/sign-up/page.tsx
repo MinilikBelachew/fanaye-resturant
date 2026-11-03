@@ -1,7 +1,6 @@
 "use client";
 
 import { RestorchLogo } from "@/components/common/RestorchLogo";
-import { RestorchBrandVideo } from "@/components/common/RestorchBrandVideo";
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
@@ -110,341 +109,289 @@ export default function SignUpPage() {
                 <LocaleSwitcher />
             </div>
 
-            <div className="mx-auto w-full max-w-5xl my-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-                {/* Left Brand Video Showcase (Desktop) */}
-                <div className="hidden lg:flex lg:col-span-5 flex-col justify-center space-y-4">
-                    <RestorchBrandVideo
-                        className="aspect-video w-full shadow-2xl rounded-2xl"
-                        badgeText="Deploy in 60 Seconds"
-                    />
-                    <div className="space-y-2 px-1">
-                        <h2 className="text-xl font-bold tracking-tight text-foreground">
-                            Scale With Restorch OS
-                        </h2>
-                        <ul className="space-y-1.5 text-xs text-muted-foreground">
-                            <li className="flex items-center gap-2">
-                                <span className="size-1.5 rounded-full bg-orange-500" />
-                                <span>
-                                    Zero-hardware cloud KDS & ticket routing
-                                </span>
-                            </li>
-                            <li className="flex items-center gap-2">
-                                <span className="size-1.5 rounded-full bg-orange-500" />
-                                <span>
-                                    Attributable staff cash custody & fraud
-                                    prevention
-                                </span>
-                            </li>
-                            <li className="flex items-center gap-2">
-                                <span className="size-1.5 rounded-full bg-orange-500" />
-                                <span>
-                                    Live QR digital dining & instant waiter
-                                    calls
-                                </span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div className="w-full max-w-lg mx-auto lg:col-span-7">
-                    {/* Header */}
-                    <div className="text-center">
-                        <h1 className="text-[32px] font-bold tracking-tight text-foreground">
-                            {t("title")}
-                        </h1>
-                        <p className="mt-1 text-[14px] text-slate-gray">
-                            {t("subTitle")}
-                        </p>
-                    </div>
-
-                    {/* Sign-Up Card */}
-                    <div className="mt-6 rounded-[24px] border border-hairline bg-white p-6 sm:p-8 dark:bg-card">
-                        {success ? (
-                            <div className="py-8 text-center space-y-3">
-                                <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50">
-                                    <CheckCircle2 className="size-8 stroke-[2.5]" />
-                                </div>
-                                <h2 className="text-[20px] font-bold text-foreground">
-                                    {t("successTitle")}
-                                </h2>
-                                <p className="text-[14px] text-slate-gray max-w-sm mx-auto">
-                                    {t("successDesc")}
-                                </p>
-                                <div className="pt-2">
-                                    <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-primary">
-                                        <Sparkles className="size-4 animate-spin" />
-                                        <span>{t("openingDashboard")}</span>
-                                    </span>
-                                </div>
-                            </div>
-                        ) : (
-                            <div>
-                                {/* Google Sign-Up */}
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={handleGoogleSignUp}
-                                    disabled={socialLoading}
-                                    className="h-11 w-full rounded-[14px] border-hairline bg-white hover:bg-secondary text-[14px] font-semibold gap-3 dark:bg-card"
-                                >
-                                    <GoogleIcon />
-                                    <span>
-                                        {socialLoading
-                                            ? t("googleConnecting")
-                                            : t("googleBtn")}
-                                    </span>
-                                </Button>
-
-                                <div className="relative my-5">
-                                    <div className="absolute inset-0 flex items-center">
-                                        <div className="w-full border-t border-hairline" />
-                                    </div>
-                                    <div className="relative flex justify-center text-[12px] uppercase">
-                                        <span className="bg-white px-3 text-slate-gray dark:bg-card font-medium">
-                                            {t("orEmail")}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Form */}
-                                <form
-                                    onSubmit={handleSignUp}
-                                    className="space-y-4"
-                                >
-                                    {error && (
-                                        <div className="flex items-center gap-2 rounded-[12px] border border-red-200 bg-red-50 p-3 text-[13px] text-red-700 dark:border-red-950 dark:bg-red-950/40 dark:text-red-400">
-                                            <AlertCircle className="size-4 shrink-0" />
-                                            <span>{error}</span>
-                                        </div>
-                                    )}
-
-                                    <div className="space-y-1.5">
-                                        <label className="text-[13px] font-medium text-foreground">
-                                            {t("restaurantName")}{" "}
-                                            <span className="text-primary">
-                                                *
-                                            </span>
-                                        </label>
-                                        <div className="relative">
-                                            <Building2 className="absolute left-3.5 top-3 size-4 text-slate-gray" />
-                                            <Input
-                                                type="text"
-                                                value={restaurantName}
-                                                onChange={e =>
-                                                    setRestaurantName(
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                placeholder={t(
-                                                    "restaurantPlaceholder",
-                                                )}
-                                                className="h-11 pl-10 rounded-[12px] text-[14px]"
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <div className="space-y-1.5">
-                                            <label className="text-[13px] font-medium text-foreground">
-                                                {t("fullName")}{" "}
-                                                <span className="text-primary">
-                                                    *
-                                                </span>
-                                            </label>
-                                            <div className="relative">
-                                                <User className="absolute left-3.5 top-3 size-4 text-slate-gray" />
-                                                <Input
-                                                    type="text"
-                                                    value={fullName}
-                                                    onChange={e =>
-                                                        setFullName(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    placeholder={t(
-                                                        "namePlaceholder",
-                                                    )}
-                                                    className="h-11 pl-10 rounded-[12px] text-[14px]"
-                                                    required
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-1.5">
-                                            <label className="text-[13px] font-medium text-foreground">
-                                                {t("phone")}
-                                            </label>
-                                            <div className="relative">
-                                                <Phone className="absolute left-3.5 top-3 size-4 text-slate-gray" />
-                                                <Input
-                                                    type="text"
-                                                    value={phone}
-                                                    onChange={e =>
-                                                        setPhone(e.target.value)
-                                                    }
-                                                    placeholder={t(
-                                                        "phonePlaceholder",
-                                                    )}
-                                                    className="h-11 pl-10 rounded-[12px] text-[14px]"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-1.5">
-                                        <label className="text-[13px] font-medium text-foreground">
-                                            {t("workEmail")}{" "}
-                                            <span className="text-primary">
-                                                *
-                                            </span>
-                                        </label>
-                                        <div className="relative">
-                                            <Mail className="absolute left-3.5 top-3 size-4 text-slate-gray" />
-                                            <Input
-                                                type="email"
-                                                value={email}
-                                                onChange={e =>
-                                                    setEmail(e.target.value)
-                                                }
-                                                placeholder={t(
-                                                    "emailPlaceholder",
-                                                )}
-                                                className="h-11 pl-10 rounded-[12px] text-[14px]"
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-1.5">
-                                        <label className="text-[13px] font-medium text-foreground">
-                                            {t("password")}{" "}
-                                            <span className="text-primary">
-                                                *
-                                            </span>
-                                        </label>
-                                        <div className="relative">
-                                            <Lock className="absolute left-3.5 top-3 size-4 text-slate-gray" />
-                                            <Input
-                                                type={
-                                                    showPassword
-                                                        ? "text"
-                                                        : "password"
-                                                }
-                                                value={password}
-                                                onChange={e =>
-                                                    setPassword(e.target.value)
-                                                }
-                                                placeholder={t(
-                                                    "passwordPlaceholder",
-                                                )}
-                                                className="h-11 pl-10 pr-10 rounded-[12px] text-[14px]"
-                                                required
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    setShowPassword(v => !v)
-                                                }
-                                                className="absolute right-3.5 top-3 z-10 flex size-5 cursor-pointer items-center justify-center text-slate-gray hover:text-foreground transition-colors"
-                                                title={
-                                                    showPassword
-                                                        ? "Hide Password"
-                                                        : "Show Password"
-                                                }
-                                            >
-                                                {showPassword ? (
-                                                    <EyeOff className="size-4" />
-                                                ) : (
-                                                    <Eye className="size-4" />
-                                                )}
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-1.5">
-                                        <label className="text-[13px] font-medium text-foreground">
-                                            {t("concept")}
-                                        </label>
-                                        <select
-                                            value={concept}
-                                            onChange={e =>
-                                                setConcept(e.target.value)
-                                            }
-                                            className="h-11 w-full rounded-[12px] border border-hairline bg-surface-ivory/50 px-3 text-[14px] text-foreground outline-none focus:border-primary"
-                                        >
-                                            <option value="casual_dining">
-                                                {t("conceptCasual")}
-                                            </option>
-                                            <option value="cafe_bar">
-                                                {t("conceptCafe")}
-                                            </option>
-                                            <option value="fast_casual">
-                                                {t("conceptFastCasual")}
-                                            </option>
-                                            <option value="bakery">
-                                                {t("conceptBakery")}
-                                            </option>
-                                            <option value="lounge">
-                                                {t("conceptLounge")}
-                                            </option>
-                                        </select>
-                                    </div>
-
-                                    <div className="pt-1">
-                                        <label className="flex items-start gap-2.5 cursor-pointer text-[13px] text-slate-gray">
-                                            <input
-                                                type="checkbox"
-                                                checked={agreed}
-                                                onChange={e =>
-                                                    setAgreed(e.target.checked)
-                                                }
-                                                className="mt-0.5 size-4 rounded border-hairline text-primary focus:ring-primary"
-                                            />
-                                            <span>
-                                                {t("termsPrefix")}{" "}
-                                                <a
-                                                    href="#"
-                                                    className="text-primary hover:underline"
-                                                >
-                                                    {t("termsLink")}
-                                                </a>{" "}
-                                                {t("termsAnd")}{" "}
-                                                <a
-                                                    href="#"
-                                                    className="text-primary hover:underline"
-                                                >
-                                                    {t("privacyLink")}
-                                                </a>
-                                            </span>
-                                        </label>
-                                    </div>
-
-                                    <Button
-                                        type="submit"
-                                        disabled={loading}
-                                        className="mt-2 h-11 w-full rounded-[14px] bg-primary text-primary-foreground hover:bg-primary-deep text-[14px] font-semibold transition-all"
-                                    >
-                                        {loading
-                                            ? t("creating")
-                                            : t("submitBtn")}
-                                    </Button>
-                                </form>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Footer Link */}
-                    <p className="mt-6 text-center text-[14px] text-slate-gray">
-                        {t("alreadyAccount")}{" "}
-                        <Link
-                            href="/sign-in"
-                            className="font-semibold text-primary hover:underline"
-                        >
-                            {t("signIn")}
-                        </Link>
+            <div className="mx-auto w-full max-w-lg my-auto">
+                {/* Header */}
+                <div className="text-center">
+                    <h1 className="text-[32px] font-bold tracking-tight text-foreground">
+                        {t("title")}
+                    </h1>
+                    <p className="mt-1 text-[14px] text-slate-gray">
+                        {t("subTitle")}
                     </p>
                 </div>
+
+                {/* Sign-Up Card */}
+                <div className="mt-6 rounded-[24px] border border-hairline bg-white p-6 sm:p-8 dark:bg-card">
+                    {success ? (
+                        <div className="py-8 text-center space-y-3">
+                            <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50">
+                                <CheckCircle2 className="size-8 stroke-[2.5]" />
+                            </div>
+                            <h2 className="text-[20px] font-bold text-foreground">
+                                {t("successTitle")}
+                            </h2>
+                            <p className="text-[14px] text-slate-gray max-w-sm mx-auto">
+                                {t("successDesc")}
+                            </p>
+                            <div className="pt-2">
+                                <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-primary">
+                                    <Sparkles className="size-4 animate-spin" />
+                                    <span>{t("openingDashboard")}</span>
+                                </span>
+                            </div>
+                        </div>
+                    ) : (
+                        <div>
+                            {/* Google Sign-Up */}
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleGoogleSignUp}
+                                disabled={socialLoading}
+                                className="h-11 w-full rounded-[14px] border-hairline bg-white hover:bg-secondary text-[14px] font-semibold gap-3 dark:bg-card"
+                            >
+                                <GoogleIcon />
+                                <span>
+                                    {socialLoading
+                                        ? t("googleConnecting")
+                                        : t("googleBtn")}
+                                </span>
+                            </Button>
+
+                            <div className="relative my-5">
+                                <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t border-hairline" />
+                                </div>
+                                <div className="relative flex justify-center text-[12px] uppercase">
+                                    <span className="bg-white px-3 text-slate-gray dark:bg-card font-medium">
+                                        {t("orEmail")}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Form */}
+                            <form onSubmit={handleSignUp} className="space-y-4">
+                                {error && (
+                                    <div className="flex items-center gap-2 rounded-[12px] border border-red-200 bg-red-50 p-3 text-[13px] text-red-700 dark:border-red-950 dark:bg-red-950/40 dark:text-red-400">
+                                        <AlertCircle className="size-4 shrink-0" />
+                                        <span>{error}</span>
+                                    </div>
+                                )}
+
+                                <div className="space-y-1.5">
+                                    <label className="text-[13px] font-medium text-foreground">
+                                        {t("restaurantName")}{" "}
+                                        <span className="text-primary">*</span>
+                                    </label>
+                                    <div className="relative">
+                                        <Building2 className="absolute left-3.5 top-3 size-4 text-slate-gray" />
+                                        <Input
+                                            type="text"
+                                            value={restaurantName}
+                                            onChange={e =>
+                                                setRestaurantName(
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder={t(
+                                                "restaurantPlaceholder",
+                                            )}
+                                            className="h-11 pl-10 rounded-[12px] text-[14px]"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[13px] font-medium text-foreground">
+                                            {t("fullName")}{" "}
+                                            <span className="text-primary">
+                                                *
+                                            </span>
+                                        </label>
+                                        <div className="relative">
+                                            <User className="absolute left-3.5 top-3 size-4 text-slate-gray" />
+                                            <Input
+                                                type="text"
+                                                value={fullName}
+                                                onChange={e =>
+                                                    setFullName(e.target.value)
+                                                }
+                                                placeholder={t(
+                                                    "namePlaceholder",
+                                                )}
+                                                className="h-11 pl-10 rounded-[12px] text-[14px]"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-[13px] font-medium text-foreground">
+                                            {t("phone")}
+                                        </label>
+                                        <div className="relative">
+                                            <Phone className="absolute left-3.5 top-3 size-4 text-slate-gray" />
+                                            <Input
+                                                type="text"
+                                                value={phone}
+                                                onChange={e =>
+                                                    setPhone(e.target.value)
+                                                }
+                                                placeholder={t(
+                                                    "phonePlaceholder",
+                                                )}
+                                                className="h-11 pl-10 rounded-[12px] text-[14px]"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-[13px] font-medium text-foreground">
+                                        {t("workEmail")}{" "}
+                                        <span className="text-primary">*</span>
+                                    </label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-3.5 top-3 size-4 text-slate-gray" />
+                                        <Input
+                                            type="email"
+                                            value={email}
+                                            onChange={e =>
+                                                setEmail(e.target.value)
+                                            }
+                                            placeholder={t("emailPlaceholder")}
+                                            className="h-11 pl-10 rounded-[12px] text-[14px]"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-[13px] font-medium text-foreground">
+                                        {t("password")}{" "}
+                                        <span className="text-primary">*</span>
+                                    </label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-3.5 top-3 size-4 text-slate-gray" />
+                                        <Input
+                                            type={
+                                                showPassword
+                                                    ? "text"
+                                                    : "password"
+                                            }
+                                            value={password}
+                                            onChange={e =>
+                                                setPassword(e.target.value)
+                                            }
+                                            placeholder={t(
+                                                "passwordPlaceholder",
+                                            )}
+                                            className="h-11 pl-10 pr-10 rounded-[12px] text-[14px]"
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setShowPassword(v => !v)
+                                            }
+                                            className="absolute right-3.5 top-3 z-10 flex size-5 cursor-pointer items-center justify-center text-slate-gray hover:text-foreground transition-colors"
+                                            title={
+                                                showPassword
+                                                    ? "Hide Password"
+                                                    : "Show Password"
+                                            }
+                                        >
+                                            {showPassword ? (
+                                                <EyeOff className="size-4" />
+                                            ) : (
+                                                <Eye className="size-4" />
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-[13px] font-medium text-foreground">
+                                        {t("concept")}
+                                    </label>
+                                    <select
+                                        value={concept}
+                                        onChange={e =>
+                                            setConcept(e.target.value)
+                                        }
+                                        className="h-11 w-full rounded-[12px] border border-hairline bg-surface-ivory/50 px-3 text-[14px] text-foreground outline-none focus:border-primary"
+                                    >
+                                        <option value="casual_dining">
+                                            {t("conceptCasual")}
+                                        </option>
+                                        <option value="cafe_bar">
+                                            {t("conceptCafe")}
+                                        </option>
+                                        <option value="fast_casual">
+                                            {t("conceptFastCasual")}
+                                        </option>
+                                        <option value="bakery">
+                                            {t("conceptBakery")}
+                                        </option>
+                                        <option value="lounge">
+                                            {t("conceptLounge")}
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div className="pt-1">
+                                    <label className="flex items-start gap-2.5 cursor-pointer text-[13px] text-slate-gray">
+                                        <input
+                                            type="checkbox"
+                                            checked={agreed}
+                                            onChange={e =>
+                                                setAgreed(e.target.checked)
+                                            }
+                                            className="mt-0.5 size-4 rounded border-hairline text-primary focus:ring-primary"
+                                        />
+                                        <span>
+                                            {t("termsPrefix")}{" "}
+                                            <a
+                                                href="#"
+                                                className="text-primary hover:underline"
+                                            >
+                                                {t("termsLink")}
+                                            </a>{" "}
+                                            {t("termsAnd")}{" "}
+                                            <a
+                                                href="#"
+                                                className="text-primary hover:underline"
+                                            >
+                                                {t("privacyLink")}
+                                            </a>
+                                        </span>
+                                    </label>
+                                </div>
+
+                                <Button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="mt-2 h-11 w-full rounded-[14px] bg-primary text-primary-foreground hover:bg-primary-deep text-[14px] font-semibold transition-all"
+                                >
+                                    {loading ? t("creating") : t("submitBtn")}
+                                </Button>
+                            </form>
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer Link */}
+                <p className="mt-6 text-center text-[14px] text-slate-gray">
+                    {t("alreadyAccount")}{" "}
+                    <Link
+                        href="/sign-in"
+                        className="font-semibold text-primary hover:underline"
+                    >
+                        {t("signIn")}
+                    </Link>
+                </p>
             </div>
         </div>
     );
