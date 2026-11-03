@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import type { CashDrop } from "@/domains/cash/domain/cashApi";
 import { exportElementToPdf } from "@/lib/pdfExport";
 import { formatEtb } from "@/lib/money";
-import { GoldenClocheLogo } from "@/components/common/GoldenClocheLogo";
+import { RestorchLogo } from "@/components/common/RestorchLogo";
 import { Badge } from "@/components/ui/badge";
 
 interface CashDropReceiptModalProps {
@@ -104,7 +104,7 @@ export const CashDropReceiptModal: React.FC<CashDropReceiptModalProps> = ({
                 >
                     <div className="text-center space-y-1">
                         <div className="flex justify-center mb-1">
-                            <GoldenClocheLogo className="size-8 text-[#d97706]" />
+                            <RestorchLogo variant="mark" height={36} />
                         </div>
                         <h2 className="text-base font-bold tracking-tight text-gray-900">
                             {restaurantName}

@@ -8,6 +8,7 @@ import { performSignOut } from "@/domains/identity/application/signOut";
 import SidebarNav from "@/components/layout/SidebarNav";
 import { navForRole } from "@/domains/identity/application/nav";
 import RoleSwitcher from "@/domains/identity/ui/RoleSwitcher";
+import { RestorchLogo } from "@/components/common/RestorchLogo";
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { useRouter } from "@/i18n/navigation";
 
@@ -47,7 +48,8 @@ export default function WaiterNavPanel({
     if (collapsed) {
         return (
             <div className="flex h-full w-full flex-col bg-card py-3">
-                <div className="flex justify-center pb-3 border-b border-border/60">
+                <div className="flex flex-col items-center gap-2.5 pb-3 border-b border-border/60">
+                    <RestorchLogo variant="mark" height={26} />
                     <RoleSwitcher compact />
                 </div>
                 <SidebarNav
@@ -74,6 +76,9 @@ export default function WaiterNavPanel({
     return (
         <div className="flex h-full w-full flex-col overflow-hidden rounded-[22px] border border-border/80 bg-card shadow-sm">
             <div className="shrink-0 p-3 border-b border-border/60">
+                <div className="pb-2.5 mb-2.5 border-b border-border/40 flex items-center justify-between">
+                    <RestorchLogo variant="full" height={22} />
+                </div>
                 <RoleSwitcher />
             </div>
             <SidebarNav

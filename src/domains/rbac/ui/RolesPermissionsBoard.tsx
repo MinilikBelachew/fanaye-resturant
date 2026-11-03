@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Loader2, RefreshCw, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { RestorchLoader } from "@/components/common/RestorchLoader";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
     useGetSuperAdminPermissionsQuery,
@@ -125,9 +126,11 @@ export default function RolesPermissionsBoard() {
 
     if (loading) {
         return (
-            <div className="flex items-center gap-2 py-16 text-sm text-muted-foreground">
-                <Loader2 className="size-4 animate-spin" />
-                Loading roles and permissions…
+            <div className="flex justify-center py-14">
+                <RestorchLoader
+                    size="md"
+                    label="Loading roles and permissions…"
+                />
             </div>
         );
     }

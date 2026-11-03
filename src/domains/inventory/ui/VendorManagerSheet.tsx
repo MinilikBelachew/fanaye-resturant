@@ -3,7 +3,9 @@
 import { useState } from "react";
 import {
     Check,
+    Globe,
     Loader2,
+    MapPin,
     Pencil,
     Phone,
     Plus,
@@ -17,8 +19,13 @@ import {
     useDeleteVendorMutation,
     useListVendorsQuery,
     useUpdateVendorMutation,
+    useGetInventoryNetworkStatusQuery,
+    useListInventoryLocationsQuery,
     type InventoryVendor,
 } from "@/context/services/inventoryApi";
+import { useListBranchesQuery } from "@/context/services/branchesApi";
+import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
+import { useAppSelector } from "@/context/hooks";
 import { InventoryNiceSelect } from "@/domains/inventory/ui/InventoryFormControls";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -35,7 +42,28 @@ export function VendorManagerSheet({
     onSelectVendor,
 }: VendorManagerSheetProps) {
     const t = useTranslations("inventory");
-    const { data: vendorsRes, isLoading } = useListVendorsQuery();
+
+    const staff = useAppSelector(selectCurrentStaff);
+    const { data: networkRes } = useGetInventoryNetworkStatusQuery();
+    const network = networkRes?.data;
+    const canOperateCentral =
+        network?.canOperateCentral ??
+        (staff?.role === "owner" || staff?.role === "store_manager");
+
+    const { data: locationsRes } = useListInventoryLocationsQuery(undefined, {
+        skip: !open,
+    });
+    const locations = locationsRes?.data ?? [];
+    const branchStores = locations.filter(l => l.type === "BRANCH_STORE");
+    const myBranchStore = !canOperateCentral ? (branchStores[0] ?? null) : null;
+    const defaultBranchId = myBranchStore?.branchId ?? "";
+
+    const { data: branchesRes } = useListBranchesQuery();
+    const branches = branchesRes?.data ?? [];
+
+    const { data: vendorsRes, isLoading } = useListVendorsQuery(undefined, {
+        skip: !open,
+    });
     const vendors = vendorsRes?.data ?? [];
 
     const [createVendor, { isLoading: isCreating }] = useCreateVendorMutation();
@@ -53,6 +81,7 @@ export function VendorManagerSheet({
         contactPerson: "",
         phone: "",
         address: "",
+        branchId: "",
     });
 
     if (!open) return null;
@@ -64,6 +93,7 @@ export function VendorManagerSheet({
             contactPerson: "",
             phone: "",
             address: "",
+            branchId: defaultBranchId,
         });
         setEditingVendor(null);
         setIsFormOpen(false);
@@ -77,6 +107,7 @@ export function VendorManagerSheet({
             contactPerson: vendor.contactPerson ?? "",
             phone: vendor.phone ?? "",
             address: vendor.address ?? "",
+            branchId: vendor.branchId ?? "",
         });
         setIsFormOpen(true);
     }
@@ -88,6 +119,9 @@ export function VendorManagerSheet({
             return;
         }
         try {
+            const branchIdPayload = formData.branchId
+                ? formData.branchId
+                : null;
             if (editingVendor) {
                 await updateVendor({
                     id: editingVendor.id,
@@ -98,6 +132,7 @@ export function VendorManagerSheet({
                             formData.contactPerson.trim() || undefined,
                         phone: formData.phone.trim() || undefined,
                         address: formData.address.trim() || undefined,
+                        branchId: branchIdPayload,
                     },
                 }).unwrap();
                 toast.success(t("vendorsToastUpdated"));
@@ -109,6 +144,7 @@ export function VendorManagerSheet({
                     contactPerson: formData.contactPerson.trim() || undefined,
                     phone: formData.phone.trim() || undefined,
                     address: formData.address.trim() || undefined,
+                    branchId: branchIdPayload,
                 }).unwrap();
                 toast.success(t("vendorsToastCreated"));
                 if (onSelectVendor && res.data) {
@@ -211,6 +247,35 @@ export function VendorManagerSheet({
                                     {t("cancelConfirm")}
                                 </button>
                             </div>
+
+                            {/* Scope / Branch Selection */}
+                            <label className="block space-y-1 text-[12px]">
+                                <span className="font-medium text-slate-gray">
+                                    Supplier Scope & Branch
+                                </span>
+                                <InventoryNiceSelect
+                                    value={formData.branchId || "CENTRAL"}
+                                    placeholder="Select scope"
+                                    onChange={v =>
+                                        setFormData(f => ({
+                                            ...f,
+                                            branchId: v === "CENTRAL" ? "" : v,
+                                        }))
+                                    }
+                                    options={[
+                                        {
+                                            value: "CENTRAL",
+                                            label: "🌐 Company-Wide (All Branches & Central)",
+                                            hint: "Available to all branches",
+                                        },
+                                        ...branches.map(b => ({
+                                            value: b.id,
+                                            label: `📍 ${b.name}${b.displayCode ? ` (${b.displayCode})` : ""}`,
+                                            hint: "Specific branch only",
+                                        })),
+                                    ]}
+                                />
+                            </label>
 
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 <label className="space-y-1 text-[12px]">
@@ -364,17 +429,29 @@ export function VendorManagerSheet({
                                 return (
                                     <div
                                         key={vendor.id}
-                                        className="flex items-center justify-between gap-3 rounded-xl border border-hairline bg-background px-3 py-2"
+                                        className="flex items-center justify-between gap-3 rounded-xl border border-hairline bg-background px-3 py-2.5"
                                     >
                                         <div className="flex min-w-0 items-center gap-3">
                                             <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-slate-gray">
                                                 <Store className="size-4 text-emerald-600" />
                                             </div>
                                             <div className="min-w-0">
-                                                <div className="flex flex-wrap items-center gap-2">
+                                                <div className="flex flex-wrap items-center gap-1.5">
                                                     <span className="truncate text-[13px] font-semibold">
                                                         {vendor.name}
                                                     </span>
+                                                    {vendor.branchId &&
+                                                    vendor.branch ? (
+                                                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/25 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+                                                            <MapPin className="size-2.5" />
+                                                            {vendor.branch.name}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/10 border border-purple-500/25 px-2 py-0.5 text-[10px] font-semibold text-purple-700 dark:text-purple-300">
+                                                            <Globe className="size-2.5" />
+                                                            Company-Wide
+                                                        </span>
+                                                    )}
                                                     <span
                                                         className={cn(
                                                             "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium",

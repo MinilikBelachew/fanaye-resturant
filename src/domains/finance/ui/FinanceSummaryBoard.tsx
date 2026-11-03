@@ -21,6 +21,7 @@ import {
 } from "recharts";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
+import { RestorchLoader } from "@/components/common/RestorchLoader";
 import { Button } from "@/components/ui/button";
 import { useListBranchesQuery } from "@/context/services/branchesApi";
 import {
@@ -351,9 +352,8 @@ export default function FinanceSummaryBoard({
             </div>
 
             {isLoading ? (
-                <div className="flex items-center justify-center gap-2 rounded-2xl border border-hairline bg-card py-16 text-slate-gray">
-                    <Loader2 className="size-4 animate-spin" />
-                    {t("loading")}
+                <div className="flex items-center justify-center rounded-2xl border border-hairline bg-card py-14">
+                    <RestorchLoader size="md" label={t("loading")} />
                 </div>
             ) : null}
 

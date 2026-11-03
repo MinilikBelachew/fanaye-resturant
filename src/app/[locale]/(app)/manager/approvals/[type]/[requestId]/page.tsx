@@ -17,6 +17,7 @@ import {
 import { useTranslations } from "next-intl";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
+import { RestorchLoader } from "@/components/common/RestorchLoader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -165,9 +166,8 @@ export default function ManagerApprovalDetailPage({
     if (isLoading) {
         return (
             <DashboardFrame>
-                <div className="flex items-center gap-2 text-slate-gray">
-                    <Loader2 className="size-4 animate-spin" />
-                    {t("loading")}
+                <div className="flex justify-center py-12">
+                    <RestorchLoader size="md" label={t("loading")} />
                 </div>
             </DashboardFrame>
         );

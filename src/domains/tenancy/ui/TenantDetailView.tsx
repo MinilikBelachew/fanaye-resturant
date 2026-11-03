@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Building2, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
+import { RestorchLoader } from "@/components/common/RestorchLoader";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -81,11 +82,8 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
     if (isLoading) {
         return (
             <DashboardFrame>
-                <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
-                    <Loader2 className="size-6 animate-spin text-slate-gray" />
-                    <p className="text-[13px] text-slate-gray">
-                        {t("detail.loading")}
-                    </p>
+                <div className="flex min-h-[400px] items-center justify-center">
+                    <RestorchLoader size="lg" label={t("detail.loading")} />
                 </div>
             </DashboardFrame>
         );

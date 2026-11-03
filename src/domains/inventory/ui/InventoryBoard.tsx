@@ -6,6 +6,7 @@ import { useAppSelector } from "@/context/hooks";
 import {
     useCreateInventoryIngredientMutation,
     useCreateMainWarehouseMutation,
+    useDisableMainWarehouseMutation,
     useDeleteInventoryIngredientMutation,
     useGetInventoryNetworkStatusQuery,
     useListInventoryBalancesQuery,
@@ -135,6 +136,7 @@ type Tab =
 
 type InventoryCategory =
     | "stock_items"
+    | "materials"
     | "branch_supply"
     | "receiving_audit"
     | "central_prep";
@@ -290,12 +292,6 @@ export default function InventoryBoard({
             }[] = [
                 { id: "stock", label: t("tabs.stock") },
                 { id: "ingredients", label: t("tabs.ingredients") },
-                {
-                    id: "materials",
-                    label: "Materials",
-                    icon: Boxes,
-                    iconColor: "text-amber-600 dark:text-amber-400",
-                },
                 { id: "ledger", label: t("tabs.ledger") },
                 {
                     id: "categories",
@@ -367,7 +363,6 @@ export default function InventoryBoard({
                 tabs: [
                     "stock",
                     "ingredients",
-                    "materials",
                     "ledger",
                     "categories",
                     "units",
@@ -402,7 +397,7 @@ export default function InventoryBoard({
     }, [canOperateCentral, isNetwork, t]);
 
     const routeCategory = useMemo<InventoryCategory>(() => {
-        if (pathname.includes("/inventory/materials")) return "stock_items";
+        if (pathname.includes("/inventory/materials")) return "materials";
         if (pathname.includes("/inventory/transfers")) return "branch_supply";
         if (pathname.includes("/inventory/receiving")) return "receiving_audit";
         if (pathname.includes("/inventory/prep")) return "central_prep";
@@ -410,11 +405,18 @@ export default function InventoryBoard({
     }, [pathname]);
 
     const activeCategory = useMemo<InventoryCategory>(() => {
+        if (tab === "materials") return "materials";
         const found = categories.find(cat => cat.tabs.includes(tab));
         return found ? found.id : routeCategory;
     }, [categories, tab, routeCategory]);
 
     useEffect(() => {
+        if (routeCategory === "materials") {
+            setTab("materials");
+            setPage(1);
+            setActiveCountId(null);
+            return;
+        }
         const targetCategory = categories.find(c => c.id === routeCategory);
         if (targetCategory && !targetCategory.tabs.includes(tab)) {
             setTab(targetCategory.tabs[0]);
@@ -457,10 +459,11 @@ export default function InventoryBoard({
     }
 
     useEffect(() => {
+        if (routeCategory === "materials" || tab === "materials") return;
         if (!tabs.some(item => item.id === tab)) {
             setTab("stock");
         }
-    }, [tabs, tab]);
+    }, [tabs, tab, routeCategory]);
 
     const listParams = useMemo(
         () => ({
@@ -551,6 +554,8 @@ export default function InventoryBoard({
         useDeleteInventoryIngredientMutation();
     const [createMainWarehouse, enablingMain] =
         useCreateMainWarehouseMutation();
+    const [disableMainWarehouse, disablingMain] =
+        useDisableMainWarehouseMutation();
     const [updateLocation, updatingLocation] =
         useUpdateInventoryLocationMutation();
     const [receiveStock, receiving] = useReceiveInventoryStockMutation();
@@ -633,6 +638,32 @@ export default function InventoryBoard({
             });
         } catch (err) {
             toast.fromUnknown(err, t("errCreateIngredient"));
+        }
+    }
+
+    async function onDisableMainWarehouse() {
+        if (
+            !window.confirm(
+                t("disableMainConfirm") ||
+                    "Turn off main warehouse? This switches back to restaurant stores only. Main must be empty, with no pending transfers or supply asks.",
+            )
+        ) {
+            return;
+        }
+        try {
+            await disableMainWarehouse().unwrap();
+            if (branchStores.length > 0 && branchStores[0]?.id) {
+                selectStockLocation(branchStores[0].id);
+            }
+            toast.success(
+                t("toastMainDisabled") ||
+                    "Main warehouse off — restaurant stores only",
+            );
+        } catch (err) {
+            toast.fromUnknown(
+                err,
+                t("errDisableMain") || "Could not turn off main warehouse.",
+            );
         }
     }
 
@@ -1100,7 +1131,7 @@ export default function InventoryBoard({
                         </div>
                     ) : null}
 
-                    {!isNetwork && canEnableMain ? (
+                    {canOperateCentral ? (
                         <div className="flex items-center gap-2 rounded-lg border border-hairline bg-card/60 px-2.5 py-1 text-[12px]">
                             <span className="text-[11px] font-medium text-slate-gray">
                                 {t("mainInventoryLabel")}
@@ -1110,17 +1141,41 @@ export default function InventoryBoard({
                                 role="switch"
                                 aria-checked={isNetwork}
                                 aria-label={t("mainInventoryLabel")}
-                                disabled={enablingMain.isLoading}
-                                onClick={() => void onEnableMainWarehouse()}
+                                disabled={
+                                    enablingMain.isLoading ||
+                                    disablingMain.isLoading
+                                }
+                                onClick={() => {
+                                    if (isNetwork) {
+                                        void onDisableMainWarehouse();
+                                    } else {
+                                        void onEnableMainWarehouse();
+                                    }
+                                }}
                                 className={cn(
-                                    "relative h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-60",
-                                    "bg-slate-300 dark:bg-slate-700",
+                                    "relative h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-60 cursor-pointer",
+                                    isNetwork
+                                        ? "bg-emerald-600"
+                                        : "bg-slate-300 dark:bg-slate-700",
                                 )}
+                                title={
+                                    isNetwork
+                                        ? t("mainInventoryOnHint") ||
+                                          "Click to turn off main warehouse"
+                                        : t("mainInventoryOffHint") ||
+                                          "Click to turn on main warehouse"
+                                }
                             >
-                                {enablingMain.isLoading ? (
+                                {enablingMain.isLoading ||
+                                disablingMain.isLoading ? (
                                     <Loader2 className="absolute inset-0 m-auto size-3 animate-spin text-white" />
                                 ) : (
-                                    <span className="absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow transition-transform" />
+                                    <span
+                                        className={cn(
+                                            "absolute top-0.5 size-4 rounded-full bg-white shadow transition-transform",
+                                            isNetwork ? "left-4.5" : "left-0.5",
+                                        )}
+                                    />
                                 )}
                             </button>
                         </div>
@@ -1161,24 +1216,45 @@ export default function InventoryBoard({
                                 className="h-10 w-full rounded-xl border border-hairline bg-background px-3 text-[13px] uppercase"
                             />
                         </label>
-                        <div className="flex justify-end gap-2 pt-1">
-                            <button
-                                type="button"
-                                className="h-10 rounded-xl border border-hairline px-3 text-[13px]"
-                                onClick={() => setEditingLocation(null)}
-                            >
-                                {t("cancelEditStore")}
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={updatingLocation.isLoading}
-                                className="inline-flex h-10 items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 text-[13px] font-semibold text-white disabled:opacity-60"
-                            >
-                                {updatingLocation.isLoading ? (
-                                    <Loader2 className="size-3.5 animate-spin" />
-                                ) : null}
-                                {t("saveStore")}
-                            </button>
+                        <div className="flex items-center justify-between gap-2 pt-1">
+                            {editingLocation.type === "MAIN_WAREHOUSE" &&
+                            canOperateCentral ? (
+                                <button
+                                    type="button"
+                                    disabled={disablingMain.isLoading}
+                                    onClick={async () => {
+                                        setEditingLocation(null);
+                                        await onDisableMainWarehouse();
+                                    }}
+                                    className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 text-[13px] font-medium text-rose-700 hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-400"
+                                >
+                                    {disablingMain.isLoading ? (
+                                        <Loader2 className="size-3.5 animate-spin" />
+                                    ) : (
+                                        <Trash2 className="size-3.5" />
+                                    )}
+                                    {t("disableMainAction") || "Turn off main"}
+                                </button>
+                            ) : null}
+                            <div className="flex items-center gap-2 ml-auto">
+                                <button
+                                    type="button"
+                                    className="h-10 rounded-xl border border-hairline px-3 text-[13px]"
+                                    onClick={() => setEditingLocation(null)}
+                                >
+                                    {t("cancelEditStore")}
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={updatingLocation.isLoading}
+                                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 text-[13px] font-semibold text-white disabled:opacity-60"
+                                >
+                                    {updatingLocation.isLoading ? (
+                                        <Loader2 className="size-3.5 animate-spin" />
+                                    ) : null}
+                                    {t("saveStore")}
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -1354,164 +1430,258 @@ export default function InventoryBoard({
                 </div>
             ) : null}
 
-            {/* Sub-Views Pill Bar (Displaying only the views for active category) */}
-            <div className="flex flex-wrap items-center gap-2 border-b border-hairline pb-3 pt-1">
-                {currentCategoryTabs.map(tabItem => {
-                    const active = tab === tabItem.id;
-                    const badge = getTabBadge(tabItem.id);
-
-                    return (
+            {/* Single-branch / Disabled Warehouse Fallback Banners */}
+            {routeCategory === "branch_supply" && !isNetwork ? (
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-hairline bg-card/50 p-12 text-center">
+                    <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                        <Truck className="size-6" />
+                    </div>
+                    <h3 className="text-base font-semibold text-foreground">
+                        Branch Supply is Disabled
+                    </h3>
+                    <p className="mt-1.5 max-w-md text-sm text-slate-gray">
+                        Inter-branch stock transfers and supply requests require
+                        Main Warehouse to be enabled. When operating as a
+                        single-branch restaurant, stock is managed locally under
+                        Stock & Items.
+                    </p>
+                    <div className="mt-6 flex items-center gap-3">
                         <button
-                            key={tabItem.id}
                             type="button"
-                            onClick={() => {
-                                setTab(tabItem.id);
-                                setPage(1);
-                                setActiveCountId(null);
-                            }}
-                            className={cn(
-                                "relative inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium transition-all border",
-                                active
-                                    ? "bg-foreground text-background shadow-xs font-semibold border-foreground"
-                                    : "bg-card text-slate-gray border-hairline hover:bg-secondary hover:text-foreground",
-                            )}
+                            onClick={() => router.push(inventoryBasePath)}
+                            className="rounded-xl border border-hairline bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary"
                         >
-                            {tabItem.icon ? (
-                                <tabItem.icon
-                                    className={cn(
-                                        "size-3.5 shrink-0",
-                                        active
-                                            ? "text-background"
-                                            : tabItem.iconColor,
-                                    )}
-                                />
-                            ) : null}
-                            <span>{tabItem.label}</span>
-                            {badge != null && Number(badge) > 0 ? (
-                                <span
-                                    className={cn(
-                                        "inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums",
-                                        active
-                                            ? "bg-background/20 text-background"
-                                            : tabItem.id === "pending-supply"
-                                              ? "bg-emerald-600 text-white"
-                                              : "bg-secondary text-slate-gray",
-                                    )}
-                                >
-                                    {badge}
-                                </span>
-                            ) : null}
+                            Back to Stock & Items
                         </button>
-                    );
-                })}
-            </div>
+                        {canEnableMain ? (
+                            <button
+                                type="button"
+                                disabled={enablingMain.isLoading}
+                                onClick={() => void onEnableMainWarehouse()}
+                                className="inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
+                            >
+                                {enablingMain.isLoading ? (
+                                    <Loader2 className="size-4 animate-spin" />
+                                ) : null}
+                                Enable Main Warehouse
+                            </button>
+                        ) : null}
+                    </div>
+                </div>
+            ) : null}
 
-            {(tab === "stock" || tab === "ingredients" || tab === "ledger") && (
-                <div className="flex flex-wrap items-center gap-3">
-                    <input
-                        value={q}
-                        onChange={e => resetPageOnSearch(e.target.value)}
-                        placeholder={t("searchPlaceholder")}
-                        className="h-10 w-full max-w-xs rounded-xl border border-hairline bg-background px-3 text-[13px]"
-                    />
+            {routeCategory === "central_prep" && !isNetwork ? (
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-hairline bg-card/50 p-12 text-center">
+                    <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                        <ChefHat className="size-6" />
+                    </div>
+                    <h3 className="text-base font-semibold text-foreground">
+                        Central Prep Commissary is Disabled
+                    </h3>
+                    <p className="mt-1.5 max-w-md text-sm text-slate-gray">
+                        Central prep and commissary batch production are
+                        available when Main Warehouse is enabled for
+                        multi-branch production.
+                    </p>
+                    <div className="mt-6 flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => router.push(inventoryBasePath)}
+                            className="rounded-xl border border-hairline bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary"
+                        >
+                            Back to Stock & Items
+                        </button>
+                        {canEnableMain ? (
+                            <button
+                                type="button"
+                                disabled={enablingMain.isLoading}
+                                onClick={() => void onEnableMainWarehouse()}
+                                className="inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
+                            >
+                                {enablingMain.isLoading ? (
+                                    <Loader2 className="size-4 animate-spin" />
+                                ) : null}
+                                Enable Main Warehouse
+                            </button>
+                        ) : null}
+                    </div>
+                </div>
+            ) : null}
 
-                    {(tab === "stock" || tab === "ingredients") && (
-                        <div className="flex items-center gap-2">
-                            <div className="min-w-[14rem]">
+            {/* Sub-Views Pill Bar (Displaying only the views for active category) */}
+            {!(routeCategory === "branch_supply" && !isNetwork) &&
+            !(routeCategory === "central_prep" && !isNetwork) &&
+            routeCategory !== "materials" &&
+            tab !== "materials" &&
+            currentCategoryTabs.length > 0 ? (
+                <div className="flex flex-wrap items-center gap-2 border-b border-hairline pb-3 pt-1">
+                    {currentCategoryTabs.map(tabItem => {
+                        const active = tab === tabItem.id;
+                        const badge = getTabBadge(tabItem.id);
+
+                        return (
+                            <button
+                                key={tabItem.id}
+                                type="button"
+                                onClick={() => {
+                                    setTab(tabItem.id);
+                                    setPage(1);
+                                    setActiveCountId(null);
+                                }}
+                                className={cn(
+                                    "relative inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium transition-all border",
+                                    active
+                                        ? "bg-foreground text-background shadow-xs font-semibold border-foreground"
+                                        : "bg-card text-slate-gray border-hairline hover:bg-secondary hover:text-foreground",
+                                )}
+                            >
+                                {tabItem.icon ? (
+                                    <tabItem.icon
+                                        className={cn(
+                                            "size-3.5 shrink-0",
+                                            active
+                                                ? "text-background"
+                                                : tabItem.iconColor,
+                                        )}
+                                    />
+                                ) : null}
+                                <span>{tabItem.label}</span>
+                                {badge != null && Number(badge) > 0 ? (
+                                    <span
+                                        className={cn(
+                                            "inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums",
+                                            active
+                                                ? "bg-background/20 text-background"
+                                                : tabItem.id ===
+                                                    "pending-supply"
+                                                  ? "bg-emerald-600 text-white"
+                                                  : "bg-secondary text-slate-gray",
+                                        )}
+                                    >
+                                        {badge}
+                                    </span>
+                                ) : null}
+                            </button>
+                        );
+                    })}
+                </div>
+            ) : null}
+
+            {!(routeCategory === "branch_supply" && !isNetwork) &&
+                !(routeCategory === "central_prep" && !isNetwork) &&
+                routeCategory !== "materials" &&
+                tab !== "materials" &&
+                (tab === "stock" ||
+                    tab === "ingredients" ||
+                    tab === "ledger") && (
+                    <div className="flex flex-wrap items-center gap-3">
+                        <input
+                            value={q}
+                            onChange={e => resetPageOnSearch(e.target.value)}
+                            placeholder={t("searchPlaceholder")}
+                            className="h-10 w-full max-w-xs rounded-xl border border-hairline bg-background px-3 text-[13px]"
+                        />
+
+                        {(tab === "stock" || tab === "ingredients") && (
+                            <div className="flex items-center gap-2">
+                                <div className="min-w-[14rem]">
+                                    <InventoryNiceSelect
+                                        value={selectedCategoryId || "__all__"}
+                                        placeholder={t("allCategories")}
+                                        options={[
+                                            {
+                                                value: "__all__",
+                                                label: t("allCategories"),
+                                            },
+                                            ...dbCategories.map(c => ({
+                                                value: c.id,
+                                                label: c.amharicName
+                                                    ? `${c.name} (${c.amharicName})`
+                                                    : c.name,
+                                            })),
+                                        ]}
+                                        onChange={v => {
+                                            setSelectedCategoryId(
+                                                v === "__all__" ? "" : v,
+                                            );
+                                            setPage(1);
+                                        }}
+                                    />
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setTab("categories")}
+                                    className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-hairline bg-card px-3 text-[13px] font-medium text-slate-gray hover:bg-secondary hover:text-foreground transition-colors"
+                                >
+                                    <Tag className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                                    <span>{t("tabs.categories")}</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setTab("units")}
+                                    className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-hairline bg-card px-3 text-[13px] font-medium text-slate-gray hover:bg-secondary hover:text-foreground transition-colors"
+                                >
+                                    <Ruler className="size-3.5 text-sky-600 dark:text-sky-400" />
+                                    <span>{t("tabs.units")}</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setTab("vendors")}
+                                    className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-hairline bg-card px-3 text-[13px] font-medium text-slate-gray hover:bg-secondary hover:text-foreground transition-colors"
+                                >
+                                    <Store className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                                    <span>{t("tabs.vendors")}</span>
+                                </button>
+                                {canOperateCentral && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setTab("drivers")}
+                                        className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-hairline bg-card px-3 text-[13px] font-medium text-slate-gray hover:bg-secondary hover:text-foreground transition-colors"
+                                    >
+                                        <Truck className="size-3.5 text-amber-600 dark:text-amber-400" />
+                                        <span>{t("tabs.drivers")}</span>
+                                    </button>
+                                )}
+                            </div>
+                        )}
+
+                        {tab === "stock" ? (
+                            <label className="flex items-center gap-2 text-[13px]">
+                                <input
+                                    type="checkbox"
+                                    checked={lowStockOnly}
+                                    onChange={e => {
+                                        setLowStockOnly(e.target.checked);
+                                        setPage(1);
+                                    }}
+                                />
+                                {t("lowStockOnly")}
+                            </label>
+                        ) : null}
+                        {tab === "ledger" ? (
+                            <div className="min-w-[12rem]">
                                 <InventoryNiceSelect
-                                    value={selectedCategoryId || "__all__"}
-                                    placeholder={t("allCategories")}
+                                    value={ledgerType || "__all__"}
+                                    placeholder={t("allTypes")}
                                     options={[
                                         {
                                             value: "__all__",
-                                            label: t("allCategories"),
+                                            label: t("allTypes"),
                                         },
-                                        ...dbCategories.map(c => ({
-                                            value: c.id,
-                                            label: c.amharicName
-                                                ? `${c.name} (${c.amharicName})`
-                                                : c.name,
+                                        ...LEDGER_FILTER_OPTIONS.map(opt => ({
+                                            value: opt.value,
+                                            label: ledgerFilterLabel(opt.value),
                                         })),
                                     ]}
                                     onChange={v => {
-                                        setSelectedCategoryId(
-                                            v === "__all__" ? "" : v,
-                                        );
+                                        setLedgerType(v === "__all__" ? "" : v);
                                         setPage(1);
                                     }}
                                 />
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => setTab("categories")}
-                                className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-hairline bg-card px-3 text-[13px] font-medium text-slate-gray hover:bg-secondary hover:text-foreground transition-colors"
-                            >
-                                <Tag className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-                                <span>{t("tabs.categories")}</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setTab("units")}
-                                className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-hairline bg-card px-3 text-[13px] font-medium text-slate-gray hover:bg-secondary hover:text-foreground transition-colors"
-                            >
-                                <Ruler className="size-3.5 text-sky-600 dark:text-sky-400" />
-                                <span>{t("tabs.units")}</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setTab("vendors")}
-                                className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-hairline bg-card px-3 text-[13px] font-medium text-slate-gray hover:bg-secondary hover:text-foreground transition-colors"
-                            >
-                                <Store className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-                                <span>{t("tabs.vendors")}</span>
-                            </button>
-                            {canOperateCentral && (
-                                <button
-                                    type="button"
-                                    onClick={() => setTab("drivers")}
-                                    className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-hairline bg-card px-3 text-[13px] font-medium text-slate-gray hover:bg-secondary hover:text-foreground transition-colors"
-                                >
-                                    <Truck className="size-3.5 text-amber-600 dark:text-amber-400" />
-                                    <span>{t("tabs.drivers")}</span>
-                                </button>
-                            )}
-                        </div>
-                    )}
-
-                    {tab === "stock" ? (
-                        <label className="flex items-center gap-2 text-[13px]">
-                            <input
-                                type="checkbox"
-                                checked={lowStockOnly}
-                                onChange={e => {
-                                    setLowStockOnly(e.target.checked);
-                                    setPage(1);
-                                }}
-                            />
-                            {t("lowStockOnly")}
-                        </label>
-                    ) : null}
-                    {tab === "ledger" ? (
-                        <div className="min-w-[12rem]">
-                            <InventoryNiceSelect
-                                value={ledgerType || "__all__"}
-                                placeholder={t("allTypes")}
-                                options={[
-                                    { value: "__all__", label: t("allTypes") },
-                                    ...LEDGER_FILTER_OPTIONS.map(opt => ({
-                                        value: opt.value,
-                                        label: ledgerFilterLabel(opt.value),
-                                    })),
-                                ]}
-                                onChange={v => {
-                                    setLedgerType(v === "__all__" ? "" : v);
-                                    setPage(1);
-                                }}
-                            />
-                        </div>
-                    ) : null}
-                </div>
-            )}
+                        ) : null}
+                    </div>
+                )}
 
             {tab === "stock" ? (
                 <div className="overflow-hidden rounded-2xl border border-hairline">

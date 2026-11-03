@@ -17,6 +17,8 @@ export type AuthContext = {
     serviceMode: string | null;
     /** Branch has hotel rooms — waiters only see Rooms nav when true. */
     roomsEnabled?: boolean;
+    /** Tenant has active main warehouse configured — drives multi-branch inventory nav. */
+    hasMainWarehouse?: boolean;
     staffMembershipId: string | null;
     roleCode: string;
     stationId: string | null;

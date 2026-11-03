@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Download, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { RestorchLogo } from "@/components/common/RestorchLogo";
 
 type BeforeInstallPromptEvent = Event & {
     prompt: () => Promise<void>;
@@ -72,8 +73,8 @@ export default function PwaInstallBanner() {
     return (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-center p-3 md:p-4">
             <div className="pointer-events-auto flex w-full max-w-lg items-start gap-3 rounded-2xl border border-hairline bg-white p-3 shadow-xl dark:bg-card">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand">
-                    <Download className="size-5" />
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-orange-500/10 p-1">
+                    <RestorchLogo variant="mark" height={28} />
                 </div>
                 <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold tracking-tight">

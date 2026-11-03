@@ -11,6 +11,7 @@ import OpsNotificationsBell from "@/domains/notifications/ui/OpsNotificationsBel
 import { navForRole } from "@/domains/identity/application/nav";
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { Link, usePathname } from "@/i18n/navigation";
+import { RestorchLogo } from "@/components/common/RestorchLogo";
 import { cn } from "@/lib/utils";
 
 function titleForPath(pathname: string) {
@@ -36,6 +37,9 @@ export default function DispatcherShell({ children }: { children: ReactNode }) {
     return (
         <div className="flex h-svh overflow-hidden bg-[radial-gradient(1200px_600px_at_10%_-10%,rgba(16,185,129,0.12),transparent),radial-gradient(900px_500px_at_90%_0%,rgba(14,165,233,0.10),transparent)] dark:bg-background">
             <aside className="hidden h-svh w-[260px] shrink-0 border-r border-hairline bg-card/80 p-4 backdrop-blur lg:flex lg:flex-col">
+                <div className="mb-4 pb-3 border-b border-hairline">
+                    <RestorchLogo variant="full" height={22} />
+                </div>
                 <div className="mb-6 flex items-center gap-3 px-1">
                     <span className="flex size-10 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
                         <Phone className="size-5" />

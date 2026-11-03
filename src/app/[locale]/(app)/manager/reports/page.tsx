@@ -20,6 +20,7 @@ import {
 import { useTranslations } from "next-intl";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
+import { RestorchLoader } from "@/components/common/RestorchLoader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import DualCalendarDatePicker from "@/components/custom/molecules/DualCalendarDatePicker";
@@ -75,10 +76,11 @@ function ManagerReportsContent() {
     const fromParam = searchParams.get("from");
     const toParam = searchParams.get("to");
 
-    const section: Exclude<ReportsSection, "all"> =
-        SECTIONS.some(s => s.id === sectionParam)
-            ? (sectionParam as Exclude<ReportsSection, "all">)
-            : "waiters";
+    const section: Exclude<ReportsSection, "all"> = SECTIONS.some(
+        s => s.id === sectionParam,
+    )
+        ? (sectionParam as Exclude<ReportsSection, "all">)
+        : "waiters";
 
     const period: ReportsPeriod =
         periodParam && VALID_PERIODS.includes(periodParam as ReportsPeriod)
@@ -167,10 +169,7 @@ function ManagerReportsContent() {
         [section],
     );
 
-    const rangeLabel =
-        isCustomRange
-            ? `${fromDate} → ${toDate}`
-            : null;
+    const rangeLabel = isCustomRange ? `${fromDate} → ${toDate}` : null;
 
     return (
         <DashboardFrame>
@@ -319,7 +318,9 @@ function ManagerReportsContent() {
                             <Icon
                                 className={cn(
                                     "size-3.5",
-                                    active ? "text-background" : "text-slate-gray",
+                                    active
+                                        ? "text-background"
+                                        : "text-slate-gray",
                                 )}
                             />
                             <span>{t(`sections.${entry.id}`)}</span>
@@ -329,9 +330,8 @@ function ManagerReportsContent() {
             </div>
 
             {activeLoading ? (
-                <div className="flex items-center justify-center gap-2 rounded-2xl border border-hairline bg-card py-16 text-slate-gray">
-                    <Loader2 className="size-4 animate-spin" />
-                    {t("loading")}
+                <div className="flex items-center justify-center rounded-2xl border border-hairline bg-card py-14">
+                    <RestorchLoader size="md" label={t("loading")} />
                 </div>
             ) : null}
 
@@ -341,7 +341,9 @@ function ManagerReportsContent() {
                 </div>
             ) : null}
 
-            {!activeLoading && !activeError && (section === "fb" ? !!fbData : !!report) ? (
+            {!activeLoading &&
+            !activeError &&
+            (section === "fb" ? !!fbData : !!report) ? (
                 <div className="space-y-4 animate-in fade-in-0 duration-300">
                     <div className="flex items-center gap-2 px-0.5 text-[13px] text-slate-gray">
                         <sectionMeta.icon className="size-4 text-brand" />
@@ -804,7 +806,9 @@ function InventoryReport({
                 <IngredientStockPanel
                     audience="manager"
                     period={
-                        period === "day" || period === "week" || period === "month"
+                        period === "day" ||
+                        period === "week" ||
+                        period === "month"
                             ? period
                             : undefined
                     }

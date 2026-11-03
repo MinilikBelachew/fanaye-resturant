@@ -10,17 +10,17 @@ import { routing } from "@/i18n/routing";
 import { setRequestLocale } from "next-intl/server";
 
 export const metadata: Metadata = {
-    applicationName: "Restaurant OS",
+    applicationName: "Restorch OS",
     title: {
-        default: "Restaurant Management",
-        template: "%s · Restaurant OS",
+        default: "Restorch · Restaurant OS",
+        template: "%s · Restorch OS",
     },
     description: "Live real-time operations for modern high-volume restaurants",
     manifest: "/manifest.webmanifest",
     appleWebApp: {
         capable: true,
         statusBarStyle: "default",
-        title: "Restaurant OS",
+        title: "Restorch OS",
     },
     formatDetection: {
         telephone: false,
@@ -29,10 +29,13 @@ export const metadata: Metadata = {
         icon: [
             { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
             { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+            { url: "/favicon.ico", sizes: "any" },
             {
-                url: "/media/logos/logo_07_golden_cloche.svg",
-                type: "image/svg+xml",
+                url: "/icons/favicon-32x32.png",
+                sizes: "32x32",
+                type: "image/png",
             },
+            { url: "/images/branding/restorch-mark.png", type: "image/png" },
         ],
         shortcut: "/icons/icon-192.png",
         apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],

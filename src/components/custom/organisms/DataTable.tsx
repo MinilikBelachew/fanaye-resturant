@@ -20,6 +20,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { RestorchLoader } from "@/components/common/RestorchLoader";
 
 export interface DataTableColumn<T> {
     id: string;
@@ -47,6 +48,7 @@ export default function DataTable<T>({
     data,
     rowKey,
     empty = "No rows to show.",
+    loading = false,
     className,
     searchPlaceholder = "Search...",
     searchText,
@@ -63,6 +65,7 @@ export default function DataTable<T>({
     data: T[];
     rowKey: (row: T) => string;
     empty?: ReactNode;
+    loading?: boolean;
     className?: string;
     searchPlaceholder?: string | null;
     searchText?: (row: T) => string;
@@ -294,13 +297,37 @@ export default function DataTable<T>({
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {rows.length === 0 ? (
+                        {loading ? (
+                            <TableRow className="hover:bg-transparent">
+                                <TableCell
+                                    colSpan={Math.max(visibleColumns.length, 1)}
+                                    className="h-28 text-center"
+                                >
+                                    <div className="flex justify-center py-4">
+                                        <RestorchLoader
+                                            size="sm"
+                                            label="Loading table records..."
+                                        />
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ) : rows.length === 0 ? (
                             <TableRow className="hover:bg-transparent">
                                 <TableCell
                                     colSpan={Math.max(visibleColumns.length, 1)}
                                     className="h-24 text-center text-[12px] text-slate-gray"
                                 >
-                                    {empty}
+                                    {typeof empty === "string" &&
+                                    /loading/i.test(empty) ? (
+                                        <div className="flex justify-center py-2">
+                                            <RestorchLoader
+                                                size="sm"
+                                                label={empty}
+                                            />
+                                        </div>
+                                    ) : (
+                                        empty
+                                    )}
                                 </TableCell>
                             </TableRow>
                         ) : (

@@ -1,7 +1,8 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle } from "lucide-react";
+import { RestorchLoader } from "@/components/common/RestorchLoader";
 import { API_BASE_URL } from "@/context/env";
 import { formatEtb } from "@/lib/money";
 import { GoldenClocheLogo } from "@/components/common/GoldenClocheLogo";
@@ -85,9 +86,8 @@ export default function PublicReceiptPage({
 
     if (loading) {
         return (
-            <div className="flex min-h-svh items-center justify-center gap-2 bg-zinc-50 text-sm text-zinc-600">
-                <Loader2 className="size-4 animate-spin" />
-                Loading e-receipt…
+            <div className="flex min-h-svh items-center justify-center bg-zinc-50 p-6">
+                <RestorchLoader size="md" label="Loading e-receipt…" />
             </div>
         );
     }
@@ -128,7 +128,7 @@ export default function PublicReceiptPage({
                     <h1 className="text-[18px] font-semibold tracking-tight text-zinc-900">
                         {receipt.restaurantName}
                     </h1>
-                    
+
                     <p className="mt-0.5 text-[12px] text-zinc-500">
                         {receipt.branchName}
                         {receipt.tableName ? ` · ${receipt.tableName}` : ""}
@@ -144,7 +144,6 @@ export default function PublicReceiptPage({
                             Tel: {receipt.phone}
                         </p>
                     ) : null}
-
                 </div>
 
                 <div className="space-y-4 px-5 py-5">

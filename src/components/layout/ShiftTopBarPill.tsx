@@ -99,8 +99,19 @@ export default function ShiftTopBarPill() {
             await clockIn().unwrap();
             toast.success("Clocked in successfully.");
             setOpenMenu(false);
-        } catch {
-            toast.error("Failed to clock in. Please check your connection.");
+        } catch (err: unknown) {
+            const data = (
+                err as {
+                    data?: {
+                        message?: string;
+                        code?: string;
+                    };
+                }
+            )?.data;
+            toast.error(
+                data?.message ||
+                    "Failed to clock in. Please check your connection.",
+            );
         }
     };
 

@@ -171,11 +171,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                             label: "Live Operations",
                             icon: Activity,
                         },
-                        {
+                        /* {
                             href: "/owner/outside",
                             label: "Outside Orders",
                             icon: Building2,
-                        },
+                        }, */
                         /* {
                             href: "/owner/fresh-prep",
                             label: "Fresh Prep",
@@ -206,6 +206,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                             label: "Branches",
                             icon: Building2,
                         },
+                        /* {
+                            href: "/owner/customers",
+                            label: "Customers & Loyalty",
+                            icon: Users,
+                        }, */
                         {
                             href: "/owner/staff",
                             label: "HR",
@@ -215,6 +220,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                                     href: "/owner/staff",
                                     label: "Directory",
                                     icon: Users,
+                                },
+                                {
+                                    href: "/owner/staff/active-shifts",
+                                    label: "Active Shifts",
+                                    icon: Activity,
                                 },
                                 {
                                     href: "/owner/staff/schedule",
@@ -424,11 +434,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                             label: "Rooms",
                             icon: BedDouble,
                         },
-                        {
+                        /* {
                             href: "/manager/outside",
                             label: "Outside Orders",
                             icon: Building2,
-                        },
+                        }, */
                         {
                             href: "/manager/front-desk",
                             label: "Front desk",
@@ -443,6 +453,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                                     href: "/manager/staff",
                                     label: "Directory",
                                     icon: Users,
+                                },
+                                {
+                                    href: "/manager/staff/active-shifts",
+                                    label: "Active Shifts",
+                                    icon: Activity,
                                 },
                                 {
                                     href: "/manager/staff/schedule",
@@ -508,6 +523,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                             label: "Feedback",
                             icon: MessageSquareQuote,
                         },
+                        /* {
+                            href: "/manager/customers",
+                            label: "Customers & Loyalty",
+                            icon: Users,
+                        }, */
                     ],
                 },
                 {
@@ -624,11 +644,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                             label: "Rooms",
                             icon: BedDouble,
                         },
-                        {
+                        /* {
                             href: "/waiter/outside",
                             label: "Outside",
                             icon: Building2,
-                        },
+                        }, */
                         {
                             href: "/waiter/ready",
                             label: "Ready",
@@ -825,6 +845,8 @@ export type NavOptions = {
     serviceMode?: string | null;
     /** When false, hide waiter Rooms (branch has no hotel rooms). */
     roomsEnabled?: boolean | null;
+    /** When false or undefined, hide multi-branch supply & central prep. */
+    hasMainWarehouse?: boolean | null;
 };
 
 function navForRole(
@@ -850,6 +872,30 @@ function navForRole(
                 items: section.items.filter(
                     item => item.href !== WAITER_ROOMS_HREF,
                 ),
+            }))
+            .filter(section => section.items.length > 0);
+    }
+
+    // Multi-branch supply & central prep only when Main Warehouse is enabled.
+    if (options.hasMainWarehouse !== true) {
+        sections = sections
+            .map(section => ({
+                ...section,
+                items: section.items.map(item => {
+                    if (item.children && item.children.length > 0) {
+                        return {
+                            ...item,
+                            children: item.children.filter(
+                                child =>
+                                    !child.href.endsWith(
+                                        "/inventory/transfers",
+                                    ) &&
+                                    !child.href.endsWith("/inventory/prep"),
+                            ),
+                        };
+                    }
+                    return item;
+                }),
             }))
             .filter(section => section.items.length > 0);
     }

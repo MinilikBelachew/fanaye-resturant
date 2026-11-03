@@ -23,7 +23,9 @@ const rawBaseQuery = fetchBaseQuery({
             endpoint !== "uploadReceipt" &&
             endpoint !== "extractReceipt" &&
             endpoint !== "uploadMenuImage" &&
-            endpoint !== "scanMenuFromImage"
+            endpoint !== "scanMenuFromImage" &&
+            endpoint !== "createCustomer" &&
+            endpoint !== "scanCustomer"
         ) {
             headers.set("Content-Type", "application/json");
         }
@@ -127,6 +129,7 @@ export const api = createApi({
         "OutsideOrders",
         "Materials",
         "Finance",
+        "Biometrics",
     ],
     endpoints: () => ({}),
 });

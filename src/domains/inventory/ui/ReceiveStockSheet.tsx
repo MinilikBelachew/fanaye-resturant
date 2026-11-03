@@ -75,9 +75,12 @@ export function ReceiveStockSheet({
         useUploadMenuImageMutation();
 
     const { data: locationsRes } = useListInventoryLocationsQuery(undefined, {
-        skip: !open || Boolean(locationId),
+        skip: !open,
     });
     const targetLocationId = locationId || locationsRes?.data?.[0]?.id;
+    const targetLocation = locationsRes?.data?.find(
+        l => l.id === targetLocationId,
+    );
 
     const fallbackQuery = useListInventoryIngredientsQuery(
         { page: 1, limit: 300 },
@@ -106,10 +109,20 @@ export function ReceiveStockSheet({
     );
     const [createVendor, { isLoading: isCreatingVendor }] =
         useCreateVendorMutation();
-    const activeVendors = useMemo(
-        () => (vendorsRes?.data ?? []).filter(v => v.status === "ACTIVE"),
-        [vendorsRes?.data],
-    );
+    const activeVendors = useMemo(() => {
+        const list = (vendorsRes?.data ?? []).filter(
+            v => v.status === "ACTIVE",
+        );
+        if (!targetLocation) return list;
+        if (targetLocation.type === "MAIN_WAREHOUSE") {
+            // Main Warehouse only receives from Company-Wide / Central vendors
+            return list.filter(v => !v.branchId);
+        }
+        // Branch store receives from Company-Wide vendors + its own local branch vendors
+        return list.filter(
+            v => !v.branchId || v.branchId === targetLocation.branchId,
+        );
+    }, [vendorsRes?.data, targetLocation]);
 
     // Header-level state
     const [vendorId, setVendorId] = useState("");
@@ -297,6 +310,7 @@ export function ReceiveStockSheet({
                 type: vendorForm.type,
                 name: trimmedName,
                 phone: vendorForm.phone.trim() || undefined,
+                branchId: targetLocation?.branchId ?? undefined,
             }).unwrap();
             const created = res?.data ?? res;
             if (created?.id) {
@@ -368,12 +382,13 @@ export function ReceiveStockSheet({
                                 options={activeVendors.map(v => ({
                                     value: v.id,
                                     label: v.name,
-                                    hint:
+                                    hint: `${v.branch ? `📍 ${v.branch.name}` : "🌐 Company-Wide"} · ${
                                         v.type === "FARM"
                                             ? t("vendorsTypeFarm")
                                             : v.type === "NEGADE"
                                               ? t("vendorsTypeNegade")
-                                              : t("vendorsTypeOther"),
+                                              : t("vendorsTypeOther")
+                                    }`,
                                 }))}
                                 onChange={setVendorId}
                                 error={
@@ -384,6 +399,15 @@ export function ReceiveStockSheet({
                             />
                             {selectedVendor ? (
                                 <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-gray">
+                                    {selectedVendor.branch ? (
+                                        <span className="rounded-full px-2 py-0.5 text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                                            📍 {selectedVendor.branch.name}
+                                        </span>
+                                    ) : (
+                                        <span className="rounded-full px-2 py-0.5 text-[10px] font-medium bg-purple-500/10 text-purple-700 dark:text-purple-300">
+                                            🌐 Company-Wide
+                                        </span>
+                                    )}
                                     <span
                                         className={cn(
                                             "rounded-full px-2 py-0.5 text-[10px] font-medium",

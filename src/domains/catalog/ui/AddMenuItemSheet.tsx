@@ -6,6 +6,7 @@ import {
     Coffee,
     CookingPot,
     CupSoda,
+    Edit2,
     ImagePlus,
     Plus,
     Save,
@@ -22,6 +23,7 @@ import {
     useCreateAdminMenuItemMutation,
     useDeleteAdminCategoryMutation,
     useMarkMenuItemSoldOutMutation,
+    useUpdateAdminCategoryMutation,
     useUpdateAdminMenuItemMutation,
     useUploadMenuImageMutation,
 } from "@/context/services/menuApi";
@@ -151,7 +153,13 @@ export default function AddMenuItemSheet({
         useCreateAdminMenuItemMutation();
     const [updateItem, { isLoading: updating }] =
         useUpdateAdminMenuItemMutation();
+    const [updateCategory] = useUpdateAdminCategoryMutation();
     const [deleteCategory] = useDeleteAdminCategoryMutation();
+    const [editingCategory, setEditingCategory] = useState<{
+        id: string;
+        name: string;
+    } | null>(null);
+    const [editingCategoryDraft, setEditingCategoryDraft] = useState("");
     const [markSoldOut] = useMarkMenuItemSoldOutMutation();
     const [uploadImage, { isLoading: uploading }] =
         useUploadMenuImageMutation();
@@ -229,6 +237,8 @@ export default function AddMenuItemSheet({
     const [badge, setBadge] = useState<string | null>(null);
     const [newDietaryTag, setNewDietaryTag] = useState("");
     const [localDietaryTags, setLocalDietaryTags] = useState<string[]>([]);
+    const [editingTag, setEditingTag] = useState<string | null>(null);
+    const [editingTagDraft, setEditingTagDraft] = useState("");
     const [submitError, setSubmitError] = useState("");
 
     const [selectedLibraryIds, setSelectedLibraryIds] = useState<string[]>([]);
@@ -327,6 +337,8 @@ export default function AddMenuItemSheet({
         }
         setSubmitError("");
         setNewDietaryTag("");
+        setEditingTag(null);
+        setEditingTagDraft("");
         setNewGroupName("");
         setOptionName("");
         setOptionDelta("0");
@@ -359,6 +371,8 @@ export default function AddMenuItemSheet({
         setLocalDietaryTags(nextTags);
         setBadge(tag);
         setNewDietaryTag("");
+        setEditingTag(null);
+        setEditingTagDraft("");
         if (qrConfig) {
             try {
                 await updateQrConfig({
@@ -369,6 +383,76 @@ export default function AddMenuItemSheet({
                 // Tag stays local for this save; QR settings can sync later.
             }
         }
+    }
+
+    async function handleSaveTagName(oldTag: string) {
+        const trimmed = normalizeDietaryTag(editingTagDraft);
+        if (!trimmed) {
+            setEditingTag(null);
+            return;
+        }
+        if (trimmed.toLowerCase() === oldTag.toLowerCase()) {
+            setEditingTag(null);
+            return;
+        }
+
+        const nextTags = localDietaryTags.map(t =>
+            t.toLowerCase() === oldTag.toLowerCase() ? trimmed : t,
+        );
+        if (!nextTags.some(t => t.toLowerCase() === trimmed.toLowerCase())) {
+            nextTags.push(trimmed);
+        }
+        setLocalDietaryTags(nextTags);
+
+        if (badge?.toLowerCase() === oldTag.toLowerCase()) {
+            setBadge(trimmed);
+        }
+
+        if (qrConfig) {
+            try {
+                await updateQrConfig({
+                    ...qrConfig,
+                    enabledDietaryTags: nextTags,
+                }).unwrap();
+            } catch {
+                // Keep local
+            }
+        }
+        toast.success("Dietary tag updated", formatDietaryTagLabel(trimmed));
+        setEditingTag(null);
+    }
+
+    async function handleDeleteDietaryTag(tagToDelete: string) {
+        setConfirmDialog({
+            title: "Remove Dietary Tag",
+            body: `Are you sure you want to remove the tag "${formatDietaryTagLabel(tagToDelete)}"?`,
+            confirmLabel: "Remove",
+            danger: true,
+            onConfirm: async () => {
+                const nextTags = localDietaryTags.filter(
+                    t => t.toLowerCase() !== tagToDelete.toLowerCase(),
+                );
+                setLocalDietaryTags(nextTags);
+                if (badge?.toLowerCase() === tagToDelete.toLowerCase()) {
+                    setBadge(null);
+                }
+                if (qrConfig) {
+                    try {
+                        await updateQrConfig({
+                            ...qrConfig,
+                            enabledDietaryTags: nextTags,
+                        }).unwrap();
+                    } catch {
+                        // Keep local
+                    }
+                }
+                toast.success(
+                    "Dietary tag removed",
+                    formatDietaryTagLabel(tagToDelete),
+                );
+                setConfirmDialog(null);
+            },
+        });
     }
 
     if (!isOpen) return null;
@@ -390,6 +474,21 @@ export default function AddMenuItemSheet({
         if (!name) return;
         setCategory(name);
         setNewCategoryName("");
+    }
+
+    async function handleSaveCategoryName(id: string) {
+        const trimmed = editingCategoryDraft.trim();
+        if (!trimmed) return;
+        try {
+            await updateCategory({ id, name: trimmed }).unwrap();
+            if (category === editingCategory?.name) {
+                setCategory(trimmed);
+            }
+            toast.success("Category updated", trimmed);
+            setEditingCategory(null);
+        } catch (err) {
+            toast.fromUnknown(err, "Could not update category.");
+        }
     }
 
     async function handleDeleteCategory(id: string, name: string) {
@@ -837,19 +936,113 @@ export default function AddMenuItemSheet({
                                 {t("dietaryTagNone")}
                             </button>
                             {dietaryTags.map(tag => (
-                                <button
+                                <div
                                     key={tag}
-                                    type="button"
-                                    onClick={() => setBadge(tag)}
                                     className={cn(
-                                        "rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
+                                        "group relative flex items-center overflow-hidden rounded-full border transition-colors",
                                         badge === tag
                                             ? "border-brand bg-brand text-white"
                                             : "border-hairline bg-secondary text-slate-gray hover:text-foreground",
                                     )}
                                 >
-                                    {formatDietaryTagLabel(tag)}
-                                </button>
+                                    {editingTag === tag ? (
+                                        <div
+                                            className="flex items-center gap-1 px-2 py-0.5"
+                                            onClick={e => e.stopPropagation()}
+                                        >
+                                            <input
+                                                type="text"
+                                                value={editingTagDraft}
+                                                onChange={e =>
+                                                    setEditingTagDraft(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                onKeyDown={e => {
+                                                    if (e.key === "Enter") {
+                                                        e.preventDefault();
+                                                        void handleSaveTagName(
+                                                            tag,
+                                                        );
+                                                    } else if (
+                                                        e.key === "Escape"
+                                                    ) {
+                                                        setEditingTag(null);
+                                                    }
+                                                }}
+                                                className="w-24 rounded border border-brand bg-background px-1.5 py-0.5 text-[11px] text-foreground focus:outline-none"
+                                                autoFocus
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    void handleSaveTagName(tag)
+                                                }
+                                                className="rounded p-0.5 hover:bg-black/10 text-emerald-600 dark:text-emerald-400"
+                                                title="Save"
+                                            >
+                                                <Check className="size-3" />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setEditingTag(null)
+                                                }
+                                                className="rounded p-0.5 hover:bg-black/10 text-muted-foreground"
+                                                title="Cancel"
+                                            >
+                                                <X className="size-3" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <button
+                                                type="button"
+                                                onClick={() => setBadge(tag)}
+                                                className="px-2.5 py-1 text-[11px] font-medium"
+                                            >
+                                                {formatDietaryTagLabel(tag)}
+                                            </button>
+                                            <div className="flex h-full items-center">
+                                                <button
+                                                    type="button"
+                                                    onClick={e => {
+                                                        e.stopPropagation();
+                                                        setEditingTag(tag);
+                                                        setEditingTagDraft(tag);
+                                                    }}
+                                                    className={cn(
+                                                        "flex h-full w-0 items-center justify-center bg-black/10 transition-all group-hover:w-5",
+                                                        badge === tag
+                                                            ? "text-white/80 hover:text-white"
+                                                            : "text-slate-gray hover:text-foreground",
+                                                    )}
+                                                    title="Rename tag"
+                                                >
+                                                    <Edit2 className="size-2.5" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={e => {
+                                                        e.stopPropagation();
+                                                        void handleDeleteDietaryTag(
+                                                            tag,
+                                                        );
+                                                    }}
+                                                    className={cn(
+                                                        "flex h-full w-0 items-center justify-center bg-black/10 transition-all group-hover:w-5",
+                                                        badge === tag
+                                                            ? "text-white/80 hover:text-white"
+                                                            : "text-slate-gray hover:text-destructive",
+                                                    )}
+                                                    title="Delete tag"
+                                                >
+                                                    <X className="size-2.5" />
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             ))}
                         </div>
                         <div className="flex gap-2">
@@ -905,34 +1098,122 @@ export default function AddMenuItemSheet({
                                                 : "border-hairline bg-secondary text-slate-gray hover:text-foreground",
                                         )}
                                     >
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                setCategory(cat.name)
-                                            }
-                                            className="px-2.5 py-1 text-[11px] font-medium"
-                                        >
-                                            {cat.name}
-                                        </button>
-                                        {cat.id !== "__new__" && (
-                                            <button
-                                                type="button"
-                                                onClick={e => {
-                                                    e.stopPropagation();
-                                                    void handleDeleteCategory(
-                                                        cat.id,
-                                                        cat.name,
-                                                    );
-                                                }}
-                                                className={cn(
-                                                    "flex h-full w-0 items-center justify-center bg-black/10 transition-all group-hover:w-6",
-                                                    category === cat.name
-                                                        ? "text-white/80 hover:text-white"
-                                                        : "text-slate-gray hover:text-destructive",
-                                                )}
+                                        {editingCategory?.id === cat.id ? (
+                                            <div
+                                                className="flex items-center gap-1 px-2 py-0.5"
+                                                onClick={e =>
+                                                    e.stopPropagation()
+                                                }
                                             >
-                                                <X className="size-3" />
-                                            </button>
+                                                <input
+                                                    type="text"
+                                                    value={editingCategoryDraft}
+                                                    onChange={e =>
+                                                        setEditingCategoryDraft(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    onKeyDown={e => {
+                                                        if (e.key === "Enter") {
+                                                            e.preventDefault();
+                                                            void handleSaveCategoryName(
+                                                                cat.id,
+                                                            );
+                                                        } else if (
+                                                            e.key === "Escape"
+                                                        ) {
+                                                            setEditingCategory(
+                                                                null,
+                                                            );
+                                                        }
+                                                    }}
+                                                    className="w-24 rounded border border-brand bg-background px-1.5 py-0.5 text-[11px] text-foreground focus:outline-none"
+                                                    autoFocus
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        void handleSaveCategoryName(
+                                                            cat.id,
+                                                        )
+                                                    }
+                                                    className="rounded p-0.5 hover:bg-black/10 text-emerald-600 dark:text-emerald-400"
+                                                    title="Save"
+                                                >
+                                                    <Check className="size-3" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setEditingCategory(null)
+                                                    }
+                                                    className="rounded p-0.5 hover:bg-black/10 text-muted-foreground"
+                                                    title="Cancel"
+                                                >
+                                                    <X className="size-3" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setCategory(cat.name)
+                                                    }
+                                                    className="px-2.5 py-1 text-[11px] font-medium"
+                                                >
+                                                    {cat.name}
+                                                </button>
+                                                {cat.id !== "__new__" && (
+                                                    <div className="flex h-full items-center">
+                                                        <button
+                                                            type="button"
+                                                            onClick={e => {
+                                                                e.stopPropagation();
+                                                                setEditingCategory(
+                                                                    {
+                                                                        id: cat.id,
+                                                                        name: cat.name,
+                                                                    },
+                                                                );
+                                                                setEditingCategoryDraft(
+                                                                    cat.name,
+                                                                );
+                                                            }}
+                                                            className={cn(
+                                                                "flex h-full w-0 items-center justify-center bg-black/10 transition-all group-hover:w-5",
+                                                                category ===
+                                                                    cat.name
+                                                                    ? "text-white/80 hover:text-white"
+                                                                    : "text-slate-gray hover:text-foreground",
+                                                            )}
+                                                            title="Rename category"
+                                                        >
+                                                            <Edit2 className="size-2.5" />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={e => {
+                                                                e.stopPropagation();
+                                                                void handleDeleteCategory(
+                                                                    cat.id,
+                                                                    cat.name,
+                                                                );
+                                                            }}
+                                                            className={cn(
+                                                                "flex h-full w-0 items-center justify-center bg-black/10 transition-all group-hover:w-5",
+                                                                category ===
+                                                                    cat.name
+                                                                    ? "text-white/80 hover:text-white"
+                                                                    : "text-slate-gray hover:text-destructive",
+                                                            )}
+                                                            title="Delete category"
+                                                        >
+                                                            <X className="size-3" />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
                                     </div>
                                 ))}

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import KpiCard from "@/components/custom/organisms/KpiCard";
 import { Button } from "@/components/ui/button";
+import { RestorchLoader } from "@/components/common/RestorchLoader";
 import { cn } from "@/lib/utils";
 import {
     FeedbackListQuery,
@@ -227,9 +228,11 @@ export default function FeedbackBoard() {
                     </div>
 
                     {isLoading ? (
-                        <div className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-background py-16 text-xs text-muted-foreground">
-                            <Loader2 className="size-4 animate-spin" />
-                            Loading customer feedback…
+                        <div className="flex items-center justify-center rounded-2xl border border-border bg-background py-14">
+                            <RestorchLoader
+                                size="md"
+                                label="Loading customer feedback…"
+                            />
                         </div>
                     ) : items.length === 0 ? (
                         <div className="rounded-2xl border border-border bg-background py-16 text-center">

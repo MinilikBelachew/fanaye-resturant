@@ -20,6 +20,7 @@ export type OpsNotificationType =
     | "floor.updated"
     | "leave.request.created"
     | "leave.request.decided"
+    | "customer.arrived"
     | string;
 
 export interface OpsNotification {
@@ -162,6 +163,8 @@ export function notificationHref(
         typeof payload.tableId === "string" ? payload.tableId : null;
 
     switch (note.type) {
+        case "customer.arrived":
+            return "/manager/customers";
         case "item.ready":
         case "guest.order_placed":
         case "guest.service_request":

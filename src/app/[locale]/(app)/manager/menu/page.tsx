@@ -1,7 +1,9 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
+    ChevronLeft,
+    ChevronRight,
     Clock,
     CookingPot,
     Edit3,
@@ -98,6 +100,19 @@ export default function ManagerMenuPage() {
         () => (data?.data ?? []).map(item => adminMenuItemToCatalog(item)),
         [data],
     );
+
+    const [page, setPage] = useState(1);
+    const [pageSize] = useState(10);
+
+    useEffect(() => {
+        setPage(1);
+    }, [deferredSearch, selectedStation]);
+
+    const totalPages = Math.max(1, Math.ceil(menuItems.length / pageSize));
+    const paginatedGridItems = useMemo(() => {
+        const start = (page - 1) * pageSize;
+        return menuItems.slice(start, start + pageSize);
+    }, [menuItems, page, pageSize]);
 
     const stationFilters = useMemo(
         () => [
@@ -423,150 +438,201 @@ export default function ManagerMenuPage() {
                     data={menuItems}
                     rowKey={row => row.id}
                     searchPlaceholder={null}
-                    serverSide
+                    pagination={{
+                        page,
+                        limit: pageSize,
+                        total: menuItems.length,
+                        totalPages,
+                        onPageChange: setPage,
+                    }}
                 />
             ) : null}
 
             {!isLoading && !isError && viewMode === "grid" ? (
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                    {menuItems.map(item => (
-                        <article
-                            key={item.id}
-                            className="group overflow-hidden rounded-xl border border-border bg-background"
-                        >
-                            <div className="relative aspect-[4/3] bg-secondary">
-                                {item.image ? (
-                                    <img
-                                        src={item.image}
-                                        alt={item.name}
-                                        className="size-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="flex size-full items-center justify-center text-slate-gray">
-                                        <CookingPot className="size-10 opacity-40" />
-                                    </div>
-                                )}
-                                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-4 text-white">
-                                    <div className="mb-2 flex items-center justify-between gap-2">
-                                        <Badge
-                                            variant={
-                                                item.available
-                                                    ? "success"
-                                                    : "warning"
-                                            }
-                                            className="cursor-pointer"
-                                            onClick={() => {
-                                                void handleToggleAvailability(
-                                                    item,
-                                                );
-                                            }}
-                                        >
-                                            {item.available
-                                                ? t("active")
-                                                : t("soldOut")}
-                                        </Badge>
-                                        <span className="text-[12px] text-white/70">
-                                            {item.category}
-                                        </span>
-                                    </div>
-                                    <h2 className="text-[22px] leading-tight font-semibold">
-                                        {item.name}
-                                    </h2>
-                                    <p
-                                        className="mt-1.5 line-clamp-2 text-[13px] text-white/75"
-                                        title={item.description || undefined}
-                                    >
-                                        {item.description}
-                                    </p>
-                                    {item.modifierGroups.length > 0 ? (
-                                        <div className="mt-3 flex flex-wrap gap-1.5">
-                                            {item.modifierGroups.map(group => (
-                                                <span
-                                                    key={group.id}
-                                                    className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-medium text-white/90 backdrop-blur-sm"
-                                                >
-                                                    {group.name}
-                                                </span>
-                                            ))}
+                <div>
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        {paginatedGridItems.map(item => (
+                            <article
+                                key={item.id}
+                                className="group overflow-hidden rounded-xl border border-border bg-background"
+                            >
+                                <div className="relative aspect-[4/3] bg-secondary">
+                                    {item.image ? (
+                                        <img
+                                            src={item.image}
+                                            alt={item.name}
+                                            className="size-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="flex size-full items-center justify-center text-slate-gray">
+                                            <CookingPot className="size-10 opacity-40" />
                                         </div>
-                                    ) : null}
-                                    <div className="mt-4 flex items-center justify-between gap-3">
-                                        <p className="text-[16px] font-semibold">
-                                            {formatEtb(item.price)}
-                                        </p>
-                                        <div className="flex items-center gap-1 text-[12px] text-white/70">
-                                            <Clock className="size-3.5" />
-                                            <span>
-                                                ~
-                                                {
-                                                    item.expectedPreparationMinutes
+                                    )}
+                                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-4 text-white">
+                                        <div className="mb-2 flex items-center justify-between gap-2">
+                                            <Badge
+                                                variant={
+                                                    item.available
+                                                        ? "success"
+                                                        : "warning"
                                                 }
-                                                m
+                                                className="cursor-pointer"
+                                                onClick={() => {
+                                                    void handleToggleAvailability(
+                                                        item,
+                                                    );
+                                                }}
+                                            >
+                                                {item.available
+                                                    ? t("active")
+                                                    : t("soldOut")}
+                                            </Badge>
+                                            <span className="text-[12px] text-white/70">
+                                                {item.category}
                                             </span>
                                         </div>
-                                    </div>
-                                    <div className="mt-3 flex items-center gap-3">
-                                        <button
-                                            type="button"
-                                            onClick={e => {
-                                                e.stopPropagation();
-                                                handleOpenDetail(item);
-                                            }}
-                                            className="flex items-center gap-1 text-[12px] font-medium text-white/80 hover:text-white"
+                                        <h2 className="text-[22px] leading-tight font-semibold">
+                                            {item.name}
+                                        </h2>
+                                        <p
+                                            className="mt-1.5 line-clamp-2 text-[13px] text-white/75"
+                                            title={
+                                                item.description || undefined
+                                            }
                                         >
-                                            <Eye className="size-3.5" />
-                                            {t("details")}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={e => {
-                                                e.stopPropagation();
-                                                handleOpenEdit(item);
-                                            }}
-                                            className="flex items-center gap-1 text-[12px] font-medium text-white hover:underline"
-                                        >
-                                            <Edit3 className="size-3.5" />
-                                            {t("edit")}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={e => {
-                                                e.stopPropagation();
-                                                setDeletingItem(item);
-                                            }}
-                                            className="flex items-center gap-1 text-[12px] font-medium text-rose-400 hover:text-rose-300 hover:underline"
-                                        >
-                                            <Trash2 className="size-3.5" />
-                                            {t("delete")}
-                                        </button>
+                                            {item.description}
+                                        </p>
+                                        {item.modifierGroups.length > 0 ? (
+                                            <div className="mt-3 flex flex-wrap gap-1.5">
+                                                {item.modifierGroups.map(
+                                                    group => (
+                                                        <span
+                                                            key={group.id}
+                                                            className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-medium text-white/90 backdrop-blur-sm"
+                                                        >
+                                                            {group.name}
+                                                        </span>
+                                                    ),
+                                                )}
+                                            </div>
+                                        ) : null}
+                                        <div className="mt-4 flex items-center justify-between gap-3">
+                                            <p className="text-[16px] font-semibold">
+                                                {formatEtb(item.price)}
+                                            </p>
+                                            <div className="flex items-center gap-1 text-[12px] text-white/70">
+                                                <Clock className="size-3.5" />
+                                                <span>
+                                                    ~
+                                                    {
+                                                        item.expectedPreparationMinutes
+                                                    }
+                                                    m
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="mt-3 flex items-center gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={e => {
+                                                    e.stopPropagation();
+                                                    handleOpenDetail(item);
+                                                }}
+                                                className="flex items-center gap-1 text-[12px] font-medium text-white/80 hover:text-white"
+                                            >
+                                                <Eye className="size-3.5" />
+                                                {t("details")}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={e => {
+                                                    e.stopPropagation();
+                                                    handleOpenEdit(item);
+                                                }}
+                                                className="flex items-center gap-1 text-[12px] font-medium text-white hover:underline"
+                                            >
+                                                <Edit3 className="size-3.5" />
+                                                {t("edit")}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={e => {
+                                                    e.stopPropagation();
+                                                    setDeletingItem(item);
+                                                }}
+                                                className="flex items-center gap-1 text-[12px] font-medium text-rose-400 hover:text-rose-300 hover:underline"
+                                            >
+                                                <Trash2 className="size-3.5" />
+                                                {t("delete")}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </article>
-                    ))}
+                            </article>
+                        ))}
 
-                    {menuItems.length === 0 ? (
-                        <div className="col-span-full flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16 text-center">
-                            <CookingPot className="size-10 text-muted-foreground/60" />
-                            <h3 className="mt-3 text-[15px] text-foreground">
-                                {t("noMenuItemsFound")}
-                            </h3>
-                            <p className="mt-1 text-[13px] text-muted-foreground">
-                                {searchQuery
-                                    ? t("noDishesMatch", {
-                                          query: searchQuery,
-                                      })
-                                    : t("noItemsForStation")}
-                            </p>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleOpenAdd}
-                                className="mt-4"
-                            >
-                                <Plus className="mr-1.5 size-4" />
-                                {t("addNewDish")}
-                            </Button>
+                        {menuItems.length === 0 ? (
+                            <div className="col-span-full flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16 text-center">
+                                <CookingPot className="size-10 text-muted-foreground/60" />
+                                <h3 className="mt-3 text-[15px] text-foreground">
+                                    {t("noMenuItemsFound")}
+                                </h3>
+                                <p className="mt-1 text-[13px] text-muted-foreground">
+                                    {searchQuery
+                                        ? t("noDishesMatch", {
+                                              query: searchQuery,
+                                          })
+                                        : t("noItemsForStation")}
+                                </p>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleOpenAdd}
+                                    className="mt-4"
+                                >
+                                    <Plus className="mr-1.5 size-4" />
+                                    {t("addNewDish")}
+                                </Button>
+                            </div>
+                        ) : null}
+                    </div>
+
+                    {totalPages > 1 ? (
+                        <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-[12px] text-muted-foreground">
+                            <span>
+                                Page {page} of {totalPages} · {menuItems.length}{" "}
+                                total
+                            </span>
+                            <div className="flex items-center gap-1.5">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={page <= 1}
+                                    onClick={() =>
+                                        setPage(p => Math.max(1, p - 1))
+                                    }
+                                    className="h-7 gap-1 rounded-full px-2.5 text-[11px] font-normal"
+                                >
+                                    <ChevronLeft className="size-3.5" />
+                                    <span>Prev</span>
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={page >= totalPages}
+                                    onClick={() =>
+                                        setPage(p =>
+                                            Math.min(totalPages, p + 1),
+                                        )
+                                    }
+                                    className="h-7 gap-1 rounded-full px-2.5 text-[11px] font-normal"
+                                >
+                                    <span>Next</span>
+                                    <ChevronRight className="size-3.5" />
+                                </Button>
+                            </div>
                         </div>
                     ) : null}
                 </div>

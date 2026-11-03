@@ -60,6 +60,20 @@ export const LivePhoneSimulator: React.FC<LivePhoneSimulatorProps> = ({
         return matchesCategory && matchesSearch && matchesDiet;
     });
 
+    const groupedSections = React.useMemo(() => {
+        if (activeTab !== "all" || search.trim()) return null;
+        const groups: Array<{ name: string; items: MenuItem[] }> = [];
+        for (const cat of categories) {
+            const catItems = filteredItems.filter(
+                i => (i.category || "Main Menu") === cat,
+            );
+            if (catItems.length > 0) {
+                groups.push({ name: cat, items: catItems });
+            }
+        }
+        return groups;
+    }, [categories, filteredItems, activeTab, search]);
+
     return (
         <div className="relative mx-auto flex h-[720px] w-[340px] flex-col overflow-hidden rounded-[44px] border-[10px] border-slate-900 bg-slate-950 shadow-2xl ring-1 ring-slate-900/10">
             {/* Top Notch / Dynamic Island */}
@@ -238,11 +252,83 @@ export const LivePhoneSimulator: React.FC<LivePhoneSimulatorProps> = ({
                 </div>
 
                 {/* Menu Items List */}
-                <div className="p-3 space-y-2.5 pb-20">
+                <div className="p-3 space-y-3 pb-20">
                     {filteredItems.length === 0 ? (
                         <div className="py-8 text-center text-[12px] text-slate-400">
                             {t("noMatchSearch")}
                         </div>
+                    ) : groupedSections && groupedSections.length > 0 ? (
+                        groupedSections.map(section => (
+                            <div key={section.name} className="space-y-2">
+                                <div className="flex items-center justify-between border-b border-slate-200/80 pb-1 pt-1">
+                                    <span className="text-[11px] font-bold text-slate-900 flex items-center gap-1.5">
+                                        <span className="size-1.5 rounded-full bg-amber-500" />
+                                        {section.name}
+                                    </span>
+                                    <span className="text-[10px] text-slate-500 font-medium">
+                                        {section.items.length}
+                                    </span>
+                                </div>
+                                {section.items.map(item => (
+                                    <div
+                                        key={item.id}
+                                        className="flex items-center gap-2.5 rounded-2xl border border-slate-200/80 bg-white p-2.5 shadow-xs transition-shadow hover:shadow-sm"
+                                    >
+                                        <div className="relative size-16 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                                            {item.image ? (
+                                                <img
+                                                    src={item.image}
+                                                    alt={item.name}
+                                                    className="h-full w-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="flex h-full w-full items-center justify-center text-slate-300">
+                                                    <UtensilsCrossed className="size-5" />
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-1">
+                                                <h4 className="text-[12px] font-bold text-slate-900 truncate">
+                                                    {item.name}
+                                                </h4>
+                                                {item.name
+                                                    .toLowerCase()
+                                                    .includes("spicy") ||
+                                                item.name
+                                                    .toLowerCase()
+                                                    .includes("tibs") ? (
+                                                    <Flame className="size-3 text-rose-500 flex-shrink-0" />
+                                                ) : null}
+                                                {item.name
+                                                    .toLowerCase()
+                                                    .includes("salad") ||
+                                                item.name
+                                                    .toLowerCase()
+                                                    .includes("veg") ? (
+                                                    <Leaf className="size-3 text-emerald-500 flex-shrink-0" />
+                                                ) : null}
+                                            </div>
+                                            <p className="mt-0.5 text-[10px] text-slate-500 line-clamp-1">
+                                                {item.description ||
+                                                    t("freshlyPrepared")}
+                                            </p>
+                                            <div className="mt-1 flex items-center justify-between">
+                                                <span className="text-[11px] font-bold text-slate-900">
+                                                    {formatEtb(
+                                                        Number(item.price),
+                                                    )}
+                                                </span>
+                                                <button className="flex size-5 items-center justify-center rounded-full bg-amber-600 text-white shadow-xs">
+                                                    <Plus className="size-3" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ))
                     ) : (
                         filteredItems.map(item => (
                             <div

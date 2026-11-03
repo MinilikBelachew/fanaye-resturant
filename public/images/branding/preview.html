@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Restorch Branding & Loader Video Preview</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 40px;
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    h1 { margin-top: 0; font-size: 28px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      border: 1px solid #e2e8f0;
+    }
+    .card.dark {
+      background: #09090b;
+      color: white;
+      border-color: #27272a;
+    }
+    .card h3 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+    .card p {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 16px;
+    }
+    .card.dark p {
+      color: #a1a1aa;
+    }
+    .media-box {
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px;
+      position: relative;
+    }
+    .checkered-light {
+      background-color: #f8fafc;
+      background-image: linear-gradient(45deg, #e2e8f0 25%, transparent 25%),
+                        linear-gradient(-45deg, #e2e8f0 25%, transparent 25%),
+                        linear-gradient(45deg, transparent 75%, #e2e8f0 75%),
+                        linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    }
+    .checkered-dark {
+      background-color: #18181b;
+      background-image: linear-gradient(45deg, #27272a 25%, transparent 25%),
+                        linear-gradient(-45deg, #27272a 25%, transparent 25%),
+                        linear-gradient(45deg, transparent 75%, #27272a 75%),
+                        linear-gradient(-45deg, transparent 75%, #27272a 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    }
+    video, img {
+      max-width: 100%;
+      max-height: 220px;
+      object-fit: contain;
+    }
+    .tag {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      background: #ffedd5;
+      color: #c2410c;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔥 Restorch Branding & Video Loader Live Suite</h1>
+  <p style="color: #64748b; margin-bottom: 32px;">Real-time preview across transparent light and dark environments.</p>
+
+  <h2>1. The Primary Transparent Video Loader (2.5s Seamless Loop)</h2>
+  <div class="grid">
+    <div class="card">
+      <span class="tag">Light Mode Loader</span>
+      <h3>Restorch_Pictogram_Loop_1080_Alpha.webm</h3>
+      <p>True alpha channel transparency over light/white surface.</p>
+      <div class="media-box checkered-light">
+        <video autoplay loop muted playsinline>
+          <source src="Restorch_Pictogram_Loop_1080_Alpha.webm" type="video/webm">
+          <source src="Restorch_Pictogram_Loop_1080.mp4" type="video/mp4">
+        </video>
+      </div>
+    </div>
+
+    <div class="card dark">
+      <span class="tag" style="background: #431407; color: #fdba74;">Dark Mode Loader</span>
+      <h3>Restorch_Pictogram_Loop_1080_Alpha.webm</h3>
+      <p>True alpha channel transparency over deep dark #09090b surface.</p>
+      <div class="media-box checkered-dark">
+        <video autoplay loop muted playsinline>
+          <source src="Restorch_Pictogram_Loop_1080_Alpha.webm" type="video/webm">
+          <source src="Restorch_Pictogram_Loop_1080.mp4" type="video/mp4">
+        </video>
+      </div>
+    </div>
+  </div>
+
+  <h2>2. The Light & Dark Full Lockup Logos</h2>
+  <div class="grid">
+    <div class="card">
+      <span class="tag">Light Mode Logo</span>
+      <h3>restorch-lockup-light.png</h3>
+      <p>Navy Text (#051225) + Vibrant Orange Swirl on transparent background.</p>
+      <div class="media-box checkered-light">
+        <img src="restorch-lockup-light.png" alt="Light Mode Logo">
+      </div>
+    </div>
+
+    <div class="card dark">
+      <span class="tag" style="background: #431407; color: #fdba74;">Dark Mode Logo</span>
+      <h3>restorch-lockup-dark.png</h3>
+      <p>Crisp White Text (#FFFFFF) + Vibrant Orange Swirl on transparent background.</p>
+      <div class="media-box checkered-dark">
+        <img src="restorch-lockup-dark.png" alt="Dark Mode Logo">
+      </div>
+    </div>
+  </div>
+
+  <h2>3. Additional Themed Video Assets</h2>
+  <div class="grid">
+    <div class="card">
+      <span class="tag">Light Theme Video (6s)</span>
+      <h3>restorch-logo-light (2).mp4</h3>
+      <p>Full brand animation with clean light background.</p>
+      <div class="media-box" style="background: #fff;">
+        <video autoplay loop muted playsinline controls>
+          <source src="restorch-logo-light (2).mp4" type="video/mp4">
+        </video>
+      </div>
+    </div>
+
+    <div class="card dark">
+      <span class="tag" style="background: #1e293b; color: #38bdf8;">Navy Theme Video (6s)</span>
+      <h3>restorch-logo-navy (2).mp4</h3>
+      <p>Full brand animation with deep navy luxury background.</p>
+      <div class="media-box" style="background: #051225;">
+        <video autoplay loop muted playsinline controls>
+          <source src="restorch-logo-navy (2).mp4" type="video/mp4">
+        </video>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+

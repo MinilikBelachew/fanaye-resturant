@@ -11,6 +11,7 @@ import DriverShell from "@/components/layout/DriverShell";
 import ResponsiveDeskShell from "@/components/layout/ResponsiveDeskShell";
 import WaiterShell from "@/components/layout/WaiterShell";
 import { SidebarUiProvider } from "@/components/layout/SidebarUi";
+import { RestorchLoader } from "@/components/common/RestorchLoader";
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { usePathname, useRouter } from "@/i18n/navigation";
 
@@ -54,6 +55,30 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             }
         }
     }, [hydrated, staff, pathname, router, serviceMode]);
+
+    if (!hydrated) {
+        return (
+            <div className="flex h-svh w-full items-center justify-center bg-background">
+                <RestorchLoader
+                    size="lg"
+                    label="Restorch OS"
+                    subLabel="Initializing session..."
+                />
+            </div>
+        );
+    }
+
+    if (!hydrated) {
+        return (
+            <div className="flex h-svh w-full items-center justify-center bg-background">
+                <RestorchLoader
+                    size="lg"
+                    label="Restorch OS"
+                    subLabel="Initializing session..."
+                />
+            </div>
+        );
+    }
 
     if (!staff) return null;
 

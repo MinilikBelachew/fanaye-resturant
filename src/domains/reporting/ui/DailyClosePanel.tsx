@@ -1,5 +1,7 @@
 "use client";
 
+import { Link } from "@/i18n/navigation";
+
 import { useState } from "react";
 import {
     useApproveDailyCloseMutation,
@@ -18,6 +20,7 @@ import {
 import { useForceCloseRoomSessionMutation } from "@/context/services/roomsApi";
 import { Badge } from "@/components/ui/badge";
 import { formatEtb } from "@/lib/money";
+import { RestorchLoader } from "@/components/common/RestorchLoader";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import type { DailyCloseBlocker } from "@/domains/reporting/domain/dailyCloseApi";
@@ -248,7 +251,11 @@ export default function DailyClosePanel({
     }
 
     if (isLoading) {
-        return <p className="text-[12px] text-slate-gray">{t("loading")}</p>;
+        return (
+            <div className="flex justify-center py-12">
+                <RestorchLoader size="md" label={t("loading")} />
+            </div>
+        );
     }
 
     if (isError || !preview) {
@@ -481,6 +488,17 @@ export default function DailyClosePanel({
                                                   ? t("forceCancel")
                                                   : t("forceClose")}
                                         </button>
+                                    ) : !isCashier &&
+                                      (blocker.code ===
+                                          "CASHIER_RECONCILIATION_MISSING" ||
+                                          blocker.code ===
+                                              "UNDROPPED_WAITER_CASH") ? (
+                                        <Link
+                                            href="/manager/staff/active-shifts"
+                                            className="shrink-0 inline-flex h-7 items-center rounded-full border border-amber-500/40 bg-amber-500/10 px-3 text-[11px] font-semibold text-amber-900 hover:bg-amber-500/20 dark:text-amber-200 transition-colors"
+                                        >
+                                            Resolve in HR Active Shifts
+                                        </Link>
                                     ) : null}
                                 </li>
                             );

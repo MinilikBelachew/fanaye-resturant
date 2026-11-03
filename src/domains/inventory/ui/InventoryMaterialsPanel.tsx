@@ -106,6 +106,54 @@ const PRESET_IMAGES = [
     { label: "Bussing Tub", url: "/images/materials/bussing-tub.jpg" },
     { label: "Squeeze Bottle", url: "/images/materials/squeeze-bottle.jpg" },
     { label: "Salt & Pepper", url: "/images/materials/salt-pepper.jpg" },
+    { label: "Copper Mug", url: "/images/materials/copper-mug.jpg" },
+    { label: "Hurricane Glass", url: "/images/materials/hurricane-glass.jpg" },
+    { label: "Brandy Snifter", url: "/images/materials/brandy-snifter.jpg" },
+    { label: "Beer Pitcher", url: "/images/materials/beer-pitcher.jpg" },
+    { label: "Water Pitcher", url: "/images/materials/water-pitcher.jpg" },
+    { label: "Glass Rimmer", url: "/images/materials/glass-rimmer.jpg" },
+    {
+        label: "Wine Bucket Stand",
+        url: "/images/materials/wine-bucket-stand.jpg",
+    },
+    {
+        label: "Wine Opener / Corkscrew",
+        url: "/images/materials/wine-opener.jpg",
+    },
+    {
+        label: "Cocktail Strainer",
+        url: "/images/materials/cocktail-strainer.jpg",
+    },
+    { label: "Bar Muddler", url: "/images/materials/bar-muddler.jpg" },
+    { label: "Bar Spoon", url: "/images/materials/bar-spoon.jpg" },
+    { label: "Ice Scoop", url: "/images/materials/ice-scoop.jpg" },
+    { label: "Bar Spill Mat", url: "/images/materials/bar-mat.jpg" },
+    {
+        label: "Bar Garnish Center",
+        url: "/images/materials/bar-garnish-center.jpg",
+    },
+    { label: "Speed Pourer Spout", url: "/images/materials/speed-pourer.jpg" },
+    {
+        label: "Cast Iron Sizzler Platter",
+        url: "/images/materials/cast-iron-sizzler.jpg",
+    },
+    {
+        label: "Table Number Stand",
+        url: "/images/materials/table-number-stand.jpg",
+    },
+    { label: "Napkin Dispenser", url: "/images/materials/napkin-holder.jpg" },
+    { label: "Taco Shell Holder", url: "/images/materials/taco-holder.jpg" },
+    {
+        label: "Fry Cone Wire Stand",
+        url: "/images/materials/fry-cone-holder.jpg",
+    },
+    { label: "Sauce / Gravy Boat", url: "/images/materials/sauce-boat.jpg" },
+    {
+        label: "Oil & Vinegar Cruet Set",
+        url: "/images/materials/oil-vinegar-cruet.jpg",
+    },
+    { label: "Menu Tent Stand", url: "/images/materials/menu-stand.jpg" },
+    { label: "Table Crumber", url: "/images/materials/table-crumber.jpg" },
 ];
 
 export function InventoryMaterialsPanel() {

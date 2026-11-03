@@ -10,12 +10,14 @@ import StationKdsNav from "@/components/layout/StationKdsNav";
 import StationTopBarTools from "@/components/layout/StationTopBarTools";
 import OpsNotificationsBell from "@/domains/notifications/ui/OpsNotificationsBell";
 import { navForRole } from "@/domains/identity/application/nav";
+import { useGetInventoryNetworkStatusQuery } from "@/context/services/inventoryApi";
 import { homePathForRole } from "@/domains/identity/application/homePath";
 import { isStationRole, type Role } from "@/domains/identity/domain/role";
 import RoleSwitcher from "@/domains/identity/ui/RoleSwitcher";
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { LocaleSwitcher } from "@/components/theme/LocaleSwitcher";
+import { RestorchLogo } from "@/components/common/RestorchLogo";
 import { useAppSelector } from "@/context/hooks";
 
 const NAV_LABEL_KEYS: Record<string, string> = {
@@ -75,9 +77,20 @@ function CompactNav({ role }: { role: Role }) {
     const roomsEnabled = useAppSelector(
         state => state.identity.session?.roomsEnabled,
     );
+    const isInventoryRole =
+        role === "owner" || role === "manager" || role === "store_manager";
+    const { data: networkRes } = useGetInventoryNetworkStatusQuery(undefined, {
+        skip: !isInventoryRole,
+    });
+    const sessionHasMain = useAppSelector(
+        state => state.identity.session?.hasMainWarehouse,
+    );
+    const hasMainWarehouse =
+        networkRes?.data?.hasMainWarehouse ?? sessionHasMain === true;
     const items = navForRole(role, {
         serviceMode,
         roomsEnabled: roomsEnabled === true,
+        hasMainWarehouse,
     }).flatMap(section => section.items);
 
     return (
@@ -134,7 +147,8 @@ export default function ResponsiveDeskShell({
                 <header className="shrink-0 border-b border-black/[0.08] bg-white dark:border-white/[0.1] dark:bg-card xl:hidden">
                     <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-3 py-2 sm:gap-3 sm:px-4 md:px-6">
                         <div className="flex h-10 items-center gap-2">
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex items-center gap-2">
+                                <RestorchLogo variant="mark" height={24} />
                                 <h1 className="truncate text-[15px] font-medium tracking-tight">
                                     {roleLabel}
                                 </h1>

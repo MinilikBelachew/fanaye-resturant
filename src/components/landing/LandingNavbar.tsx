@@ -5,7 +5,8 @@ import { Link } from "@/i18n/navigation";
 import { ThemeToggleButton } from "@/components/theme/ThemeSwitcher";
 import { LocaleSwitcher } from "@/components/theme/LocaleSwitcher";
 import { useTranslations } from "next-intl";
-import { ArrowUpRight, Menu, Sparkles, X } from "lucide-react";
+import { ArrowUpRight, Menu, X } from "lucide-react";
+import { RestorchLogo } from "@/components/common/RestorchLogo";
 
 export default function LandingNavbar() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -25,14 +26,9 @@ export default function LandingNavbar() {
                     {/* Brand: LUMEN style clean logo + uppercase bold title */}
                     <Link
                         href="/"
-                        className="group flex items-center gap-2.5 shrink-0"
+                        className="group flex items-center gap-2 shrink-0 transition-opacity hover:opacity-90"
                     >
-                        <div className="flex size-7 items-center justify-center rounded-lg bg-secondary text-foreground transition-transform group-hover:scale-105">
-                            <Sparkles className="size-4" />
-                        </div>
-                        <span className="text-sm sm:text-base font-extrabold tracking-widest uppercase text-foreground whitespace-nowrap">
-                            FANAYE
-                        </span>
+                        <RestorchLogo variant="full" height={28} priority />
                     </Link>
 
                     {/* Centered Navigation Links in One Clean Line */}

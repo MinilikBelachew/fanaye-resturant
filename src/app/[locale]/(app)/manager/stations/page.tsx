@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
+import { RestorchLoader } from "@/components/common/RestorchLoader";
 import { useAppDispatch } from "@/context/hooks";
 import { openAddStation, openEditStation } from "@/context/slices/stationSlice";
 import {
@@ -178,10 +179,7 @@ export default function ManagerStationsPage() {
 
             {isLoading ? (
                 <div className="flex flex-col items-center justify-center rounded-2xl border border-hairline bg-card py-14">
-                    <Loader2 className="size-6 animate-spin text-primary" />
-                    <p className="mt-2 text-[12px] text-slate-gray">
-                        {t("loading")}
-                    </p>
+                    <RestorchLoader size="md" label={t("loading")} />
                 </div>
             ) : isError ? (
                 <div className="flex flex-col items-center justify-center rounded-2xl border border-destructive/20 bg-destructive/5 py-10 text-center">

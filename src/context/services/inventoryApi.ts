@@ -202,6 +202,12 @@ export interface InventoryVendor {
     phone: string | null;
     address: string | null;
     status: string;
+    branchId?: string | null;
+    branch?: {
+        id: string;
+        name: string;
+        displayCode?: string | null;
+    } | null;
     createdAt: string;
     updatedAt: string;
 }
@@ -212,6 +218,7 @@ export interface CreateVendorPayload {
     contactPerson?: string;
     phone?: string;
     address?: string;
+    branchId?: string | null;
 }
 
 export interface UpdateVendorPayload {
@@ -221,6 +228,7 @@ export interface UpdateVendorPayload {
     phone?: string;
     address?: string;
     status?: string;
+    branchId?: string | null;
 }
 
 export interface CreateDriverPayload {
@@ -490,6 +498,8 @@ export interface InventoryListParams {
     to?: string;
     locationId?: string;
     categoryId?: string;
+    branchId?: string;
+    scope?: "CENTRAL" | "BRANCH_ONLY" | "ALL" | string;
     direction?: "incoming" | "outgoing" | "all" | string;
 }
 

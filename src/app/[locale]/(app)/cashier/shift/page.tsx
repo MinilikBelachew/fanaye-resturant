@@ -109,9 +109,18 @@ export default function CashierShiftPage() {
         if (error && typeof error === "object" && "data" in error) {
             const data = (
                 error as {
-                    data?: { errors?: { shift?: string }; openTables?: number };
+                    data?: {
+                        message?: string;
+                        code?: string;
+                        errors?: { shift?: string };
+                        cashierName?: string;
+                        openTables?: number;
+                    };
                 }
             ).data;
+            if (data?.code === "CASHIER_DRAWER_ALREADY_OPEN" && data.message) {
+                return data.message;
+            }
             if (data?.errors?.shift === "openTables") {
                 return t("closeOpenTables", { count: data.openTables ?? 0 });
             }
@@ -129,6 +138,9 @@ export default function CashierShiftPage() {
             }
             if (data?.errors && "version" in data.errors) {
                 return t("shiftChangedRefresh");
+            }
+            if (data?.message && typeof data.message === "string") {
+                return data.message;
             }
         }
         return t("couldNotUpdateShift");

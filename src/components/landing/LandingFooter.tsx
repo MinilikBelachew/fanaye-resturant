@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { RestorchLogo } from "@/components/common/RestorchLogo";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { ArrowRight, ShieldCheck, Sparkles, Zap } from "lucide-react";
@@ -47,17 +48,7 @@ export default function LandingFooter() {
                     {/* Brand Column with Golden Cloche Logo */}
                     <div className="col-span-2 space-y-3">
                         <Link href="/" className="flex items-center gap-2.5">
-                            <div className="relative size-8 shrink-0 overflow-hidden rounded-lg border border-border/60">
-                                <Image
-                                    src="/media/logos/logo_07_golden_cloche.svg"
-                                    alt="Fanaye Golden Cloche Logo"
-                                    fill
-                                    className="object-contain"
-                                />
-                            </div>
-                            <span className="text-base font-bold tracking-tight text-foreground">
-                                FANAYE OS
-                            </span>
+                            <RestorchLogo variant="full" height={30} />
                         </Link>
                         <p className="text-xs text-muted-foreground leading-relaxed max-w-xs">
                             {t("brandDesc")}
@@ -146,7 +137,7 @@ export default function LandingFooter() {
                                     href="#comparison"
                                     className="hover:text-foreground transition"
                                 >
-                                    Legacy POS vs Fanaye
+                                    Legacy POS vs Restorch
                                 </a>
                             </li>
                             <li>

@@ -7,6 +7,7 @@ import PageHeader from "@/components/custom/organisms/PageHeader";
 import { useListHrAttendanceQuery } from "@/context/services/hrApi";
 import { Link } from "@/i18n/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { RestorchLoader } from "@/components/common/RestorchLoader";
 
 export default function StaffAttendanceBoard({
     basePath = "/manager/staff",
@@ -78,8 +79,8 @@ export default function StaffAttendanceBoard({
 
             <div className="overflow-hidden rounded-2xl border border-hairline">
                 {isLoading ? (
-                    <div className="flex justify-center py-12 text-slate-gray">
-                        <Loader2 className="size-5 animate-spin" />
+                    <div className="flex justify-center py-12">
+                        <RestorchLoader size="md" label={t("loading")} />
                     </div>
                 ) : isError ? (
                     <p className="px-4 py-8 text-center text-[13px] text-slate-gray">

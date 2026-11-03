@@ -18,6 +18,7 @@ import DataTable, {
     type DataTablePagination,
 } from "@/components/custom/organisms/DataTable";
 import PageHeader from "@/components/custom/organisms/PageHeader";
+import { RestorchLoader } from "@/components/common/RestorchLoader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -201,10 +202,7 @@ export default function ManagerTableDetailPage({
         return (
             <DashboardFrame>
                 <div className="flex flex-col items-center justify-center rounded-2xl border border-hairline bg-card py-16">
-                    <Loader2 className="size-6 animate-spin text-primary" />
-                    <p className="mt-2 text-[12px] text-slate-gray">
-                        {t("loading")}
-                    </p>
+                    <RestorchLoader size="md" label={t("loading")} />
                 </div>
             </DashboardFrame>
         );

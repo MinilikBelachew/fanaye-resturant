@@ -10,6 +10,7 @@ import BranchSwitcher from "@/components/layout/BranchSwitcher";
 import ShiftTopBarPill from "@/components/layout/ShiftTopBarPill";
 import { roleUsesShiftClock } from "@/domains/identity/domain/role";
 import { navForRole } from "@/domains/identity/application/nav";
+import { useGetInventoryNetworkStatusQuery } from "@/context/services/inventoryApi";
 import { homePathForRole } from "@/domains/identity/application/homePath";
 import { isStationRole } from "@/domains/identity/domain/role";
 import { parseQueueFilter } from "@/domains/fulfillment/application/queueFilter";
@@ -114,10 +115,23 @@ function AppTopBarInner({ className }: { className?: string }) {
     const roomsEnabled = useAppSelector(
         state => state.identity.session?.roomsEnabled,
     );
+    const isInventoryRole =
+        staff?.role === "owner" ||
+        staff?.role === "manager" ||
+        staff?.role === "store_manager";
+    const { data: networkRes } = useGetInventoryNetworkStatusQuery(undefined, {
+        skip: !isInventoryRole,
+    });
+    const sessionHasMain = useAppSelector(
+        state => state.identity.session?.hasMainWarehouse,
+    );
+    const hasMainWarehouse =
+        networkRes?.data?.hasMainWarehouse ?? sessionHasMain === true;
     const sections = staff
         ? navForRole(staff.role, {
               serviceMode,
               roomsEnabled: roomsEnabled === true,
+              hasMainWarehouse,
           })
         : [];
     const items = sections.flatMap(section => section.items);

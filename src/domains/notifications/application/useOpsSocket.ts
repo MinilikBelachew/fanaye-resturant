@@ -22,6 +22,9 @@ function invalidateForType(
     dispatch: ReturnType<typeof useAppDispatch>,
     type: string,
 ) {
+    if (type === "customer.arrived") {
+        dispatch(api.util.invalidateTags(["Biometrics", "Notifications"]));
+    }
     if (
         type === "item.ready" ||
         type === "item.delayed" ||
@@ -156,7 +159,12 @@ export function useOpsSocket() {
 
             dispatch(pushNotification({ ...raw, readAt: raw.readAt ?? null }));
 
-            if (raw.severity === "URGENT" || raw.severity === "ATTENTION") {
+            if (raw.type === "customer.arrived") {
+                toast.success(raw.title, raw.body ?? undefined);
+            } else if (
+                raw.severity === "URGENT" ||
+                raw.severity === "ATTENTION"
+            ) {
                 toast.info(raw.title, raw.body ?? undefined);
             }
         });

@@ -136,6 +136,43 @@ export default function GuestTableOrderingPage({
         });
     }, [items, activeCategory, search, selectedDiet]);
 
+    // Group filtered items by category for structured browsing
+    const groupedSections = useMemo(() => {
+        if (activeCategory !== "all" || search.trim()) {
+            return null;
+        }
+
+        const groups: Array<{
+            category: { id: string; name: string };
+            items: PublicMenuItem[];
+        }> = [];
+
+        for (const cat of categories) {
+            const catItems = filteredItems.filter(i => i.categoryId === cat.id);
+            if (catItems.length > 0) {
+                groups.push({
+                    category: { id: cat.id, name: cat.name },
+                    items: catItems,
+                });
+            }
+        }
+
+        const uncategorized = filteredItems.filter(
+            i =>
+                !i.categoryId ||
+                i.categoryId === "other" ||
+                !categories.some(c => c.id === i.categoryId),
+        );
+        if (uncategorized.length > 0) {
+            groups.push({
+                category: { id: "other", name: "Other Specials" },
+                items: uncategorized,
+            });
+        }
+
+        return groups;
+    }, [categories, filteredItems, activeCategory, search]);
+
     const dietaryTags = config?.enabledDietaryTags || [];
 
     function handleItemClick(item: PublicMenuItem) {
@@ -616,8 +653,8 @@ export default function GuestTableOrderingPage({
                     ))}
                 </div>
 
-                {/* Menu Item Cards: Responsive 2-Column Grid on Tablet & Big Screens! */}
-                <main className="mt-4 px-4 sm:px-0">
+                {/* Menu Item Cards: Categorized & Responsive 2-Column Grid */}
+                <main className="mt-5 px-4 sm:px-0">
                     {filteredItems.length === 0 ? (
                         <div className="rounded-3xl border border-slate-200 bg-white py-12 px-6 text-center shadow-xs dark:border-slate-700 dark:bg-slate-900">
                             <div className="text-3xl">🍲</div>
@@ -629,57 +666,163 @@ export default function GuestTableOrderingPage({
                                 filters.
                             </p>
                         </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
-                            {filteredItems.map(item => (
-                                <div
-                                    key={item.id}
-                                    onClick={() => handleItemClick(item)}
-                                    className="flex cursor-pointer items-center gap-3.5 rounded-3xl border border-slate-200/80 bg-white p-3.5 shadow-xs transition-all hover:shadow-md hover:border-amber-400/60 active:scale-[0.99] group dark:border-slate-700 dark:bg-slate-900 dark:hover:border-amber-500/50"
+                    ) : groupedSections && groupedSections.length > 0 ? (
+                        <div className="space-y-8">
+                            {groupedSections.map(section => (
+                                <section
+                                    key={section.category.id}
+                                    id={`cat-section-${section.category.id}`}
+                                    className="scroll-mt-24"
                                 >
-                                    <div className="relative size-20 sm:size-24 flex-shrink-0 overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800">
-                                        {item.imageUrl ? (
-                                            <img
-                                                src={item.imageUrl}
-                                                alt={item.name}
-                                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                            />
-                                        ) : (
-                                            <div className="flex h-full w-full items-center justify-center text-2xl text-slate-300 dark:text-slate-600">
-                                                🍲
-                                            </div>
-                                        )}
-                                        {item.badge ? (
-                                            <span className="absolute top-1.5 left-1.5 rounded-md bg-slate-900/85 px-1.5 py-0.5 text-[9px] font-bold text-white uppercase backdrop-blur-xs">
-                                                {item.badge}
-                                            </span>
-                                        ) : null}
+                                    <div className="mb-3.5 flex items-center justify-between border-b border-slate-200/70 pb-2 dark:border-slate-800">
+                                        <div className="flex items-center gap-2">
+                                            <span className="size-2 rounded-full bg-amber-500 shadow-xs" />
+                                            <h2 className="text-base font-black tracking-tight text-slate-900 dark:text-slate-100">
+                                                {section.category.name}
+                                            </h2>
+                                        </div>
+                                        <span className="rounded-full bg-slate-200/70 px-2.5 py-0.5 text-[11px] font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                                            {section.items.length}{" "}
+                                            {section.items.length === 1
+                                                ? "item"
+                                                : "items"}
+                                        </span>
                                     </div>
 
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-1.5">
-                                            <h3 className="text-sm font-bold text-slate-900 truncate group-hover:text-amber-600 transition-colors dark:text-slate-100 dark:group-hover:text-amber-400">
-                                                {item.name}
-                                            </h3>
-                                        </div>
-                                        <p className="mt-0.5 text-xs text-slate-500 line-clamp-2 leading-relaxed dark:text-slate-400">
-                                            {item.description ||
-                                                "Crafted fresh with premium ingredients"}
-                                        </p>
-                                        <div className="mt-2.5 flex items-center justify-between">
-                                            <span className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-slate-100">
-                                                {formatEtb(Number(item.price))}
-                                            </span>
-                                            {config?.allowGuestOrders ? (
-                                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 border border-amber-500/20 group-hover:bg-amber-100 transition-colors dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30 dark:group-hover:bg-amber-500/25">
-                                                    <Plus className="size-3.5" />
-                                                    Add
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
+                                        {section.items.map(item => (
+                                            <div
+                                                key={item.id}
+                                                onClick={() =>
+                                                    handleItemClick(item)
+                                                }
+                                                className="flex cursor-pointer items-center gap-3.5 rounded-3xl border border-slate-200/80 bg-white p-3.5 shadow-xs transition-all hover:shadow-md hover:border-amber-400/60 active:scale-[0.99] group dark:border-slate-700 dark:bg-slate-900 dark:hover:border-amber-500/50"
+                                            >
+                                                <div className="relative size-20 sm:size-24 flex-shrink-0 overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800">
+                                                    {item.imageUrl ? (
+                                                        <img
+                                                            src={item.imageUrl}
+                                                            alt={item.name}
+                                                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                        />
+                                                    ) : (
+                                                        <div className="flex h-full w-full items-center justify-center text-2xl text-slate-300 dark:text-slate-600">
+                                                            🍲
+                                                        </div>
+                                                    )}
+                                                    {item.badge ? (
+                                                        <span className="absolute top-1.5 left-1.5 rounded-md bg-slate-900/85 px-1.5 py-0.5 text-[9px] font-bold text-white uppercase backdrop-blur-xs">
+                                                            {item.badge}
+                                                        </span>
+                                                    ) : null}
+                                                </div>
+
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <h3 className="text-sm font-bold text-slate-900 truncate group-hover:text-amber-600 transition-colors dark:text-slate-100 dark:group-hover:text-amber-400">
+                                                            {item.name}
+                                                        </h3>
+                                                    </div>
+                                                    <p className="mt-0.5 text-xs text-slate-500 line-clamp-2 leading-relaxed dark:text-slate-400">
+                                                        {item.description ||
+                                                            "Crafted fresh with premium ingredients"}
+                                                    </p>
+                                                    <div className="mt-2.5 flex items-center justify-between">
+                                                        <span className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-slate-100">
+                                                            {formatEtb(
+                                                                Number(
+                                                                    item.price,
+                                                                ),
+                                                            )}
+                                                        </span>
+                                                        {config?.allowGuestOrders ? (
+                                                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 border border-amber-500/20 group-hover:bg-amber-100 transition-colors dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30 dark:group-hover:bg-amber-500/25">
+                                                                <Plus className="size-3.5" />
+                                                                Add
+                                                            </span>
+                                                        ) : null}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {activeCategory !== "all" ? (
+                                <div className="mb-3.5 flex items-center justify-between border-b border-slate-200/70 pb-2 dark:border-slate-800">
+                                    <div className="flex items-center gap-2">
+                                        <span className="size-2 rounded-full bg-amber-500 shadow-xs" />
+                                        <h2 className="text-base font-black tracking-tight text-slate-900 dark:text-slate-100">
+                                            {categories.find(
+                                                c => c.id === activeCategory,
+                                            )?.name || "Dishes"}
+                                        </h2>
+                                    </div>
+                                    <span className="rounded-full bg-slate-200/70 px-2.5 py-0.5 text-[11px] font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                                        {filteredItems.length}{" "}
+                                        {filteredItems.length === 1
+                                            ? "item"
+                                            : "items"}
+                                    </span>
+                                </div>
+                            ) : null}
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
+                                {filteredItems.map(item => (
+                                    <div
+                                        key={item.id}
+                                        onClick={() => handleItemClick(item)}
+                                        className="flex cursor-pointer items-center gap-3.5 rounded-3xl border border-slate-200/80 bg-white p-3.5 shadow-xs transition-all hover:shadow-md hover:border-amber-400/60 active:scale-[0.99] group dark:border-slate-700 dark:bg-slate-900 dark:hover:border-amber-500/50"
+                                    >
+                                        <div className="relative size-20 sm:size-24 flex-shrink-0 overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800">
+                                            {item.imageUrl ? (
+                                                <img
+                                                    src={item.imageUrl}
+                                                    alt={item.name}
+                                                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                />
+                                            ) : (
+                                                <div className="flex h-full w-full items-center justify-center text-2xl text-slate-300 dark:text-slate-600">
+                                                    🍲
+                                                </div>
+                                            )}
+                                            {item.badge ? (
+                                                <span className="absolute top-1.5 left-1.5 rounded-md bg-slate-900/85 px-1.5 py-0.5 text-[9px] font-bold text-white uppercase backdrop-blur-xs">
+                                                    {item.badge}
                                                 </span>
                                             ) : null}
                                         </div>
+
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-1.5">
+                                                <h3 className="text-sm font-bold text-slate-900 truncate group-hover:text-amber-600 transition-colors dark:text-slate-100 dark:group-hover:text-amber-400">
+                                                    {item.name}
+                                                </h3>
+                                            </div>
+                                            <p className="mt-0.5 text-xs text-slate-500 line-clamp-2 leading-relaxed dark:text-slate-400">
+                                                {item.description ||
+                                                    "Crafted fresh with premium ingredients"}
+                                            </p>
+                                            <div className="mt-2.5 flex items-center justify-between">
+                                                <span className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-slate-100">
+                                                    {formatEtb(
+                                                        Number(item.price),
+                                                    )}
+                                                </span>
+                                                {config?.allowGuestOrders ? (
+                                                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 border border-amber-500/20 group-hover:bg-amber-100 transition-colors dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30 dark:group-hover:bg-amber-500/25">
+                                                        <Plus className="size-3.5" />
+                                                        Add
+                                                    </span>
+                                                ) : null}
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
                     )}
                 </main>

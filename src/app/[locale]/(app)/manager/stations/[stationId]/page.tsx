@@ -17,6 +17,7 @@ import DataTable, {
     type DataTablePagination,
 } from "@/components/custom/organisms/DataTable";
 import PageHeader from "@/components/custom/organisms/PageHeader";
+import { RestorchLoader } from "@/components/common/RestorchLoader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

@@ -3,7 +3,7 @@
 import { use } from "react";
 import { Render, type Data } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
-import { Loader2 } from "lucide-react";
+import { RestorchLoader } from "@/components/common/RestorchLoader";
 import { useGetPublicSiteQuery } from "@/context/services/siteApi";
 import {
     SiteRenderContext,
@@ -23,9 +23,8 @@ export default function PublicRestaurantSitePage({
 
     if (isLoading) {
         return (
-            <div className="flex min-h-svh items-center justify-center gap-2 text-sm text-slate-600">
-                <Loader2 className="size-4 animate-spin" />
-                Loading restaurant site…
+            <div className="flex min-h-svh items-center justify-center bg-background p-6">
+                <RestorchLoader size="md" label="Loading restaurant site…" />
             </div>
         );
     }

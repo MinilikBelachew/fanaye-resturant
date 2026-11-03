@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
     return {
-        name: "Restaurant OS",
-        short_name: "Restaurant OS",
+        name: "Restorch OS",
+        short_name: "Restorch OS",
         description:
-            "Live restaurant operations — floor, kitchen, cashier, and menu management.",
+            "Live restaurant operations powered by Restorch — floor, kitchen, cashier, and menu management.",
         start_url: "/en",
         scope: "/",
         display: "standalone",
