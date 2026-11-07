@@ -11,6 +11,7 @@ export type ChatRequest = {
     branchId?: string;
     engine?: "sql" | "tools";
     voiceResponse?: boolean;
+    voice?: string;
 };
 
 export type ChatResponse = {

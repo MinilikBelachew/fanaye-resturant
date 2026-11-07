@@ -318,6 +318,7 @@ export default function AddEditStaffSheet() {
         useCreateShiftDefinitionMutation();
     const [showNewShift, setShowNewShift] = useState(false);
     const [showPin, setShowPin] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
 
     const handlePhotoFileChange = (
@@ -1356,84 +1357,163 @@ export default function AddEditStaffSheet() {
                                         </FormItem>
                                     )}
                                 />
-                                <FormField
-                                    control={form.control}
-                                    name="pin"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>
-                                                {t("quickAccessPin")}{" "}
-                                                {!isEditMode ? (
-                                                    <span className="text-primary">
-                                                        *
-                                                    </span>
-                                                ) : null}
-                                            </FormLabel>
-                                            <div className="relative">
-                                                <Lock className="pointer-events-none absolute top-2.5 left-3 size-4 text-slate-gray" />
-                                                <FormControl>
-                                                    <Input
-                                                        type={
-                                                            showPin
-                                                                ? "text"
-                                                                : "password"
+                                {[
+                                    "manager",
+                                    "owner",
+                                    "MANAGER",
+                                    "OWNER_ADMIN",
+                                    "store_manager",
+                                    "STORE_MANAGER",
+                                ].includes(role) ? (
+                                    <FormField
+                                        control={form.control}
+                                        name="password"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>
+                                                    Login Password{" "}
+                                                    {!isEditMode ? (
+                                                        <span className="text-primary">
+                                                            *
+                                                        </span>
+                                                    ) : null}
+                                                </FormLabel>
+                                                <div className="relative">
+                                                    <Lock className="pointer-events-none absolute top-2.5 left-3 size-4 text-slate-gray" />
+                                                    <FormControl>
+                                                        <Input
+                                                            type={
+                                                                showPassword
+                                                                    ? "text"
+                                                                    : "password"
+                                                            }
+                                                            autoComplete="new-password"
+                                                            placeholder={
+                                                                isEditMode
+                                                                    ? "Leave blank to keep current"
+                                                                    : "Enter strong password (min 8 chars)"
+                                                            }
+                                                            className="h-10 rounded-[10px] pl-9 pr-10"
+                                                            {...field}
+                                                            value={
+                                                                field.value ||
+                                                                ""
+                                                            }
+                                                        />
+                                                    </FormControl>
+                                                    <button
+                                                        type="button"
+                                                        tabIndex={-1}
+                                                        onClick={() =>
+                                                            setShowPassword(
+                                                                prev => !prev,
+                                                            )
                                                         }
-                                                        inputMode="numeric"
-                                                        pattern="[0-9]*"
-                                                        maxLength={4}
-                                                        autoComplete="new-password"
-                                                        placeholder={
-                                                            isEditMode
-                                                                ? t(
-                                                                      "pinPlaceholderEdit",
-                                                                  )
-                                                                : t(
-                                                                      "pinPlaceholder",
-                                                                  )
+                                                        className="absolute top-2.5 right-3 z-10 flex size-5 cursor-pointer items-center justify-center text-slate-gray hover:text-foreground transition-colors"
+                                                        title={
+                                                            showPassword
+                                                                ? "Hide password"
+                                                                : "Show password"
                                                         }
-                                                        className="h-10 rounded-[10px] pl-9 pr-10 font-mono tracking-wider"
-                                                        {...field}
-                                                        onChange={e => {
-                                                            const val =
-                                                                e.target.value.replace(
-                                                                    /\D/g,
-                                                                    "",
-                                                                );
-                                                            field.onChange(val);
-                                                        }}
-                                                    />
-                                                </FormControl>
-                                                <button
-                                                    type="button"
-                                                    tabIndex={-1}
-                                                    onClick={() =>
-                                                        setShowPin(
-                                                            prev => !prev,
-                                                        )
-                                                    }
-                                                    className="absolute top-2.5 right-3 z-10 flex size-5 cursor-pointer items-center justify-center text-slate-gray hover:text-foreground transition-colors"
-                                                    title={
-                                                        showPin
-                                                            ? t("hidePin")
-                                                            : t("showPin")
-                                                    }
-                                                >
-                                                    {showPin ? (
-                                                        <EyeOff className="size-4" />
-                                                    ) : (
-                                                        <Eye className="size-4" />
-                                                    )}
-                                                </button>
-                                            </div>
-                                            {isEditMode ? (
-                                                <p className="text-[12px] text-slate-gray">
-                                                    {t("pinResetHint")}
+                                                    >
+                                                        {showPassword ? (
+                                                            <EyeOff className="size-4" />
+                                                        ) : (
+                                                            <Eye className="size-4" />
+                                                        )}
+                                                    </button>
+                                                </div>
+                                                <p className="text-[11.5px] text-slate-gray">
+                                                    {isEditMode
+                                                        ? "Only fill this if you want to reset their password. Must be at least 8 chars with uppercase, lowercase, and numbers."
+                                                        : "Must be at least 8 characters with uppercase, lowercase, and numbers."}
                                                 </p>
-                                            ) : null}
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                ) : (
+                                    <FormField
+                                        control={form.control}
+                                        name="pin"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>
+                                                    {t("quickAccessPin")}{" "}
+                                                    {!isEditMode ? (
+                                                        <span className="text-primary">
+                                                            *
+                                                        </span>
+                                                    ) : null}
+                                                </FormLabel>
+                                                <div className="relative">
+                                                    <Lock className="pointer-events-none absolute top-2.5 left-3 size-4 text-slate-gray" />
+                                                    <FormControl>
+                                                        <Input
+                                                            type={
+                                                                showPin
+                                                                    ? "text"
+                                                                    : "password"
+                                                            }
+                                                            inputMode="numeric"
+                                                            pattern="[0-9]*"
+                                                            maxLength={4}
+                                                            autoComplete="new-password"
+                                                            placeholder={
+                                                                isEditMode
+                                                                    ? t(
+                                                                          "pinPlaceholderEdit",
+                                                                      )
+                                                                    : t(
+                                                                          "pinPlaceholder",
+                                                                      )
+                                                            }
+                                                            className="h-10 rounded-[10px] pl-9 pr-10 font-mono tracking-wider"
+                                                            {...field}
+                                                            onChange={e => {
+                                                                const val =
+                                                                    e.target.value.replace(
+                                                                        /\D/g,
+                                                                        "",
+                                                                    );
+                                                                field.onChange(
+                                                                    val,
+                                                                );
+                                                            }}
+                                                        />
+                                                    </FormControl>
+                                                    <button
+                                                        type="button"
+                                                        tabIndex={-1}
+                                                        onClick={() =>
+                                                            setShowPin(
+                                                                prev => !prev,
+                                                            )
+                                                        }
+                                                        className="absolute top-2.5 right-3 z-10 flex size-5 cursor-pointer items-center justify-center text-slate-gray hover:text-foreground transition-colors"
+                                                        title={
+                                                            showPin
+                                                                ? t("hidePin")
+                                                                : t("showPin")
+                                                        }
+                                                    >
+                                                        {showPin ? (
+                                                            <EyeOff className="size-4" />
+                                                        ) : (
+                                                            <Eye className="size-4" />
+                                                        )}
+                                                    </button>
+                                                </div>
+                                                {isEditMode ? (
+                                                    <p className="text-[12px] text-slate-gray">
+                                                        {t("pinResetHint")}
+                                                    </p>
+                                                ) : null}
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
                             </div>
 
                             <FormField

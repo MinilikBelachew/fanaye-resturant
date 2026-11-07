@@ -9,17 +9,23 @@ import {
     ArrowRight,
     Building2,
     Check,
+    Cloud,
     Delete,
+    DownloadCloud,
     Eye,
     EyeOff,
+    Globe,
     KeyRound,
+    Loader2,
     Lock,
     Mail,
     RefreshCw,
     Search,
     ShieldCheck,
+    Sparkles,
     Store,
     X,
+    Zap,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/context/hooks";
 import {
@@ -28,15 +34,25 @@ import {
     useVerifyTenantMutation,
     type PinTenantMatch,
 } from "@/context/services/authApi";
+import { useFirstTimeSetupMutation } from "@/context/services/syncApi";
 import { homePathForRole } from "@/domains/identity/application/homePath";
 import { mapRoleCodeToRole } from "@/domains/identity/application/mapAuthToStaff";
 import { performSignOut } from "@/domains/identity/application/signOut";
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { Link, useRouter } from "@/i18n/navigation";
 import LocaleSwitcher from "@/components/theme/LocaleSwitcher";
 import { getAvatarSolidColor } from "@/lib/avatarColors";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 type AuthMode = "pin" | "credentials";
@@ -75,6 +91,17 @@ export default function SignInPage() {
         useLoginMutation();
     const [verifyTenant, { isLoading: isVerifyingTenant }] =
         useVerifyTenantMutation();
+    const [firstTimeSetup, { isLoading: isFirstTimeLoading }] =
+        useFirstTimeSetupMutation();
+
+    // First-Time Cloud Setup modal states
+    const [showFirstTimeModal, setShowFirstTimeModal] =
+        useState<boolean>(false);
+    const [setupCloudUrl, setSetupCloudUrl] = useState<string>("");
+    const [setupEmail, setSetupEmail] = useState<string>("");
+    const [setupPassword, setSetupPassword] = useState<string>("");
+    const [setupDownloadImages, setSetupDownloadImages] =
+        useState<boolean>(true);
 
     // Check localStorage on mount
     useEffect(() => {
@@ -364,6 +391,68 @@ export default function SignInPage() {
             setError(message);
         }
     }
+
+    const handleFirstTimeSetupSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (
+            !setupCloudUrl.trim() ||
+            !setupEmail.trim() ||
+            !setupPassword.trim()
+        ) {
+            toast.error(
+                "Please fill in Cloud Server URL, Manager Email, and Password.",
+            );
+            return;
+        }
+
+        try {
+            toast.info(
+                "Connecting to Cloud server and activating restaurant...",
+            );
+            const session = await firstTimeSetup({
+                cloudUrl: setupCloudUrl.trim(),
+                email: setupEmail.trim(),
+                password: setupPassword.trim(),
+                downloadImages: setupDownloadImages,
+            }).unwrap();
+
+            if (session.context.roleCode === "NONE") {
+                await performSignOut(dispatch);
+                toast.error(t("noRestaurantHome"));
+                return;
+            }
+
+            // Pair terminal to this tenant locally
+            const activeTenantId = session.context.tenantId || "";
+            const activeName =
+                session.context.branchName ||
+                session.context.displayName ||
+                "Restaurant";
+
+            if (activeTenantId) {
+                handlePairRestaurant({
+                    id: activeTenantId,
+                    name: activeName,
+                });
+            }
+
+            toast.success(`Welcome! ${activeName} is now active.`);
+            setShowFirstTimeModal(false);
+
+            const role = mapRoleCodeToRole(
+                session.context.roleCode,
+                session.context.stationCode,
+            );
+            router.push(homePathForRole(role));
+        } catch (err: unknown) {
+            const message =
+                (err as { data?: { message?: string }; message?: string })?.data
+                    ?.message ||
+                (err as { message?: string })?.message ||
+                "Failed to connect to Cloud server.";
+            toast.error(message);
+        }
+    };
 
     const maxPinDots = Math.max(4, pin.length);
 
@@ -750,6 +839,18 @@ export default function SignInPage() {
                             </Button>
                         </form>
                     )}
+
+                    {/* First-time Cloud Provisioning link */}
+                    <div className="mt-4 pt-3 border-t border-hairline/80 text-center">
+                        <button
+                            type="button"
+                            onClick={() => setShowFirstTimeModal(true)}
+                            className="inline-flex items-center gap-1.5 text-[11px] text-primary hover:underline font-medium transition-colors"
+                        >
+                            <Cloud className="size-3.5" />
+                            First time setup on this PC? Connect to Cloud
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -827,6 +928,135 @@ export default function SignInPage() {
                     </div>
                 </div>
             )}
+
+            {/* FIRST-TIME CLOUD PROVISIONING MODAL */}
+            <Dialog
+                open={showFirstTimeModal}
+                onOpenChange={setShowFirstTimeModal}
+            >
+                <DialogContent className="sm:max-w-[400px] p-5">
+                    <DialogHeader className="pb-2">
+                        <DialogTitle className="flex items-center gap-2 text-[15px] font-semibold text-foreground">
+                            <Cloud className="size-4 text-primary" />
+                            First-Time Restaurant Setup
+                        </DialogTitle>
+                        <DialogDescription className="text-[12px] text-slate-gray">
+                            Enter your Cloud Server details and Manager
+                            credentials to download your restaurant&apos;s
+                            menus, tables, and staff.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <form
+                        onSubmit={handleFirstTimeSetupSubmit}
+                        className="space-y-3 pt-1"
+                    >
+                        <div className="space-y-1">
+                            <Label
+                                htmlFor="setupCloudUrl"
+                                className="text-[11px] font-medium text-foreground"
+                            >
+                                Contabo Cloud Server URL
+                            </Label>
+                            <Input
+                                id="setupCloudUrl"
+                                placeholder="https://api.yourcloudrestaurant.com"
+                                value={setupCloudUrl}
+                                onChange={e => setSetupCloudUrl(e.target.value)}
+                                className="h-9 text-[12px] font-mono"
+                                required
+                            />
+                        </div>
+
+                        <div className="space-y-1">
+                            <Label
+                                htmlFor="setupEmail"
+                                className="text-[11px] font-medium text-foreground"
+                            >
+                                Manager Email
+                            </Label>
+                            <Input
+                                id="setupEmail"
+                                type="email"
+                                placeholder="manager@restaurant.com"
+                                value={setupEmail}
+                                onChange={e => setSetupEmail(e.target.value)}
+                                className="h-9 text-[12px]"
+                                required
+                            />
+                        </div>
+
+                        <div className="space-y-1">
+                            <Label
+                                htmlFor="setupPassword"
+                                className="text-[11px] font-medium text-foreground"
+                            >
+                                Manager Password
+                            </Label>
+                            <Input
+                                id="setupPassword"
+                                type="password"
+                                placeholder="••••••••"
+                                value={setupPassword}
+                                onChange={e => setSetupPassword(e.target.value)}
+                                className="h-9 text-[12px]"
+                                required
+                            />
+                        </div>
+
+                        <label className="flex items-center justify-between p-2.5 rounded-lg bg-surface-ivory/60 dark:bg-card border border-hairline cursor-pointer select-none">
+                            <div className="space-y-0.5">
+                                <span className="text-[11.5px] font-medium text-foreground block">
+                                    Pre-cache Dish Images
+                                </span>
+                                <span className="text-[10px] text-slate-gray block">
+                                    Stores photos on PC drive for offline
+                                    viewing.
+                                </span>
+                            </div>
+                            <input
+                                type="checkbox"
+                                checked={setupDownloadImages}
+                                onChange={e =>
+                                    setSetupDownloadImages(e.target.checked)
+                                }
+                                className="size-4 rounded border-hairline text-primary focus:ring-primary"
+                            />
+                        </label>
+
+                        <div className="pt-2 flex items-center justify-end gap-2 border-t border-hairline">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowFirstTimeModal(false)}
+                                disabled={isFirstTimeLoading}
+                                className="h-8 text-xs"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                size="sm"
+                                disabled={isFirstTimeLoading}
+                                className="h-8 text-xs font-semibold gap-1.5 bg-primary text-primary-foreground hover:bg-primary-deep"
+                            >
+                                {isFirstTimeLoading ? (
+                                    <>
+                                        <Loader2 className="size-3.5 animate-spin" />
+                                        <span>Downloading...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Zap className="size-3.5" />
+                                        <span>Connect & Activate</span>
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

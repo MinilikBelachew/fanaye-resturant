@@ -3,25 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 import {
     Bot,
-    Check,
-    ChevronDown,
-    ChevronUp,
-    Copy,
-    Database,
-    Headphones,
     Loader2,
-    MessagesSquare,
     Mic,
-    MicOff,
     Radio,
-    RotateCcw,
-    Send,
-    ShieldCheck,
-    Sparkles,
+    Settings,
+    Sliders,
     Square,
     Terminal,
+    Trash2,
     Volume2,
-    VolumeX,
+    X,
 } from "lucide-react";
 import PageHeader from "@/components/custom/organisms/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -40,47 +31,13 @@ type ExtendedMessage = ChatMessage & {
     timestamp: Date;
 };
 
-const PROMPT_SUGGESTIONS = [
-    {
-        label: "Today's Revenue",
-        query: "What is today's total revenue, total collected amount, and paid bills count?",
-    },
-    {
-        label: "Bottles & Drinks Sold",
-        query: "How many bottles and drinks were sold in the last 7 days?",
-    },
-    {
-        label: "Top 5 Dishes",
-        query: "What are the top 5 most ordered dishes this week with their quantities and revenue?",
-    },
-    {
-        label: "Net Profit & Margins",
-        query: "What is our net operating profit and profit margin after deducting manual operating expenses?",
-    },
-    {
-        label: "Peak Rush Hours",
-        query: "What are our busiest rush hours of the day based on customer order volume?",
-    },
-    {
-        label: "Lost Revenue & Voids",
-        query: "How much revenue did we lose from cancelled or voided orders, and what were the main reasons?",
-    },
-    {
-        label: "Server Rankings",
-        query: "Rank our servers by total completed sales volume and orders created.",
-    },
-    {
-        label: "Expenses & Payouts",
-        query: "How much did we spend on manual expenses and petty cash this month? Break it down by label.",
-    },
-    {
-        label: "Customer Ratings",
-        query: "What is our average customer rating and what comments or complaints did guests leave recently?",
-    },
-    {
-        label: "Low Stock Alert",
-        query: "Which inventory ingredients are currently running low or below their minimum stock threshold?",
-    },
+const TTS_VOICES = [
+    { id: "alloy", name: "Alloy", desc: "Balanced & natural" },
+    { id: "nova", name: "Nova", desc: "Warm & energetic" },
+    { id: "echo", name: "Echo", desc: "Smooth & gentle" },
+    { id: "shimmer", name: "Shimmer", desc: "Clear & expressive" },
+    { id: "onyx", name: "Onyx", desc: "Deep & authoritative" },
+    { id: "fable", name: "Fable", desc: "British & professional" },
 ];
 
 export default function OwnerAiPage() {
@@ -89,55 +46,52 @@ export default function OwnerAiPage() {
             id: "welcome",
             role: "assistant",
             content:
-                "Hello! I am your AI Voice Business Advisor. Speak to me or type your question about revenue, bottles sold, inventory, or shifts.",
+                "Hello! I am your AI Business Advisor. Hold the circular wave orb to ask me about today's revenue, bottles sold, inventory, or staff shifts.",
             timestamp: new Date(),
         },
     ]);
-    const [input, setInput] = useState("");
-    const [engine, setEngine] = useState<"sql" | "tools">("sql");
-    const [viewMode, setViewMode] = useState<"voice" | "chat">("voice");
+    const [engine, setEngine] = useState<"sql" | "tools">("tools");
+    const [voice, setVoice] = useState("alloy");
     const [autoSpeak, setAutoSpeak] = useState(true);
+    const [settingsOpen, setSettingsOpen] = useState(false);
 
     // Audio recording state
     const [isRecording, setIsRecording] = useState(false);
+    const [recordingSeconds, setRecordingSeconds] = useState(0);
     const [isTranscribing, setIsTranscribing] = useState(false);
     const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-    const [playingMessageId, setPlayingMessageId] = useState<string | null>(
-        null,
-    );
 
-    // SQL inspection accordion
+    // Accordion for tool inspection
     const [expandedSqlIds, setExpandedSqlIds] = useState<
         Record<string, boolean>
     >({});
-    const [copiedId, setCopiedId] = useState<string | null>(null);
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
     const currentAudioRef = useRef<HTMLAudioElement | null>(null);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const isHoldingRef = useRef(false);
+    const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     const [askAi, { isLoading }] = useAskAiMutation();
     const [transcribeAudio] = useTranscribeAudioMutation();
 
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages, isLoading, isTranscribing]);
-
-    // Cleanup audio on unmount
+    // Cleanup audio and recording timer on unmount
     useEffect(() => {
         return () => {
             if (currentAudioRef.current) {
                 currentAudioRef.current.pause();
                 currentAudioRef.current = null;
             }
+            if (recordingTimerRef.current) {
+                clearInterval(recordingTimerRef.current);
+                recordingTimerRef.current = null;
+            }
         };
     }, []);
 
-    function playAudio(audioBase64?: string, messageId?: string) {
+    function playAudio(audioBase64?: string) {
         if (!audioBase64) return;
 
-        // Stop any currently playing audio
         if (currentAudioRef.current) {
             currentAudioRef.current.pause();
             currentAudioRef.current = null;
@@ -147,27 +101,22 @@ export default function OwnerAiPage() {
             const audio = new Audio(`data:audio/mp3;base64,${audioBase64}`);
             currentAudioRef.current = audio;
             setIsPlayingAudio(true);
-            if (messageId) setPlayingMessageId(messageId);
 
             audio.onended = () => {
                 setIsPlayingAudio(false);
-                setPlayingMessageId(null);
                 currentAudioRef.current = null;
             };
 
             audio.onerror = () => {
                 setIsPlayingAudio(false);
-                setPlayingMessageId(null);
                 currentAudioRef.current = null;
             };
 
             audio.play().catch(() => {
                 setIsPlayingAudio(false);
-                setPlayingMessageId(null);
             });
         } catch {
             setIsPlayingAudio(false);
-            setPlayingMessageId(null);
         }
     }
 
@@ -177,19 +126,19 @@ export default function OwnerAiPage() {
             currentAudioRef.current = null;
         }
         setIsPlayingAudio(false);
-        setPlayingMessageId(null);
     }
 
-    // Start browser audio recording
+    // Start browser audio recording (supports Press & Hold push-to-talk)
     async function startRecording() {
         stopAudio();
+        isHoldingRef.current = true;
+        setRecordingSeconds(0);
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: true,
             });
             audioChunksRef.current = [];
 
-            // Detect supported recording mimeType
             const isWebmOpus = MediaRecorder.isTypeSupported(
                 "audio/webm;codecs=opus",
             );
@@ -220,32 +169,58 @@ export default function OwnerAiPage() {
 
             recorder.onstop = async () => {
                 stream.getTracks().forEach(track => track.stop());
+                if (recordingTimerRef.current) {
+                    clearInterval(recordingTimerRef.current);
+                    recordingTimerRef.current = null;
+                }
+                setRecordingSeconds(0);
                 await handleRecordedAudio(cleanMime);
             };
 
             recorder.start(100);
             setIsRecording(true);
-        } catch (err: any) {
+
+            if (recordingTimerRef.current) {
+                clearInterval(recordingTimerRef.current);
+            }
+            recordingTimerRef.current = setInterval(() => {
+                setRecordingSeconds(prev => prev + 1);
+            }, 1000);
+
+            // If user released the hold before getUserMedia finished granting:
+            if (!isHoldingRef.current) {
+                setTimeout(() => {
+                    stopRecording();
+                }, 300);
+            }
+        } catch {
             alert(
                 "Microphone access denied or unavailable. Please allow microphone access in your browser.",
             );
             setIsRecording(false);
+            isHoldingRef.current = false;
         }
     }
 
     // Stop recording and process
     function stopRecording() {
-        if (mediaRecorderRef.current && isRecording) {
+        isHoldingRef.current = false;
+        if (recordingTimerRef.current) {
+            clearInterval(recordingTimerRef.current);
+            recordingTimerRef.current = null;
+        }
+        if (
+            mediaRecorderRef.current &&
+            mediaRecorderRef.current.state === "recording"
+        ) {
             try {
-                if (mediaRecorderRef.current.state === "recording") {
-                    mediaRecorderRef.current.requestData();
-                }
+                mediaRecorderRef.current.requestData();
             } catch {
                 // ignore
             }
             mediaRecorderRef.current.stop();
-            setIsRecording(false);
         }
+        setIsRecording(false);
     }
 
     // Convert recorded audio blob to base64, transcribe with Whisper, and send
@@ -253,8 +228,7 @@ export default function OwnerAiPage() {
         if (audioChunksRef.current.length === 0) return;
 
         const audioBlob = new Blob(audioChunksRef.current, { type: cleanMime });
-        if (audioBlob.size < 800) {
-            // Audio too brief
+        if (audioBlob.size < 500) {
             return;
         }
 
@@ -272,10 +246,9 @@ export default function OwnerAiPage() {
 
                 const spokenText = res.text?.trim();
                 if (spokenText) {
-                    setInput(spokenText);
                     await handleSend(spokenText);
                 }
-            } catch (err: any) {
+            } catch {
                 alert("Voice transcription failed. Please try speaking again.");
             } finally {
                 setIsTranscribing(false);
@@ -283,8 +256,8 @@ export default function OwnerAiPage() {
         };
     }
 
-    async function handleSend(textToSend?: string) {
-        const text = (textToSend ?? input).trim();
+    async function handleSend(textToSend: string) {
+        const text = textToSend.trim();
         if (!text || isLoading || isTranscribing) return;
 
         stopAudio();
@@ -298,7 +271,6 @@ export default function OwnerAiPage() {
 
         const updatedMessages = [...messages, userMsg];
         setMessages(updatedMessages);
-        setInput("");
 
         const history: ChatMessage[] = updatedMessages
             .filter(m => m.id !== "welcome")
@@ -311,6 +283,7 @@ export default function OwnerAiPage() {
                 history,
                 engine,
                 voiceResponse: autoSpeak,
+                voice,
             }).unwrap();
 
             const assistantMsg: ExtendedMessage = {
@@ -325,17 +298,16 @@ export default function OwnerAiPage() {
 
             setMessages(prev => [...prev, assistantMsg]);
 
-            // Auto-play the spoken voice response
             if (autoSpeak && res.audioBase64) {
-                playAudio(res.audioBase64, assistantMsg.id);
+                playAudio(res.audioBase64);
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             const errorMsg: ExtendedMessage = {
                 id: `${Date.now()}-err`,
                 role: "assistant",
                 content:
-                    err?.data?.message ||
-                    err?.error ||
+                    (err as { data?: { message?: string } })?.data?.message ||
+                    (err as { error?: string })?.error ||
                     "An error occurred while analyzing the database. Please try asking again.",
                 timestamp: new Date(),
             };
@@ -347,645 +319,505 @@ export default function OwnerAiPage() {
         setExpandedSqlIds(prev => ({ ...prev, [id]: !prev[id] }));
     }
 
-    async function copyToClipboard(text: string, id: string) {
-        try {
-            await navigator.clipboard.writeText(text);
-            setCopiedId(id);
-            setTimeout(() => setCopiedId(null), 2000);
-        } catch {
-            // ignore
-        }
-    }
-
-    function handleReset() {
+    function clearConversation() {
         stopAudio();
         setMessages([
             {
                 id: "welcome",
                 role: "assistant",
                 content:
-                    "Voice session refreshed. Tap the microphone and ask any question to hear the answer.",
+                    "Conversation cleared. How can I assist you with your restaurant analytics today?",
                 timestamp: new Date(),
             },
         ]);
+        setSettingsOpen(false);
     }
 
     const latestAssistantMsg = [...messages]
         .reverse()
-        .find(m => m.role === "assistant");
+        .find(m => m.role === "assistant" && m.id !== "welcome");
     const latestUserMsg = [...messages].reverse().find(m => m.role === "user");
 
     return (
-        <div className="flex h-[calc(100vh-4rem)] flex-col space-y-3 p-3 sm:p-5 max-w-6xl mx-auto">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
+        <div className="flex h-[calc(100vh-4rem)] flex-col gap-3 p-3 sm:p-6 max-w-5xl mx-auto">
+            {/* Top Minimal Navigation Bar */}
+            <div className="flex items-center justify-between gap-3 px-1">
                 <PageHeader
-                    title="AI Voice Advisor"
-                    description="Speak naturally to query revenue, bottles sold, inventory, and restaurant performance."
+                    compact
+                    eyebrow="Intelligence"
+                    title="Voice Advisor"
+                    description="Real-time voice intelligence for restaurant owners"
                 />
 
-                <div className="flex flex-wrap items-center gap-2">
-                    {/* View Switcher: Voice Mode vs Chat Transcript */}
-                    <div className="flex items-center rounded-lg bg-slate-100 p-0.5 text-xs font-medium border border-slate-200">
-                        <button
-                            type="button"
-                            onClick={() => setViewMode("voice")}
-                            className={cn(
-                                "flex items-center gap-1.5 px-3 py-1 rounded-md transition-all",
-                                viewMode === "voice"
-                                    ? "bg-amber-500 text-white shadow-xs font-semibold"
-                                    : "text-slate-600 hover:text-slate-900",
-                            )}
-                        >
-                            <Headphones className="size-3.5" />
-                            <span>Voice Mode</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setViewMode("chat")}
-                            className={cn(
-                                "flex items-center gap-1.5 px-3 py-1 rounded-md transition-all",
-                                viewMode === "chat"
-                                    ? "bg-white text-slate-900 shadow-xs font-semibold"
-                                    : "text-slate-600 hover:text-slate-900",
-                            )}
-                        >
-                            <MessagesSquare className="size-3.5" />
-                            <span>Transcript</span>
-                        </button>
-                    </div>
-
-                    {/* Engine Switcher */}
-                    <div className="flex items-center rounded-lg bg-slate-100 p-0.5 text-xs font-medium border border-slate-200">
-                        <button
-                            type="button"
-                            onClick={() => setEngine("sql")}
-                            className={cn(
-                                "px-2.5 py-1 rounded-md transition-all",
-                                engine === "sql"
-                                    ? "bg-white text-slate-900 shadow-xs font-semibold"
-                                    : "text-slate-500 hover:text-slate-800",
-                            )}
-                            title="Direct SQL generated against live PostgreSQL schema dump with Auto-Healing"
-                        >
-                            SQL Dump Engine
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setEngine("tools")}
-                            className={cn(
-                                "px-2.5 py-1 rounded-md transition-all",
-                                engine === "tools"
-                                    ? "bg-white text-slate-900 shadow-xs font-semibold"
-                                    : "text-slate-500 hover:text-slate-800",
-                            )}
-                            title="Type-safe Prisma Function Calling tools"
-                        >
-                            Tools Engine
-                        </button>
-                    </div>
-
-                    {/* Auto-Speak Sound Toggle */}
-                    <button
-                        type="button"
-                        onClick={() => {
-                            if (isPlayingAudio) stopAudio();
-                            setAutoSpeak(!autoSpeak);
-                        }}
-                        className={cn(
-                            "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold border transition-all",
-                            autoSpeak
-                                ? "bg-amber-50 text-amber-700 border-amber-300"
-                                : "bg-slate-100 text-slate-500 border-slate-200",
-                        )}
-                        title={
-                            autoSpeak
-                                ? "Auto-Speak is ON"
-                                : "Auto-Speak is Muted"
-                        }
-                    >
-                        {autoSpeak ? (
-                            <>
-                                <Volume2 className="size-3.5 text-amber-600" />
-                                <span>Voice On</span>
-                            </>
-                        ) : (
-                            <>
-                                <VolumeX className="size-3.5 text-slate-400" />
-                                <span>Voice Muted</span>
-                            </>
-                        )}
-                    </button>
-
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
-                        <ShieldCheck className="size-3.5" />
-                        Tenant Safe
-                    </span>
-
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleReset}
-                        className="h-8 gap-1.5 text-xs text-slate-600 hover:text-slate-900 border-slate-200"
-                        title="Reset voice conversation"
-                    >
-                        <RotateCcw className="size-3.5" />
-                        Reset
-                    </Button>
-                </div>
+                {/* Settings Modal Button */}
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setSettingsOpen(true)}
+                    className="size-9 rounded-full border-slate-300/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors shadow-2xs"
+                    title="AI Advisor Settings"
+                >
+                    <Settings className="size-4" />
+                </Button>
             </div>
 
-            {/* Quick Prompts Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-                <span className="flex items-center gap-1 font-semibold text-slate-500 shrink-0">
-                    <Sparkles className="size-3.5 text-amber-500" />
-                    Quick voice prompts:
-                </span>
-                {PROMPT_SUGGESTIONS.map((item, idx) => (
-                    <button
-                        key={idx}
-                        type="button"
-                        onClick={() => handleSend(item.query)}
-                        disabled={isLoading || isRecording || isTranscribing}
-                        className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1 text-slate-700 shadow-2xs hover:border-slate-400 hover:bg-slate-50 transition-colors disabled:opacity-50"
-                    >
-                        {item.label}
-                    </button>
-                ))}
-            </div>
+            {/* PURE VOICE CANVAS: Apple Emotion-Inspired Concentric Circular Wave Canvas */}
+            <div className="flex-1 flex flex-col items-center justify-between rounded-[36px] border border-slate-200/80 dark:border-white/10 bg-gradient-to-b from-sky-50/70 via-slate-50/50 to-indigo-50/40 dark:from-slate-900/90 dark:via-slate-950 dark:to-black p-6 sm:p-12 shadow-xl relative overflow-hidden transition-colors">
+                {/* Ambient Glow Orbs */}
+                <div
+                    className={cn(
+                        "absolute -top-32 -left-32 size-96 rounded-full blur-3xl pointer-events-none transition-all duration-700 opacity-40 dark:opacity-30",
+                        isRecording
+                            ? "bg-rose-400 dark:bg-rose-600"
+                            : isPlayingAudio
+                              ? "bg-sky-400 dark:bg-sky-500"
+                              : isLoading || isTranscribing
+                                ? "bg-indigo-400 dark:bg-indigo-600"
+                                : "bg-sky-300 dark:bg-sky-600/60",
+                    )}
+                />
+                <div
+                    className={cn(
+                        "absolute -bottom-32 -right-32 size-96 rounded-full blur-3xl pointer-events-none transition-all duration-700 opacity-30 dark:opacity-20",
+                        isRecording
+                            ? "bg-red-400 dark:bg-red-600"
+                            : "bg-cyan-300 dark:bg-cyan-600/50",
+                    )}
+                />
 
-            {/* MAIN CONTENT AREA */}
-            {viewMode === "voice" ? (
-                /* VOICE MODE: ChatGPT-style immersive voice screen */
-                <div className="flex-1 flex flex-col items-center justify-between rounded-3xl border border-slate-200 bg-gradient-to-b from-slate-900 via-slate-950 to-black p-6 sm:p-10 shadow-xl text-white relative overflow-hidden">
-                    {/* Background Ambient Glow */}
-                    <div
+                {/* Top Status Pill */}
+                <div className="z-10 flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/70 dark:bg-white/10 backdrop-blur-md border border-slate-200/80 dark:border-white/15 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-2xs">
+                    <Radio
                         className={cn(
-                            "absolute -top-24 -left-24 size-96 rounded-full blur-3xl pointer-events-none transition-all duration-700 opacity-30",
+                            "size-3.5",
                             isRecording
-                                ? "bg-rose-500"
+                                ? "text-rose-500 animate-pulse"
                                 : isPlayingAudio
-                                  ? "bg-amber-400"
+                                  ? "text-sky-500 dark:text-sky-400 animate-pulse"
                                   : isLoading || isTranscribing
-                                    ? "bg-blue-500"
-                                    : "bg-amber-600",
+                                    ? "text-indigo-500 dark:text-indigo-400 animate-spin"
+                                    : "text-emerald-500",
                         )}
                     />
-                    <div
-                        className={cn(
-                            "absolute -bottom-24 -right-24 size-96 rounded-full blur-3xl pointer-events-none transition-all duration-700 opacity-20",
-                            isRecording ? "bg-red-600" : "bg-emerald-500",
-                        )}
-                    />
+                    <span>
+                        {isRecording
+                            ? `Listening (${recordingSeconds}s)... Release when done`
+                            : isTranscribing
+                              ? "Transcribing with Whisper..."
+                              : isLoading
+                                ? "Analyzing restaurant data..."
+                                : isPlayingAudio
+                                  ? "Speaking answer..."
+                                  : "Ready • Hold the orb to speak"}
+                    </span>
+                </div>
 
-                    {/* Top Status Indicator */}
-                    <div className="z-10 flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-xs font-medium">
-                        <Radio
+                {/* CENTRAL CONCENTRIC CIRCULAR WAVE ORB */}
+                <div className="relative my-auto flex flex-col items-center justify-center text-center">
+                    <div className="relative flex items-center justify-center">
+                        {/* Animated Sound Wave Ripples radiating outward */}
+                        {isPlayingAudio && (
+                            <>
+                                <div className="absolute size-72 sm:size-96 rounded-full border border-sky-400/50 dark:border-sky-400/30 animate-ping" />
+                                <div className="absolute size-88 sm:size-[400px] rounded-full border border-cyan-400/40 dark:border-cyan-400/20 animate-pulse" />
+                                <div className="absolute size-64 sm:size-80 rounded-full bg-sky-400/10 dark:bg-sky-500/10 blur-xl animate-pulse" />
+                            </>
+                        )}
+                        {isRecording && (
+                            <>
+                                <div className="absolute size-72 sm:size-96 rounded-full border-2 border-rose-400/50 dark:border-rose-500/40 animate-ping" />
+                                <div className="absolute size-88 sm:size-[400px] rounded-full border border-rose-500/30 animate-pulse" />
+                                <div className="absolute size-64 sm:size-80 rounded-full bg-rose-500/15 blur-xl animate-pulse" />
+                            </>
+                        )}
+                        {(isLoading || isTranscribing) && (
+                            <div className="absolute size-72 sm:size-96 rounded-full border-2 border-dashed border-sky-400/40 dark:border-sky-400/30 animate-spin" />
+                        )}
+
+                        {/* Concentric Layer 1: Outer Translucent Glass Disk */}
+                        <div
                             className={cn(
-                                "size-3.5",
+                                "size-64 sm:size-80 rounded-full flex items-center justify-center transition-all duration-700 backdrop-blur-2xl border shadow-xl",
                                 isRecording
-                                    ? "text-red-400 animate-pulse"
+                                    ? "border-rose-300/70 bg-gradient-to-br from-rose-100/60 via-rose-50/40 to-white/50 dark:from-rose-950/40 dark:via-slate-900/40 dark:to-rose-950/20 dark:border-rose-500/30 shadow-rose-500/20"
                                     : isPlayingAudio
-                                      ? "text-amber-400 animate-pulse"
-                                      : isLoading || isTranscribing
-                                        ? "text-blue-400 animate-spin"
-                                        : "text-emerald-400",
+                                      ? "border-sky-300/70 bg-gradient-to-br from-sky-100/60 via-cyan-50/40 to-white/50 dark:from-sky-950/50 dark:via-slate-900/50 dark:to-sky-950/30 dark:border-sky-400/30 shadow-sky-500/25 scale-105"
+                                      : "border-sky-200/60 bg-gradient-to-br from-sky-100/40 via-white/50 to-sky-50/30 dark:from-sky-950/40 dark:via-slate-900/40 dark:to-sky-950/20 dark:border-sky-500/20 shadow-sky-500/10",
                             )}
-                        />
-                        <span>
+                        >
+                            {/* Concentric Layer 2: Middle Soft Ripple Ring */}
+                            <div
+                                className={cn(
+                                    "size-48 sm:size-60 rounded-full flex items-center justify-center transition-all duration-500 border shadow-inner",
+                                    isRecording
+                                        ? "border-rose-300/80 bg-gradient-to-br from-rose-200/60 via-rose-100/40 to-white/60 dark:from-rose-900/50 dark:via-rose-950/40 dark:to-slate-900/40 dark:border-rose-400/30"
+                                        : isPlayingAudio
+                                          ? "border-sky-300/80 bg-gradient-to-br from-sky-200/60 via-cyan-100/40 to-white/60 dark:from-sky-900/60 dark:via-cyan-950/40 dark:to-slate-900/50 dark:border-sky-300/40"
+                                          : "border-sky-200/70 bg-gradient-to-br from-sky-200/40 via-sky-100/40 to-white/50 dark:from-sky-900/40 dark:via-sky-950/30 dark:to-slate-900/40 dark:border-sky-400/20",
+                                )}
+                            >
+                                {/* Concentric Layer 3: Inner Focal Ring */}
+                                <div
+                                    className={cn(
+                                        "size-36 sm:size-44 rounded-full flex items-center justify-center transition-all duration-300 border shadow-md",
+                                        isRecording
+                                            ? "border-rose-400/80 bg-gradient-to-tr from-rose-300/60 to-rose-100/40 dark:from-rose-800/60 dark:to-rose-900/30 dark:border-rose-400/50"
+                                            : isPlayingAudio
+                                              ? "border-sky-400/80 bg-gradient-to-tr from-sky-300/60 to-cyan-100/50 dark:from-sky-700/60 dark:to-sky-900/40 dark:border-sky-300/50 scale-105"
+                                              : "border-sky-300/70 bg-gradient-to-tr from-sky-300/30 to-sky-100/30 dark:from-sky-800/30 dark:to-sky-900/20 dark:border-sky-400/30",
+                                    )}
+                                >
+                                    {/* Interactive Core Center Orb (Press & Hold to talk) */}
+                                    <button
+                                        type="button"
+                                        onPointerDown={e => {
+                                            e.preventDefault();
+                                            if (isLoading || isTranscribing)
+                                                return;
+                                            if (isPlayingAudio) {
+                                                stopAudio();
+                                                return;
+                                            }
+                                            void startRecording();
+                                        }}
+                                        onPointerUp={e => {
+                                            e.preventDefault();
+                                            if (isRecording) stopRecording();
+                                        }}
+                                        onPointerLeave={e => {
+                                            e.preventDefault();
+                                            if (isRecording) stopRecording();
+                                        }}
+                                        onPointerCancel={e => {
+                                            e.preventDefault();
+                                            if (isRecording) stopRecording();
+                                        }}
+                                        onContextMenu={e => e.preventDefault()}
+                                        disabled={isLoading || isTranscribing}
+                                        style={{ touchAction: "none" }}
+                                        className={cn(
+                                            "relative size-24 sm:size-28 rounded-full flex flex-col items-center justify-center text-white shadow-xl transition-all duration-300 select-none cursor-pointer",
+                                            isRecording
+                                                ? "bg-gradient-to-tr from-rose-600 to-rose-500 scale-110 ring-4 ring-rose-400/60 shadow-rose-600/50"
+                                                : isPlayingAudio
+                                                  ? "bg-gradient-to-tr from-sky-500 via-sky-400 to-cyan-300 text-slate-950 scale-105 ring-4 ring-sky-300/60 shadow-sky-400/40"
+                                                  : isTranscribing || isLoading
+                                                    ? "bg-gradient-to-tr from-sky-600 to-indigo-600 ring-4 ring-sky-400/30"
+                                                    : "bg-gradient-to-tr from-sky-500 via-sky-400 to-cyan-400 hover:from-sky-400 hover:to-cyan-300 ring-4 ring-sky-400/30 active:scale-95 shadow-sky-500/30",
+                                        )}
+                                    >
+                                        {isRecording ? (
+                                            <div className="flex flex-col items-center">
+                                                <span className="size-2 rounded-full bg-white animate-ping mb-1" />
+                                                <span className="text-[10px] font-bold font-mono">
+                                                    {recordingSeconds > 0
+                                                        ? `${Math.floor(recordingSeconds / 60)}:${String(recordingSeconds % 60).padStart(2, "0")}`
+                                                        : "REC"}
+                                                </span>
+                                            </div>
+                                        ) : isTranscribing || isLoading ? (
+                                            <Loader2 className="size-8 animate-spin" />
+                                        ) : isPlayingAudio ? (
+                                            <Volume2 className="size-8 animate-bounce" />
+                                        ) : (
+                                            <Mic className="size-8 drop-shadow-sm" />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Apple Emotion-Style Typography State */}
+                    <div className="mt-8 space-y-1.5 px-4 max-w-md">
+                        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white transition-colors">
                             {isRecording
                                 ? "Listening to your voice..."
                                 : isTranscribing
-                                  ? "Transcribing with OpenAI Whisper..."
+                                  ? "Transcribing with Whisper..."
                                   : isLoading
-                                    ? "Analyzing PostgreSQL database..."
+                                    ? "Consulting restaurant data..."
                                     : isPlayingAudio
                                       ? "Speaking answer..."
-                                      : "Ready • Tap the microphone to talk"}
+                                      : "How can I help your restaurant?"}
+                        </h2>
+                        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                            {isRecording
+                                ? "Release the orb when you finish speaking"
+                                : isPlayingAudio
+                                  ? "Tap the orb to stop audio playback"
+                                  : isLoading || isTranscribing
+                                    ? "Analyzing with Function Calling tools..."
+                                    : "Press & hold the orb to speak"}
+                        </p>
+                    </div>
+                </div>
+
+                {/* Latest Spoken Question & Answer Card */}
+                {latestAssistantMsg ? (
+                    <div className="z-10 w-full max-w-xl rounded-2xl bg-white/80 dark:bg-white/5 backdrop-blur-xl p-4 text-sm border border-slate-200/80 dark:border-white/10 text-left space-y-2.5 shadow-lg animate-in fade-in slide-in-from-bottom-2">
+                        {latestUserMsg && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                You asked:{" "}
+                                <span className="text-slate-900 dark:text-slate-200 font-semibold italic">
+                                    "{latestUserMsg.content}"
+                                </span>
+                            </p>
+                        )}
+
+                        <div className="flex items-start justify-between gap-3 pt-1 border-t border-slate-200/60 dark:border-white/10">
+                            <div className="space-y-1.5 flex-1">
+                                <div className="flex items-center gap-1.5 text-xs font-bold text-sky-600 dark:text-sky-400">
+                                    <Bot className="size-3.5" />
+                                    <span>AI Advisor</span>
+                                </div>
+                                <p className="text-[13px] text-slate-800 dark:text-slate-100 whitespace-pre-wrap leading-relaxed">
+                                    {latestAssistantMsg.content}
+                                </p>
+                            </div>
+
+                            {latestAssistantMsg.audioBase64 && (
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        isPlayingAudio
+                                            ? stopAudio()
+                                            : playAudio(
+                                                  latestAssistantMsg.audioBase64,
+                                              )
+                                    }
+                                    className={cn(
+                                        "size-8 rounded-full flex items-center justify-center shrink-0 transition-colors shadow-2xs",
+                                        isPlayingAudio
+                                            ? "bg-rose-500 text-white animate-pulse"
+                                            : "bg-sky-100 dark:bg-sky-950/80 text-sky-700 dark:text-sky-300 hover:bg-sky-200",
+                                    )}
+                                    title={
+                                        isPlayingAudio
+                                            ? "Stop audio"
+                                            : "Replay spoken answer"
+                                    }
+                                >
+                                    {isPlayingAudio ? (
+                                        <Square className="size-3.5 fill-current" />
+                                    ) : (
+                                        <Volume2 className="size-4" />
+                                    )}
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Executed Tools Details Toggle */}
+                        {latestAssistantMsg.sqlQuery && (
+                            <div className="pt-2 border-t border-slate-200/60 dark:border-white/10 text-xs">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        toggleSql(latestAssistantMsg.id)
+                                    }
+                                    className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-mono"
+                                >
+                                    <Terminal className="size-3 text-sky-600 dark:text-sky-400" />
+                                    <span>
+                                        {expandedSqlIds[latestAssistantMsg.id]
+                                            ? latestAssistantMsg.sqlQuery.startsWith(
+                                                  "Tool Calling:",
+                                              )
+                                                ? "Hide Tool Calls"
+                                                : "Hide SQL Query"
+                                            : latestAssistantMsg.sqlQuery.startsWith(
+                                                    "Tool Calling:",
+                                                )
+                                              ? "View Executed Tool Calls"
+                                              : "View Executed SQL Query"}
+                                    </span>
+                                    {typeof latestAssistantMsg.rowCount ===
+                                        "number" && (
+                                        <span className="text-slate-400">
+                                            ({latestAssistantMsg.rowCount}{" "}
+                                            tools)
+                                        </span>
+                                    )}
+                                </button>
+                                {expandedSqlIds[latestAssistantMsg.id] && (
+                                    <pre className="mt-2 rounded-xl bg-slate-900 dark:bg-black/80 p-2.5 font-mono text-[11px] text-emerald-400 overflow-x-auto whitespace-pre-wrap">
+                                        {latestAssistantMsg.sqlQuery}
+                                    </pre>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    /* Minimalist Bottom Voice Hint */
+                    <div className="z-10 text-center text-xs text-slate-400 dark:text-slate-500">
+                        <span>
+                            Press & hold the center orb to ask any business
+                            analytics question
                         </span>
                     </div>
+                )}
+            </div>
 
-                    {/* Central Pulsing Audio Orb */}
-                    <div className="z-10 flex flex-col items-center justify-center my-auto text-center space-y-6">
-                        <div className="relative flex items-center justify-center">
-                            {/* Animated Pulse Rings */}
-                            {isRecording && (
-                                <>
-                                    <div className="absolute size-44 rounded-full bg-rose-500/20 animate-ping" />
-                                    <div className="absolute size-56 rounded-full bg-rose-500/10 animate-pulse" />
-                                </>
-                            )}
-                            {isPlayingAudio && (
-                                <>
-                                    <div className="absolute size-44 rounded-full bg-amber-400/20 animate-ping" />
-                                    <div className="absolute size-56 rounded-full bg-amber-400/10 animate-pulse" />
-                                </>
-                            )}
-                            {(isLoading || isTranscribing) && (
-                                <div className="absolute size-48 rounded-full border-2 border-dashed border-blue-400/40 animate-spin" />
-                            )}
-
-                            {/* Main Interactive Button */}
+            {/* AI ADVISOR SETTINGS DIALOG */}
+            {settingsOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in">
+                    <div
+                        className="fixed inset-0"
+                        onClick={() => setSettingsOpen(false)}
+                    />
+                    <div className="relative z-10 w-full max-w-md rounded-[24px] border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 p-6 shadow-2xl space-y-5 animate-in zoom-in-95">
+                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/10 pb-3">
+                            <div className="flex items-center gap-2">
+                                <div className="size-8 rounded-full bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400 flex items-center justify-center">
+                                    <Sliders className="size-4" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-[15px] text-slate-900 dark:text-white">
+                                        Advisor Settings
+                                    </h3>
+                                    <p className="text-[11.5px] text-slate-500 dark:text-slate-400">
+                                        Configure voice model and execution
+                                        engine
+                                    </p>
+                                </div>
+                            </div>
                             <button
                                 type="button"
-                                onClick={
-                                    isRecording ? stopRecording : startRecording
-                                }
-                                disabled={isLoading || isTranscribing}
-                                className={cn(
-                                    "relative size-32 sm:size-36 rounded-full flex flex-col items-center justify-center shadow-2xl transition-all duration-300 transform active:scale-95",
-                                    isRecording
-                                        ? "bg-rose-600 hover:bg-rose-500 text-white scale-105 ring-4 ring-rose-400/50"
-                                        : isPlayingAudio
-                                          ? "bg-gradient-to-tr from-amber-500 to-amber-400 text-slate-950 scale-105 ring-4 ring-amber-300/50"
-                                          : "bg-gradient-to-tr from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white ring-4 ring-amber-500/20",
-                                )}
+                                onClick={() => setSettingsOpen(false)}
+                                className="size-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                             >
-                                {isRecording ? (
-                                    <>
-                                        <Square className="size-10 fill-current mb-1" />
-                                        <span className="text-[11px] font-bold uppercase tracking-wider">
-                                            Tap to Stop
-                                        </span>
-                                    </>
-                                ) : isTranscribing || isLoading ? (
-                                    <>
-                                        <Loader2 className="size-10 animate-spin mb-1" />
-                                        <span className="text-[11px] font-bold tracking-wider">
-                                            Thinking...
-                                        </span>
-                                    </>
-                                ) : isPlayingAudio ? (
-                                    <>
-                                        <Volume2 className="size-10 animate-bounce mb-1" />
-                                        <span className="text-[11px] font-bold uppercase tracking-wider">
-                                            Speaking
-                                        </span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Mic className="size-12 mb-1" />
-                                        <span className="text-[11px] font-bold uppercase tracking-wider">
-                                            Tap & Speak
-                                        </span>
-                                    </>
-                                )}
+                                <X className="size-4" />
                             </button>
                         </div>
 
-                        {/* Spoken Query & Spoken Answer Transcript Card */}
-                        <div className="max-w-xl mx-auto space-y-3 px-4">
-                            {latestUserMsg && (
-                                <div className="text-xs text-slate-400 font-medium">
-                                    You asked:{" "}
-                                    <span className="text-slate-200 font-semibold italic">
-                                        "{latestUserMsg.content}"
-                                    </span>
-                                </div>
-                            )}
-
-                            {latestAssistantMsg && (
-                                <div className="rounded-2xl bg-white/10 backdrop-blur-md p-4 text-sm text-slate-100 border border-white/10 text-left space-y-2 shadow-lg">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
-                                            <Bot className="size-3.5" />
-                                            AI Voice Answer
-                                        </span>
-                                        {latestAssistantMsg.audioBase64 && (
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    isPlayingAudio
-                                                        ? stopAudio()
-                                                        : playAudio(
-                                                              latestAssistantMsg.audioBase64,
-                                                              latestAssistantMsg.id,
-                                                          )
-                                                }
-                                                className="flex items-center gap-1 text-[11px] font-medium text-amber-300 hover:text-white transition-colors"
-                                            >
-                                                {isPlayingAudio ? (
-                                                    <>
-                                                        <Square className="size-3 fill-current" />
-                                                        Stop voice
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Volume2 className="size-3" />
-                                                        Replay voice
-                                                    </>
-                                                )}
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    <div className="text-sm font-normal text-slate-100 leading-relaxed whitespace-pre-wrap">
-                                        {latestAssistantMsg.content}
-                                    </div>
-
-                                    {/* Executed SQL query toggle in Voice Mode */}
-                                    {latestAssistantMsg.sqlQuery && (
-                                        <div className="pt-2 border-t border-white/10 text-xs">
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    toggleSql(
-                                                        latestAssistantMsg.id,
-                                                    )
-                                                }
-                                                className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-slate-200 font-mono"
-                                            >
-                                                <Terminal className="size-3" />
-                                                <span>
-                                                    {expandedSqlIds[
-                                                        latestAssistantMsg.id
-                                                    ]
-                                                        ? "Hide SQL Query"
-                                                        : "View Executed SQL Query"}
-                                                </span>
-                                                {typeof latestAssistantMsg.rowCount ===
-                                                    "number" && (
-                                                    <span className="text-slate-500">
-                                                        (
-                                                        {
-                                                            latestAssistantMsg.rowCount
-                                                        }{" "}
-                                                        rows)
-                                                    </span>
-                                                )}
-                                            </button>
-                                            {expandedSqlIds[
-                                                latestAssistantMsg.id
-                                            ] && (
-                                                <pre className="mt-2 rounded bg-black/60 p-2 font-mono text-[11px] text-emerald-400 overflow-x-auto whitespace-pre-wrap">
-                                                    {
-                                                        latestAssistantMsg.sqlQuery
-                                                    }
-                                                </pre>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Bottom Voice Hint */}
-                    <div className="z-10 text-xs text-slate-400 flex items-center gap-2">
-                        <span>
-                            Ask in English: "How many bottles were sold?",
-                            "Today's sales", "Low ingredients"
-                        </span>
-                    </div>
-                </div>
-            ) : (
-                /* TRANSCRIPT CHAT VIEW: Traditional chat log with audio replay */
-                <div className="flex-1 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/50 p-4 sm:p-6 space-y-4 shadow-inner">
-                    {messages.map(msg => {
-                        const isUser = msg.role === "user";
-                        const isWelcome = msg.id === "welcome";
-                        const isThisPlaying =
-                            isPlayingAudio && playingMessageId === msg.id;
-
-                        return (
-                            <div
-                                key={msg.id}
-                                className={cn(
-                                    "flex gap-3",
-                                    isUser ? "justify-end" : "justify-start",
-                                )}
-                            >
-                                {!isUser && (
-                                    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-xs">
-                                        <Bot className="size-5" />
-                                    </div>
-                                )}
-
-                                <div
+                        {/* Setting 1: AI Execution Engine */}
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                                AI Execution Engine
+                            </label>
+                            <div className="grid grid-cols-2 gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setEngine("tools")}
                                     className={cn(
-                                        "max-w-2xl rounded-2xl px-4 py-3 text-sm shadow-xs",
-                                        isUser
-                                            ? "bg-slate-900 text-white rounded-tr-none"
-                                            : "bg-white text-slate-800 border border-slate-200/80 rounded-tl-none",
+                                        "p-3 rounded-xl border text-left transition-all",
+                                        engine === "tools"
+                                            ? "border-sky-500 bg-sky-50/60 dark:bg-sky-950/40 text-sky-900 dark:text-sky-200 font-semibold ring-2 ring-sky-500/20"
+                                            : "border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800",
                                     )}
                                 >
-                                    <div className="whitespace-pre-wrap leading-relaxed">
-                                        {msg.content}
-                                    </div>
-
-                                    {/* Audio Playback Pill for Assistant Messages */}
-                                    {!isUser &&
-                                        !isWelcome &&
-                                        msg.audioBase64 && (
-                                            <div className="mt-2.5 flex items-center gap-2 pt-2 border-t border-slate-100">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        if (isThisPlaying) {
-                                                            stopAudio();
-                                                        } else {
-                                                            playAudio(
-                                                                msg.audioBase64,
-                                                                msg.id,
-                                                            );
-                                                        }
-                                                    }}
-                                                    className={cn(
-                                                        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold transition-all",
-                                                        isThisPlaying
-                                                            ? "bg-amber-500 text-white shadow-xs"
-                                                            : "bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200",
-                                                    )}
-                                                >
-                                                    {isThisPlaying ? (
-                                                        <>
-                                                            <Square className="size-3 fill-current" />
-                                                            <span>
-                                                                Playing...
-                                                                (Stop)
-                                                            </span>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <Volume2 className="size-3 text-amber-600" />
-                                                            <span>
-                                                                Listen Spoken
-                                                                Audio
-                                                            </span>
-                                                        </>
-                                                    )}
-                                                </button>
-                                            </div>
-                                        )}
-
-                                    {/* Generated SQL Query Accordion for Assistant */}
-                                    {!isUser && !isWelcome && msg.sqlQuery && (
-                                        <div className="mt-2 pt-2 border-t border-slate-100">
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    toggleSql(msg.id)
-                                                }
-                                                className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-slate-800 transition-colors"
-                                            >
-                                                <Terminal className="size-3" />
-                                                <span>
-                                                    {expandedSqlIds[msg.id]
-                                                        ? "Hide executed SQL query"
-                                                        : "View executed SQL query"}
-                                                </span>
-                                                {typeof msg.rowCount ===
-                                                    "number" && (
-                                                    <span className="text-[10px] text-slate-400">
-                                                        ({msg.rowCount} rows
-                                                        returned)
-                                                    </span>
-                                                )}
-                                                {expandedSqlIds[msg.id] ? (
-                                                    <ChevronUp className="size-3 ml-0.5" />
-                                                ) : (
-                                                    <ChevronDown className="size-3 ml-0.5" />
-                                                )}
-                                            </button>
-
-                                            {expandedSqlIds[msg.id] && (
-                                                <div className="relative mt-2 rounded-lg bg-slate-950 p-3 font-mono text-[11px] text-emerald-400 overflow-x-auto shadow-inner">
-                                                    <pre className="pr-12 whitespace-pre-wrap">
-                                                        {msg.sqlQuery}
-                                                    </pre>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            copyToClipboard(
-                                                                msg.sqlQuery!,
-                                                                msg.id,
-                                                            )
-                                                        }
-                                                        className="absolute top-2.5 right-2.5 rounded bg-slate-800 p-1 text-slate-400 hover:text-white"
-                                                        title="Copy SQL"
-                                                    >
-                                                        {copiedId === msg.id ? (
-                                                            <Check className="size-3.5 text-emerald-400" />
-                                                        ) : (
-                                                            <Copy className="size-3.5" />
-                                                        )}
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
+                                    <p className="text-xs font-bold">
+                                        Tools Engine
+                                    </p>
+                                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                        Function Calling (Fast & Safe)
+                                    </p>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setEngine("sql")}
+                                    className={cn(
+                                        "p-3 rounded-xl border text-left transition-all",
+                                        engine === "sql"
+                                            ? "border-sky-500 bg-sky-50/60 dark:bg-sky-950/40 text-sky-900 dark:text-sky-200 font-semibold ring-2 ring-sky-500/20"
+                                            : "border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800",
                                     )}
-
-                                    <div
-                                        className={cn(
-                                            "mt-1 text-[10px]",
-                                            isUser
-                                                ? "text-slate-400 text-right"
-                                                : "text-slate-400",
-                                        )}
-                                    >
-                                        {new Date(
-                                            msg.timestamp,
-                                        ).toLocaleTimeString([], {
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                        })}
-                                    </div>
-                                </div>
-
-                                {isUser && (
-                                    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-white font-bold text-xs shadow-xs">
-                                        You
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-
-                    {isLoading && (
-                        <div className="flex gap-3 justify-start items-center">
-                            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white">
-                                <Bot className="size-5" />
-                            </div>
-                            <div className="rounded-2xl rounded-tl-none border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-xs flex items-center gap-2">
-                                <Loader2 className="size-4 animate-spin text-amber-600" />
-                                <span>Analyzing database records...</span>
+                                >
+                                    <p className="text-xs font-bold">
+                                        SQL Dump
+                                    </p>
+                                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                        Direct schema SQL queries
+                                    </p>
+                                </button>
                             </div>
                         </div>
-                    )}
 
-                    <div ref={messagesEndRef} />
+                        {/* Setting 2: Spoken Voice Selector */}
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                                Advisor Spoken Voice
+                            </label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {TTS_VOICES.map(v => (
+                                    <button
+                                        key={v.id}
+                                        type="button"
+                                        onClick={() => setVoice(v.id)}
+                                        className={cn(
+                                            "p-2.5 rounded-xl border text-center transition-all",
+                                            voice === v.id
+                                                ? "border-sky-500 bg-sky-500 text-white font-bold shadow-xs"
+                                                : "border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800",
+                                        )}
+                                    >
+                                        <p className="text-xs">{v.name}</p>
+                                        <p
+                                            className={cn(
+                                                "text-[10px] mt-0.5 truncate",
+                                                voice === v.id
+                                                    ? "text-sky-100"
+                                                    : "text-slate-400",
+                                            )}
+                                        >
+                                            {v.desc.split("&")[0]}
+                                        </p>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Setting 3: Auto-Speak Sound Toggle */}
+                        <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-white/10">
+                            <div>
+                                <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                                    Spoken Voice Feedback
+                                </p>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                                    Automatically synthesize and speak answers
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (isPlayingAudio) stopAudio();
+                                    setAutoSpeak(!autoSpeak);
+                                }}
+                                className={cn(
+                                    "px-3 py-1.5 rounded-full text-xs font-bold transition-all",
+                                    autoSpeak
+                                        ? "bg-sky-600 text-white shadow-xs"
+                                        : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300",
+                                )}
+                            >
+                                {autoSpeak ? "Enabled" : "Muted"}
+                            </button>
+                        </div>
+
+                        {/* Setting 4: Clear Conversation History */}
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-white/10">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={clearConversation}
+                                className="h-9 rounded-xl text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-rose-200 dark:border-rose-900/60 gap-1.5 font-semibold"
+                            >
+                                <Trash2 className="size-3.5" />
+                                <span>Clear Chat History</span>
+                            </Button>
+
+                            <Button
+                                type="button"
+                                onClick={() => setSettingsOpen(false)}
+                                className="h-9 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-semibold px-4"
+                            >
+                                Done
+                            </Button>
+                        </div>
+                    </div>
                 </div>
             )}
-
-            {/* Bottom Input Bar with Dedicated Voice Button */}
-            <form
-                onSubmit={e => {
-                    e.preventDefault();
-                    handleSend();
-                }}
-                className="flex items-center gap-2 rounded-2xl border border-slate-300 bg-white p-2 shadow-xs focus-within:border-slate-500 transition-colors"
-            >
-                {/* Microphone Button */}
-                <button
-                    type="button"
-                    onClick={isRecording ? stopRecording : startRecording}
-                    disabled={isLoading || isTranscribing}
-                    className={cn(
-                        "size-10 rounded-xl flex items-center justify-center transition-all shrink-0",
-                        isRecording
-                            ? "bg-rose-600 text-white animate-pulse ring-2 ring-rose-400"
-                            : isTranscribing
-                              ? "bg-amber-100 text-amber-700"
-                              : "bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200",
-                    )}
-                    title={
-                        isRecording
-                            ? "Recording voice... Click to send"
-                            : "Click to speak via OpenAI Whisper"
-                    }
-                >
-                    {isRecording ? (
-                        <Square className="size-4 fill-current" />
-                    ) : isTranscribing ? (
-                        <Loader2 className="size-4 animate-spin" />
-                    ) : (
-                        <Mic className="size-5 text-amber-600" />
-                    )}
-                </button>
-
-                <input
-                    type="text"
-                    value={input}
-                    onChange={e => setInput(e.target.value)}
-                    placeholder={
-                        isRecording
-                            ? "Listening to your voice..."
-                            : isTranscribing
-                              ? "Transcribing your speech with Whisper..."
-                              : "Speak or type your question in English..."
-                    }
-                    className="flex-1 bg-transparent px-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden"
-                    disabled={isLoading || isRecording || isTranscribing}
-                />
-
-                <Button
-                    type="submit"
-                    disabled={
-                        !input.trim() ||
-                        isLoading ||
-                        isRecording ||
-                        isTranscribing
-                    }
-                    className="h-10 px-4 gap-1.5 rounded-xl bg-slate-900 text-white font-semibold text-xs shadow-xs hover:bg-black disabled:opacity-50"
-                >
-                    {isLoading ? (
-                        <Loader2 className="size-4 animate-spin" />
-                    ) : (
-                        <Send className="size-4" />
-                    )}
-                    <span>Send</span>
-                </Button>
-            </form>
         </div>
     );
 }

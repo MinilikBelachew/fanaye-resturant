@@ -3,6 +3,7 @@ import type { Staff } from "@/domains/identity/domain/staff";
 import type { AuthContext } from "@/domains/identity/domain/authContext";
 import type { CurrentShiftResponse } from "@/domains/identity/domain/shift";
 import { authApi } from "@/context/services/authApi";
+import { syncApi } from "@/context/services/syncApi";
 import { shiftsApi } from "@/context/services/shiftsApi";
 import { API_BASE_URL } from "@/context/env";
 
@@ -166,6 +167,17 @@ export const identitySlice = createSlice({
     extraReducers: builder => {
         builder.addMatcher(
             authApi.endpoints.login.matchFulfilled,
+            (state, action) => {
+                if (action.payload.context.roleCode === "NONE") {
+                    return;
+                }
+                state.session = action.payload.context;
+                state.accessToken = action.payload.token;
+                state.tokenExpires = action.payload.tokenExpires;
+            },
+        );
+        builder.addMatcher(
+            syncApi.endpoints.firstTimeSetup.matchFulfilled,
             (state, action) => {
                 if (action.payload.context.roleCode === "NONE") {
                     return;

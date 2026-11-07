@@ -131,6 +131,7 @@ export const api = createApi({
         "Finance",
         "Biometrics",
         "Backup",
+        "Sync",
     ],
     endpoints: () => ({}),
 });

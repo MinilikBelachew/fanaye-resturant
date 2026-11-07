@@ -17,6 +17,7 @@ import {
     Send,
     Bot,
     Building2,
+    Wifi,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +44,8 @@ import {
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import OwnerBackupSection from "@/domains/identity/ui/OwnerBackupSection";
+import TerminalConnectSection from "@/domains/identity/ui/TerminalConnectSection";
+import CloudSyncSection from "@/domains/identity/ui/CloudSyncSection";
 
 function slugify(value: string) {
     return value
@@ -53,10 +56,12 @@ function slugify(value: string) {
         .slice(0, 80);
 }
 
-type SettingsTab = "general" | "features" | "backup";
+type SettingsTab = "general" | "terminals" | "sync" | "features" | "backup";
 
 const TABS: { id: SettingsTab; label: string; icon: React.ElementType }[] = [
     { id: "general", label: "General", icon: Settings },
+    { id: "terminals", label: "Connect Staff & Devices", icon: Wifi },
+    { id: "sync", label: "Cloud Sync", icon: Globe },
     { id: "features", label: "Features & Modules", icon: SlidersHorizontal },
     { id: "backup", label: "Backup & Restore", icon: HardDriveDownload },
 ];
@@ -921,6 +926,20 @@ export default function OwnerSettingsPage() {
                             </div>
                         </div>
                     </section>
+                </div>
+            )}
+
+            {/* ===================== CONNECT TERMINALS TAB ===================== */}
+            {activeTab === "terminals" && (
+                <div className="mt-4">
+                    <TerminalConnectSection />
+                </div>
+            )}
+
+            {/* ===================== CLOUD SYNC TAB ===================== */}
+            {activeTab === "sync" && (
+                <div className="mt-4">
+                    <CloudSyncSection />
                 </div>
             )}
 

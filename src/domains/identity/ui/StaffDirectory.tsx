@@ -979,62 +979,65 @@ export default function StaffDirectory({
                                                                               )}
                                                                           </span>
                                                                       </Link>
-                                                                      <button
-                                                                          type="button"
-                                                                          onClick={() => {
-                                                                              setMenuOpenMemberId(
-                                                                                  null,
-                                                                              );
-                                                                              setMenuPos(
-                                                                                  null,
-                                                                              );
-                                                                              setPinTarget(
-                                                                                  member,
-                                                                              );
-                                                                              setPinValue(
-                                                                                  "",
-                                                                              );
-                                                                              setShowPinValue(
-                                                                                  false,
-                                                                              );
-                                                                          }}
-                                                                          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-secondary/70"
-                                                                      >
-                                                                          <KeyRound className="size-3.5 text-primary" />
-                                                                          <span>
-                                                                              {t(
-                                                                                  "menuChangePin",
-                                                                              )}
-                                                                          </span>
-                                                                      </button>
-                                                                      <button
-                                                                          type="button"
-                                                                          onClick={() => {
-                                                                              setMenuOpenMemberId(
-                                                                                  null,
-                                                                              );
-                                                                              setMenuPos(
-                                                                                  null,
-                                                                              );
-                                                                              setPasswordTarget(
-                                                                                  member,
-                                                                              );
-                                                                              setPasswordValue(
-                                                                                  "",
-                                                                              );
-                                                                              setShowPasswordValue(
-                                                                                  false,
-                                                                              );
-                                                                          }}
-                                                                          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-secondary/70"
-                                                                      >
-                                                                          <Lock className="size-3.5 text-slate-gray" />
-                                                                          <span>
-                                                                              {t(
-                                                                                  "menuResetPassword",
-                                                                              )}
-                                                                          </span>
-                                                                      </button>
+                                                                      {isManagerOrOwner ? (
+                                                                          <button
+                                                                              type="button"
+                                                                              onClick={() => {
+                                                                                  setMenuOpenMemberId(
+                                                                                      null,
+                                                                                  );
+                                                                                  setMenuPos(
+                                                                                      null,
+                                                                                  );
+                                                                                  setPasswordTarget(
+                                                                                      member,
+                                                                                  );
+                                                                                  setPasswordValue(
+                                                                                      "",
+                                                                                  );
+                                                                                  setShowPasswordValue(
+                                                                                      false,
+                                                                                  );
+                                                                              }}
+                                                                              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-secondary/70"
+                                                                          >
+                                                                              <Lock className="size-3.5 text-slate-gray" />
+                                                                              <span>
+                                                                                  {t(
+                                                                                      "menuResetPassword",
+                                                                                  )}
+                                                                              </span>
+                                                                          </button>
+                                                                      ) : (
+                                                                          <button
+                                                                              type="button"
+                                                                              onClick={() => {
+                                                                                  setMenuOpenMemberId(
+                                                                                      null,
+                                                                                  );
+                                                                                  setMenuPos(
+                                                                                      null,
+                                                                                  );
+                                                                                  setPinTarget(
+                                                                                      member,
+                                                                                  );
+                                                                                  setPinValue(
+                                                                                      "",
+                                                                                  );
+                                                                                  setShowPinValue(
+                                                                                      false,
+                                                                                  );
+                                                                              }}
+                                                                              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-secondary/70"
+                                                                          >
+                                                                              <KeyRound className="size-3.5 text-primary" />
+                                                                              <span>
+                                                                                  {t(
+                                                                                      "menuChangePin",
+                                                                                  )}
+                                                                              </span>
+                                                                          </button>
+                                                                      )}
                                                                       {isWaiter ? (
                                                                           <button
                                                                               type="button"
