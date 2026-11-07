@@ -120,6 +120,22 @@ export const authApi = api.injectEndpoints({
                 body,
             }),
         }),
+        updateMe: builder.mutation<
+            unknown,
+            {
+                password?: string;
+                oldPassword?: string;
+                firstName?: string;
+                lastName?: string;
+            }
+        >({
+            query: body => ({
+                url: "/auth/me",
+                method: "PATCH",
+                body,
+            }),
+            invalidatesTags: ["Auth"],
+        }),
     }),
 });
 
@@ -128,6 +144,7 @@ export const {
     usePinLoginMutation,
     useGetTerminalStaffQuery,
     useMeQuery,
+    useUpdateMeMutation,
     useLogoutMutation,
     useRefreshMutation,
     useVerifyTenantMutation,

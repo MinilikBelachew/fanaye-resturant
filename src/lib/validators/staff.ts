@@ -52,6 +52,7 @@ export const staffFormSchema = z
             .refine(value => value === "" || /^\d{4}$/.test(value), {
                 message: "PIN must be exactly 4 digits.",
             }),
+        password: z.string().trim().optional(),
         hireDate: z.string().optional().or(z.literal("")),
         photoId: z.string().optional().or(z.literal("")),
         licencePlate: z.string().trim().optional(),
@@ -65,6 +66,32 @@ export const staffFormSchema = z
         coverageShiftId: z.string().optional().or(z.literal("")),
     })
     .superRefine((data, ctx) => {
+        const isManagerOrOwner = [
+            "manager",
+            "owner",
+            "MANAGER",
+            "OWNER_ADMIN",
+        ].includes(data.role);
+        if (isManagerOrOwner) {
+            if (data.password && data.password.length > 0) {
+                if (data.password.length < 8) {
+                    ctx.addIssue({
+                        code: "custom",
+                        path: ["password"],
+                        message: "Password must be at least 8 characters long.",
+                    });
+                } else if (
+                    !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(data.password)
+                ) {
+                    ctx.addIssue({
+                        code: "custom",
+                        path: ["password"],
+                        message:
+                            "Password must contain uppercase, lowercase, and a number.",
+                    });
+                }
+            }
+        }
         if (data.role === "driver") {
             const digits = (data.phone || "").replace(/\D/g, "");
             const isEt =
@@ -141,6 +168,7 @@ export const staffFormDefaults: StaffFormValues = {
     phone: "",
     email: "",
     pin: "",
+    password: "",
     hireDate: "",
     photoId: "",
     licencePlate: "",

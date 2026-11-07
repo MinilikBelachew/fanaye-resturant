@@ -1,5 +1,15 @@
 "use client";
 
+function validateStrongPassword(pass: string): string | null {
+    if (pass.length < 8) return "Password must be at least 8 characters long.";
+    if (!/[A-Z]/.test(pass))
+        return "Must include at least one uppercase letter (A-Z).";
+    if (!/[a-z]/.test(pass))
+        return "Must include at least one lowercase letter (a-z).";
+    if (!/[0-9]/.test(pass)) return "Must include at least one number (0-9).";
+    return null;
+}
+
 import { use, useEffect, useState } from "react";
 import {
     ArrowLeft,
@@ -274,14 +284,17 @@ export default function StaffDetailBoard({
     }
 
     async function onResetPassword() {
-        if (!member || passwordValue.trim().length < 6) {
-            toast.error(tStaff("toastPasswordTooShort"));
+        if (!member) return;
+        const trimmed = passwordValue.trim();
+        const strongErr = validateStrongPassword(trimmed);
+        if (strongErr) {
+            toast.error(strongErr);
             return;
         }
         try {
             await resetPassword({
                 membershipId: member.id,
-                password: passwordValue.trim(),
+                password: trimmed,
             }).unwrap();
             toast.success(tStaff("toastPasswordUpdated"));
             setPasswordOpen(false);
@@ -782,65 +795,73 @@ export default function StaffDetailBoard({
                         {t("sectionCredentials")}
                     </h3>
                     <div className="mt-3 space-y-3">
-                        <div className="flex items-center justify-between gap-3 rounded-xl bg-secondary/50 px-3 py-2.5">
-                            <div className="flex items-center gap-2 text-[13px]">
-                                <KeyRound className="size-3.5 text-slate-gray" />
-                                <span className="text-slate-gray">
-                                    {tStaff("pinLabel")}
-                                </span>
-                                <span className="font-mono font-semibold tracking-widest">
-                                    {member.hasPin
-                                        ? "••••"
-                                        : tStaff("credentialNone")}
-                                </span>
-                            </div>
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                className="h-7 rounded-full text-[11px]"
-                                onClick={() => {
-                                    setPinOpen(true);
-                                    setPinValue("");
-                                    setShowPinValue(false);
-                                }}
-                            >
-                                {tStaff("menuChangePin")}
-                            </Button>
-                        </div>
-                        <div className="flex items-center justify-between gap-3 rounded-xl bg-secondary/50 px-3 py-2.5">
-                            <div className="flex items-center gap-2 text-[13px]">
-                                <Lock className="size-3.5 text-slate-gray" />
-                                <span className="text-slate-gray">
-                                    {tStaff("passwordLabel")}
-                                </span>
-                                <span
-                                    className={cn(
-                                        "font-medium",
-                                        member.hasPassword
-                                            ? "text-emerald-600 dark:text-emerald-400"
-                                            : "text-amber-600 dark:text-amber-400",
-                                    )}
+                        {[
+                            "MANAGER",
+                            "BRANCH_MANAGER",
+                            "OWNER_ADMIN",
+                            "OWNER",
+                        ].includes(member.roleCode) ? (
+                            <div className="flex items-center justify-between gap-3 rounded-xl bg-secondary/50 px-3 py-2.5">
+                                <div className="flex items-center gap-2 text-[13px]">
+                                    <Lock className="size-3.5 text-slate-gray" />
+                                    <span className="text-slate-gray">
+                                        {tStaff("passwordLabel")}
+                                    </span>
+                                    <span
+                                        className={cn(
+                                            "font-medium",
+                                            member.hasPassword
+                                                ? "text-emerald-600 dark:text-emerald-400"
+                                                : "text-amber-600 dark:text-amber-400",
+                                        )}
+                                    >
+                                        {member.hasPassword
+                                            ? tStaff("passwordSet")
+                                            : tStaff("passwordNotSet")}
+                                    </span>
+                                </div>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 rounded-full text-[11px]"
+                                    onClick={() => {
+                                        setPasswordOpen(true);
+                                        setPasswordValue("");
+                                        setShowPasswordValue(false);
+                                    }}
                                 >
-                                    {member.hasPassword
-                                        ? tStaff("passwordSet")
-                                        : tStaff("passwordNotSet")}
-                                </span>
+                                    {tStaff("menuResetPassword")}
+                                </Button>
                             </div>
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                className="h-7 rounded-full text-[11px]"
-                                onClick={() => {
-                                    setPasswordOpen(true);
-                                    setPasswordValue("");
-                                    setShowPasswordValue(false);
-                                }}
-                            >
-                                {tStaff("menuResetPassword")}
-                            </Button>
-                        </div>
+                        ) : (
+                            <div className="flex items-center justify-between gap-3 rounded-xl bg-secondary/50 px-3 py-2.5">
+                                <div className="flex items-center gap-2 text-[13px]">
+                                    <KeyRound className="size-3.5 text-slate-gray" />
+                                    <span className="text-slate-gray">
+                                        {tStaff("pinLabel")}
+                                    </span>
+                                    <span className="font-mono font-semibold tracking-widest">
+                                        {member.hasPin
+                                            ? "••••"
+                                            : tStaff("credentialNone")}
+                                    </span>
+                                </div>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 rounded-full text-[11px]"
+                                    onClick={() => {
+                                        setPinOpen(true);
+                                        setPinValue("");
+                                        setShowPinValue(false);
+                                    }}
+                                >
+                                    {tStaff("menuChangePin")}
+                                </Button>
+                            </div>
+                        )}
                         <p className="text-[11px] text-slate-gray">
                             {t("credentialsHint")}
                         </p>

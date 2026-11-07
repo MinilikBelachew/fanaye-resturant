@@ -1,5 +1,15 @@
 "use client";
 
+function validateStrongPassword(pass: string): string | null {
+    if (pass.length < 8) return "Password must be at least 8 characters long.";
+    if (!/[A-Z]/.test(pass))
+        return "Must include at least one uppercase letter (A-Z).";
+    if (!/[a-z]/.test(pass))
+        return "Must include at least one lowercase letter (a-z).";
+    if (!/[0-9]/.test(pass)) return "Must include at least one number (0-9).";
+    return null;
+}
+
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -349,15 +359,17 @@ export default function StaffDirectory({
 
     async function handleSavePassword() {
         if (!passwordTarget) return;
-        if (passwordValue.trim().length < 6) {
-            toast.error(t("toastPasswordTooShort"));
+        const trimmed = passwordValue.trim();
+        const strongErr = validateStrongPassword(trimmed);
+        if (strongErr) {
+            toast.error(strongErr);
             return;
         }
 
         try {
             await resetPassword({
                 membershipId: passwordTarget.id,
-                password: passwordValue.trim(),
+                password: trimmed,
             }).unwrap();
 
             toast.success(t("toastPasswordUpdated"), passwordTarget.name);
@@ -632,6 +644,13 @@ export default function StaffDirectory({
                                     filteredStaff.map(member => {
                                         const isWaiter =
                                             member.roleCode === "WAITER";
+                                        const isManagerOrOwner = [
+                                            "MANAGER",
+                                            "BRANCH_MANAGER",
+                                            "STORE_MANAGER",
+                                            "OWNER_ADMIN",
+                                            "OWNER",
+                                        ].includes(member.roleCode);
                                         return (
                                             <tr
                                                 key={member.id}
@@ -691,43 +710,48 @@ export default function StaffDirectory({
                                                 ) : null}
                                                 <td className="px-6 py-4">
                                                     <div className="flex flex-col gap-1 text-[11.5px]">
-                                                        <div className="flex items-center gap-1.5 font-mono">
-                                                            <KeyRound className="size-3 text-slate-gray" />
-                                                            <span className="font-sans text-slate-gray">
-                                                                {t("pinLabel")}
-                                                            </span>
-                                                            <span className="font-bold tracking-widest text-foreground">
-                                                                {member.hasPin
-                                                                    ? "••••"
-                                                                    : t(
-                                                                          "credentialNone",
-                                                                      )}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-center gap-1.5">
-                                                            <Lock className="size-3 text-slate-gray" />
-                                                            <span className="text-slate-gray">
-                                                                {t(
-                                                                    "passwordLabel",
-                                                                )}
-                                                            </span>
-                                                            <span
-                                                                className={cn(
-                                                                    "font-medium",
-                                                                    member.hasPassword
-                                                                        ? "text-emerald-600 dark:text-emerald-400"
-                                                                        : "text-amber-600 dark:text-amber-400",
-                                                                )}
-                                                            >
-                                                                {member.hasPassword
-                                                                    ? t(
-                                                                          "passwordSet",
-                                                                      )
-                                                                    : t(
-                                                                          "passwordNotSet",
-                                                                      )}
-                                                            </span>
-                                                        </div>
+                                                        {isManagerOrOwner ? (
+                                                            <div className="flex items-center gap-1.5">
+                                                                <Lock className="size-3 text-slate-gray" />
+                                                                <span className="text-slate-gray">
+                                                                    {t(
+                                                                        "passwordLabel",
+                                                                    )}
+                                                                </span>
+                                                                <span
+                                                                    className={cn(
+                                                                        "font-medium",
+                                                                        member.hasPassword
+                                                                            ? "text-emerald-600 dark:text-emerald-400"
+                                                                            : "text-amber-600 dark:text-amber-400",
+                                                                    )}
+                                                                >
+                                                                    {member.hasPassword
+                                                                        ? t(
+                                                                              "passwordSet",
+                                                                          )
+                                                                        : t(
+                                                                              "passwordNotSet",
+                                                                          )}
+                                                                </span>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex items-center gap-1.5 font-mono">
+                                                                <KeyRound className="size-3 text-slate-gray" />
+                                                                <span className="font-sans text-slate-gray">
+                                                                    {t(
+                                                                        "pinLabel",
+                                                                    )}
+                                                                </span>
+                                                                <span className="font-bold tracking-widest text-foreground">
+                                                                    {member.hasPin
+                                                                        ? "••••"
+                                                                        : t(
+                                                                              "credentialNone",
+                                                                          )}
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
@@ -1244,7 +1268,9 @@ export default function StaffDirectory({
                                     {t("newPasswordLabel")}
                                 </label>
                                 <p className="text-[11.5px] text-slate-gray">
-                                    {t("passwordModalHint")}
+                                    {t("passwordModalHint")} — Must be at least
+                                    8 characters with uppercase, lowercase, and
+                                    numbers.
                                 </p>
                                 <div className="relative mt-1">
                                     <Input
@@ -1297,7 +1323,7 @@ export default function StaffDirectory({
                                     type="button"
                                     disabled={
                                         resettingPassword ||
-                                        passwordValue.length < 6
+                                        passwordValue.length < 8
                                     }
                                     onClick={() => void handleSavePassword()}
                                     className="h-9 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-[13px] font-semibold"

@@ -1,5 +1,15 @@
 "use client";
 
+function validateStrongPassword(pass: string): string | null {
+    if (pass.length < 8) return "Password must be at least 8 characters long.";
+    if (!/[A-Z]/.test(pass))
+        return "Must include at least one uppercase letter (A-Z).";
+    if (!/[a-z]/.test(pass))
+        return "Must include at least one lowercase letter (a-z).";
+    if (!/[0-9]/.test(pass)) return "Must include at least one number (0-9).";
+    return null;
+}
+
 import { useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
@@ -521,6 +531,7 @@ export default function AddEditStaffSheet() {
                 phone: editingStaff.phone || "",
                 email: editingStaff.email || "",
                 pin: "",
+                password: "",
                 hireDate: member?.hireDate || "",
                 photoId: member?.photoId || "",
                 active: editingStaff.active !== false,
@@ -852,20 +863,54 @@ export default function AddEditStaffSheet() {
 
         setSaving(true);
         try {
-            if (!isEditMode && !values.pin.trim()) {
-                form.setError("pin", {
-                    type: "manual",
-                    message: t("pinValidationError"),
-                });
-                setSaving(false);
-                const el = document.querySelector(
-                    `[name="pin"], #staff-pin, input[name="pin"]`,
-                );
-                if (el) {
-                    el.scrollIntoView({ behavior: "smooth", block: "center" });
-                    (el as HTMLElement).focus?.();
+            const isManagerOrOwner = [
+                "manager",
+                "owner",
+                "MANAGER",
+                "OWNER_ADMIN",
+            ].includes(values.role);
+            if (isManagerOrOwner) {
+                if (!isEditMode && !values.password?.trim()) {
+                    form.setError("password", {
+                        type: "manual",
+                        message:
+                            "A password is required for Manager and Owner accounts.",
+                    });
+                    setSaving(false);
+                    return;
                 }
-                return;
+                if (values.password?.trim()) {
+                    const strongErr = validateStrongPassword(
+                        values.password.trim(),
+                    );
+                    if (strongErr) {
+                        form.setError("password", {
+                            type: "manual",
+                            message: strongErr,
+                        });
+                        setSaving(false);
+                        return;
+                    }
+                }
+            } else {
+                if (!isEditMode && !values.pin.trim()) {
+                    form.setError("pin", {
+                        type: "manual",
+                        message: t("pinValidationError"),
+                    });
+                    setSaving(false);
+                    const el = document.querySelector(
+                        `[name="pin"], #staff-pin, input[name="pin"]`,
+                    );
+                    if (el) {
+                        el.scrollIntoView({
+                            behavior: "smooth",
+                            block: "center",
+                        });
+                        (el as HTMLElement).focus?.();
+                    }
+                    return;
+                }
             }
 
             const dayShifts = dayShiftsFromForm(values.dayShiftByDay);
@@ -920,9 +965,13 @@ export default function AddEditStaffSheet() {
                         role: apiRole,
                         phone: cleanPhoneForApi(values.phone),
                         email: values.email.trim(),
-                        ...(values.pin.trim()
-                            ? { pin: values.pin.trim() }
-                            : {}),
+                        ...(isManagerOrOwner
+                            ? values.password?.trim()
+                                ? { password: values.password.trim() }
+                                : {}
+                            : values.pin?.trim()
+                              ? { pin: values.pin.trim() }
+                              : {}),
                         active: values.active,
                         dayShifts,
                         stationCode,
@@ -964,7 +1013,9 @@ export default function AddEditStaffSheet() {
                     role: apiRole,
                     phone: cleanPhoneForApi(values.phone),
                     email: values.email.trim(),
-                    pin: values.pin.trim(),
+                    ...(isManagerOrOwner
+                        ? { password: values.password?.trim() }
+                        : { pin: values.pin.trim() }),
                     active: values.active,
                     dayShifts,
                     stationCode,
