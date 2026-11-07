@@ -15,11 +15,19 @@ export const reconciliationApi = api.injectEndpoints({
     endpoints: builder => ({
         reconciliationPreview: builder.query<
             { data: ReconciliationPreview },
-            void
+            { from?: string; to?: string } | void
         >({
-            query: () => ({
+            query: args => ({
                 url: "/cashier/reconciliation/preview",
                 method: "GET",
+                params: {
+                    ...(args && (args as { from?: string }).from
+                        ? { from: (args as { from?: string }).from }
+                        : {}),
+                    ...(args && (args as { to?: string }).to
+                        ? { to: (args as { to?: string }).to }
+                        : {}),
+                },
             }),
             providesTags: ["Reconciliation"],
         }),

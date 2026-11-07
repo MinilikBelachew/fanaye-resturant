@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { CookingPot, LayoutGrid, Map, User } from "lucide-react";
+import {
+    BellRing,
+    ChefHat,
+    CookingPot,
+    LayoutGrid,
+    Map,
+    User,
+} from "lucide-react";
 import { useFloorTablesQuery } from "@/context/services/floorApi";
 import {
     groupFloorTables,
@@ -38,29 +45,84 @@ export default function LiveFloorBoard() {
 
     const tables = data?.data ?? [];
     const locations = data?.locations ?? [];
-    const open = tables.filter(table => table.tableSessionId);
+    const open = tables.filter(t => t.tableSessionId);
+    const ready = tables.filter(t => (t.readyItemCount ?? 0) > 0);
+    const cooking = tables.filter(
+        t => (t.cookingItemCount ?? 0) > 0 && (t.readyItemCount ?? 0) === 0,
+    );
 
-    if (isLoading) {
-        return <LiveFloorSkeleton />;
-    }
+    if (isLoading) return <LiveFloorSkeleton />;
 
     return (
-        <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-[12px] text-muted-foreground">
-                    {tLive("openCount", { count: open.length })}
-                    <span className="mx-1.5 text-border">·</span>
-                    {tLive("totalCount", { count: tables.length })}
-                </p>
-                <div className="inline-flex rounded-lg border border-border p-0.5">
+        <div className="flex flex-col gap-5">
+            {/* Summary strip */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="rounded-2xl border border-hairline bg-card px-3 py-2.5 sm:px-4 sm:py-3">
+                    <p className="text-[10px] text-slate-gray sm:text-[11px]">
+                        Open tables
+                    </p>
+                    <p className="mt-1 text-[20px] font-semibold tabular-nums text-foreground sm:text-[24px]">
+                        {open.length}
+                        <span className="ml-1 text-[12px] font-normal text-slate-gray sm:ml-1.5 sm:text-[13px]">
+                            / {tables.length}
+                        </span>
+                    </p>
+                </div>
+                <div className="rounded-2xl border border-hairline bg-card px-3 py-2.5 sm:px-4 sm:py-3">
+                    <p className="text-[10px] text-slate-gray sm:text-[11px]">
+                        Cooking
+                    </p>
+                    <p className="mt-1 text-[20px] font-semibold tabular-nums text-foreground sm:text-[24px]">
+                        {cooking.length}
+                        <span className="ml-1 text-[12px] font-normal text-slate-gray sm:ml-1.5 sm:text-[13px]">
+                            tables
+                        </span>
+                    </p>
+                </div>
+                <div className="rounded-2xl border border-hairline bg-card px-3 py-2.5 sm:px-4 sm:py-3">
+                    <p className="text-[10px] text-slate-gray sm:text-[11px]">
+                        Ready
+                    </p>
+                    <p className="mt-1 text-[20px] font-semibold tabular-nums text-foreground sm:text-[24px]">
+                        {ready.length}
+                        <span className="ml-1 text-[12px] font-normal text-slate-gray sm:ml-1.5 sm:text-[13px]">
+                            tables
+                        </span>
+                    </p>
+                </div>
+            </div>
+
+            {/* View toggle + legend */}
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                {/* Legend — wraps to its own row on mobile */}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                    <LegendDot
+                        className="bg-hairline border border-hairline"
+                        label="Free"
+                    />
+                    <LegendDot
+                        className="bg-foreground/15 border border-foreground/10"
+                        label="Open"
+                    />
+                    <LegendDot
+                        className="bg-amber-300/70 border border-amber-300"
+                        label={tWaiter("cooking")}
+                    />
+                    <LegendDot
+                        className="bg-emerald-400/70 border border-emerald-300"
+                        label="Ready"
+                    />
+                </div>
+                {/* Toggle — right side on desktop, full-width on mobile */}
+                <div className="inline-flex self-start rounded-xl border border-hairline bg-card p-0.5 sm:self-auto">
                     <button
                         type="button"
                         onClick={() => setView("cards")}
                         className={cn(
-                            "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] transition-colors",
+                            "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium transition-colors",
                             view === "cards"
                                 ? "bg-foreground text-background"
-                                : "text-muted-foreground hover:text-foreground",
+                                : "text-slate-gray hover:text-foreground",
                         )}
                     >
                         <LayoutGrid className="size-3.5" />
@@ -70,10 +132,10 @@ export default function LiveFloorBoard() {
                         type="button"
                         onClick={() => setView("map")}
                         className={cn(
-                            "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] transition-colors",
+                            "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium transition-colors",
                             view === "map"
                                 ? "bg-foreground text-background"
-                                : "text-muted-foreground hover:text-foreground",
+                                : "text-slate-gray hover:text-foreground",
                         )}
                     >
                         <Map className="size-3.5" />
@@ -82,14 +144,12 @@ export default function LiveFloorBoard() {
                 </div>
             </div>
 
+            {/* Card view */}
             {view === "cards" ? (
                 open.length === 0 ? (
-                    <EmptyState
-                        title={tWaiter("noActiveSessions")}
-                        body={tWaiter("allTablesFree")}
-                    />
+                    <EmptyFloor />
                 ) : (
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
                         {open.map(table => (
                             <TableCard
                                 key={table.tableId}
@@ -106,10 +166,7 @@ export default function LiveFloorBoard() {
                     </div>
                 )
             ) : tables.length === 0 ? (
-                <EmptyState
-                    title={tLive("noTables")}
-                    body={tLive("noTablesHint")}
-                />
+                <EmptyFloor />
             ) : (
                 <FloorMapView
                     tables={tables}
@@ -128,11 +185,16 @@ export default function LiveFloorBoard() {
     );
 }
 
-function EmptyState({ title, body }: { title: string; body: string }) {
+function EmptyFloor() {
     return (
-        <div className="rounded-xl border border-border px-6 py-10 text-center">
-            <p className="text-[14px] text-foreground">{title}</p>
-            <p className="mt-1 text-[12px] text-muted-foreground">{body}</p>
+        <div className="flex min-h-[180px] flex-col items-center justify-center rounded-2xl border border-dashed border-hairline bg-card text-center">
+            <CookingPot className="size-8 text-slate-gray/40" />
+            <p className="mt-3 text-[14px] font-medium text-foreground">
+                All tables are free
+            </p>
+            <p className="mt-1 text-[12px] text-slate-gray">
+                No active sessions right now
+            </p>
         </div>
     );
 }
@@ -152,42 +214,81 @@ function TableCard({
     };
 }) {
     const tone = statusTone(table);
+    const hasReady = (table.readyItemCount ?? 0) > 0;
+    const hasCooking = (table.cookingItemCount ?? 0) > 0;
 
     return (
         <Link
             href={href}
             className={cn(
-                "flex flex-col justify-between rounded-xl border px-4 py-3.5 transition-colors hover:border-foreground/25",
+                "group flex flex-col gap-2.5 rounded-2xl border p-3 transition-colors hover:border-foreground/20 sm:gap-3 sm:p-4",
                 tone === "ready"
-                    ? "border-emerald-200 bg-emerald-50/40"
+                    ? "border-emerald-200 bg-emerald-50/40 dark:border-emerald-900/40 dark:bg-emerald-950/20"
                     : tone === "cooking"
-                      ? "border-amber-200 bg-amber-50/30"
-                      : "border-border bg-background",
+                      ? "border-amber-200 bg-amber-50/30 dark:border-amber-900/40 dark:bg-amber-950/15"
+                      : "border-hairline bg-card",
             )}
         >
-            <div>
-                <p className="text-[11px] tracking-wide text-muted-foreground">
-                    {labels.table}
-                </p>
-                <p className="mt-0.5 text-[22px] tracking-tight text-foreground">
-                    {tableNumber(table)}
-                </p>
-                <p className="mt-1 text-[12px] text-muted-foreground">
-                    {table.locationName}
-                </p>
+            {/* Table number + location */}
+            <div className="flex items-start justify-between gap-2">
+                <div>
+                    <p className="text-[10px] uppercase tracking-[0.1em] text-slate-gray">
+                        {labels.table}
+                    </p>
+                    <p className="mt-0.5 text-[22px] font-semibold leading-none tracking-tight text-foreground sm:text-[26px]">
+                        {tableNumber(table)}
+                    </p>
+                    <p className="mt-1 text-[11px] text-slate-gray sm:mt-1.5 sm:text-[12px]">
+                        {table.locationName}
+                    </p>
+                </div>
+                <span
+                    className={cn(
+                        "mt-1 size-2 shrink-0 rounded-full",
+                        tone === "ready"
+                            ? "bg-emerald-500"
+                            : tone === "cooking"
+                              ? "bg-amber-500"
+                              : "bg-foreground/20",
+                    )}
+                />
             </div>
-            <div className="mt-3 space-y-1 text-[12px] text-muted-foreground">
-                <p className="flex items-center gap-1.5">
-                    <User className="size-3.5 shrink-0" />
-                    <span className="truncate text-foreground/80">
-                        {table.waiterName ?? labels.waiter}
+
+            {/* Waiter */}
+            <div className="flex items-center gap-1.5 text-[11px] text-foreground/80 sm:text-[12px]">
+                <User className="size-3 shrink-0 text-slate-gray sm:size-3.5" />
+                <span className="truncate">
+                    {table.waiterName ?? labels.waiter}
+                </span>
+            </div>
+
+            {/* Kitchen status */}
+            <div className="flex flex-wrap items-center gap-1.5 border-t border-hairline pt-2 sm:pt-2.5">
+                {hasCooking && (
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 sm:px-2 sm:py-1 sm:text-[11px]">
+                        <ChefHat className="size-2.5 sm:size-3" />
+                        {table.cookingItemCount}
+                        <span className="hidden sm:inline">
+                            {" "}
+                            {labels.cooking}
+                        </span>
                     </span>
-                </p>
-                <p className="flex items-center gap-1.5">
-                    <CookingPot className="size-3.5 shrink-0" />
-                    {table.cookingItemCount} {labels.cooking} ·{" "}
-                    {table.readyItemCount} {labels.ready}
-                </p>
+                )}
+                {hasReady && (
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 sm:px-2 sm:py-1 sm:text-[11px]">
+                        <BellRing className="size-2.5 sm:size-3" />
+                        {table.readyItemCount}
+                        <span className="hidden sm:inline">
+                            {" "}
+                            {labels.ready}
+                        </span>
+                    </span>
+                )}
+                {!hasCooking && !hasReady && (
+                    <span className="text-[10px] text-slate-gray sm:text-[11px]">
+                        0 · 0
+                    </span>
+                )}
             </div>
         </Link>
     );
@@ -213,95 +314,89 @@ function FloorMapView({
     const groups = groupFloorTables(tables, locations);
 
     return (
-        <div className="space-y-5">
-            <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground">
-                <LegendDot className="bg-muted" label={labels.free} />
-                <LegendDot className="bg-foreground/15" label={labels.open} />
-                <LegendDot className="bg-amber-300/80" label={labels.cooking} />
-                <LegendDot className="bg-emerald-400/80" label={labels.ready} />
-            </div>
-
-            {groups.map(group => (
-                <section
-                    key={group.location.id}
-                    className="rounded-xl border border-border px-4 py-4"
-                >
-                    <div className="mb-3 flex items-baseline justify-between gap-2">
-                        <h2 className="text-[13px] tracking-wide text-foreground">
-                            {group.location.name}
-                        </h2>
-                        <span className="text-[11px] text-muted-foreground">
-                            {group.tables.filter(t => t.tableSessionId).length}/
-                            {group.tables.length} {labels.open.toLowerCase()}
-                        </span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
-                        {group.tables.map(table => {
-                            const tone = statusTone(table);
-                            const occupied = Boolean(table.tableSessionId);
-                            const inner = (
-                                <div
-                                    className={cn(
-                                        "flex aspect-square flex-col items-center justify-center rounded-lg border px-1.5 text-center transition-colors",
-                                        tone === "ready"
-                                            ? "border-emerald-300 bg-emerald-50 text-emerald-900"
-                                            : tone === "cooking"
-                                              ? "border-amber-300 bg-amber-50 text-amber-900"
-                                              : occupied
-                                                ? "border-foreground/20 bg-foreground/[0.04] text-foreground"
-                                                : "border-border bg-muted/40 text-muted-foreground",
-                                        occupied &&
-                                            "hover:border-foreground/35",
-                                    )}
-                                >
-                                    <span className="text-[15px] tracking-tight">
-                                        {tableNumber(table)}
-                                    </span>
-                                    {occupied ? (
-                                        <span className="mt-0.5 max-w-full truncate text-[9px] text-muted-foreground">
-                                            {table.waiterName?.split(" ")[0] ??
-                                                labels.waiter}
-                                        </span>
-                                    ) : (
-                                        <span className="mt-0.5 text-[9px]">
-                                            {labels.free}
-                                        </span>
-                                    )}
-                                </div>
-                            );
-
-                            if (!occupied) {
-                                return (
+        <div className="space-y-4">
+            {groups.map(group => {
+                const openInGroup = group.tables.filter(
+                    t => t.tableSessionId,
+                ).length;
+                return (
+                    <section
+                        key={group.location.id}
+                        className="rounded-2xl border border-hairline bg-card"
+                    >
+                        <div className="flex items-center justify-between border-b border-hairline px-5 py-3">
+                            <h2 className="text-[13px] font-semibold text-foreground">
+                                {group.location.name}
+                            </h2>
+                            <span className="text-[12px] text-slate-gray">
+                                {openInGroup}/{group.tables.length}{" "}
+                                {labels.open.toLowerCase()}
+                            </span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-1.5 p-3 sm:grid-cols-5 sm:gap-2 sm:p-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10">
+                            {group.tables.map(table => {
+                                const tone = statusTone(table);
+                                const occupied = Boolean(table.tableSessionId);
+                                const cell = (
                                     <div
-                                        key={table.tableId}
-                                        className="min-w-0"
+                                        className={cn(
+                                            "flex aspect-square flex-col items-center justify-center rounded-xl border text-center transition-colors",
+                                            tone === "ready"
+                                                ? "border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+                                                : tone === "cooking"
+                                                  ? "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+                                                  : occupied
+                                                    ? "border-foreground/20 bg-foreground/5 text-foreground"
+                                                    : "border-hairline bg-secondary/50 text-slate-gray",
+                                            occupied &&
+                                                "hover:border-foreground/30",
+                                        )}
                                     >
-                                        {inner}
+                                        <span className="text-[15px] font-semibold leading-none">
+                                            {tableNumber(table)}
+                                        </span>
+                                        <span className="mt-1 max-w-full truncate px-1 text-[9px]">
+                                            {occupied
+                                                ? (table.waiterName?.split(
+                                                      " ",
+                                                  )[0] ?? labels.waiter)
+                                                : labels.free}
+                                        </span>
                                     </div>
                                 );
-                            }
 
-                            return (
-                                <Link
-                                    key={table.tableId}
-                                    href={`${basePath}/${table.tableId}`}
-                                    className="min-w-0"
-                                >
-                                    {inner}
-                                </Link>
-                            );
-                        })}
-                    </div>
-                </section>
-            ))}
+                                if (!occupied) {
+                                    return (
+                                        <div
+                                            key={table.tableId}
+                                            className="min-w-0"
+                                        >
+                                            {cell}
+                                        </div>
+                                    );
+                                }
+                                return (
+                                    <Link
+                                        key={table.tableId}
+                                        href={`${basePath}/${table.tableId}`}
+                                        className="min-w-0"
+                                    >
+                                        {cell}
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    </section>
+                );
+            })}
         </div>
     );
 }
 
 function LegendDot({ className, label }: { className: string; label: string }) {
     return (
-        <span className="inline-flex items-center gap-1.5">
-            <span className={cn("size-2 rounded-full", className)} />
+        <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-gray">
+            <span className={cn("size-2.5 rounded-full", className)} />
             {label}
         </span>
     );

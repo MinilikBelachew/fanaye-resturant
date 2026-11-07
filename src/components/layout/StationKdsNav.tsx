@@ -6,7 +6,11 @@ import {
     Flame,
     Inbox,
     LayoutGrid,
+    UtensilsCrossed,
+    CalendarDays,
+    Boxes,
 } from "lucide-react";
+import { useGetTenantSiteQuery } from "@/context/services/siteApi";
 import { Suspense } from "react";
 import {
     parseQueueFilter,
@@ -58,6 +62,8 @@ function StationKdsNavInner({
     const q = searchParams.get("q") ?? "";
     const onHome = pathname === home;
     const { counts } = useCurrentStationQueue();
+    const { data: siteRes } = useGetTenantSiteQuery();
+    const site = siteRes?.data;
     const tabCount: Record<QueueFilter, number | null> = {
         all: null,
         new: counts.new,
@@ -73,6 +79,7 @@ function StationKdsNavInner({
                 className,
             )}
         >
+            {/* Queue filter tabs */}
             {TABS.map(tab => {
                 const href = stationQueueHref(home, {
                     status: tab.key,
@@ -102,6 +109,53 @@ function StationKdsNavInner({
                     </Link>
                 );
             })}
+
+            {/* Divider between Queue tabs and Station tools */}
+            <div className="h-6 w-px bg-border my-auto shrink-0 mx-0.5" />
+
+            {/* Station Menu link */}
+            <Link
+                href={`${home}/menu`}
+                className={cn(
+                    "flex shrink-0 items-center gap-1.5 rounded-[12px] border px-2.5 py-1.5 text-[12px] font-medium sm:gap-2 sm:rounded-[16px] sm:px-3 sm:py-2 sm:text-[13px]",
+                    pathname === `${home}/menu`
+                        ? "border-transparent bg-accent text-accent-foreground"
+                        : "border-hairline bg-card text-slate-gray hover:text-foreground",
+                )}
+            >
+                <UtensilsCrossed className="size-3.5 sm:size-4" />
+                <span className="whitespace-nowrap">Menu</span>
+            </Link>
+
+            {/* Returnable Materials link (if feature enabled) */}
+            {site?.featureOutsideOrders !== false && (
+                <Link
+                    href={`${home}/materials`}
+                    className={cn(
+                        "flex shrink-0 items-center gap-1.5 rounded-[12px] border px-2.5 py-1.5 text-[12px] font-medium sm:gap-2 sm:rounded-[16px] sm:px-3 sm:py-2 sm:text-[13px]",
+                        pathname === `${home}/materials`
+                            ? "border-transparent bg-accent text-accent-foreground"
+                            : "border-hairline bg-card text-slate-gray hover:text-foreground",
+                    )}
+                >
+                    <Boxes className="size-3.5 sm:size-4 text-amber-500" />
+                    <span className="whitespace-nowrap">Tableware</span>
+                </Link>
+            )}
+
+            {/* My Leave link */}
+            <Link
+                href={`${home}/leave`}
+                className={cn(
+                    "flex shrink-0 items-center gap-1.5 rounded-[12px] border px-2.5 py-1.5 text-[12px] font-medium sm:gap-2 sm:rounded-[16px] sm:px-3 sm:py-2 sm:text-[13px]",
+                    pathname === `${home}/leave`
+                        ? "border-transparent bg-accent text-accent-foreground"
+                        : "border-hairline bg-card text-slate-gray hover:text-foreground",
+                )}
+            >
+                <CalendarDays className="size-3.5 sm:size-4" />
+                <span className="whitespace-nowrap">Leave</span>
+            </Link>
         </nav>
     );
 }

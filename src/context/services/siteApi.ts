@@ -44,6 +44,11 @@ export interface TenantSite {
     calendarPreference?: "ETHIOPIAN" | "GREGORIAN" | string;
     autoApproveSupplyRequests?: boolean;
     requireDriverForDispatch?: boolean;
+    featureInventory?: boolean;
+    featureCentralWarehouse?: boolean;
+    featureTelegramBackup?: boolean;
+    featureAiAdvisor?: boolean;
+    featureOutsideOrders?: boolean;
 }
 
 export interface SiteResponse {
@@ -89,6 +94,11 @@ export interface UpdateSitePayload {
     calendarPreference?: "ETHIOPIAN" | "GREGORIAN" | string;
     autoApproveSupplyRequests?: boolean;
     requireDriverForDispatch?: boolean;
+    featureInventory?: boolean;
+    featureCentralWarehouse?: boolean;
+    featureTelegramBackup?: boolean;
+    featureAiAdvisor?: boolean;
+    featureOutsideOrders?: boolean;
 }
 
 export const siteApi = api.injectEndpoints({

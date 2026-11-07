@@ -2,8 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
-import { Loader2, X } from "lucide-react";
+import {
+    Building2,
+    ChefHat,
+    Info,
+    Loader2,
+    Lock,
+    Mail,
+    Store,
+    User,
+    X,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { EthiopianPhoneInput } from "@/components/ui/ethiopian-phone-input";
 import { PasswordLiveChecks } from "@/components/ui/password-live-checks";
@@ -21,7 +32,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const fieldClass =
-    "h-9 rounded-[10px] border-hairline bg-card text-[13px] focus-visible:border-foreground/30 focus-visible:ring-foreground/10";
+    "h-10 rounded-xl border-hairline bg-card text-[13px] focus-visible:border-foreground/40 focus-visible:ring-foreground/10 px-3";
 
 const defaults: CreateBranchFormValues = {
     name: "",
@@ -34,6 +45,16 @@ const defaults: CreateBranchFormValues = {
     managerPhone: "+251 ",
     managerPassword: "",
 };
+
+function FieldError({ message }: { message?: string }) {
+    if (!message) return null;
+    return (
+        <p className="mt-1 flex items-center gap-1 text-[11px] text-destructive">
+            <span className="inline-block size-1 shrink-0 rounded-full bg-destructive" />
+            {message}
+        </p>
+    );
+}
 
 export default function AddBranchSheet({
     open,
@@ -51,48 +72,39 @@ export default function AddBranchSheet({
     const [createBranch, { isLoading }] = useCreateBranchMutation();
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-    const form = useForm<CreateBranchFormValues>({
+    const {
+        formState: { errors },
+        watch,
+        register,
+        setValue,
+        handleSubmit,
+        reset,
+    } = useForm<CreateBranchFormValues>({
         defaultValues: defaults,
+        resolver: zodResolver(createBranchFormSchema) as any,
         mode: "onTouched",
     });
 
     useEffect(() => {
         if (!open) return;
-        form.reset(defaults);
+        reset(defaults);
         setErrorMsg(null);
-    }, [open]);
+    }, [open, reset]);
 
     if (!open) return null;
 
     const atLimit = data != null && data.activeCount >= data.maxBranches;
-    const values = form.watch();
+    const values = watch();
+    const isBakery = values.serviceMode === "BAKERY";
 
-    async function onSubmit(raw: CreateBranchFormValues) {
+    async function onSubmit(payload: CreateBranchFormValues) {
         setErrorMsg(null);
-        const parsed = createBranchFormSchema.safeParse(raw);
-        if (!parsed.success) {
-            const message =
-                parsed.error.issues[0]?.message || "Check the form.";
-            setErrorMsg(message);
-            for (const issue of parsed.error.issues) {
-                const path = issue.path[0];
-                if (typeof path === "string") {
-                    form.setError(path as keyof CreateBranchFormValues, {
-                        message: issue.message,
-                    });
-                }
-            }
-            return;
-        }
-
-        const payload = parsed.data;
         const body: CreateBranchBody = {
             name: payload.name.trim(),
             ...(payload.displayCode?.trim()
-                ? { displayCode: payload.displayCode.trim() }
+                ? { displayCode: payload.displayCode.trim().toUpperCase() }
                 : {}),
-            tableCount:
-                payload.serviceMode === "BAKERY" ? 1 : payload.tableCount,
+            tableCount: isBakery ? 1 : payload.tableCount,
             serviceMode: payload.serviceMode,
             ...(payload.copyFromBranchId
                 ? { copyFromBranchId: payload.copyFromBranchId }
@@ -111,7 +123,7 @@ export default function AddBranchSheet({
         try {
             await createBranch(body).unwrap();
             toast.success(t("branchCreated"));
-            form.reset(defaults);
+            reset(defaults);
             onClose();
         } catch (err) {
             toast.fromUnknown(err, t("branchCreateError"));
@@ -119,27 +131,34 @@ export default function AddBranchSheet({
         }
     }
 
-    const isBakery = values.serviceMode === "BAKERY";
-
     return (
         <div className="fixed inset-0 z-50">
+            {/* Backdrop */}
             <button
                 type="button"
-                className="absolute inset-0 bg-black/55 backdrop-blur-[3px]"
+                className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
                 aria-label={t("closeBranchMenu")}
                 onClick={onClose}
             />
-            <aside className="absolute inset-y-0 right-0 z-10 flex h-full w-[24rem] max-w-[calc(100vw-1rem)] flex-col border-l border-hairline bg-background shadow-2xl animate-in slide-in-from-right duration-300">
-                <div className="flex items-start justify-between gap-3 border-b border-hairline px-5 py-3">
-                    <div>
-                        <h2 className="text-[16px] font-semibold">
-                            {t("addBranchTitle")}
-                        </h2>
-                        <p className="mt-0.5 text-[12px] text-slate-gray">
-                            {atLimit
-                                ? `Plan limit reached (${data?.activeCount}/${data?.maxBranches} branches).`
-                                : t("addBranchDesc")}
-                        </p>
+
+            {/* Sheet */}
+            <aside className="absolute inset-y-0 right-0 z-10 flex h-full w-[34rem] max-w-[calc(100vw-1rem)] flex-col border-l border-hairline bg-background shadow-2xl animate-in slide-in-from-right duration-300">
+                {/* Header */}
+                <div className="flex items-start justify-between gap-3 border-b border-hairline px-6 py-4">
+                    <div className="flex items-start gap-3">
+                        <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand/10">
+                            <Building2 className="size-4 text-brand" />
+                        </div>
+                        <div>
+                            <h2 className="text-[16px] font-semibold">
+                                {t("addBranchTitle")}
+                            </h2>
+                            <p className="mt-0.5 text-[12px] text-slate-gray">
+                                {atLimit
+                                    ? `Plan limit reached (${data?.activeCount}/${data?.maxBranches} branches).`
+                                    : t("addBranchDesc")}
+                            </p>
+                        </div>
                     </div>
                     <button
                         type="button"
@@ -151,182 +170,214 @@ export default function AddBranchSheet({
                 </div>
 
                 <form
-                    onSubmit={form.handleSubmit(onSubmit)}
+                    onSubmit={handleSubmit(onSubmit)}
                     className="flex min-h-0 flex-1 flex-col"
                 >
-                    <div className="app-scroll flex-1 space-y-3.5 overflow-y-auto px-5 py-4">
+                    <div className="app-scroll flex-1 space-y-5 overflow-y-auto px-6 py-5">
+                        {/* Plan limit warning */}
                         {atLimit ? (
-                            <p className="rounded-[10px] border border-hairline bg-secondary/50 px-3 py-2 text-[12px] text-slate-gray">
-                                Upgrade the plan or archive a branch before
-                                adding another location.
-                            </p>
+                            <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900/40 dark:bg-amber-950/30">
+                                <Info className="mt-0.5 size-4 shrink-0 text-amber-600" />
+                                <p className="text-[12px] text-amber-800 dark:text-amber-400">
+                                    Upgrade the plan or archive a branch before
+                                    adding another location.
+                                </p>
+                            </div>
                         ) : null}
 
-                        <div className="space-y-1">
-                            <Label htmlFor="branch-name">
-                                {t("branchName")}
-                            </Label>
-                            <Input
-                                id="branch-name"
-                                className={fieldClass}
-                                disabled={atLimit}
-                                {...form.register("name")}
-                            />
-                            {form.formState.errors.name ? (
-                                <p className="text-[12px] text-destructive">
-                                    {form.formState.errors.name.message}
-                                </p>
-                            ) : null}
-                        </div>
+                        {/* ── Branch Details ── */}
+                        <section className="space-y-4">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-gray">
+                                Branch Details
+                            </p>
 
-                        <div className="space-y-1">
-                            <Label>Branch type</Label>
-                            <div className="grid grid-cols-2 gap-2">
-                                {(["RESTAURANT", "BAKERY"] as const).map(
-                                    mode => (
+                            {/* Branch name */}
+                            <div className="space-y-1.5">
+                                <Label htmlFor="branch-name">
+                                    {t("branchName")}
+                                </Label>
+                                <Input
+                                    id="branch-name"
+                                    className={fieldClass}
+                                    disabled={atLimit}
+                                    placeholder="e.g. Bole, Piassa, CMC"
+                                    {...register("name")}
+                                />
+                                <FieldError message={errors.name?.message} />
+                            </div>
+
+                            {/* Branch type */}
+                            <div className="space-y-1.5">
+                                <Label>Branch type</Label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {(
+                                        [
+                                            {
+                                                mode: "RESTAURANT",
+                                                label: "Restaurant",
+                                                icon: Store,
+                                            },
+                                            {
+                                                mode: "BAKERY",
+                                                label: "Bakery",
+                                                icon: ChefHat,
+                                            },
+                                        ] as const
+                                    ).map(({ mode, label, icon: Icon }) => (
                                         <button
                                             key={mode}
                                             type="button"
                                             disabled={atLimit}
                                             onClick={() =>
-                                                form.setValue(
-                                                    "serviceMode",
-                                                    mode,
-                                                )
+                                                setValue("serviceMode", mode)
                                             }
                                             className={cn(
-                                                "h-9 rounded-[10px] border text-[13px] font-medium",
+                                                "flex h-11 items-center justify-center gap-2 rounded-xl border text-[13px] font-medium transition-all",
                                                 values.serviceMode === mode
-                                                    ? "border-foreground bg-foreground text-background"
-                                                    : "border-hairline bg-card",
+                                                    ? "border-foreground bg-foreground text-background shadow-sm"
+                                                    : "border-hairline bg-card text-foreground hover:border-foreground/30",
                                             )}
                                         >
-                                            {mode === "BAKERY"
-                                                ? "Bakery"
-                                                : "Restaurant"}
+                                            <Icon className="size-4" />
+                                            {label}
                                         </button>
-                                    ),
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Branch code + tables */}
+                            <div
+                                className={cn(
+                                    "grid gap-3",
+                                    isBakery ? "grid-cols-1" : "grid-cols-2",
+                                )}
+                            >
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center gap-1.5">
+                                        <Label htmlFor="branch-code">
+                                            {t("branchCode")}
+                                        </Label>
+                                        <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px] text-slate-gray">
+                                            optional
+                                        </span>
+                                    </div>
+                                    <Input
+                                        id="branch-code"
+                                        className={cn(
+                                            fieldClass,
+                                            "uppercase tracking-widest",
+                                        )}
+                                        disabled={atLimit}
+                                        placeholder={t("branchCodeHint")}
+                                        maxLength={8}
+                                        {...register("displayCode")}
+                                    />
+                                    <p className="text-[11px] text-slate-gray">
+                                        Used on bill numbers & inventory labels
+                                    </p>
+                                    <FieldError
+                                        message={errors.displayCode?.message}
+                                    />
+                                </div>
+
+                                {!isBakery && (
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="table-count">
+                                            {t("tableCountSeed")}
+                                        </Label>
+                                        <Input
+                                            id="table-count"
+                                            type="number"
+                                            min={0}
+                                            max={60}
+                                            className={fieldClass}
+                                            disabled={atLimit}
+                                            {...register("tableCount", {
+                                                valueAsNumber: true,
+                                            })}
+                                        />
+                                        <FieldError
+                                            message={errors.tableCount?.message}
+                                        />
+                                    </div>
                                 )}
                             </div>
-                        </div>
 
-                        <div
-                            className={cn(
-                                "grid gap-3",
-                                isBakery ? "grid-cols-1" : "grid-cols-2",
-                            )}
-                        >
-                            <div className="space-y-1">
-                                <Label htmlFor="branch-code">
-                                    {t("branchCode")}
-                                </Label>
-                                <Input
-                                    id="branch-code"
-                                    className={cn(fieldClass, "uppercase")}
-                                    disabled={atLimit}
-                                    placeholder={t("branchCodeHint")}
-                                    {...form.register("displayCode")}
-                                />
-                            </div>
-                            {isBakery ? null : (
-                                <div className="space-y-1">
-                                    <Label htmlFor="table-count">
-                                        {t("tableCountSeed")}
+                            {/* Copy stations from */}
+                            {!isBakery && (data?.data.length ?? 0) > 0 && (
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="copy-from">
+                                        {t("copyFromBranch")}
                                     </Label>
-                                    <Input
-                                        id="table-count"
-                                        type="number"
-                                        min={0}
-                                        max={60}
-                                        className={fieldClass}
+                                    <select
+                                        id="copy-from"
                                         disabled={atLimit}
-                                        {...form.register("tableCount", {
-                                            valueAsNumber: true,
-                                        })}
-                                    />
-                                    {form.formState.errors.tableCount ? (
-                                        <p className="text-[12px] text-destructive">
-                                            {
-                                                form.formState.errors.tableCount
-                                                    .message
-                                            }
-                                        </p>
-                                    ) : null}
+                                        className={cn(
+                                            fieldClass,
+                                            "w-full border bg-card",
+                                        )}
+                                        {...register("copyFromBranchId")}
+                                    >
+                                        <option value="">
+                                            {t("copyFromNone")}
+                                        </option>
+                                        {data?.data.map(b => (
+                                            <option key={b.id} value={b.id}>
+                                                {b.name}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                             )}
-                        </div>
+                        </section>
 
-                        {!isBakery && (data?.data.length ?? 0) > 0 ? (
-                            <div className="space-y-1">
-                                <Label htmlFor="copy-from">
-                                    {t("copyFromBranch")}
-                                </Label>
-                                <select
-                                    id="copy-from"
-                                    disabled={atLimit}
-                                    className={cn(
-                                        fieldClass,
-                                        "w-full border bg-card px-3",
-                                    )}
-                                    {...form.register("copyFromBranchId")}
-                                >
-                                    <option value="">
-                                        {t("copyFromNone")}
-                                    </option>
-                                    {data?.data.map(b => (
-                                        <option key={b.id} value={b.id}>
-                                            {b.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        ) : null}
-
-                        <div className="border-t border-hairline pt-3.5">
-                            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-gray">
+                        {/* ── Branch Manager ── */}
+                        <section className="space-y-4 border-t border-hairline pt-5">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-gray">
                                 {t("managerSection")}
                             </p>
-                            <div className="space-y-3">
-                                <div className="space-y-1">
-                                    <Label htmlFor="mgr-name">
-                                        {t("managerName")}
-                                    </Label>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="mgr-name">
+                                    {t("managerName")}
+                                </Label>
+                                <div className="relative">
+                                    <User className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-gray" />
                                     <Input
                                         id="mgr-name"
-                                        className={fieldClass}
+                                        className={cn(fieldClass, "pl-9")}
                                         disabled={atLimit}
-                                        {...form.register("managerName")}
+                                        placeholder="Full name"
+                                        {...register("managerName")}
                                     />
-                                    {form.formState.errors.managerName ? (
-                                        <p className="text-[12px] text-destructive">
-                                            {
-                                                form.formState.errors
-                                                    .managerName.message
-                                            }
-                                        </p>
-                                    ) : null}
                                 </div>
-                                <div className="space-y-1">
+                                <FieldError
+                                    message={errors.managerName?.message}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
                                     <Label htmlFor="mgr-email">
                                         {t("managerEmail")}
                                     </Label>
-                                    <Input
-                                        id="mgr-email"
-                                        type="email"
-                                        className={fieldClass}
-                                        disabled={atLimit}
-                                        {...form.register("managerEmail")}
+                                    <div className="relative">
+                                        <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-gray" />
+                                        <Input
+                                            id="mgr-email"
+                                            type="email"
+                                            className={cn(fieldClass, "pl-9")}
+                                            disabled={atLimit}
+                                            placeholder="email@example.com"
+                                            {...register("managerEmail")}
+                                        />
+                                    </div>
+                                    <FieldError
+                                        message={errors.managerEmail?.message}
                                     />
-                                    {form.formState.errors.managerEmail ? (
-                                        <p className="text-[12px] text-destructive">
-                                            {
-                                                form.formState.errors
-                                                    .managerEmail.message
-                                            }
-                                        </p>
-                                    ) : null}
                                 </div>
-                                <div className="space-y-1">
+
+                                <div className="space-y-1.5">
                                     <Label htmlFor="mgr-phone">
                                         {t("managerPhone")}
                                     </Label>
@@ -335,81 +386,86 @@ export default function AddBranchSheet({
                                         disabled={atLimit}
                                         value={values.managerPhone}
                                         onChange={value =>
-                                            form.setValue(
-                                                "managerPhone",
-                                                value,
-                                                {
-                                                    shouldValidate: true,
-                                                },
-                                            )
+                                            setValue("managerPhone", value, {
+                                                shouldValidate: true,
+                                            })
                                         }
                                     />
-                                    {form.formState.errors.managerPhone ? (
-                                        <p className="text-[12px] text-destructive">
-                                            {
-                                                form.formState.errors
-                                                    .managerPhone.message
-                                            }
-                                        </p>
-                                    ) : null}
+                                    <FieldError
+                                        message={errors.managerPhone?.message}
+                                    />
                                 </div>
-                                <div className="space-y-1">
-                                    <Label htmlFor="mgr-pass">
-                                        {t("managerPassword")}
-                                    </Label>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="mgr-pass">
+                                    {t("managerPassword")}
+                                </Label>
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-gray" />
                                     <Input
                                         id="mgr-pass"
                                         type="password"
                                         autoComplete="new-password"
                                         placeholder="Min. 8 characters"
-                                        className={cn(fieldClass, "font-mono")}
+                                        className={cn(
+                                            fieldClass,
+                                            "pl-9 font-mono",
+                                        )}
                                         disabled={atLimit}
-                                        {...form.register("managerPassword")}
-                                    />
-                                    {form.formState.errors.managerPassword ? (
-                                        <p className="text-[12px] text-destructive">
-                                            {
-                                                form.formState.errors
-                                                    .managerPassword.message
-                                            }
-                                        </p>
-                                    ) : null}
-                                    <PasswordLiveChecks
-                                        value={values.managerPassword}
+                                        {...register("managerPassword")}
                                     />
                                 </div>
+                                <FieldError
+                                    message={errors.managerPassword?.message}
+                                />
+                                <PasswordLiveChecks
+                                    value={values.managerPassword}
+                                />
                             </div>
-                        </div>
+                        </section>
 
-                        {errorMsg ? (
-                            <p className="rounded-[10px] border border-destructive/20 bg-destructive/10 px-3 py-2 text-[12px] text-destructive">
-                                {errorMsg}
-                            </p>
-                        ) : null}
+                        {/* Submit error */}
+                        {errorMsg && (
+                            <div className="flex items-start gap-2.5 rounded-xl border border-destructive/20 bg-destructive/8 px-4 py-3">
+                                <Info className="mt-0.5 size-4 shrink-0 text-destructive" />
+                                <p className="text-[12px] text-destructive">
+                                    {errorMsg}
+                                </p>
+                            </div>
+                        )}
                     </div>
 
-                    <div className="flex items-center justify-end gap-2 border-t border-hairline px-5 py-3">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="h-8 rounded-full px-3 text-[12px] font-medium text-slate-gray hover:bg-secondary"
-                        >
-                            {t("closeBranchMenu")}
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={isLoading || atLimit}
-                            className="inline-flex h-8 min-w-[108px] items-center justify-center gap-1.5 rounded-full bg-foreground px-4 text-[12px] font-semibold text-background hover:bg-foreground/90 disabled:opacity-50"
-                        >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="size-3.5 animate-spin" />
-                                    {t("creatingBranch")}
-                                </>
-                            ) : (
-                                t("createBranch")
-                            )}
-                        </button>
+                    {/* Footer */}
+                    <div className="flex items-center justify-between gap-2 border-t border-hairline px-6 py-4">
+                        <p className="text-[11px] text-slate-gray">
+                            {data
+                                ? `${data.activeCount} / ${data.maxBranches} branches used`
+                                : ""}
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="h-9 rounded-xl px-4 text-[13px] font-medium text-slate-gray hover:bg-secondary"
+                            >
+                                {t("closeBranchMenu")}
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={isLoading || atLimit}
+                                className="inline-flex h-9 min-w-[120px] items-center justify-center gap-1.5 rounded-xl bg-foreground px-5 text-[13px] font-semibold text-background hover:bg-foreground/90 disabled:opacity-50"
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="size-3.5 animate-spin" />
+                                        {t("creatingBranch")}
+                                    </>
+                                ) : (
+                                    t("createBranch")
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </form>
             </aside>

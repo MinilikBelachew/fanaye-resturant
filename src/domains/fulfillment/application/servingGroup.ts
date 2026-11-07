@@ -7,7 +7,9 @@ export interface ParsedServingGroup {
     cleanInstruction: string;
 }
 
-export function parseServingGroup(instruction?: string | null): ParsedServingGroup {
+export function parseServingGroup(
+    instruction?: string | null,
+): ParsedServingGroup {
     if (!instruction) {
         return {
             rawTray: null,
@@ -53,4 +55,3 @@ export function formatInstructionWithTray(
     }
     return clean;
 }
-

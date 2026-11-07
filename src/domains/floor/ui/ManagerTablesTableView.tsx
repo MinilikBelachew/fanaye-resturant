@@ -2,14 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import {
-    BellRing,
-    ChefHat,
-    ChevronRight,
-    Sparkles,
-    User,
-    Users,
-} from "lucide-react";
+import { BellRing, ChefHat, ChevronRight, Sparkles, Users } from "lucide-react";
 import type {
     FloorLocation,
     FloorTable,
@@ -97,9 +90,6 @@ export function ManagerTablesTableView({
                                             {labels.status}
                                         </th>
                                         <th className="px-4 py-3">
-                                            {labels.server}
-                                        </th>
-                                        <th className="px-4 py-3">
                                             {labels.orderStatus}
                                         </th>
                                         <th className="px-4 py-3 text-center">
@@ -115,19 +105,6 @@ export function ManagerTablesTableView({
                                         const occupied = Boolean(
                                             table.tableSessionId,
                                         );
-                                        const waiter = occupied
-                                            ? table.waiterName
-                                            : table.assignedWaiterName;
-
-                                        const waiterInitials = waiter
-                                            ? waiter
-                                                  .split(" ")
-                                                  .filter(Boolean)
-                                                  .map(p => p[0])
-                                                  .slice(0, 2)
-                                                  .join("")
-                                                  .toUpperCase()
-                                            : null;
 
                                         const tableNum = table.displayNumber
                                             ? `#${table.displayNumber}`
@@ -208,26 +185,7 @@ export function ManagerTablesTableView({
                                                     </Badge>
                                                 </td>
 
-                                                {/* 3. SERVER COLUMN */}
-                                                <td className="px-4 py-3">
-                                                    {waiter ? (
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-brand/10 text-[10px] font-bold text-brand">
-                                                                {waiterInitials}
-                                                            </span>
-                                                            <span className="truncate font-medium text-foreground">
-                                                                {waiter}
-                                                            </span>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="flex items-center gap-1 text-[12px] text-amber-700 dark:text-amber-400">
-                                                            <User className="size-3" />
-                                                            {labels.unassigned}
-                                                        </span>
-                                                    )}
-                                                </td>
-
-                                                {/* 4. ORDER / KITCHEN PROGRESS COLUMN */}
+                                                {/* 3. ORDER / KITCHEN PROGRESS COLUMN */}
                                                 <td className="px-4 py-3">
                                                     {table.readyItemCount >
                                                     0 ? (

@@ -368,6 +368,7 @@ export default function CashierPaymentsLog() {
                     isBakery ? undefined : activeReceipt?.tableDisplayName
                 }
                 waiterName={isBakery ? undefined : activeReceipt?.waiterName}
+                cashierName={activeReceipt?.bill?.cashierName ?? undefined}
                 showSendToWaiter={!isBakery}
                 hideTable={isBakery}
             />

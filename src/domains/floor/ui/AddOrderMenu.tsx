@@ -1,14 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import {
     ArrowLeft,
     ChefHat,
+    ChevronDown,
+    ChevronLeft,
+    ChevronRight,
+    ChevronUp,
     Coffee,
     Minus,
     Plus,
     Receipt,
     Search,
+    ShoppingBag,
     SlidersHorizontal,
     Trash2,
     UtensilsCrossed,
@@ -18,6 +23,7 @@ import {
     useConfirmOrderMutation,
     useWaiterMenuQuery,
 } from "@/context/services/ordersApi";
+import { RestorchLoader } from "@/components/common/RestorchLoader";
 import CustomizeItemSheet from "@/domains/floor/ui/CustomizeItemSheet";
 import { unitPriceFor, type MenuItem } from "@/domains/catalog/domain/menu";
 import {
@@ -30,7 +36,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createId } from "@/lib/ids";
 import { formatEtb } from "@/lib/money";
-import { ServingGroupType, formatInstructionWithTray } from "@/domains/fulfillment/application/servingGroup";
+import {
+    ServingGroupType,
+    formatInstructionWithTray,
+} from "@/domains/fulfillment/application/servingGroup";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 
@@ -100,6 +109,39 @@ export default function AddOrderMenu({
     const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
     const [mobileTicketOpen, setMobileTicketOpen] = useState(false);
 
+    const categoryNavRef = useRef<HTMLDivElement>(null);
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(false);
+
+    const updateScrollButtons = useCallback(() => {
+        const el = categoryNavRef.current;
+        if (!el) return;
+        setCanScrollLeft(el.scrollLeft > 6);
+        setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 6);
+    }, []);
+
+    useEffect(() => {
+        const el = categoryNavRef.current;
+        if (!el) return;
+        updateScrollButtons();
+        el.addEventListener("scroll", updateScrollButtons, { passive: true });
+        window.addEventListener("resize", updateScrollButtons);
+        return () => {
+            el.removeEventListener("scroll", updateScrollButtons);
+            window.removeEventListener("resize", updateScrollButtons);
+        };
+    }, [updateScrollButtons]);
+
+    function scrollCategories(direction: "left" | "right") {
+        const el = categoryNavRef.current;
+        if (!el) return;
+        const distance = 260;
+        el.scrollBy({
+            left: direction === "left" ? -distance : distance,
+            behavior: "smooth",
+        });
+    }
+
     const editing = draft;
     const editingItem = editing
         ? menuItems.find(item => item.id === editing.menuItemId)
@@ -127,7 +169,10 @@ export default function AddOrderMenu({
     const filteredItems = useMemo(() => {
         let result = menuItems;
 
-        if (selectedCategory !== "ALL") {
+        if (selectedCategory === "__IN_ORDER__") {
+            const inOrderIds = new Set(lines.map(l => l.menuItemId));
+            result = result.filter(item => inOrderIds.has(item.id));
+        } else if (selectedCategory !== "ALL") {
             result = result.filter(
                 item =>
                     item.category.toLowerCase() ===
@@ -146,7 +191,7 @@ export default function AddOrderMenu({
         }
 
         return result;
-    }, [menuItems, selectedCategory, searchQuery]);
+    }, [menuItems, selectedCategory, searchQuery, lines]);
 
     const pieceCount = lines.reduce((sum, line) => sum + line.quantity, 0);
     const basketTotal = lines.reduce((sum, line) => {
@@ -217,8 +262,12 @@ export default function AddOrderMenu({
             }
             return current.map(l => {
                 if (l.id !== lineId) return l;
-                let nextInstructions = l.itemInstructions ? [...l.itemInstructions] : [l.instruction];
-                let nextServingGroups = l.itemServingGroups ? [...l.itemServingGroups] : [l.servingGroup ?? "separate"];
+                let nextInstructions = l.itemInstructions
+                    ? [...l.itemInstructions]
+                    : [l.instruction];
+                let nextServingGroups = l.itemServingGroups
+                    ? [...l.itemServingGroups]
+                    : [l.servingGroup ?? "separate"];
                 while (nextInstructions.length < nextQty) {
                     nextInstructions.push("");
                 }
@@ -241,13 +290,19 @@ export default function AddOrderMenu({
         });
     }
 
-    function setPieceInstruction(lineId: string, index: number, instruction: string) {
+    function setPieceInstruction(
+        lineId: string,
+        index: number,
+        instruction: string,
+    ) {
         setLines(current =>
             current.map(line => {
                 if (line.id !== lineId) return line;
                 const nextInstructions = line.itemInstructions
                     ? [...line.itemInstructions]
-                    : Array.from({ length: line.quantity }, (_, i) => (i === 0 ? line.instruction : ""));
+                    : Array.from({ length: line.quantity }, (_, i) =>
+                          i === 0 ? line.instruction : "",
+                      );
                 while (nextInstructions.length < line.quantity) {
                     nextInstructions.push("");
                 }
@@ -261,13 +316,20 @@ export default function AddOrderMenu({
         );
     }
 
-    function setPieceServingGroup(lineId: string, index: number, group: ServingGroupType) {
+    function setPieceServingGroup(
+        lineId: string,
+        index: number,
+        group: ServingGroupType,
+    ) {
         setLines(current =>
             current.map(line => {
                 if (line.id !== lineId) return line;
                 const nextServingGroups = line.itemServingGroups
                     ? [...line.itemServingGroups]
-                    : Array.from({ length: line.quantity }, () => line.servingGroup ?? "separate");
+                    : Array.from(
+                          { length: line.quantity },
+                          () => line.servingGroup ?? "separate",
+                      );
                 while (nextServingGroups.length < line.quantity) {
                     nextServingGroups.push(line.servingGroup ?? "separate");
                 }
@@ -328,26 +390,52 @@ export default function AddOrderMenu({
         for (const line of lines) {
             const hasIndividualCustomization =
                 line.quantity > 1 &&
-                (Boolean(line.itemInstructions?.some(inst => inst && inst.trim() !== "")) ||
-                 Boolean(line.itemServingGroups?.some(sg => sg && sg !== (line.servingGroup || "separate"))));
+                (Boolean(
+                    line.itemInstructions?.some(
+                        inst => inst && inst.trim() !== "",
+                    ),
+                ) ||
+                    Boolean(
+                        line.itemServingGroups?.some(
+                            sg =>
+                                sg && sg !== (line.servingGroup || "separate"),
+                        ),
+                    ));
 
             if (hasIndividualCustomization) {
                 for (let i = 0; i < line.quantity; i++) {
-                    const pieceInstruction = line.itemInstructions?.[i] ?? (i === 0 ? line.instruction : "");
-                    const pieceServing = line.itemServingGroups?.[i] ?? line.servingGroup ?? "separate";
+                    const pieceInstruction =
+                        line.itemInstructions?.[i] ??
+                        (i === 0 ? line.instruction : "");
+                    const pieceServing =
+                        line.itemServingGroups?.[i] ??
+                        line.servingGroup ??
+                        "separate";
                     finalItems.push({
                         menuItemId: line.menuItemId,
                         quantity: 1,
-                        modifierOptionIds: line.modifiers.map(entry => entry.optionId),
-                        specialInstruction: formatInstructionWithTray(pieceServing, pieceInstruction) || undefined,
+                        modifierOptionIds: line.modifiers.map(
+                            entry => entry.optionId,
+                        ),
+                        specialInstruction:
+                            formatInstructionWithTray(
+                                pieceServing,
+                                pieceInstruction,
+                            ) || undefined,
                     });
                 }
             } else {
                 finalItems.push({
                     menuItemId: line.menuItemId,
                     quantity: line.quantity,
-                    modifierOptionIds: line.modifiers.map(entry => entry.optionId),
-                    specialInstruction: formatInstructionWithTray(line.servingGroup || "separate", line.instruction) || undefined,
+                    modifierOptionIds: line.modifiers.map(
+                        entry => entry.optionId,
+                    ),
+                    specialInstruction:
+                        formatInstructionWithTray(
+                            line.servingGroup || "separate",
+                            line.instruction,
+                        ) || undefined,
                 });
             }
         }
@@ -378,167 +466,229 @@ export default function AddOrderMenu({
 
     return (
         <div className="fixed inset-0 z-50 flex flex-col bg-background text-foreground animate-in fade-in duration-150">
-            {/* 1. TOP NAVIGATION & HEADER (International POS Standard) */}
-            <header className="flex h-16 shrink-0 items-center justify-between border-b border-hairline bg-card/95 px-4 backdrop-blur-md sm:px-6">
-                <div className="flex items-center gap-3">
+            {/* 1. TOP NAVIGATION & HEADER (Responsive across Mobile, Tablet, Web) */}
+            <header className="flex h-14 sm:h-16 shrink-0 items-center justify-between border-b border-hairline bg-card/95 px-3 sm:px-4 md:px-6 backdrop-blur-md gap-2">
+                {/* Left: Back button + Table Title */}
+                <div className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={onClose}
-                        className="h-9 gap-1.5 rounded-full px-3 text-[13px] font-semibold text-slate-gray hover:bg-secondary hover:text-foreground"
+                        className="size-8 sm:h-9 sm:w-auto sm:px-3 p-0 rounded-full text-slate-gray hover:bg-secondary hover:text-foreground shrink-0"
                     >
                         <ArrowLeft className="size-4" />
-                        <span className="hidden sm:inline">
+                        <span className="hidden md:inline text-[13px] font-semibold ml-1.5">
                             {isDispatcher ? "Back to call" : "Back to Table"}
                         </span>
                     </Button>
-                    <div className="h-5 w-px bg-hairline" />
-                    <div className="flex items-center gap-2">
-                        <span className="text-[15px] font-semibold tracking-tight text-foreground">
+                    <div className="hidden sm:block h-5 w-px bg-hairline shrink-0" />
+                    <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                        <span className="text-[14px] sm:text-[15px] font-semibold tracking-tight text-foreground truncate max-w-[100px] sm:max-w-[160px] md:max-w-none">
                             {tableLabel}
                         </span>
                         <span
                             className={cn(
-                                "hidden items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase sm:inline-flex",
+                                "hidden items-center rounded-full px-2 py-0.5 text-[10.5px] font-bold uppercase sm:inline-flex shrink-0",
                                 isDispatcher
                                     ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                                    : "bg-brand/10 text-brand",
+                                    : "bg-primary/10 text-primary",
                             )}
                         >
                             {isDispatcher ? "Call pickup" : "Take Order"}
                         </span>
                         {data?.activePeriod ? (
-                            <span className="hidden rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-medium text-slate-gray md:inline-flex">
+                            <span className="hidden rounded-full bg-secondary px-2.5 py-0.5 text-[10.5px] font-medium text-slate-gray lg:inline-flex shrink-0">
                                 {data.activePeriod.name}
                             </span>
                         ) : null}
                     </div>
                 </div>
 
-                {/* Instant Search Bar */}
-                <div className="relative mx-2 w-full max-w-xs sm:max-w-sm md:max-w-md">
-                    <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-gray" />
+                {/* Center: Search Bar (Flexibly sized for mobile, tablet, and web) */}
+                <div className="relative flex-1 max-w-[180px] sm:max-w-xs md:max-w-sm lg:max-w-md mx-1 sm:mx-2">
+                    <Search className="pointer-events-none absolute top-1/2 left-2.5 sm:left-3 size-3.5 sm:size-4 -translate-y-1/2 text-slate-gray" />
                     <Input
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
-                        placeholder="Search dishes, drinks, codes…"
-                        className="h-9 w-full rounded-full border-transparent bg-secondary/70 pr-8 pl-9 text-[13px] placeholder:text-slate-gray/70 focus:border-brand/40 focus:bg-card"
+                        placeholder="Search dishes…"
+                        className="h-8 sm:h-9 w-full rounded-full border-transparent bg-secondary/70 pr-7 sm:pr-8 pl-8 sm:pl-9 text-[12px] sm:text-[13px] placeholder:text-slate-gray/70 focus:border-primary/40 focus:bg-card"
                     />
                     {searchQuery ? (
                         <button
                             type="button"
                             onClick={() => setSearchQuery("")}
-                            className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-full p-0.5 text-slate-gray hover:text-foreground"
+                            className="absolute top-1/2 right-2 sm:right-2.5 -translate-y-1/2 rounded-full p-0.5 text-slate-gray hover:text-foreground"
                         >
-                            <X className="size-3.5" />
+                            <X className="size-3 sm:size-3.5" />
                         </button>
                     ) : null}
                 </div>
 
-                {/* Right controls */}
-                <div className="flex items-center gap-2">
-                    {/* Mobile ticket toggle button */}
-                    <button
-                        type="button"
-                        onClick={() => setMobileTicketOpen(true)}
-                        className={cn(
-                            "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white shadow-sm md:hidden",
-                            isDispatcher
-                                ? "bg-emerald-600 hover:bg-emerald-700"
-                                : "bg-brand hover:bg-brand-deep",
-                        )}
-                    >
-                        <Receipt className="size-3.5" />
-                        <span>{pieceCount}</span>
-                    </button>
+                {/* Right: Ticket pill on mobile/tablet + Close button */}
+                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                    {pieceCount > 0 ? (
+                        <button
+                            type="button"
+                            onClick={() => setMobileTicketOpen(true)}
+                            className={cn(
+                                "flex items-center gap-1.5 sm:gap-2 rounded-full px-2.5 sm:px-3.5 py-1 sm:py-1.5 text-xs font-bold text-white shadow-xs transition-all active:scale-95 lg:hidden",
+                                isDispatcher
+                                    ? "bg-emerald-600 hover:bg-emerald-700"
+                                    : "bg-primary hover:bg-primary-deep",
+                            )}
+                        >
+                            <Receipt className="size-3.5" />
+                            <span>{pieceCount}</span>
+                            <span className="hidden sm:inline opacity-90">
+                                · {formatEtb(basketTotal)}
+                            </span>
+                        </button>
+                    ) : null}
 
                     <button
                         type="button"
                         aria-label="Close"
-                        className="flex size-9 items-center justify-center rounded-full border border-hairline bg-card text-slate-gray transition-colors hover:bg-accent hover:text-foreground"
+                        className="flex size-8 sm:size-9 items-center justify-center rounded-full border border-hairline bg-card text-slate-gray transition-colors hover:bg-accent hover:text-foreground shrink-0"
                         onClick={onClose}
                     >
-                        <X className="size-5" />
+                        <X className="size-4 sm:size-5" />
                     </button>
                 </div>
             </header>
 
-            {/* 2. CATEGORY FILTER TABS */}
-            <nav className="flex shrink-0 items-center gap-2 overflow-x-auto border-b border-hairline bg-card/60 px-4 py-2.5 backdrop-blur-sm sm:px-6 sidebar-scroll">
-                <button
-                    type="button"
-                    onClick={() => setSelectedCategory("ALL")}
-                    className={cn(
-                        "flex shrink-0 items-center gap-1.5 rounded-full px-4 py-1.5 text-[13px] font-semibold transition-all duration-150",
-                        selectedCategory === "ALL"
-                            ? isDispatcher
-                                ? "bg-emerald-600 text-white shadow-sm"
-                                : "bg-brand text-white shadow-sm"
-                            : "border border-hairline bg-card text-slate-gray hover:bg-secondary hover:text-foreground",
-                    )}
+            {/* 2. CATEGORY FILTER TABS (Smoothly Scrollable on Mobile, Tablet & Desktop) */}
+            <div className="relative shrink-0 border-b border-hairline bg-card/75 backdrop-blur-sm">
+                {/* Desktop Left Scroll Chevron */}
+                {canScrollLeft ? (
+                    <div className="hidden lg:flex absolute left-0 top-0 bottom-0 z-10 items-center pl-2 bg-gradient-to-r from-card via-card/90 to-transparent pr-4 pointer-events-auto animate-in fade-in duration-150">
+                        <button
+                            type="button"
+                            onClick={() => scrollCategories("left")}
+                            className="size-7 rounded-full border border-hairline bg-card shadow-xs flex items-center justify-center text-slate-gray hover:text-foreground hover:bg-secondary transition-all cursor-pointer"
+                            aria-label="Scroll left"
+                        >
+                            <ChevronLeft className="size-4" />
+                        </button>
+                    </div>
+                ) : null}
+
+                {/* Desktop Right Scroll Chevron */}
+                {canScrollRight ? (
+                    <div className="hidden lg:flex absolute right-0 top-0 bottom-0 z-10 items-center pr-2 bg-gradient-to-l from-card via-card/90 to-transparent pl-4 pointer-events-auto animate-in fade-in duration-150">
+                        <button
+                            type="button"
+                            onClick={() => scrollCategories("right")}
+                            className="size-7 rounded-full border border-hairline bg-card shadow-xs flex items-center justify-center text-slate-gray hover:text-foreground hover:bg-secondary transition-all cursor-pointer"
+                            aria-label="Scroll right"
+                        >
+                            <ChevronRight className="size-4" />
+                        </button>
+                    </div>
+                ) : null}
+
+                <nav
+                    ref={categoryNavRef}
+                    onWheel={e => {
+                        if (e.deltaY !== 0 && categoryNavRef.current) {
+                            categoryNavRef.current.scrollLeft += e.deltaY;
+                        }
+                    }}
+                    className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 scroll-smooth overscroll-x-contain touch-pan-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                 >
-                    <span>All Items</span>
-                    <span
+                    <button
+                        type="button"
+                        onClick={() => setSelectedCategory("ALL")}
                         className={cn(
-                            "rounded-full px-1.5 py-0.2 text-[11px] font-bold",
+                            "flex shrink-0 items-center gap-1.5 rounded-full px-4 py-1.5 text-[13px] font-semibold transition-all duration-150",
                             selectedCategory === "ALL"
-                                ? "bg-white/25 text-white"
-                                : "bg-secondary text-slate-gray",
+                                ? isDispatcher
+                                    ? "bg-emerald-600 text-white shadow-sm"
+                                    : "bg-primary text-white shadow-sm"
+                                : "border border-hairline bg-card text-slate-gray hover:bg-secondary hover:text-foreground",
                         )}
                     >
-                        {menuItems.length}
-                    </span>
-                </button>
-
-                {categories.map(cat => {
-                    const count = menuItems.filter(
-                        item =>
-                            item.category.toLowerCase() ===
-                            cat.name.toLowerCase(),
-                    ).length;
-                    const isActive =
-                        selectedCategory.toLowerCase() ===
-                        cat.name.toLowerCase();
-                    return (
-                        <button
-                            key={cat.id}
-                            type="button"
-                            onClick={() => setSelectedCategory(cat.name)}
+                        <span>All Items</span>
+                        <span
                             className={cn(
-                                "flex shrink-0 items-center gap-1.5 rounded-full px-4 py-1.5 text-[13px] font-semibold transition-all duration-150",
-                                isActive
-                                    ? isDispatcher
-                                        ? "bg-emerald-600 text-white shadow-sm"
-                                        : "bg-brand text-white shadow-sm"
-                                    : "border border-hairline bg-card text-slate-gray hover:bg-secondary hover:text-foreground",
+                                "rounded-full px-1.5 py-0.2 text-[11px] font-bold",
+                                selectedCategory === "ALL"
+                                    ? "bg-white/25 text-white"
+                                    : "bg-secondary text-slate-gray",
                             )}
                         >
-                            <span>{cat.name}</span>
-                            <span
-                                className={cn(
-                                    "rounded-full px-1.5 py-0.2 text-[11px] font-bold",
-                                    isActive
-                                        ? "bg-white/25 text-white"
-                                        : "bg-secondary text-slate-gray",
-                                )}
-                            >
-                                {count}
+                            {menuItems.length}
+                        </span>
+                    </button>
+
+                    {lines.length > 0 ? (
+                        <button
+                            type="button"
+                            onClick={() => setSelectedCategory("__IN_ORDER__")}
+                            className={cn(
+                                "flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-all duration-150 active:scale-95",
+                                selectedCategory === "__IN_ORDER__"
+                                    ? "bg-amber-500 text-white shadow-xs"
+                                    : "border border-amber-500/35 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20",
+                            )}
+                        >
+                            <ShoppingBag className="size-3.5" />
+                            <span>In Order</span>
+                            <span className="rounded-full bg-black/15 px-1.5 py-0.2 text-[11px] font-bold">
+                                {counts.size}
                             </span>
                         </button>
-                    );
-                })}
-            </nav>
+                    ) : null}
+
+                    {categories.map(cat => {
+                        const count = menuItems.filter(
+                            item =>
+                                item.category.toLowerCase() ===
+                                cat.name.toLowerCase(),
+                        ).length;
+                        const isActive =
+                            selectedCategory.toLowerCase() ===
+                            cat.name.toLowerCase();
+                        return (
+                            <button
+                                key={cat.id}
+                                type="button"
+                                onClick={() => setSelectedCategory(cat.name)}
+                                className={cn(
+                                    "flex shrink-0 items-center gap-1.5 rounded-full px-4 py-1.5 text-[13px] font-semibold transition-all duration-150",
+                                    isActive
+                                        ? isDispatcher
+                                            ? "bg-emerald-600 text-white shadow-sm"
+                                            : "bg-primary text-white shadow-sm"
+                                        : "border border-hairline bg-card text-slate-gray hover:bg-secondary hover:text-foreground",
+                                )}
+                            >
+                                <span>{cat.name}</span>
+                                <span
+                                    className={cn(
+                                        "rounded-full px-1.5 py-0.2 text-[11px] font-bold",
+                                        isActive
+                                            ? "bg-white/25 text-white"
+                                            : "bg-secondary text-slate-gray",
+                                    )}
+                                >
+                                    {count}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </nav>
+            </div>
 
             {/* 3. SPLIT WORKSPACE: CATALOG (LEFT) & LIVE ORDER TICKET (RIGHT) */}
             <div className="flex min-h-0 flex-1 overflow-hidden">
                 {/* LEFT: PRODUCT CATALOG GRID */}
                 <main className="min-w-0 flex-1 overflow-y-auto p-4 pb-28 sm:p-6 md:pb-6 sidebar-scroll">
                     {isLoading ? (
-                        <div className="flex h-64 flex-col items-center justify-center gap-3 text-slate-gray">
-                            <ChefHat className="size-8 animate-bounce text-brand" />
-                            <p className="text-[14px] font-medium">
-                                Loading restaurant catalog…
-                            </p>
+                        <div className="flex h-72 flex-col items-center justify-center gap-3">
+                            <RestorchLoader
+                                size="lg"
+                                label="Loading restaurant catalog…"
+                            />
                         </div>
                     ) : isError ? (
                         <div className="flex h-64 flex-col items-center justify-center gap-3 text-destructive">
@@ -567,7 +717,7 @@ export default function AddOrderMenu({
                             </p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4">
                             {filteredItems.map(item => {
                                 const count = counts.get(item.id) ?? 0;
                                 const hasCustom =
@@ -623,13 +773,13 @@ export default function AddOrderMenu({
                                             )}
 
                                             {/* Station badge pill */}
-                                            <div className="absolute top-2.5 left-2.5 flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-0.5 text-[11px] font-semibold text-white/95 backdrop-blur-md">
+                                            <div className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] sm:text-[10.5px] font-semibold text-white/95 backdrop-blur-md max-w-[50%]">
                                                 <span>{item.category}</span>
                                             </div>
 
                                             {/* In-order count badge on image */}
                                             {inTicket ? (
-                                                <div className="absolute top-2.5 right-2.5 flex items-center gap-1 rounded-full bg-brand px-2.5 py-0.5 text-[11px] font-bold text-white shadow-sm">
+                                                <div className="absolute top-2 right-2 flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] sm:text-[10.5px] font-bold text-primary-foreground shadow-sm animate-in zoom-in-95 duration-150">
                                                     <span>
                                                         {count} in order
                                                     </span>
@@ -647,17 +797,17 @@ export default function AddOrderMenu({
                                         </div>
 
                                         {/* DISH BODY */}
-                                        <div className="flex flex-1 flex-col justify-between p-4">
+                                        <div className="flex flex-1 flex-col justify-between p-3 sm:p-3.5">
                                             <div
                                                 className="cursor-pointer"
                                                 onClick={() => selectItem(item)}
                                             >
                                                 <div className="flex items-start justify-between gap-2">
-                                                    <h3 className="text-[14.5px] font-semibold text-foreground transition-colors group-hover:text-brand">
+                                                    <h3 className="text-[13.5px] sm:text-[14px] font-semibold text-foreground transition-colors group-hover:text-primary truncate">
                                                         {item.name}
                                                     </h3>
                                                 </div>
-                                                <p className="mt-1 line-clamp-2 min-h-[32px] text-[12px] leading-relaxed text-slate-gray">
+                                                <p className="mt-0.5 line-clamp-1 sm:line-clamp-2 min-h-[20px] sm:min-h-[32px] text-[11px] sm:text-[11.5px] leading-relaxed text-slate-gray">
                                                     {item.description || (
                                                         <span className="italic opacity-50">
                                                             Freshly prepared to
@@ -674,9 +824,9 @@ export default function AddOrderMenu({
                                             </div>
 
                                             {/* PRICE & ACTIONS ROW */}
-                                            <div className="mt-3 flex items-center justify-between gap-2 border-t border-hairline/60 pt-2.5">
+                                            <div className="mt-2 flex items-center justify-between gap-1.5 border-t border-hairline/60 pt-2">
                                                 <div>
-                                                    <span className="text-[14px] font-semibold text-foreground">
+                                                    <span className="text-[13px] sm:text-[13.5px] font-semibold text-foreground whitespace-nowrap">
                                                         {formatEtb(item.price)}
                                                     </span>
                                                     {data?.isVip ? (
@@ -697,7 +847,7 @@ export default function AddOrderMenu({
                                                                     item,
                                                                 )
                                                             }
-                                                            className="flex size-8 items-center justify-center rounded-full border border-hairline bg-secondary/50 text-slate-gray transition-colors hover:bg-accent hover:text-foreground"
+                                                            className="flex size-7 items-center justify-center rounded-full border border-hairline bg-secondary/50 text-slate-gray transition-colors hover:bg-accent hover:text-foreground"
                                                             title="Dish Options & Customizations"
                                                         >
                                                             <SlidersHorizontal className="size-3.5" />
@@ -710,7 +860,7 @@ export default function AddOrderMenu({
                                                         <div className="flex items-center gap-1 rounded-full border border-brand/30 bg-card p-0.5 shadow-xs">
                                                             <button
                                                                 type="button"
-                                                                className="flex size-7 items-center justify-center rounded-full text-foreground transition-colors hover:bg-secondary"
+                                                                className="flex size-6 sm:size-6.5 items-center justify-center rounded-full text-foreground transition-colors hover:bg-secondary"
                                                                 onClick={() =>
                                                                     changeQty(
                                                                         item.id,
@@ -766,7 +916,7 @@ export default function AddOrderMenu({
                 </main>
 
                 {/* RIGHT: DESKTOP LIVE ORDER TICKET (Toast / Square POS Style) */}
-                <aside className="hidden h-full w-[380px] shrink-0 flex-col border-l border-hairline bg-card shadow-subtle lg:w-[410px] md:flex">
+                <aside className="hidden h-full w-[340px] shrink-0 flex-col border-l border-hairline bg-card shadow-subtle lg:flex xl:w-[360px] 2xl:w-[380px]">
                     <OrderTicketContent
                         tableLabel={tableLabel}
                         variant={variant}
@@ -812,7 +962,7 @@ export default function AddOrderMenu({
 
             {/* 4. MOBILE SLIDE-UP TICKET DRAWER & FLOATING BAR */}
             {lines.length > 0 && !mobileTicketOpen ? (
-                <div className="fixed right-0 bottom-0 left-0 z-40 border-t border-hairline bg-card/95 p-3 backdrop-blur-md md:hidden">
+                <div className="fixed right-0 bottom-0 left-0 z-40 border-t border-hairline bg-card/95 p-3 backdrop-blur-md lg:hidden">
                     <Button
                         className={cn(
                             "h-12 w-full justify-between rounded-[16px] px-4 text-[14px] font-bold text-white shadow-md",
@@ -836,11 +986,11 @@ export default function AddOrderMenu({
 
             {mobileTicketOpen ? (
                 <div
-                    className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 md:hidden"
+                    className="fixed inset-0 z-50 flex flex-col justify-end lg:hidden bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
                     onClick={() => setMobileTicketOpen(false)}
                 >
                     <div
-                        className="flex max-h-[85svh] w-full flex-col overflow-hidden rounded-t-[24px] bg-card"
+                        className="flex max-h-[90svh] md:max-h-full md:h-full md:w-[420px] md:self-end w-full flex-col overflow-hidden md:rounded-l-[24px] md:rounded-t-none rounded-t-[24px] bg-card shadow-2xl animate-in slide-in-from-bottom-6 md:slide-in-from-right duration-200"
                         onClick={e => e.stopPropagation()}
                     >
                         <OrderTicketContent
@@ -975,8 +1125,16 @@ function OrderTicketContent({
     onEditLine: (line: BasketLine) => void;
     onInstructionChange: (lineId: string, instruction: string) => void;
     onServingGroupChange: (lineId: string, group: ServingGroupType) => void;
-    onPieceInstructionChange: (lineId: string, index: number, instruction: string) => void;
-    onPieceServingGroupChange: (lineId: string, index: number, group: ServingGroupType) => void;
+    onPieceInstructionChange: (
+        lineId: string,
+        index: number,
+        instruction: string,
+    ) => void;
+    onPieceServingGroupChange: (
+        lineId: string,
+        index: number,
+        group: ServingGroupType,
+    ) => void;
     onSetAllServingGroup: (group: ServingGroupType) => void;
     onCloseMobile?: () => void;
     onSubmit: () => void;
@@ -984,6 +1142,9 @@ function OrderTicketContent({
     const t = useTranslations("waiter");
     const tCommon = useTranslations("common");
     const isDispatcher = variant === "dispatcher";
+    const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>(
+        {},
+    );
     return (
         <div className="flex h-full min-h-0 flex-1 flex-col">
             {/* Header */}
@@ -1033,7 +1194,7 @@ function OrderTicketContent({
                             <button
                                 type="button"
                                 onClick={onCloseMobile}
-                                className="p-1 text-slate-gray hover:text-foreground md:hidden"
+                                className="p-1 text-slate-gray hover:text-foreground lg:hidden"
                             >
                                 <X className="size-5" />
                             </button>
@@ -1053,7 +1214,11 @@ function OrderTicketContent({
                                 onClick={() => onSetAllServingGroup("separate")}
                                 className={cn(
                                     "rounded-md px-2.5 py-1 text-[11px] font-medium transition-all cursor-pointer",
-                                    lines.every(l => !l.servingGroup || l.servingGroup === "separate")
+                                    lines.every(
+                                        l =>
+                                            !l.servingGroup ||
+                                            l.servingGroup === "separate",
+                                    )
                                         ? "bg-secondary text-foreground font-semibold shadow-2xs border border-hairline"
                                         : "text-slate-gray hover:text-foreground",
                                 )}
@@ -1137,10 +1302,17 @@ function OrderTicketContent({
                                                 <div className="inline-flex rounded-md border border-hairline bg-secondary/30 p-0.5">
                                                     <button
                                                         type="button"
-                                                        onClick={() => onServingGroupChange(line.id, "separate")}
+                                                        onClick={() =>
+                                                            onServingGroupChange(
+                                                                line.id,
+                                                                "separate",
+                                                            )
+                                                        }
                                                         className={cn(
                                                             "rounded px-2.5 py-0.5 text-[10.5px] font-medium transition-all cursor-pointer",
-                                                            (!line.servingGroup || line.servingGroup === "separate")
+                                                            !line.servingGroup ||
+                                                                line.servingGroup ===
+                                                                    "separate"
                                                                 ? "bg-card text-foreground shadow-2xs border border-hairline font-semibold"
                                                                 : "text-slate-gray hover:text-foreground",
                                                         )}
@@ -1149,10 +1321,16 @@ function OrderTicketContent({
                                                     </button>
                                                     <button
                                                         type="button"
-                                                        onClick={() => onServingGroupChange(line.id, "tray1")}
+                                                        onClick={() =>
+                                                            onServingGroupChange(
+                                                                line.id,
+                                                                "tray1",
+                                                            )
+                                                        }
                                                         className={cn(
                                                             "rounded px-2.5 py-0.5 text-[10.5px] font-medium transition-all cursor-pointer",
-                                                            line.servingGroup === "tray1"
+                                                            line.servingGroup ===
+                                                                "tray1"
                                                                 ? "bg-amber-500/20 text-amber-950 dark:text-amber-200 border border-amber-500/40 shadow-2xs font-semibold"
                                                                 : "text-slate-gray hover:text-foreground",
                                                         )}
@@ -1161,10 +1339,16 @@ function OrderTicketContent({
                                                     </button>
                                                     <button
                                                         type="button"
-                                                        onClick={() => onServingGroupChange(line.id, "tray2")}
+                                                        onClick={() =>
+                                                            onServingGroupChange(
+                                                                line.id,
+                                                                "tray2",
+                                                            )
+                                                        }
                                                         className={cn(
                                                             "rounded px-2.5 py-0.5 text-[10.5px] font-medium transition-all cursor-pointer",
-                                                            line.servingGroup === "tray2"
+                                                            line.servingGroup ===
+                                                                "tray2"
                                                                 ? "bg-orange-500/20 text-orange-950 dark:text-orange-200 border border-orange-500/40 shadow-2xs font-semibold"
                                                                 : "text-slate-gray hover:text-foreground",
                                                         )}
@@ -1183,81 +1367,292 @@ function OrderTicketContent({
                                                     e.target.value,
                                                 )
                                             }
-                                            placeholder={t("stationNotePlaceholder")}
+                                            placeholder={t(
+                                                "stationNotePlaceholder",
+                                            )}
                                             maxLength={240}
                                             className="h-8 rounded-lg border-hairline bg-secondary/30 px-2.5 text-[12px] placeholder:text-slate-gray/70"
                                         />
                                     </>
                                 ) : (
                                     <div className="space-y-2 rounded-xl bg-secondary/20 p-2.5 border border-hairline/60">
-                                        <div className="flex items-center justify-between px-0.5">
-                                            <span className="text-[11px] font-semibold text-foreground">
-                                                Per-item notes & plating ({line.quantity}×)
-                                            </span>
-                                            <span className="text-[10px] text-muted-foreground">
-                                                Custom instructions
-                                            </span>
-                                        </div>
-                                        {Array.from({ length: line.quantity }).map((_, idx) => {
-                                            const pieceNote = line.itemInstructions?.[idx] ?? (idx === 0 ? line.instruction : "");
-                                            const pieceServing = line.itemServingGroups?.[idx] ?? line.servingGroup ?? "separate";
-                                            return (
-                                                <div key={idx} className="flex flex-col gap-1.5 rounded-lg bg-card p-2 border border-hairline shadow-2xs">
-                                                    <div className="flex items-center justify-between gap-1.5">
-                                                        <span className="text-[11px] font-bold text-foreground">
-                                                            #{idx + 1}
-                                                        </span>
-                                                        {!isDispatcher ? (
-                                                            <div className="inline-flex rounded border border-hairline bg-secondary/40 p-0.5">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => onPieceServingGroupChange(line.id, idx, "separate")}
-                                                                    className={cn(
-                                                                        "rounded px-2 py-0.5 text-[9.5px] font-medium transition-all cursor-pointer",
-                                                                        pieceServing === "separate"
-                                                                            ? "bg-card text-foreground shadow-2xs border border-hairline font-semibold"
-                                                                            : "text-slate-gray hover:text-foreground",
-                                                                    )}
-                                                                >
-                                                                    🍽️ Plate
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => onPieceServingGroupChange(line.id, idx, "tray1")}
-                                                                    className={cn(
-                                                                        "rounded px-2 py-0.5 text-[9.5px] font-medium transition-all cursor-pointer",
-                                                                        pieceServing === "tray1"
-                                                                            ? "bg-amber-500/20 text-amber-950 dark:text-amber-200 border border-amber-500/40 shadow-2xs font-semibold"
-                                                                            : "text-slate-gray hover:text-foreground",
-                                                                    )}
-                                                                >
-                                                                    🍱 Tray 1
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => onPieceServingGroupChange(line.id, idx, "tray2")}
-                                                                    className={cn(
-                                                                        "rounded px-2 py-0.5 text-[9.5px] font-medium transition-all cursor-pointer",
-                                                                        pieceServing === "tray2"
-                                                                            ? "bg-orange-500/20 text-orange-950 dark:text-orange-200 border border-orange-500/40 shadow-2xs font-semibold"
-                                                                            : "text-slate-gray hover:text-foreground",
-                                                                    )}
-                                                                >
-                                                                    🍱 Tray 2
-                                                                </button>
-                                                            </div>
-                                                        ) : null}
-                                                    </div>
-                                                    <Input
-                                                        value={pieceNote}
-                                                        onChange={e => onPieceInstructionChange(line.id, idx, e.target.value)}
-                                                        placeholder={`Note for #${idx + 1} (e.g. no onion, extra cheese)`}
-                                                        maxLength={240}
-                                                        className="h-7 rounded-md border-hairline bg-secondary/20 px-2 text-[11.5px] placeholder:text-slate-gray/60"
-                                                    />
+                                        <div className="flex items-center justify-between gap-1.5 px-0.5">
+                                            {/* Line-Wide Plating Pills */}
+                                            {!isDispatcher ? (
+                                                <div className="inline-flex rounded-md border border-hairline bg-card p-0.5 shadow-2xs">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            onServingGroupChange(
+                                                                line.id,
+                                                                "separate",
+                                                            );
+                                                            for (
+                                                                let i = 0;
+                                                                i <
+                                                                line.quantity;
+                                                                i++
+                                                            ) {
+                                                                onPieceServingGroupChange(
+                                                                    line.id,
+                                                                    i,
+                                                                    "separate",
+                                                                );
+                                                            }
+                                                        }}
+                                                        className={cn(
+                                                            "rounded px-2 py-0.5 text-[10px] font-medium transition-all cursor-pointer",
+                                                            !line.servingGroup ||
+                                                                line.servingGroup ===
+                                                                    "separate"
+                                                                ? "bg-secondary text-foreground font-semibold shadow-2xs border border-hairline"
+                                                                : "text-slate-gray hover:text-foreground",
+                                                        )}
+                                                    >
+                                                        🍽️ Separate
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            onServingGroupChange(
+                                                                line.id,
+                                                                "tray1",
+                                                            );
+                                                            for (
+                                                                let i = 0;
+                                                                i <
+                                                                line.quantity;
+                                                                i++
+                                                            ) {
+                                                                onPieceServingGroupChange(
+                                                                    line.id,
+                                                                    i,
+                                                                    "tray1",
+                                                                );
+                                                            }
+                                                        }}
+                                                        className={cn(
+                                                            "rounded px-2 py-0.5 text-[10px] font-medium transition-all cursor-pointer",
+                                                            line.servingGroup ===
+                                                                "tray1"
+                                                                ? "bg-amber-500/20 text-amber-950 dark:text-amber-200 border border-amber-500/40 shadow-2xs font-semibold"
+                                                                : "text-slate-gray hover:text-foreground",
+                                                        )}
+                                                    >
+                                                        🍱 Tray 1
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            onServingGroupChange(
+                                                                line.id,
+                                                                "tray2",
+                                                            );
+                                                            for (
+                                                                let i = 0;
+                                                                i <
+                                                                line.quantity;
+                                                                i++
+                                                            ) {
+                                                                onPieceServingGroupChange(
+                                                                    line.id,
+                                                                    i,
+                                                                    "tray2",
+                                                                );
+                                                            }
+                                                        }}
+                                                        className={cn(
+                                                            "rounded px-2 py-0.5 text-[10px] font-medium transition-all cursor-pointer",
+                                                            line.servingGroup ===
+                                                                "tray2"
+                                                                ? "bg-orange-500/20 text-orange-950 dark:text-orange-200 border border-orange-500/40 shadow-2xs font-semibold"
+                                                                : "text-slate-gray hover:text-foreground",
+                                                        )}
+                                                    >
+                                                        🍱 Tray 2
+                                                    </button>
                                                 </div>
-                                            );
-                                        })}
+                                            ) : null}
+
+                                            {/* Expand/Collapse Custom Notes Trigger */}
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setExpandedNotes(prev => ({
+                                                        ...prev,
+                                                        [line.id]:
+                                                            !prev[line.id],
+                                                    }))
+                                                }
+                                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline cursor-pointer ml-auto"
+                                            >
+                                                <span>
+                                                    {expandedNotes[line.id] ||
+                                                    line.itemInstructions?.some(
+                                                        n =>
+                                                            Boolean(
+                                                                n && n.trim(),
+                                                            ),
+                                                    ) ||
+                                                    line.itemServingGroups?.some(
+                                                        sg =>
+                                                            Boolean(
+                                                                sg &&
+                                                                    sg !==
+                                                                        (line.servingGroup ||
+                                                                            "separate"),
+                                                            ),
+                                                    )
+                                                        ? "Hide details"
+                                                        : `Notes (${line.quantity}×)`}
+                                                </span>
+                                                {expandedNotes[line.id] ||
+                                                line.itemInstructions?.some(n =>
+                                                    Boolean(n && n.trim()),
+                                                ) ||
+                                                line.itemServingGroups?.some(
+                                                    sg =>
+                                                        Boolean(
+                                                            sg &&
+                                                                sg !==
+                                                                    (line.servingGroup ||
+                                                                        "separate"),
+                                                        ),
+                                                ) ? (
+                                                    <ChevronUp className="size-3" />
+                                                ) : (
+                                                    <ChevronDown className="size-3" />
+                                                )}
+                                            </button>
+                                        </div>
+
+                                        {expandedNotes[line.id] ||
+                                        line.itemInstructions?.some(n =>
+                                            Boolean(n && n.trim()),
+                                        ) ||
+                                        line.itemServingGroups?.some(sg =>
+                                            Boolean(
+                                                sg &&
+                                                    sg !==
+                                                        (line.servingGroup ||
+                                                            "separate"),
+                                            ),
+                                        ) ? (
+                                            <div className="space-y-1.5 pt-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                                                {Array.from({
+                                                    length: line.quantity,
+                                                }).map((_, idx) => {
+                                                    const pieceNote =
+                                                        line.itemInstructions?.[
+                                                            idx
+                                                        ] ??
+                                                        (idx === 0
+                                                            ? line.instruction
+                                                            : "");
+                                                    const pieceServing =
+                                                        line
+                                                            .itemServingGroups?.[
+                                                            idx
+                                                        ] ??
+                                                        line.servingGroup ??
+                                                        "separate";
+                                                    return (
+                                                        <div
+                                                            key={idx}
+                                                            className="flex flex-col gap-1.5 rounded-lg bg-card p-2 border border-hairline shadow-2xs"
+                                                        >
+                                                            <div className="flex items-center justify-between gap-1.5">
+                                                                <span className="text-[11px] font-bold text-foreground">
+                                                                    #{idx + 1}
+                                                                </span>
+                                                                {!isDispatcher ? (
+                                                                    <div className="inline-flex rounded border border-hairline bg-secondary/40 p-0.5">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                onPieceServingGroupChange(
+                                                                                    line.id,
+                                                                                    idx,
+                                                                                    "separate",
+                                                                                )
+                                                                            }
+                                                                            className={cn(
+                                                                                "rounded px-2 py-0.5 text-[9.5px] font-medium transition-all cursor-pointer",
+                                                                                pieceServing ===
+                                                                                    "separate"
+                                                                                    ? "bg-card text-foreground shadow-2xs border border-hairline font-semibold"
+                                                                                    : "text-slate-gray hover:text-foreground",
+                                                                            )}
+                                                                        >
+                                                                            🍽️
+                                                                            Plate
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                onPieceServingGroupChange(
+                                                                                    line.id,
+                                                                                    idx,
+                                                                                    "tray1",
+                                                                                )
+                                                                            }
+                                                                            className={cn(
+                                                                                "rounded px-2 py-0.5 text-[9.5px] font-medium transition-all cursor-pointer",
+                                                                                pieceServing ===
+                                                                                    "tray1"
+                                                                                    ? "bg-amber-500/20 text-amber-950 dark:text-amber-200 border border-amber-500/40 shadow-2xs font-semibold"
+                                                                                    : "text-slate-gray hover:text-foreground",
+                                                                            )}
+                                                                        >
+                                                                            🍱
+                                                                            Tray
+                                                                            1
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                onPieceServingGroupChange(
+                                                                                    line.id,
+                                                                                    idx,
+                                                                                    "tray2",
+                                                                                )
+                                                                            }
+                                                                            className={cn(
+                                                                                "rounded px-2 py-0.5 text-[9.5px] font-medium transition-all cursor-pointer",
+                                                                                pieceServing ===
+                                                                                    "tray2"
+                                                                                    ? "bg-orange-500/20 text-orange-950 dark:text-orange-200 border border-orange-500/40 shadow-2xs font-semibold"
+                                                                                    : "text-slate-gray hover:text-foreground",
+                                                                            )}
+                                                                        >
+                                                                            🍱
+                                                                            Tray
+                                                                            2
+                                                                        </button>
+                                                                    </div>
+                                                                ) : null}
+                                                            </div>
+                                                            <Input
+                                                                value={
+                                                                    pieceNote
+                                                                }
+                                                                onChange={e =>
+                                                                    onPieceInstructionChange(
+                                                                        line.id,
+                                                                        idx,
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                                placeholder={`Note for #${idx + 1} (e.g. no onion, extra cheese)`}
+                                                                maxLength={240}
+                                                                className="h-7 rounded-md border-hairline bg-secondary/20 px-2 text-[11.5px] placeholder:text-slate-gray/60"
+                                                            />
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : null}
                                     </div>
                                 )}
 

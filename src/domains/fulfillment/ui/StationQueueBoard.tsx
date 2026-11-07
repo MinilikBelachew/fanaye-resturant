@@ -24,7 +24,9 @@ import {
 } from "@/domains/fulfillment/application/queueFilter";
 import StationStatusSelect from "@/domains/fulfillment/ui/StationStatusSelect";
 import StationTicketActions from "@/domains/fulfillment/ui/StationTicketActions";
-import TableOrderCard, { TableGroupData } from "@/domains/fulfillment/ui/TableOrderCard";
+import TableOrderCard, {
+    TableGroupData,
+} from "@/domains/fulfillment/ui/TableOrderCard";
 import GroupedStationTable from "@/domains/fulfillment/ui/GroupedStationTable";
 import { parseServingGroup } from "@/domains/fulfillment/application/servingGroup";
 import type { StationRole } from "@/domains/identity/domain/role";
@@ -44,6 +46,7 @@ import {
 import { formatEtb } from "@/lib/money";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
+import { useGetTenantSiteQuery } from "@/context/services/siteApi";
 import { cn } from "@/lib/utils";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
@@ -308,12 +311,14 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
     const home = homePathForRole(role);
     const pathname = usePathname();
     const router = useRouter();
+    const { data: siteRes } = useGetTenantSiteQuery();
+    const featureOutsideOrders = siteRes?.data?.featureOutsideOrders !== false;
     const searchParams = useSearchParams();
     const status = parseQueueFilter(searchParams.get("status"));
     const view = parseQueueView(searchParams.get("view"));
     const query = searchParams.get("q") ?? "";
     const { stationId, tickets, counts, isLoading, isError, data, refetch } =
-        useCurrentStationQueue();
+        useCurrentStationQueue(role);
     const workflowMode = data?.workflowMode ?? "FULL_PREP";
     const [showMaterialsAuditModal, setShowMaterialsAuditModal] = useState(
         () => searchParams.get("view_materials") === "true",
@@ -438,7 +443,8 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                     const modifiers = row.ticket.modifiers
                         .map(entry => entry.name)
                         .join(" · ");
-                    const { trayLabel, isSharedTray, cleanInstruction } = parseServingGroup(row.ticket.specialInstruction);
+                    const { trayLabel, isSharedTray, cleanInstruction } =
+                        parseServingGroup(row.ticket.specialInstruction);
                     if (!modifiers && !cleanInstruction && !isSharedTray) {
                         return (
                             <span className="text-slate-gray">
@@ -464,7 +470,8 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                             ) : null}
                             {cleanInstruction ? (
                                 <p className="text-[12px] font-semibold text-amber-700 dark:text-amber-300">
-                                    {tStations("notePrefix")}: {cleanInstruction}
+                                    {tStations("notePrefix")}:{" "}
+                                    {cleanInstruction}
                                 </p>
                             ) : null}
                         </div>
@@ -574,9 +581,7 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
         for (const row of rows) {
             const t = row.ticket;
             const key =
-                t.tableSessionId ||
-                t.outsideOrderId ||
-                t.tableDisplayName;
+                t.tableSessionId || t.outsideOrderId || t.tableDisplayName;
             let group = map.get(key);
             if (!group) {
                 group = {
@@ -604,7 +609,10 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
             if (isFreshTicket(t)) group.hasFresh = true;
 
             const parsed = parseServingGroup(t.specialInstruction);
-            if (parsed.rawTray?.toLowerCase().includes("1") || parsed.rawTray?.toLowerCase().includes("shared")) {
+            if (
+                parsed.rawTray?.toLowerCase().includes("1") ||
+                parsed.rawTray?.toLowerCase().includes("shared")
+            ) {
                 group.tray1Items.push(t);
             } else if (parsed.rawTray?.toLowerCase().includes("2")) {
                 group.tray2Items.push(t);
@@ -737,7 +745,7 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
             <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
                 <div className="min-w-0">
                     <p className="text-[11px] tracking-[0.08em] text-steel-gray uppercase sm:text-[12px]">
-                        {stationName ?? "Queue"}
+                        {stationName ?? data?.stationName ?? "Queue"}
                     </p>
                     <h1 className="truncate text-[18px] font-normal sm:text-[22px]">
                         {status === "all"
@@ -748,26 +756,28 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                     </h1>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => router.push(`/${role}/materials`)}
-                        className={cn(
-                            "h-8 sm:h-9 px-2.5 sm:px-3 text-[12px] sm:text-[13px] font-medium border-hairline cursor-pointer",
-                            pendingAuditCount > 0
-                                ? "border-amber-500/50 bg-amber-500/10 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20"
-                                : "text-foreground hover:bg-secondary",
-                        )}
-                    >
-                        <Boxes className="size-3.5 sm:size-4 mr-1 text-amber-600 dark:text-amber-400" />
-                        <span>Tableware Audit</span>
-                        {pendingAuditCount > 0 && (
-                            <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0.2 text-[10px] font-bold text-white animate-pulse">
-                                {pendingAuditCount}
-                            </span>
-                        )}
-                    </Button>
+                    {featureOutsideOrders && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => router.push(`/${role}/materials`)}
+                            className={cn(
+                                "h-8 sm:h-9 px-2.5 sm:px-3 text-[12px] sm:text-[13px] font-medium border-hairline cursor-pointer",
+                                pendingAuditCount > 0
+                                    ? "border-amber-500/50 bg-amber-500/10 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20"
+                                    : "text-foreground hover:bg-secondary",
+                            )}
+                        >
+                            <Boxes className="size-3.5 sm:size-4 mr-1 text-amber-600 dark:text-amber-400" />
+                            <span>Tableware Audit</span>
+                            {pendingAuditCount > 0 && (
+                                <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0.2 text-[10px] font-bold text-white animate-pulse">
+                                    {pendingAuditCount}
+                                </span>
+                            )}
+                        </Button>
+                    )}
                     <div className="flex rounded-[10px] border border-hairline bg-card p-0.5 sm:rounded-[12px] sm:p-1">
                         <button
                             type="button"
@@ -800,7 +810,7 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
             </div>
 
             {/* Tableware Audit Alert Banner if returns are waiting */}
-            {pendingAuditCount > 0 && (
+            {featureOutsideOrders && pendingAuditCount > 0 && (
                 <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-950 dark:text-amber-200 animate-in fade-in-50">
                     <div className="flex items-center gap-2">
                         <span className="flex size-2 rounded-full bg-amber-500 animate-ping" />
@@ -829,8 +839,8 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                 />
             )}
 
-            {/* Interactive Top Status Filter */}
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-2.5">
+            {/* Interactive Top Status Filter - shown on desktop xl+, on tablet/mobile the top bar tabs handle this cleanly */}
+            <div className="hidden xl:grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-2.5">
                 {filterTabs.map(tab => {
                     const isActive = status === tab.key;
                     return (

@@ -65,7 +65,12 @@ export function DialogHeader({
 }) {
     const { onOpenChange } = React.useContext(DialogContext);
     return (
-        <div className={cn("flex items-center justify-between pb-3 border-b border-hairline/80", className)}>
+        <div
+            className={cn(
+                "flex items-center justify-between pb-3 border-b border-hairline/80",
+                className,
+            )}
+        >
             <div className="space-y-1">{children}</div>
             <button
                 type="button"
@@ -86,9 +91,33 @@ export function DialogTitle({
     children: React.ReactNode;
 }) {
     return (
-        <h3 className={cn("text-base font-semibold leading-none tracking-tight text-foreground", className)}>
+        <h3
+            className={cn(
+                "text-base font-semibold leading-none tracking-tight text-foreground",
+                className,
+            )}
+        >
             {children}
         </h3>
+    );
+}
+
+export function DialogDescription({
+    className,
+    children,
+}: {
+    className?: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <p
+            className={cn(
+                "text-xs text-muted-foreground leading-normal",
+                className,
+            )}
+        >
+            {children}
+        </p>
     );
 }
 
@@ -100,9 +129,13 @@ export function DialogFooter({
     children: React.ReactNode;
 }) {
     return (
-        <div className={cn("flex items-center justify-end gap-2 pt-3 border-t border-hairline/80", className)}>
+        <div
+            className={cn(
+                "flex items-center justify-end gap-2 pt-3 border-t border-hairline/80",
+                className,
+            )}
+        >
             {children}
         </div>
     );
 }
-

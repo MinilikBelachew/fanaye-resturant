@@ -1,6 +1,7 @@
 import type {
     Bill,
     BillRequestCreated,
+    CashierActiveBill,
     CashierBillRequest,
     CashierPaymentDetail,
     CashierPaymentLogItem,
@@ -65,6 +66,13 @@ export const billingApi = api.injectEndpoints({
                 "Bill",
                 { type: "Bill", id: arg.tableSessionId },
             ],
+        }),
+        cashierActiveBills: builder.query<{ data: CashierActiveBill[] }, void>({
+            query: () => ({
+                url: "/cashier/active-bills",
+                method: "GET",
+            }),
+            providesTags: ["Bill"],
         }),
         cashierBillRequests: builder.query<
             { data: CashierBillRequest[] },
@@ -315,6 +323,8 @@ export const {
     useSessionBillQuery,
     useRequestBillMutation,
     useCancelBillRequestMutation,
+    useCashierActiveBillsQuery,
+    useLazyCashierActiveBillsQuery,
     useCashierBillRequestsQuery,
     useGenerateBillMutation,
     usePayCashMutation,

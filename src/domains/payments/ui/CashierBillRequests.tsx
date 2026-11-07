@@ -1,16 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useAppSelector } from "@/context/hooks";
 import {
+    useCashierActiveBillsQuery,
     useCashierBillRequestsQuery,
     useGenerateBillMutation,
 } from "@/context/services/billingApi";
-import { Bill } from "@/domains/billing/domain/billingApi";
+import { Bill, CashierActiveBill } from "@/domains/billing/domain/billingApi";
 import { CashierReceiptModal } from "@/domains/payments/ui/CashierReceiptModal";
+import WaiterPaymentPanel from "@/domains/payments/ui/WaiterPaymentPanel";
 import DataTable, {
     type DataTableColumn,
 } from "@/components/custom/organisms/DataTable";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { formatEtb } from "@/lib/money";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -19,9 +24,13 @@ import {
     AlertTriangle,
     ArrowRight,
     ArrowRightLeft,
+    CheckCircle2,
+    Clock,
+    CreditCard,
     LayoutGrid,
     Lock,
     LogIn,
+    Receipt,
     Table2,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
@@ -32,53 +41,105 @@ import { CashierBillsSkeleton } from "@/components/custom/molecules/Skeletons";
 import { useRealtimePollMs } from "@/domains/notifications/application/useRealtimePollMs";
 
 type ViewMode = "table" | "cards";
+type TabMode = "requests" | "awaiting";
 
 export default function CashierBillRequests() {
     const tCashier = useTranslations("cashier");
     const tCommon = useTranslations("common");
+    const searchParams = useSearchParams();
+    const initialTab =
+        searchParams.get("tab") === "awaiting" ? "awaiting" : "requests";
+    const currentUserDisplayName = useAppSelector(
+        state => state.identity.session?.displayName ?? null,
+    );
+
+    const [activeTab, setActiveTab] = useState<TabMode>(initialTab);
     const [view, setView] = useState<ViewMode>("table");
     const [page, setPage] = useState(1);
+    const [awaitingPage, setAwaitingPage] = useState(1);
     const PAGE_SIZE = 10;
     const pollMs = useRealtimePollMs(12_000);
-    const { data, isLoading, isError } = useCashierBillRequestsQuery(
-        undefined,
-        { pollingInterval: pollMs, refetchOnFocus: true },
-    );
+
+    const {
+        data: requestsData,
+        isLoading: requestsLoading,
+        isError: requestsError,
+    } = useCashierBillRequestsQuery(undefined, {
+        pollingInterval: pollMs,
+        refetchOnFocus: true,
+    });
+
+    const {
+        data: activeBillsData,
+        isLoading: activeBillsLoading,
+        isError: activeBillsError,
+    } = useCashierActiveBillsQuery(undefined, {
+        pollingInterval: pollMs,
+        refetchOnFocus: true,
+    });
+
     const { data: currentShift } = useCurrentShiftQuery(undefined, {
         pollingInterval: pollMs || 15_000,
         refetchOnFocus: true,
     });
+
     const shiftExpiry = useMemo(
         () => checkShiftExpiry(currentShift?.shiftSession),
         [currentShift?.shiftSession],
     );
+
     const [generateBill, { isLoading: generating }] = useGenerateBillMutation();
     const [error, setError] = useState("");
     const [busyId, setBusyId] = useState("");
+
     const [activeReceipt, setActiveReceipt] = useState<{
         bill: Bill;
         tableDisplayName: string;
         waiterName: string;
+        cashierName?: string;
     } | null>(null);
-    const [recentGeneratedBills, setRecentGeneratedBills] = useState<
-        Array<{
-            bill: Bill;
-            tableDisplayName: string;
-            waiterName: string;
-            generatedTime: string;
-        }>
-    >([]);
 
-    const requests = data?.data ?? [];
+    const [payModalBill, setPayModalBill] = useState<CashierActiveBill | null>(
+        null,
+    );
+
+    const requests = requestsData?.data ?? [];
+    const activeBills = activeBillsData?.data ?? [];
+
     const totalPages = Math.max(1, Math.ceil(requests.length / PAGE_SIZE));
     const pageRequests = useMemo(() => {
         const start = (page - 1) * PAGE_SIZE;
         return requests.slice(start, start + PAGE_SIZE);
     }, [requests, page]);
 
+    const totalAwaitingPages = Math.max(
+        1,
+        Math.ceil(activeBills.length / PAGE_SIZE),
+    );
+    const pageActiveBills = useMemo(() => {
+        const start = (awaitingPage - 1) * PAGE_SIZE;
+        return activeBills.slice(start, start + PAGE_SIZE);
+    }, [activeBills, awaitingPage]);
+
     useEffect(() => {
         if (page > totalPages) setPage(totalPages);
     }, [page, totalPages]);
+
+    useEffect(() => {
+        if (awaitingPage > totalAwaitingPages)
+            setAwaitingPage(totalAwaitingPages);
+    }, [awaitingPage, totalAwaitingPages]);
+
+    // Auto switch to awaiting tab if no pending requests and has active bills on first load
+    useEffect(() => {
+        if (
+            !searchParams.get("tab") &&
+            requests.length === 0 &&
+            activeBills.length > 0
+        ) {
+            setActiveTab("awaiting");
+        }
+    }, [requests.length, activeBills.length, searchParams]);
 
     async function generate(request: (typeof requests)[number]) {
         if (currentShift && !currentShift.clockedIn) {
@@ -100,25 +161,12 @@ export default function CashierBillRequests() {
                 roomSessionId: request.roomSessionId,
             }).unwrap();
 
-            const item = {
-                bill,
-                tableDisplayName: request.tableDisplayName || tCommon("table"),
-                waiterName: request.waiter?.displayName || tCommon("waiter"),
-                generatedTime: new Date().toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                }),
-            };
-
-            setRecentGeneratedBills(prev => [
-                item,
-                ...prev.filter(b => b.bill.billId !== bill.billId),
-            ]);
-
             setActiveReceipt({
                 bill,
                 tableDisplayName: request.tableDisplayName || tCommon("table"),
                 waiterName: request.waiter?.displayName || tCommon("waiter"),
+                cashierName:
+                    currentUserDisplayName || bill.cashierName || undefined,
             });
 
             toast.success(
@@ -130,6 +178,7 @@ export default function CashierBillRequests() {
                         tCommon("table"),
                 }),
             );
+            setActiveTab("awaiting");
         } catch (err) {
             const message = tCashier("billGenerateError");
             setError(message);
@@ -139,7 +188,9 @@ export default function CashierBillRequests() {
         }
     }
 
-    const columns = useMemo<DataTableColumn<(typeof requests)[number]>[]>(
+    const requestColumns = useMemo<
+        DataTableColumn<(typeof requests)[number]>[]
+    >(
         () => [
             {
                 id: "table",
@@ -220,11 +271,102 @@ export default function CashierBillRequests() {
         [busyId, currentShift, generating, tCashier, tCommon],
     );
 
-    if (isLoading) {
+    const activeBillColumns = useMemo<DataTableColumn<CashierActiveBill>[]>(
+        () => [
+            {
+                id: "table",
+                header: tCommon("table"),
+                cell: row => (
+                    <div className="font-semibold text-foreground">
+                        {row.tableDisplayName}
+                    </div>
+                ),
+                sortValue: row => row.tableDisplayName,
+            },
+            {
+                id: "billNumber",
+                header: "Bill #",
+                cell: row => (
+                    <span className="font-mono text-xs text-muted-foreground">
+                        #{row.billNumber}
+                    </span>
+                ),
+                sortValue: row => row.billNumber,
+            },
+            {
+                id: "waiter",
+                header: tCommon("waiter"),
+                cell: row => (
+                    <span className="text-slate-gray">{row.waiterName}</span>
+                ),
+                sortValue: row => row.waiterName,
+            },
+            {
+                id: "total",
+                header: tCommon("total"),
+                cell: row => (
+                    <span className="font-semibold tabular-nums text-foreground">
+                        {formatEtb(Number(row.total))}
+                    </span>
+                ),
+                sortValue: row => Number(row.total),
+                className: "text-right",
+                headerClassName: "text-right",
+            },
+            {
+                id: "status",
+                header: tCommon("status"),
+                cell: () => (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                        <Clock className="size-3" />
+                        Awaiting Payment
+                    </span>
+                ),
+            },
+            {
+                id: "actions",
+                header: "",
+                cell: row => (
+                    <div className="flex items-center justify-end gap-1.5">
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 gap-1.5 rounded-full px-2.5 text-[11px]"
+                            onClick={() =>
+                                setActiveReceipt({
+                                    bill: row,
+                                    tableDisplayName: row.tableDisplayName,
+                                    waiterName: row.waiterName,
+                                    cashierName:
+                                        currentUserDisplayName ||
+                                        row.cashierName ||
+                                        undefined,
+                                })
+                            }
+                        >
+                            <Receipt className="size-3" />
+                            <span>Receipt</span>
+                        </Button>
+                        <Button
+                            size="sm"
+                            className="h-7 gap-1.5 rounded-full bg-primary px-3 text-[11px] font-semibold text-white shadow-xs hover:bg-primary/90"
+                            onClick={() => setPayModalBill(row)}
+                        >
+                            <CreditCard className="size-3" />
+                            <span>Collect</span>
+                        </Button>
+                    </div>
+                ),
+            },
+        ],
+        [tCashier, tCommon],
+    );
+
+    if (requestsLoading && activeBillsLoading) {
         return <CashierBillsSkeleton />;
     }
 
-    if (isError) {
+    if (requestsError && activeBillsError) {
         return <p className="text-[13px] text-red-600">{tCommon("error")}</p>;
     }
 
@@ -309,15 +451,45 @@ export default function CashierBillRequests() {
                 </div>
             ) : null}
 
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                    <p className="text-[13px] font-medium tracking-tight">
-                        {tCashier("pendingRequests")}
-                    </p>
-                    <p className="text-[12px] text-slate-gray">
-                        {tCashier("waitingCount", { count: requests.length })}
-                    </p>
+            {/* TAB SELECTOR & VIEW MODE */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline pb-4">
+                <div className="inline-flex rounded-full border border-hairline bg-muted/40 p-1 text-[12px]">
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab("requests")}
+                        className={cn(
+                            "flex items-center gap-2 rounded-full px-3.5 py-1.5 font-semibold transition-all",
+                            activeTab === "requests"
+                                ? "bg-background text-foreground shadow-xs"
+                                : "text-muted-foreground hover:text-foreground",
+                        )}
+                    >
+                        <span>Pending Requests</span>
+                        {requests.length > 0 && (
+                            <span className="flex size-5 items-center justify-center rounded-full bg-amber-500 text-[11px] font-bold text-white">
+                                {requests.length}
+                            </span>
+                        )}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab("awaiting")}
+                        className={cn(
+                            "flex items-center gap-2 rounded-full px-3.5 py-1.5 font-semibold transition-all",
+                            activeTab === "awaiting"
+                                ? "bg-background text-foreground shadow-xs"
+                                : "text-muted-foreground hover:text-foreground",
+                        )}
+                    >
+                        <span>Awaiting Payment</span>
+                        {activeBills.length > 0 && (
+                            <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-white">
+                                {activeBills.length}
+                            </span>
+                        )}
+                    </button>
                 </div>
+
                 <div className="inline-flex rounded-full border border-hairline p-0.5">
                     <button
                         type="button"
@@ -348,165 +520,272 @@ export default function CashierBillRequests() {
                 </div>
             </div>
 
-            {requests.length === 0 ? (
-                <p className="rounded-[14px] border border-hairline bg-card p-5 text-[13px] text-slate-gray">
-                    {tCashier("noPendingBills")}
-                </p>
-            ) : view === "table" ? (
-                <DataTable
-                    columns={columns}
-                    data={pageRequests}
-                    rowKey={row => row.billRequestId}
-                    empty={tCashier("noPendingBills")}
-                    searchPlaceholder={null}
-                    showColumnToggle={false}
-                    pagination={{
-                        page,
-                        totalPages,
-                        total: requests.length,
-                        onPageChange: setPage,
-                    }}
-                />
-            ) : (
-                <div className="grid gap-3 sm:grid-cols-2">
-                    {pageRequests.map(request => (
-                        <article
-                            key={request.billRequestId}
-                            className="rounded-[14px] border border-hairline bg-card p-4"
-                        >
+            {/* TAB 1: PENDING REQUESTS */}
+            {activeTab === "requests" && (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-[13px] font-medium tracking-tight">
+                                {tCashier("pendingRequests")}
+                            </p>
                             <p className="text-[12px] text-slate-gray">
-                                {tCommon("table")} {request.tableDisplayName} ·{" "}
-                                {request.waiter.displayName}
+                                {tCashier("waitingCount", {
+                                    count: requests.length,
+                                })}
                             </p>
-                            <p className="mt-1 text-[15px] font-medium tabular-nums tracking-tight">
-                                {formatEtb(Number(request.estimatedAmount))}
+                        </div>
+                    </div>
+
+                    {requests.length === 0 ? (
+                        <div className="rounded-[14px] border border-hairline bg-card p-6 text-center space-y-2">
+                            <p className="text-[13px] text-slate-gray">
+                                {tCashier("noPendingBills")}
                             </p>
-                            <p className="mt-1 text-[12px] text-slate-gray">
-                                {tCommon("waiting")}{" "}
-                                {Math.floor(request.requestAgeSeconds / 60)} min
-                                {request.warnings.length > 0
-                                    ? ` · ${request.warnings
-                                          .join(", ")
-                                          .toLowerCase()
-                                          .replaceAll("_", " ")}`
-                                    : ""}
-                            </p>
-                            {(() => {
-                                const isOff =
-                                    currentShift && !currentShift.clockedIn;
-                                return (
-                                    <Button
-                                        className={cn(
-                                            "mt-3 h-8 rounded-full text-[12px] font-normal",
-                                            isOff &&
-                                                "opacity-80 border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100",
+                            {activeBills.length > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab("awaiting")}
+                                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                                >
+                                    <span>
+                                        View {activeBills.length} generated
+                                        bill(s) awaiting payment
+                                    </span>
+                                    <ArrowRight className="size-3" />
+                                </button>
+                            )}
+                        </div>
+                    ) : view === "table" ? (
+                        <DataTable
+                            columns={requestColumns}
+                            data={pageRequests}
+                            rowKey={row => row.billRequestId}
+                            empty={tCashier("noPendingBills")}
+                            searchPlaceholder={null}
+                            showColumnToggle={false}
+                            pagination={{
+                                page,
+                                totalPages,
+                                total: requests.length,
+                                onPageChange: setPage,
+                            }}
+                        />
+                    ) : (
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            {pageRequests.map(request => (
+                                <article
+                                    key={request.billRequestId}
+                                    className="rounded-[14px] border border-hairline bg-card p-4"
+                                >
+                                    <p className="text-[12px] text-slate-gray">
+                                        {tCommon("table")}{" "}
+                                        {request.tableDisplayName} ·{" "}
+                                        {request.waiter.displayName}
+                                    </p>
+                                    <p className="mt-1 text-[15px] font-medium tabular-nums tracking-tight">
+                                        {formatEtb(
+                                            Number(request.estimatedAmount),
                                         )}
-                                        disabled={
-                                            Boolean(isOff) ||
-                                            busyId === request.billRequestId ||
-                                            Boolean(generating)
-                                        }
-                                        onClick={() => void generate(request)}
-                                    >
-                                        {busyId === request.billRequestId ? (
-                                            tCashier("generating")
-                                        ) : isOff ? (
-                                            <span className="flex items-center gap-1.5">
-                                                <Lock className="size-3" />
-                                                Clock In to Bill
-                                            </span>
-                                        ) : (
-                                            tCashier("generateBill")
-                                        )}
-                                    </Button>
-                                );
-                            })()}
-                        </article>
-                    ))}
+                                    </p>
+                                    <p className="mt-1 text-[12px] text-slate-gray">
+                                        {tCommon("waiting")}{" "}
+                                        {Math.floor(
+                                            request.requestAgeSeconds / 60,
+                                        )}{" "}
+                                        min
+                                        {request.warnings.length > 0
+                                            ? ` · ${request.warnings
+                                                  .join(", ")
+                                                  .toLowerCase()
+                                                  .replaceAll("_", " ")}`
+                                            : ""}
+                                    </p>
+                                    {(() => {
+                                        const isOff =
+                                            currentShift &&
+                                            !currentShift.clockedIn;
+                                        return (
+                                            <Button
+                                                className={cn(
+                                                    "mt-3 h-8 rounded-full text-[12px] font-normal",
+                                                    isOff &&
+                                                        "opacity-80 border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100",
+                                                )}
+                                                disabled={
+                                                    Boolean(isOff) ||
+                                                    busyId ===
+                                                        request.billRequestId ||
+                                                    Boolean(generating)
+                                                }
+                                                onClick={() =>
+                                                    void generate(request)
+                                                }
+                                            >
+                                                {busyId ===
+                                                request.billRequestId ? (
+                                                    tCashier("generating")
+                                                ) : isOff ? (
+                                                    <span className="flex items-center gap-1.5">
+                                                        <Lock className="size-3" />
+                                                        Clock In to Bill
+                                                    </span>
+                                                ) : (
+                                                    tCashier("generateBill")
+                                                )}
+                                            </Button>
+                                        );
+                                    })()}
+                                </article>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
 
-            {recentGeneratedBills.length > 0 ? (
-                <div className="space-y-3">
-                    <div>
-                        <p className="text-[13px] font-medium tracking-tight">
-                            Generated this session
-                        </p>
-                        <p className="text-[12px] text-slate-gray">
-                            {recentGeneratedBills.length} ready to print
-                        </p>
+            {/* TAB 2: AWAITING PAYMENT (GENERATED BILLS) */}
+            {activeTab === "awaiting" && (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-[13px] font-medium tracking-tight">
+                                Bills Awaiting Settlement
+                            </p>
+                            <p className="text-[12px] text-slate-gray">
+                                {activeBills.length} bill(s) generated and
+                                awaiting cash or transfer collection
+                            </p>
+                        </div>
                     </div>
-                    <div className="overflow-x-auto rounded-[14px] border border-hairline">
-                        <table className="w-full min-w-[520px] text-left text-[12px]">
-                            <thead className="border-b border-hairline bg-muted/30 text-slate-gray">
-                                <tr>
-                                    <th className="px-4 py-2.5 font-medium">
-                                        Table
-                                    </th>
-                                    <th className="px-4 py-2.5 font-medium">
-                                        Waiter
-                                    </th>
-                                    <th className="px-4 py-2.5 font-medium">
-                                        Bill
-                                    </th>
-                                    <th className="px-4 py-2.5 font-medium text-right">
-                                        Total
-                                    </th>
-                                    <th className="px-4 py-2.5 font-medium" />
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {recentGeneratedBills.map(item => (
-                                    <tr
-                                        key={item.bill.billId}
-                                        className="border-b border-hairline last:border-0"
-                                    >
-                                        <td className="px-4 py-2.5">
-                                            {item.tableDisplayName}
-                                        </td>
-                                        <td className="px-4 py-2.5 text-slate-gray">
-                                            {item.waiterName}
-                                        </td>
-                                        <td className="px-4 py-2.5 text-slate-gray">
-                                            #{item.bill.billNumber} ·{" "}
-                                            {item.generatedTime}
-                                        </td>
-                                        <td className="px-4 py-2.5 text-right tabular-nums">
-                                            {formatEtb(Number(item.bill.total))}
-                                        </td>
-                                        <td className="px-4 py-2.5 text-right">
-                                            <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                className="h-7 rounded-full px-2 text-[12px] font-normal"
-                                                onClick={() =>
-                                                    setActiveReceipt({
-                                                        bill: item.bill,
-                                                        tableDisplayName:
-                                                            item.tableDisplayName,
-                                                        waiterName:
-                                                            item.waiterName,
-                                                    })
-                                                }
-                                            >
-                                                Receipt
-                                            </Button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            ) : null}
 
-            <CashierReceiptModal
-                open={Boolean(activeReceipt)}
-                onOpenChange={open => !open && setActiveReceipt(null)}
-                bill={activeReceipt?.bill || null}
-                tableDisplayName={activeReceipt?.tableDisplayName}
-                waiterName={activeReceipt?.waiterName}
-            />
+                    {activeBills.length === 0 ? (
+                        <div className="rounded-[14px] border border-hairline bg-card p-6 text-center space-y-1">
+                            <p className="text-[13px] text-slate-gray">
+                                No active bills awaiting payment.
+                            </p>
+                            <p className="text-[11px] text-muted-foreground">
+                                When a bill is generated, it stays here until
+                                paid by the waiter or cashier.
+                            </p>
+                        </div>
+                    ) : view === "table" ? (
+                        <DataTable
+                            columns={activeBillColumns}
+                            data={pageActiveBills}
+                            rowKey={row => row.billId}
+                            empty="No active bills awaiting payment"
+                            searchPlaceholder={null}
+                            showColumnToggle={false}
+                            pagination={{
+                                page: awaitingPage,
+                                totalPages: totalAwaitingPages,
+                                total: activeBills.length,
+                                onPageChange: setAwaitingPage,
+                            }}
+                        />
+                    ) : (
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            {pageActiveBills.map(bill => (
+                                <article
+                                    key={bill.billId}
+                                    className="rounded-[14px] border border-hairline bg-card p-4 space-y-3"
+                                >
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <p className="text-sm font-bold text-foreground">
+                                                {bill.tableDisplayName}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                #{bill.billNumber} · Server:{" "}
+                                                {bill.waiterName}
+                                            </p>
+                                        </div>
+                                        <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                                            Awaiting Payment
+                                        </span>
+                                    </div>
+                                    <p className="text-lg font-bold tabular-nums text-foreground">
+                                        {formatEtb(Number(bill.total))}
+                                    </p>
+                                    <div className="flex items-center gap-2 pt-1 border-t border-hairline">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="h-8 flex-1 gap-1.5 rounded-full text-xs"
+                                            onClick={() =>
+                                                setActiveReceipt({
+                                                    bill,
+                                                    tableDisplayName:
+                                                        bill.tableDisplayName,
+                                                    waiterName: bill.waiterName,
+                                                    cashierName:
+                                                        currentUserDisplayName ||
+                                                        bill.cashierName ||
+                                                        undefined,
+                                                })
+                                            }
+                                        >
+                                            <Receipt className="size-3.5" />
+                                            <span>Receipt</span>
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            className="h-8 flex-1 gap-1.5 rounded-full bg-primary text-xs font-semibold text-white shadow-xs hover:bg-primary/90"
+                                            onClick={() =>
+                                                setPayModalBill(bill)
+                                            }
+                                        >
+                                            <CreditCard className="size-3.5" />
+                                            <span>Collect</span>
+                                        </Button>
+                                    </div>
+                                </article>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* RECEIPT MODAL */}
+            {activeReceipt && (
+                <CashierReceiptModal
+                    open={Boolean(activeReceipt)}
+                    onOpenChange={open => !open && setActiveReceipt(null)}
+                    bill={activeReceipt.bill}
+                    tableDisplayName={activeReceipt.tableDisplayName}
+                    waiterName={activeReceipt.waiterName}
+                    cashierName={activeReceipt.cashierName}
+                />
+            )}
+
+            {/* COLLECT PAYMENT MODAL */}
+            {payModalBill && payModalBill.tableSessionId ? (
+                <Dialog
+                    open={Boolean(payModalBill)}
+                    onOpenChange={open => !open && setPayModalBill(null)}
+                >
+                    <DialogContent className="max-w-md p-6">
+                        <div className="flex items-center justify-between pb-3 border-b border-hairline">
+                            <div>
+                                <h3 className="text-base font-bold text-foreground">
+                                    Collect Payment ·{" "}
+                                    {payModalBill.tableDisplayName}
+                                </h3>
+                                <p className="text-xs text-muted-foreground">
+                                    Bill #{payModalBill.billNumber} · Server:{" "}
+                                    {payModalBill.waiterName}
+                                </p>
+                            </div>
+                        </div>
+                        <div className="pt-2">
+                            <WaiterPaymentPanel
+                                bill={payModalBill}
+                                tableSessionId={payModalBill.tableSessionId}
+                                onSuccess={() => setPayModalBill(null)}
+                            />
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            ) : null}
         </div>
     );
 }

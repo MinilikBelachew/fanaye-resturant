@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
     useAcknowledgeOrderItemMutation,
     useMarkItemReadyMutation,
@@ -12,6 +13,15 @@ import {
     type StationTicket,
 } from "@/domains/fulfillment/domain/stationTicket";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import {
     Select,
     SelectContent,
@@ -54,6 +64,10 @@ export default function StationStatusSelect({
     const [start] = useStartPreparationMutation();
     const [ready] = useMarkItemReadyMutation();
     const [cannotPrepare] = useReportCannotPrepareMutation();
+
+    // Pending "cannot prepare" state to decide mark-sold-out
+    const [cannotPrepareModal, setCannotPrepareModal] = useState(false);
+
     const current = SETTABLE.includes(ticket.state as (typeof SETTABLE)[number])
         ? ticket.state
         : null;
@@ -107,6 +121,25 @@ export default function StationStatusSelect({
         return false;
     }
 
+    async function executeCannotPrepare(markSoldOut: boolean) {
+        setCannotPrepareModal(false);
+        try {
+            await cannotPrepare({
+                ...body,
+                reasonDetail: "Cannot prepare",
+                markSoldOut,
+            }).unwrap();
+            toast.success(
+                markSoldOut
+                    ? "Cannot prepare · sold out for waiters"
+                    : "Reported cannot prepare",
+                label,
+            );
+        } catch (err) {
+            toast.fromUnknown(err, "Could not update status.");
+        }
+    }
+
     async function apply(next: string) {
         if (next === ticket.state) return;
         if (!canSelect(next)) {
@@ -132,20 +165,8 @@ export default function StationStatusSelect({
                     label,
                 );
             } else if (next === "CANNOT_PREPARE") {
-                const alsoSoldOut = window.confirm(
-                    "Also mark this dish sold out so waiters cannot order it again?",
-                );
-                await cannotPrepare({
-                    ...body,
-                    reasonDetail: "Cannot prepare",
-                    markSoldOut: alsoSoldOut,
-                }).unwrap();
-                toast.success(
-                    alsoSoldOut
-                        ? "Cannot prepare · sold out for waiters"
-                        : "Reported cannot prepare",
-                    label,
-                );
+                // Open local modal instead of window.confirm
+                setCannotPrepareModal(true);
             }
         } catch (err) {
             toast.fromUnknown(err, "Could not update status.");
@@ -153,24 +174,58 @@ export default function StationStatusSelect({
     }
 
     return (
-        <Select value={current} onValueChange={value => void apply(value)}>
-            <SelectTrigger
-                size="sm"
-                aria-label="Status"
-                className={cn(
-                    "h-7 min-w-[8.5rem] rounded-full border-0 px-2.5 text-[12px] font-medium shadow-none focus-visible:ring-1",
-                    tone(ticket),
-                )}
+        <>
+            <Select value={current} onValueChange={value => void apply(value)}>
+                <SelectTrigger
+                    size="sm"
+                    aria-label="Status"
+                    className={cn(
+                        "h-7 min-w-[8.5rem] rounded-full border-0 px-2.5 text-[12px] font-medium shadow-none focus-visible:ring-1",
+                        tone(ticket),
+                    )}
+                >
+                    <SelectValue>{stationStateLabel(ticket.state)}</SelectValue>
+                </SelectTrigger>
+                <SelectContent align="start">
+                    {SETTABLE.filter(state => canSelect(state)).map(state => (
+                        <SelectItem key={state} value={state}>
+                            {stationStateLabel(state)}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+
+            {/* Cannot Prepare — Sold Out? Modal */}
+            <Dialog
+                open={cannotPrepareModal}
+                onOpenChange={setCannotPrepareModal}
             >
-                <SelectValue>{stationStateLabel(ticket.state)}</SelectValue>
-            </SelectTrigger>
-            <SelectContent align="start">
-                {SETTABLE.filter(state => canSelect(state)).map(state => (
-                    <SelectItem key={state} value={state}>
-                        {stationStateLabel(state)}
-                    </SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
+                <DialogContent className="max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle>
+                            Cannot Prepare — Mark Sold Out?
+                        </DialogTitle>
+                        <DialogDescription>
+                            Would you also like to mark <strong>{label}</strong>{" "}
+                            as sold out so waiters cannot order it again?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="flex-col gap-2 sm:flex-row">
+                        <Button
+                            variant="outline"
+                            onClick={() => void executeCannotPrepare(false)}
+                        >
+                            No — just report
+                        </Button>
+                        <Button
+                            className="bg-destructive text-white hover:bg-destructive/90"
+                            onClick={() => void executeCannotPrepare(true)}
+                        >
+                            Yes — also sold out
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }

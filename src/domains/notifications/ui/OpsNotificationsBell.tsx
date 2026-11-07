@@ -120,7 +120,7 @@ export default function OpsNotificationsBell({
             </button>
 
             {open ? (
-                <div className="absolute top-10 right-0 z-50 w-[min(92vw,360px)] overflow-hidden rounded-2xl border border-hairline bg-white shadow-xl dark:bg-card">
+                <div className="fixed inset-x-2 top-[56px] z-50 overflow-hidden rounded-2xl border border-hairline bg-white shadow-xl dark:bg-card sm:absolute sm:inset-x-auto sm:top-10 sm:right-0 sm:w-[360px]">
                     <div className="flex items-center justify-between gap-3 border-b border-hairline px-4 py-3">
                         <div>
                             <p className="text-sm font-semibold tracking-tight">

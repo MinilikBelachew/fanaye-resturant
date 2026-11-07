@@ -763,7 +763,8 @@
         "offline": "Offline",
         "all": "All",
         "prev": "Prev",
-        "next": "Next"
+        "next": "Next",
+        "item": "Item"
     },
     "managerWaiters": {
         "periodDay": "Daily",
@@ -2057,6 +2058,11 @@
         "colRole": "Role",
         "colCredentials": "Credentials",
         "colTablesByShift": "Tables by shift",
+        "colShiftCoverage": "Shift & Coverage",
+        "colStationShift": "Station & Shift",
+        "colManagementShift": "Shift Schedule",
+        "cashRegister": "Cash Register",
+        "noTablesAssigned": "No tables assigned",
         "colStatus": "Status",
         "colActions": "Actions",
         "loadingStaff": "Loading staff…",

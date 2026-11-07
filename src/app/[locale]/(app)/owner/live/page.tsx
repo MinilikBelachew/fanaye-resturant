@@ -8,8 +8,8 @@ export default function OwnerLivePage() {
             <PageHeader
                 compact
                 eyebrow="Business"
-                title="Live operations"
-                description="Same table timeline the waiter and stations are writing."
+                title="Live Operations"
+                description="Tables, orders, and station exceptions on one timeline."
             />
             <LiveFloorBoard />
         </DashboardFrame>

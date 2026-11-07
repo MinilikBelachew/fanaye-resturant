@@ -28,6 +28,7 @@ import "./services/inventoryApi";
 import "./services/managerReportsApi";
 import "./services/feedbackApi";
 import "./services/menuEngineeringApi";
+import "./services/backupApi";
 
 export const store = configureStore({
     reducer: {

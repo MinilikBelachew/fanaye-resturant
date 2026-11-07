@@ -8,7 +8,7 @@ import { tableNumber } from "@/domains/floor/application/groupFloor";
 import FloorLocationSections from "@/domains/floor/ui/FloorLocationSections";
 import FloorTableCard from "@/domains/floor/ui/FloorTableCard";
 import ManagerTablesTableView from "@/domains/floor/ui/ManagerTablesTableView";
-import { useRouter } from "@/i18n/navigation";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 
 export default function ManagerTablesBoard() {
@@ -16,6 +16,8 @@ export default function ManagerTablesBoard() {
     const tDetail = useTranslations("managerTableDetail");
     const tCommon = useTranslations("common");
     const router = useRouter();
+    const pathname = usePathname();
+    const basePath = pathname.startsWith("/owner/") ? "/owner" : "/manager";
     const { data, isLoading, isError } = useFloorTablesQuery();
     const tables = data?.data ?? [];
     const locations = data?.locations ?? [];
@@ -240,7 +242,9 @@ export default function ManagerTablesBoard() {
                 <ManagerTablesTableView
                     tables={filteredTables}
                     locations={locations}
-                    onSelectTable={id => router.push(`/manager/tables/${id}`)}
+                    onSelectTable={id =>
+                        router.push(`${basePath}/tables/${id}`)
+                    }
                     labels={{
                         table: tCommon("table"),
                         location: "Zone / Location",
@@ -308,7 +312,7 @@ export default function ManagerTablesBoard() {
                                 footerAction={tDetail("viewDetail")}
                                 onClick={() =>
                                     router.push(
-                                        `/manager/tables/${table.tableId}`,
+                                        `${basePath}/tables/${table.tableId}`,
                                     )
                                 }
                             />

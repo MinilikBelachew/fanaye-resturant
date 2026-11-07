@@ -57,8 +57,22 @@ function invalidateForType(
             ]),
         );
     }
-    if (type === "bill.request.created" || type === "bill.ready") {
-        dispatch(api.util.invalidateTags(["Bill", "Floor", "Notifications"]));
+    if (
+        type === "bill.request.created" ||
+        type === "bill.ready" ||
+        type === "payment.settled" ||
+        type.startsWith("payment.")
+    ) {
+        dispatch(
+            api.util.invalidateTags([
+                "Bill",
+                "Cash",
+                "Floor",
+                "Order",
+                "DailyClose",
+                "Notifications",
+            ]),
+        );
     }
     if (type.startsWith("cash_drop")) {
         dispatch(api.util.invalidateTags(["Cash", "Notifications"]));

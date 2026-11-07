@@ -9,6 +9,7 @@ import DesktopSidebar from "@/components/layout/DesktopSidebar";
 import StationKdsNav from "@/components/layout/StationKdsNav";
 import StationTopBarTools from "@/components/layout/StationTopBarTools";
 import OpsNotificationsBell from "@/domains/notifications/ui/OpsNotificationsBell";
+import BranchSwitcher from "@/components/layout/BranchSwitcher";
 import { navForRole } from "@/domains/identity/application/nav";
 import { useGetInventoryNetworkStatusQuery } from "@/context/services/inventoryApi";
 import { homePathForRole } from "@/domains/identity/application/homePath";
@@ -159,6 +160,7 @@ export default function ResponsiveDeskShell({
                                 ) : hideNotifications ? null : (
                                     <OpsNotificationsBell />
                                 )}
+                                <BranchSwitcher compact showAlways />
                                 <LocaleSwitcher className="scale-90 origin-right sm:scale-100" />
                                 <ThemeToggleButton />
                                 <AccountMenu compact />

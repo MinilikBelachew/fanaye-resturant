@@ -226,6 +226,7 @@ export default function CashierPaymentDetail({
                     isBakery ? undefined : payment.tableDisplayName
                 }
                 waiterName={isBakery ? undefined : payment.waiterName}
+                cashierName={bill?.cashierName ?? undefined}
                 showSendToWaiter={!isBakery}
                 hideTable={isBakery}
             />

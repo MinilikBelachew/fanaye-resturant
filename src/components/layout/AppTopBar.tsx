@@ -11,6 +11,7 @@ import ShiftTopBarPill from "@/components/layout/ShiftTopBarPill";
 import { roleUsesShiftClock } from "@/domains/identity/domain/role";
 import { navForRole } from "@/domains/identity/application/nav";
 import { useGetInventoryNetworkStatusQuery } from "@/context/services/inventoryApi";
+import { useGetTenantSiteQuery } from "@/context/services/siteApi";
 import { homePathForRole } from "@/domains/identity/application/homePath";
 import { isStationRole } from "@/domains/identity/domain/role";
 import { parseQueueFilter } from "@/domains/fulfillment/application/queueFilter";
@@ -122,6 +123,9 @@ function AppTopBarInner({ className }: { className?: string }) {
     const { data: networkRes } = useGetInventoryNetworkStatusQuery(undefined, {
         skip: !isInventoryRole,
     });
+    const { data: siteRes } = useGetTenantSiteQuery();
+    const site = siteRes?.data;
+
     const sessionHasMain = useAppSelector(
         state => state.identity.session?.hasMainWarehouse,
     );
@@ -132,6 +136,11 @@ function AppTopBarInner({ className }: { className?: string }) {
               serviceMode,
               roomsEnabled: roomsEnabled === true,
               hasMainWarehouse,
+              featureInventory: site?.featureInventory,
+              featureCentralWarehouse: site?.featureCentralWarehouse,
+              featureTelegramBackup: site?.featureTelegramBackup,
+              featureAiAdvisor: site?.featureAiAdvisor,
+              featureOutsideOrders: site?.featureOutsideOrders,
           })
         : [];
     const items = sections.flatMap(section => section.items);

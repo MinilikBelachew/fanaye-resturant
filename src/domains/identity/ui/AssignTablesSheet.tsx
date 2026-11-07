@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocale } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -41,6 +42,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/lib/toast";
+import {
+    DAY_ETHIOPIAN,
+    formatEthiopianShiftRange,
+} from "@/domains/identity/domain/shift";
 import {
     shiftDefinitionSchema,
     type ShiftDefinitionFormValues,
@@ -132,6 +137,8 @@ export default function AssignTablesSheet({
     shifts: propShifts,
     onClose,
 }: AssignTablesSheetProps) {
+    const locale = useLocale();
+    const isAmharic = locale === "am";
     const { data: staffData } = useAdminStaffQuery(undefined, {
         skip:
             !isOpen ||
@@ -561,8 +568,22 @@ export default function AssignTablesSheet({
                                         )}
                                     >
                                         <span className="text-[12px] font-bold leading-tight">
-                                            {day}
+                                            {isAmharic
+                                                ? DAY_ETHIOPIAN[day]?.am || day
+                                                : day}
                                         </span>
+                                        {isAmharic ? (
+                                            <span
+                                                className={cn(
+                                                    "text-[10px] font-ethiopic leading-tight opacity-75 mt-0.5",
+                                                    isDaySelected
+                                                        ? "text-white/80 dark:text-zinc-950/80"
+                                                        : "text-muted-foreground",
+                                                )}
+                                            >
+                                                {DAY_ETHIOPIAN[day]?.shortAm}
+                                            </span>
+                                        ) : null}
                                         <span
                                             className={cn(
                                                 "mt-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium leading-none",
@@ -586,9 +607,13 @@ export default function AssignTablesSheet({
                     {/* Step 2: Shift Selector for Current Day */}
                     <div className="space-y-1.5 rounded-xl border border-hairline bg-card/60 p-3">
                         <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
-                                2. Shift for {activeDayCode}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
+                                    {isAmharic
+                                        ? `2. የ${DAY_ETHIOPIAN[normalizeDayCode(activeDayCode) ?? "Mon"]?.am || activeDayCode} ፈረቃ`
+                                        : `2. Shift for ${activeDayCode}`}
+                                </span>
+                            </div>
                             <button
                                 type="button"
                                 onClick={() => setShowNewShift(v => !v)}
@@ -666,6 +691,21 @@ export default function AssignTablesSheet({
                                             )}
                                         />
                                     </div>
+                                    {shiftForm.watch("startLocalTime") &&
+                                    shiftForm.watch("endLocalTime") ? (
+                                        <div
+                                            className={cn(
+                                                "text-[11px] font-medium px-1",
+                                                isAmharic
+                                                    ? "font-ethiopic text-amber-600 dark:text-amber-400"
+                                                    : "text-amber-600 dark:text-amber-400",
+                                            )}
+                                        >
+                                            {isAmharic
+                                                ? `የኢትዮጵያ ሰዓት፡ ${formatEthiopianShiftRange(shiftForm.watch("startLocalTime"), shiftForm.watch("endLocalTime"), true)}`
+                                                : `Ethiopian Time: ${formatEthiopianShiftRange(shiftForm.watch("startLocalTime"), shiftForm.watch("endLocalTime"), false)}`}
+                                        </div>
+                                    ) : null}
                                     <div className="flex justify-end gap-2 pt-1">
                                         <Button
                                             type="button"
@@ -743,17 +783,45 @@ export default function AssignTablesSheet({
                                                 )}
                                             />
                                         )}
-                                        <span>
-                                            {shift.name} (
-                                            {format12HourTime(
-                                                shift.startLocalTime,
-                                            )}
-                                            –
-                                            {format12HourTime(
-                                                shift.endLocalTime,
-                                            )}
-                                            )
-                                        </span>
+                                        <div className="flex flex-col items-start text-left leading-tight">
+                                            <span>
+                                                {shift.name}{" "}
+                                                <span className="font-normal opacity-90">
+                                                    (
+                                                    {format12HourTime(
+                                                        shift.startLocalTime,
+                                                    )}
+                                                    –
+                                                    {format12HourTime(
+                                                        shift.endLocalTime,
+                                                    )}
+                                                    )
+                                                </span>
+                                            </span>
+                                            <span
+                                                className={cn(
+                                                    "text-[10px] mt-0.5",
+                                                    isAmharic
+                                                        ? "font-ethiopic"
+                                                        : "",
+                                                    isCurrentShift
+                                                        ? "text-amber-300 dark:text-amber-600 font-semibold"
+                                                        : "text-amber-600 dark:text-amber-500 font-medium",
+                                                )}
+                                            >
+                                                {isAmharic
+                                                    ? formatEthiopianShiftRange(
+                                                          shift.startLocalTime,
+                                                          shift.endLocalTime,
+                                                          true,
+                                                      )
+                                                    : `Eth: ${formatEthiopianShiftRange(
+                                                          shift.startLocalTime,
+                                                          shift.endLocalTime,
+                                                          false,
+                                                      )}`}
+                                            </span>
+                                        </div>
                                         {isCurrentShift ? (
                                             <span
                                                 className={cn(
@@ -803,8 +871,47 @@ export default function AssignTablesSheet({
                         <div className="space-y-3 rounded-xl border border-hairline bg-card/60 p-3.5">
                             <div className="flex items-center justify-between">
                                 <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
-                                    3. Table Assignment · {activeDayCode}{" "}
+                                    {isAmharic
+                                        ? "3. የጠረጴዛ ምደባ"
+                                        : "3. Table Assignment"}{" "}
+                                    ·{" "}
+                                    {isAmharic
+                                        ? DAY_ETHIOPIAN[
+                                              normalizeDayCode(activeDayCode) ??
+                                                  "Mon"
+                                          ]?.am || activeDayCode
+                                        : activeDayCode}{" "}
                                     {activeShift?.name}
+                                    {activeShift ? (
+                                        <span className="ml-1.5 normal-case font-normal text-slate-500">
+                                            (
+                                            {format12HourTime(
+                                                activeShift.startLocalTime,
+                                            )}
+                                            –
+                                            {format12HourTime(
+                                                activeShift.endLocalTime,
+                                            )}{" "}
+                                            ·{" "}
+                                            <span
+                                                className={cn(
+                                                    "font-medium",
+                                                    isAmharic
+                                                        ? "font-ethiopic text-amber-600 dark:text-amber-500"
+                                                        : "text-amber-600 dark:text-amber-500",
+                                                )}
+                                            >
+                                                {isAmharic
+                                                    ? formatEthiopianShiftRange(
+                                                          activeShift.startLocalTime,
+                                                          activeShift.endLocalTime,
+                                                          true,
+                                                      )
+                                                    : `Eth: ${formatEthiopianShiftRange(activeShift.startLocalTime, activeShift.endLocalTime, false)}`}
+                                            </span>
+                                            )
+                                        </span>
+                                    ) : null}
                                 </span>
                                 <div className="flex items-center gap-2">
                                     <button

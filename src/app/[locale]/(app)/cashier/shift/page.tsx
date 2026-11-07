@@ -3,17 +3,19 @@
 import {
     ArrowRight,
     ArrowRightLeft,
+    Calendar,
     CheckCircle2,
     ClipboardCheck,
     CreditCard,
+    Globe,
     LogIn,
     LogOut,
     Wallet,
     Warehouse,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CashierHandoverModal from "@/domains/payments/ui/CashierHandoverModal";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useAppSelector } from "@/context/hooks";
 import { useCashierCashDropsQuery } from "@/context/services/cashApi";
 import { useReconciliationPreviewQuery } from "@/context/services/reconciliationApi";
@@ -31,6 +33,45 @@ import { Link } from "@/i18n/navigation";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { getStaffAvatarUrl } from "@/lib/avatars";
+import {
+    type CalendarMode,
+    ETHIOPIAN_DAYS,
+    formatEthiopianLocalTime,
+    getEthiopianDateDetails,
+    getSavedCalendarMode,
+    setSavedCalendarMode,
+} from "@/lib/ethiopian-calendar";
+import {
+    format12HourTime,
+    formatEthiopianShiftRange,
+} from "@/domains/identity/domain/shift";
+
+const WEEK_DAY_CODES = [
+    "Mon",
+    "Tue",
+    "Wed",
+    "Thu",
+    "Fri",
+    "Sat",
+    "Sun",
+] as const;
+
+function mondayOfWeek(date = new Date()) {
+    const d = new Date(date);
+    const offset = (d.getDay() + 6) % 7;
+    d.setHours(12, 0, 0, 0);
+    d.setDate(d.getDate() - offset);
+    return d;
+}
+
+function dateForDayCode(dayCode: string, weekStart = mondayOfWeek()) {
+    const index = WEEK_DAY_CODES.indexOf(
+        dayCode as (typeof WEEK_DAY_CODES)[number],
+    );
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + (index >= 0 ? index : 0));
+    return d;
+}
 
 function formatClock(value?: string | null) {
     if (!value) return "—";
@@ -50,6 +91,23 @@ export default function CashierShiftPage() {
     const t = useTranslations("cashier");
     const tCommon = useTranslations("common");
     const tRoles = useTranslations("roleLabels");
+    const locale = useLocale();
+    const isAmharic = locale.startsWith("am");
+    const [calendarMode, setCalendarMode] = useState<CalendarMode>(
+        getSavedCalendarMode(),
+    );
+
+    useEffect(() => {
+        const handler = (e: Event) => {
+            const detail = (e as CustomEvent<CalendarMode>).detail;
+            if (detail === "ETHIOPIAN" || detail === "GREGORIAN")
+                setCalendarMode(detail);
+        };
+        window.addEventListener("calendar_mode_changed", handler);
+        return () =>
+            window.removeEventListener("calendar_mode_changed", handler);
+    }, []);
+
     const staff = useAppSelector(selectCurrentStaff);
     const hasSession = useAppSelector(state => Boolean(state.identity.session));
     const { data: shift, isFetching } = useCurrentShiftQuery(undefined, {
@@ -74,7 +132,28 @@ export default function CashierShiftPage() {
 
     const session = shift?.shiftSession ?? null;
     const upcoming = shift?.upcomingAssignment ?? null;
+    const weeklyPlan = shift?.weeklyPlan ?? [];
     const busy = clockingIn || clockingOut || isFetching;
+
+    // Weekly schedule helpers
+    const today = useMemo(() => new Date(), []);
+    const todayDayCode = WEEK_DAY_CODES[(today.getDay() + 6) % 7];
+
+    const weekCells = useMemo(() => {
+        const byDay = new Map(weeklyPlan.map(row => [row.dayCode, row]));
+        return WEEK_DAY_CODES.map(dayCode => {
+            const date = dateForDayCode(dayCode);
+            const eth = getEthiopianDateDetails(date);
+            const row = byDay.get(dayCode) ?? null;
+            const isToday = dayCode === todayDayCode;
+            const gregLabel = date.toLocaleDateString(
+                isAmharic ? "am-ET" : "en-US",
+                { month: "short", day: "numeric" },
+            );
+            const ethLabel = `${isAmharic ? eth.monthNameAm : eth.monthNameEn} ${eth.date}`;
+            return { dayCode, date, eth, row, isToday, gregLabel, ethLabel };
+        });
+    }, [weeklyPlan, todayDayCode, isAmharic]);
     const preview = recon?.data;
     const pendingDrops = drops?.data?.length ?? 0;
     const expected = Number(preview?.expectedCash ?? 0);
@@ -274,7 +353,7 @@ export default function CashierShiftPage() {
                     </div>
 
                     <div className="space-y-4 px-5 py-5 sm:px-6">
-                        <div className="grid grid-cols-3 gap-3 text-[13px]">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 text-[13px]">
                             <div>
                                 <p className="text-[11px] font-medium tracking-[0.06em] text-slate-gray uppercase">
                                     {t("assignment")}
@@ -517,6 +596,137 @@ export default function CashierShiftPage() {
                     currentVersion={session?.version ?? 1}
                     expectedCash={expected}
                 />
+            ) : null}
+
+            {/* ── Weekly shift schedule ─────────────────────────────── */}
+            {weeklyPlan.length > 0 ? (
+                <div className="rounded-[16px] border border-hairline bg-card p-4">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <p className="text-[13px] font-medium text-foreground">
+                                My weekly schedule
+                            </p>
+                            <p className="text-[11px] text-slate-gray">
+                                Assigned shifts for this week
+                            </p>
+                        </div>
+                        {/* Calendar mode toggle */}
+                        <div className="inline-flex items-center rounded-lg border border-hairline bg-secondary/50 p-0.5">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setCalendarMode("ETHIOPIAN");
+                                    setSavedCalendarMode("ETHIOPIAN");
+                                }}
+                                className={cn(
+                                    "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-all cursor-pointer",
+                                    calendarMode === "ETHIOPIAN"
+                                        ? "bg-white dark:bg-card text-foreground shadow-xs"
+                                        : "text-slate-gray hover:text-foreground",
+                                )}
+                            >
+                                <span className="text-[10px]">🇪🇹</span>
+                                Ethiopian
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setCalendarMode("GREGORIAN");
+                                    setSavedCalendarMode("GREGORIAN");
+                                }}
+                                className={cn(
+                                    "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-all cursor-pointer",
+                                    calendarMode === "GREGORIAN"
+                                        ? "bg-white dark:bg-card text-foreground shadow-xs"
+                                        : "text-slate-gray hover:text-foreground",
+                                )}
+                            >
+                                <Globe className="size-3" />
+                                Gregorian
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Scrollable on mobile, grid on larger screens */}
+                    <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
+                        <div className="flex min-w-[480px] gap-1 sm:grid sm:min-w-0 sm:grid-cols-7">
+                            {weekCells.map(cell => {
+                                const hasShift = Boolean(cell.row);
+                                const isActive = cell.isToday && clockedIn;
+
+                                return (
+                                    <div
+                                        key={cell.dayCode}
+                                        className={cn(
+                                            "flex flex-1 flex-col items-center rounded-xl border p-2 text-center transition-colors",
+                                            cell.isToday
+                                                ? "border-brand/40 bg-brand/5"
+                                                : hasShift
+                                                  ? "border-hairline bg-card"
+                                                  : "border-dashed border-hairline bg-secondary/30 opacity-60",
+                                        )}
+                                    >
+                                        {/* Day name */}
+                                        <p
+                                            className={cn(
+                                                "text-[10px] font-semibold uppercase tracking-[0.06em]",
+                                                cell.isToday
+                                                    ? "text-brand"
+                                                    : "text-slate-gray",
+                                            )}
+                                        >
+                                            {isAmharic
+                                                ? (ETHIOPIAN_DAYS.find(
+                                                      d =>
+                                                          d.key ===
+                                                          cell.dayCode,
+                                                  )?.shortAm ?? cell.dayCode)
+                                                : cell.dayCode}
+                                        </p>
+
+                                        {/* Date */}
+                                        <p className="mt-0.5 text-[10px] text-slate-gray">
+                                            {calendarMode === "ETHIOPIAN"
+                                                ? cell.ethLabel
+                                                : cell.gregLabel}
+                                        </p>
+
+                                        {/* Shift info */}
+                                        {hasShift ? (
+                                            <div className="mt-1.5 w-full space-y-1">
+                                                <p className="truncate text-[10px] font-semibold text-foreground">
+                                                    {cell.row!.definitionName}
+                                                </p>
+                                                <p className="text-[9px] leading-snug text-slate-gray break-words">
+                                                    {calendarMode ===
+                                                    "ETHIOPIAN"
+                                                        ? formatEthiopianShiftRange(
+                                                              cell.row!
+                                                                  .startLocalTime,
+                                                              cell.row!
+                                                                  .endLocalTime,
+                                                              isAmharic,
+                                                          )
+                                                        : `${format12HourTime(cell.row!.startLocalTime)}–${format12HourTime(cell.row!.endLocalTime)}`}
+                                                </p>
+                                                {isActive ? (
+                                                    <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[8px] font-semibold text-emerald-600">
+                                                        <span className="size-1 rounded-full bg-emerald-500" />
+                                                        Active
+                                                    </span>
+                                                ) : null}
+                                            </div>
+                                        ) : (
+                                            <p className="mt-1.5 text-[10px] text-slate-gray">
+                                                Off
+                                            </p>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
             ) : null}
         </DashboardFrame>
     );

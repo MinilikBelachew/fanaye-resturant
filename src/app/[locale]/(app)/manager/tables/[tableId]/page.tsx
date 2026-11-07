@@ -27,7 +27,7 @@ import {
     type TableVisitHistoryItem,
     type TableVisitHistoryPeriod,
 } from "@/context/services/floorApi";
-import { Link } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { formatEtb } from "@/lib/money";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -44,6 +44,8 @@ export default function ManagerTableDetailPage({
     const { tableId } = use(params);
     const t = useTranslations("managerTableDetail");
     const tManager = useTranslations("manager");
+    const pathname = usePathname();
+    const basePath = pathname.startsWith("/owner/") ? "/owner" : "/manager";
 
     const [period, setPeriod] = useState<TableVisitHistoryPeriod>("week");
     const [customFrom, setCustomFrom] = useState("");
@@ -223,7 +225,7 @@ export default function ManagerTableDetailPage({
                             className="h-8 rounded-full text-[12px]"
                             asChild
                         >
-                            <Link href="/manager/tables">
+                            <Link href={`${basePath}/tables`}>
                                 <ArrowLeft className="size-3.5" />
                                 {t("backToTables")}
                             </Link>
@@ -254,7 +256,7 @@ export default function ManagerTableDetailPage({
         <DashboardFrame>
             <div className="flex flex-col gap-3">
                 <Link
-                    href="/manager/tables"
+                    href={`${basePath}/tables`}
                     className="inline-flex w-fit items-center gap-1.5 text-[12px] text-slate-gray transition-colors hover:text-foreground"
                 >
                     <ArrowLeft className="size-3.5" />
@@ -300,7 +302,7 @@ export default function ManagerTableDetailPage({
                                 className="h-8 rounded-full text-[12px] font-normal"
                                 asChild
                             >
-                                <Link href={`/manager/live/${detail.id}`}>
+                                <Link href={`${basePath}/live/${detail.id}`}>
                                     {t("openLive")}
                                 </Link>
                             </Button>

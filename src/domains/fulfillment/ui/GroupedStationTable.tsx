@@ -26,11 +26,7 @@ import type { TableGroupData } from "@/domains/fulfillment/ui/TableOrderCard";
 import IssueMaterialsModal from "@/domains/outside-orders/ui/IssueMaterialsModal";
 import { cn } from "@/lib/utils";
 
-function MaterialsButton({
-    ticket,
-}: {
-    ticket: StationTicket;
-}) {
+function MaterialsButton({ ticket }: { ticket: StationTicket }) {
     const [showModal, setShowModal] = useState(false);
 
     if (!ticket.outsideOrderId) return null;
@@ -73,7 +69,10 @@ function TableGroupRow({
     const readyCount = group.allTickets.filter(t => t.state === "READY").length;
     const totalCount = group.allTickets.length;
     const allAreReady = group.allTickets.every(t => t.state === "READY");
-    const elapsedMinutes = Math.max(1, Math.round(group.maxElapsedSeconds / 60));
+    const elapsedMinutes = Math.max(
+        1,
+        Math.round(group.maxElapsedSeconds / 60),
+    );
 
     return (
         <div
@@ -134,7 +133,8 @@ function TableGroupRow({
                             <strong className="text-foreground font-semibold">
                                 {group.waiterName}
                             </strong>{" "}
-                            · {totalCount} {totalCount === 1 ? "dish" : "dishes"}
+                            · {totalCount}{" "}
+                            {totalCount === 1 ? "dish" : "dishes"}
                         </p>
                     </div>
                 </div>
@@ -171,18 +171,35 @@ function TableGroupRow({
                                 <th className="px-3 py-2">Plating / Serving</th>
                                 <th className="px-3 py-2 text-center">Qty</th>
                                 <th className="px-3 py-2">Status</th>
-                                <th className="px-4 py-2 text-right">Actions</th>
+                                <th className="px-4 py-2 text-right">
+                                    Actions
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-hairline/40 bg-card">
                             {group.allTickets.map(ticket => {
-                                const parsed = parseServingGroup(ticket.specialInstruction);
+                                const parsed = parseServingGroup(
+                                    ticket.specialInstruction,
+                                );
                                 const isReady = ticket.state === "READY";
-                                const isCooking = ticket.state === "IN_PREPARATION";
-                                const isTray1 = parsed.rawTray?.toLowerCase().includes("1") || parsed.rawTray?.toLowerCase().includes("shared");
-                                const isTray2 = parsed.rawTray?.toLowerCase().includes("2");
-                                const isTray3 = parsed.rawTray?.toLowerCase().includes("3");
-                                const modifiersText = ticket.modifiers.map(m => m.name).join(" · ");
+                                const isCooking =
+                                    ticket.state === "IN_PREPARATION";
+                                const isTray1 =
+                                    parsed.rawTray
+                                        ?.toLowerCase()
+                                        .includes("1") ||
+                                    parsed.rawTray
+                                        ?.toLowerCase()
+                                        .includes("shared");
+                                const isTray2 = parsed.rawTray
+                                    ?.toLowerCase()
+                                    .includes("2");
+                                const isTray3 = parsed.rawTray
+                                    ?.toLowerCase()
+                                    .includes("3");
+                                const modifiersText = ticket.modifiers
+                                    .map(m => m.name)
+                                    .join(" · ");
                                 const dishImage = imageForDish(ticket.itemName);
 
                                 return (
@@ -206,10 +223,17 @@ function TableGroupRow({
                                                     <div className="size-8 rounded-full overflow-hidden border border-hairline shrink-0 bg-muted/40 shadow-2xs">
                                                         <img
                                                             src={dishImage}
-                                                            alt={ticket.itemName}
+                                                            alt={
+                                                                ticket.itemName
+                                                            }
                                                             className="size-full object-cover"
                                                             onError={e => {
-                                                                (e.currentTarget.parentElement as HTMLElement).style.display = "none";
+                                                                (
+                                                                    e
+                                                                        .currentTarget
+                                                                        .parentElement as HTMLElement
+                                                                ).style.display =
+                                                                    "none";
                                                             }}
                                                         />
                                                     </div>
@@ -217,7 +241,10 @@ function TableGroupRow({
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex items-center gap-1.5 flex-wrap">
                                                         <Link
-                                                            href={stationOrderPath(role, ticket.orderItemId)}
+                                                            href={stationOrderPath(
+                                                                role,
+                                                                ticket.orderItemId,
+                                                            )}
                                                             className="text-[15px] sm:text-[16px] font-bold text-foreground hover:text-brand hover:underline inline-flex items-center gap-1 transition-colors"
                                                         >
                                                             {ticket.itemName}
@@ -237,7 +264,10 @@ function TableGroupRow({
                                                     ) : null}
                                                     {parsed.cleanInstruction ? (
                                                         <p className="mt-1 inline-flex items-center gap-1 rounded-md bg-amber-500/10 border border-amber-500/25 px-2 py-0.5 text-[11px] font-semibold text-amber-900 dark:text-amber-200">
-                                                            📝 Note: {parsed.cleanInstruction}
+                                                            📝 Note:{" "}
+                                                            {
+                                                                parsed.cleanInstruction
+                                                            }
                                                         </p>
                                                     ) : null}
                                                 </div>
@@ -288,7 +318,9 @@ function TableGroupRow({
                                                     compact
                                                     workflowMode={workflowMode}
                                                 />
-                                                <MaterialsButton ticket={ticket} />
+                                                <MaterialsButton
+                                                    ticket={ticket}
+                                                />
                                             </div>
                                         </td>
                                     </tr>
@@ -314,7 +346,9 @@ export default function GroupedStationTable({
     emptyLabel: string;
 }) {
     const [search, setSearch] = useState("");
-    const [collapsedKeys, setCollapsedKeys] = useState<Record<string, boolean>>({});
+    const [collapsedKeys, setCollapsedKeys] = useState<Record<string, boolean>>(
+        {},
+    );
 
     function toggleGroup(key: string) {
         setCollapsedKeys(prev => ({
@@ -362,7 +396,11 @@ export default function GroupedStationTable({
                     />
                 </div>
                 <div className="text-[12px] text-slate-gray">
-                    Showing <strong className="text-foreground">{filteredGroups.length}</strong> active tables
+                    Showing{" "}
+                    <strong className="text-foreground">
+                        {filteredGroups.length}
+                    </strong>{" "}
+                    active tables
                 </div>
             </div>
 
@@ -388,4 +426,3 @@ export default function GroupedStationTable({
         </div>
     );
 }
-

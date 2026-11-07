@@ -78,9 +78,11 @@ function clampMoney(value: string, max: number): string {
 export default function WaiterPaymentPanel({
     bill,
     tableSessionId,
+    onSuccess,
 }: {
     bill: Bill;
     tableSessionId: string;
+    onSuccess?: () => void;
 }) {
     const t = useTranslations("waiter");
     const total = Number(bill.total);
@@ -132,6 +134,7 @@ export default function WaiterPaymentPanel({
                 );
             } else {
                 toast.success(t("cashRecorded"), formatEtb(Number(portion)));
+                onSuccess?.();
             }
         } catch (err) {
             const message = t("couldNotRecordCash");
@@ -168,6 +171,9 @@ export default function WaiterPaymentPanel({
 
         setReference("");
         const remaining = Number(result.remainingAmount ?? 0);
+        if (remaining <= 0) {
+            onSuccess?.();
+        }
         if (result.tipAmount && Number(result.tipAmount) > 0) {
             toast.success(
                 t("transferPaidWithTip", {

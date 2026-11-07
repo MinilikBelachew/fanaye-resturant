@@ -30,7 +30,7 @@ import {
 import { openEditStation } from "@/context/slices/stationSlice";
 import { useAppDispatch } from "@/context/hooks";
 import AddEditStationSheet from "@/domains/fulfillment/ui/AddEditStationSheet";
-import { Link } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
@@ -86,6 +86,12 @@ export default function ManagerStationDetailPage({
     const tManager = useTranslations("manager");
     const tCommon = useTranslations("common");
     const dispatch = useAppDispatch();
+    const pathname = usePathname();
+
+    // Derive back href from current URL so owner → /owner/stations, manager → /manager/stations
+    const backHref = pathname.startsWith("/owner/")
+        ? "/owner/stations"
+        : "/manager/stations";
 
     const [period, setPeriod] = useState<StationHistoryPeriod>("today");
     const [customFrom, setCustomFrom] = useState("");
@@ -307,7 +313,7 @@ export default function ManagerStationDetailPage({
                             className="h-8 rounded-full text-[12px]"
                             asChild
                         >
-                            <Link href="/manager/stations">
+                            <Link href={backHref}>
                                 <ArrowLeft className="size-3.5" />
                                 {t("backToStations")}
                             </Link>
@@ -330,7 +336,7 @@ export default function ManagerStationDetailPage({
         <DashboardFrame>
             <div className="flex flex-col gap-3">
                 <Link
-                    href="/manager/stations"
+                    href={backHref}
                     className="inline-flex w-fit items-center gap-1.5 text-[12px] text-slate-gray transition-colors hover:text-foreground"
                 >
                     <ArrowLeft className="size-3.5" />

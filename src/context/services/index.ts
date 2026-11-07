@@ -130,6 +130,7 @@ export const api = createApi({
         "Materials",
         "Finance",
         "Biometrics",
+        "Backup",
     ],
     endpoints: () => ({}),
 });

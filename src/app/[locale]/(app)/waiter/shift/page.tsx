@@ -2,16 +2,14 @@
 
 import {
     ArrowRightLeft,
-    Bell,
+    Calendar,
     CalendarDays,
-    Flame,
-    LayoutGrid,
+    Globe,
     LogIn,
     LogOut,
     UtensilsCrossed,
-    Wallet,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useAppSelector } from "@/context/hooks";
 import { useWaiterCashSummaryQuery } from "@/context/services/cashApi";
@@ -29,11 +27,13 @@ import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import WaiterHandoverModal from "@/domains/ordering/ui/WaiterHandoverModal";
 import { Link } from "@/i18n/navigation";
 import {
+    type CalendarMode,
     ETHIOPIAN_DAYS,
     formatEthiopianLocalTime,
     getEthiopianDateDetails,
+    getSavedCalendarMode,
+    setSavedCalendarMode,
 } from "@/lib/ethiopian-calendar";
-import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { getStaffAvatarUrl } from "@/lib/avatars";
 
@@ -82,42 +82,6 @@ function formatGregorianDate(date: Date, locale: string) {
     );
 }
 
-function MetricCard({
-    label,
-    value,
-    hint,
-    icon: Icon,
-    accent = false,
-}: {
-    label: string;
-    value: string;
-    hint: string;
-    icon: typeof Bell;
-    accent?: boolean;
-}) {
-    return (
-        <div className="rounded-[20px] border border-hairline bg-card p-5">
-            <div className="flex items-center justify-between gap-3">
-                <p className="text-[13px] font-normal text-slate-gray">
-                    {label}
-                </p>
-                <span className="flex size-8 items-center justify-center rounded-full bg-secondary text-slate-gray">
-                    <Icon className="size-4" />
-                </span>
-            </div>
-            <p
-                className={cn(
-                    "mt-3 text-[28px] leading-none font-normal tracking-tight",
-                    accent ? "text-brand" : "text-foreground",
-                )}
-            >
-                {value}
-            </p>
-            <p className="mt-2 text-[12px] text-slate-gray">{hint}</p>
-        </div>
-    );
-}
-
 function formatClock(value?: string | null) {
     if (!value) return "—";
     const date = new Date(value);
@@ -140,6 +104,22 @@ export default function WaiterShiftPage() {
     const t = useTranslations("waiter");
     const locale = useLocale();
     const isAmharic = locale.startsWith("am");
+    const [calendarMode, setCalendarMode] = useState<CalendarMode>(
+        getSavedCalendarMode(),
+    );
+
+    useEffect(() => {
+        const handler = (e: Event) => {
+            const detail = (e as CustomEvent<CalendarMode>).detail;
+            if (detail === "ETHIOPIAN" || detail === "GREGORIAN") {
+                setCalendarMode(detail);
+            }
+        };
+        window.addEventListener("calendar_mode_changed", handler);
+        return () =>
+            window.removeEventListener("calendar_mode_changed", handler);
+    }, []);
+
     const staff = useAppSelector(selectCurrentStaff);
     const hasSession = useAppSelector(state => Boolean(state.identity.session));
     const { data: shift, isFetching } = useCurrentShiftQuery(undefined, {
@@ -250,9 +230,26 @@ export default function WaiterShiftPage() {
                 ? formatWindowLabel(row.startLocalTime, row.endLocalTime)
                 : null;
             const isToday = dayCode === todayDayCode;
-            return { dayCode, date, eth, row, window, isToday };
+            const gregMonthShort = date.toLocaleDateString(
+                isAmharic ? "am-ET" : "en-US",
+                { month: "short" },
+            );
+            const gregLabel = `${gregMonthShort} ${date.getDate()}`;
+            const ethMonthName = isAmharic ? eth.monthNameAm : eth.monthNameEn;
+            const ethLabel = `${ethMonthName} ${eth.date}`;
+
+            return {
+                dayCode,
+                date,
+                eth,
+                row,
+                window,
+                isToday,
+                gregLabel,
+                ethLabel,
+            };
         });
-    }, [weeklyPlan, todayDayCode]);
+    }, [weeklyPlan, todayDayCode, isAmharic]);
 
     function shiftErrorMessage(error: unknown) {
         if (error && typeof error === "object" && "data" in error) {
@@ -390,14 +387,29 @@ export default function WaiterShiftPage() {
                             <p className="text-[11px] font-medium uppercase tracking-wide text-slate-gray">
                                 {t("todayDate")}
                             </p>
-                            <p className="mt-0.5 font-normal text-foreground">
-                                {gregToday}
-                            </p>
-                            <p className="text-[12px] text-slate-gray">
-                                {isAmharic
-                                    ? ethToday.formattedAm
-                                    : ethToday.formattedEn}
-                            </p>
+                            {calendarMode === "ETHIOPIAN" ? (
+                                <>
+                                    <p className="mt-0.5 font-normal text-foreground">
+                                        {isAmharic
+                                            ? ethToday.formattedAm
+                                            : ethToday.formattedEn}
+                                    </p>
+                                    <p className="text-[12px] text-slate-gray">
+                                        {gregToday}
+                                    </p>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="mt-0.5 font-normal text-foreground">
+                                        {gregToday}
+                                    </p>
+                                    <p className="text-[12px] text-slate-gray">
+                                        {isAmharic
+                                            ? ethToday.formattedAm
+                                            : ethToday.formattedEn}
+                                    </p>
+                                </>
+                            )}
                         </div>
                         <div>
                             <p className="text-[11px] font-medium uppercase tracking-wide text-slate-gray">
@@ -613,7 +625,7 @@ export default function WaiterShiftPage() {
                 ) : null}
 
                 <div className="rounded-[16px] border border-hairline bg-card p-3 sm:p-4">
-                    <div className="mb-2.5 flex items-center justify-between gap-2">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                         <div>
                             <p className="text-[13px] font-medium text-foreground">
                                 {t("myAssignedShifts")}
@@ -622,7 +634,57 @@ export default function WaiterShiftPage() {
                                 {t("myAssignedShiftsHint")}
                             </p>
                         </div>
-                        <CalendarDays className="size-3.5 text-slate-gray" />
+                        <div className="flex items-center gap-2">
+                            {/* Calendar Mode Switcher */}
+                            <div className="inline-flex items-center rounded-lg border border-hairline bg-secondary/50 p-0.5">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setCalendarMode("ETHIOPIAN");
+                                        setSavedCalendarMode("ETHIOPIAN");
+                                    }}
+                                    className={cn(
+                                        "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-all cursor-pointer",
+                                        calendarMode === "ETHIOPIAN"
+                                            ? "bg-background text-foreground shadow-xs font-semibold"
+                                            : "text-muted-foreground hover:text-foreground",
+                                    )}
+                                    title={
+                                        isAmharic
+                                            ? "የኢትዮጵያ ቀን መቁጠሪያ"
+                                            : "Ethiopian Calendar"
+                                    }
+                                >
+                                    <Calendar className="size-3" />
+                                    <span>
+                                        {isAmharic ? "ኢትዮጵያ" : "Ethiopian"}
+                                    </span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setCalendarMode("GREGORIAN");
+                                        setSavedCalendarMode("GREGORIAN");
+                                    }}
+                                    className={cn(
+                                        "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-all cursor-pointer",
+                                        calendarMode === "GREGORIAN"
+                                            ? "bg-background text-foreground shadow-xs font-semibold"
+                                            : "text-muted-foreground hover:text-foreground",
+                                    )}
+                                    title={
+                                        isAmharic
+                                            ? "ጎርጎሮሳዊ ቀን መቁጠሪያ"
+                                            : "Gregorian Calendar"
+                                    }
+                                >
+                                    <Globe className="size-3" />
+                                    <span>
+                                        {isAmharic ? "ጎርጎሮሳዊ" : "Gregorian"}
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     {weeklyPlan.length > 0 || upcomingAssignments.length > 0 ? (
@@ -634,23 +696,37 @@ export default function WaiterShiftPage() {
                                             <th
                                                 key={cell.dayCode}
                                                 className={cn(
-                                                    "px-1.5 py-1.5 text-[10px] font-medium uppercase tracking-wide text-slate-gray",
+                                                    "px-2 py-1.5 text-[10px] font-medium uppercase tracking-wide text-slate-gray",
                                                     cell.isToday &&
                                                         "text-brand",
                                                 )}
                                             >
-                                                <span className="block">
+                                                <span className="block font-semibold">
                                                     {dayLabel(
                                                         cell.dayCode,
                                                         isAmharic,
                                                     )}
                                                 </span>
-                                                <span className="block font-normal normal-case tracking-normal text-[10px] text-slate-gray">
-                                                    {cell.date.getDate()}{" "}
-                                                    {isAmharic
-                                                        ? cell.eth.monthNameAm
-                                                        : cell.eth.monthNameEn}
-                                                </span>
+                                                {calendarMode ===
+                                                "ETHIOPIAN" ? (
+                                                    <>
+                                                        <span className="block font-medium text-[11px] text-foreground normal-case">
+                                                            {cell.ethLabel}
+                                                        </span>
+                                                        <span className="block text-[10px] text-slate-gray normal-case">
+                                                            {cell.gregLabel}
+                                                        </span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <span className="block font-medium text-[11px] text-foreground normal-case">
+                                                            {cell.gregLabel}
+                                                        </span>
+                                                        <span className="block text-[10px] text-slate-gray normal-case">
+                                                            {cell.ethLabel}
+                                                        </span>
+                                                    </>
+                                                )}
                                             </th>
                                         ))}
                                     </tr>
@@ -756,95 +832,6 @@ export default function WaiterShiftPage() {
                             {t("noAssignedShifts")}
                         </p>
                     )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                    <MetricCard
-                        label={t("openTables")}
-                        value={String(summary.openTables)}
-                        hint={t("yourActiveCovers")}
-                        icon={LayoutGrid}
-                    />
-                    <MetricCard
-                        label={t("sales")}
-                        value={formatEtb(summary.sales)}
-                        hint={t("openTicketsHint")}
-                        icon={Wallet}
-                        accent
-                    />
-                    <MetricCard
-                        label={t("readyShort")}
-                        value={String(summary.readyCount)}
-                        hint={t("waitingToServe")}
-                        icon={Bell}
-                    />
-                    <MetricCard
-                        label={t("stillCooking")}
-                        value={String(summary.cookingCount)}
-                        hint={t("stillAtStation")}
-                        icon={Flame}
-                    />
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-2">
-                    <Link
-                        href="/waiter/tables"
-                        className="rounded-[20px] border border-hairline bg-card p-5 transition-colors hover:bg-secondary/40"
-                    >
-                        <p className="text-[13px] font-normal text-slate-gray">
-                            {t("floorLink")}
-                        </p>
-                        <p className="mt-1 text-[16px] font-normal text-foreground">
-                            {t("openTables")}
-                        </p>
-                        <p className="mt-1 text-[13px] text-slate-gray">
-                            {t("floorLinkDesc")}
-                        </p>
-                    </Link>
-                    <Link
-                        href="/waiter/ready"
-                        className="rounded-[20px] border border-hairline bg-card p-5 transition-colors hover:bg-secondary/40"
-                    >
-                        <p className="text-[13px] font-normal text-slate-gray">
-                            {t("serviceLink")}
-                        </p>
-                        <p className="mt-1 text-[16px] font-normal text-foreground">
-                            {t("readyTickets")}
-                        </p>
-                        <p className="mt-1 text-[13px] text-slate-gray">
-                            {summary.readyCount > 0
-                                ? summary.readyCount === 1
-                                    ? t("dishReadyToRun", {
-                                          count: summary.readyCount,
-                                      })
-                                    : t("dishesReadyToRun", {
-                                          count: summary.readyCount,
-                                      })
-                                : t("nothingWaiting")}
-                        </p>
-                    </Link>
-                </div>
-
-                <div className="flex items-start gap-3 rounded-[20px] border border-hairline bg-card p-5">
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-foreground">
-                        <Wallet className="size-4" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                        <p className="text-[15px] font-normal text-foreground">
-                            {t("cashOnYou")}
-                        </p>
-                        <p className="mt-1 text-[14px] text-slate-gray">
-                            {t("cashOnYouHint", {
-                                amount: formatEtb(cashOnHand),
-                            })}
-                        </p>
-                        <Link
-                            href="/waiter/cash"
-                            className="mt-3 inline-flex text-[14px] font-normal text-brand hover:underline"
-                        >
-                            {t("dropCashLink")}
-                        </Link>
-                    </div>
                 </div>
 
                 {/* Handover Modal */}

@@ -7,6 +7,7 @@ import {
     BedDouble,
     Bell,
     BookOpen,
+    Bot,
     Boxes,
     Building2,
     CalendarDays,
@@ -20,6 +21,7 @@ import {
     Flame,
     Globe,
     HandCoins,
+    HardDriveDownload,
     Inbox,
     LayoutDashboard,
     LayoutGrid,
@@ -143,6 +145,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                             label: "Roles & Permissions",
                             icon: Shield,
                         },
+                        {
+                            href: "/super-admin/backups",
+                            label: "Automated Backups",
+                            icon: HardDriveDownload,
+                        },
                     ],
                 },
                 {
@@ -167,20 +174,15 @@ function navSectionsForRole(role: Role): NavSection[] {
                             icon: LayoutDashboard,
                         },
                         {
+                            href: "/owner/ai",
+                            label: "AI Advisor",
+                            icon: Bot,
+                        },
+                        {
                             href: "/owner/live",
                             label: "Live Operations",
                             icon: Activity,
                         },
-                        /* {
-                            href: "/owner/outside",
-                            label: "Outside Orders",
-                            icon: Building2,
-                        }, */
-                        /* {
-                            href: "/owner/fresh-prep",
-                            label: "Fresh Prep",
-                            icon: ChefHat,
-                        }, */
                         {
                             href: "/owner/notifications",
                             label: "Notifications",
@@ -197,20 +199,97 @@ function navSectionsForRole(role: Role): NavSection[] {
                             icon: MessageSquareQuote,
                         },
                         {
-                            href: "/owner/menu-engineering",
-                            label: "Menu Engineering",
-                            icon: BarChart3,
-                        },
-                        {
                             href: "/owner/branches",
                             label: "Branches",
                             icon: Building2,
                         },
-                        /* {
-                            href: "/owner/customers",
-                            label: "Customers & Loyalty",
-                            icon: Users,
-                        }, */
+                        {
+                            href: "/owner/backup",
+                            label: "Backup & Restore",
+                            icon: HardDriveDownload,
+                        },
+                    ],
+                },
+                {
+                    title: "House",
+                    items: [
+                        {
+                            href: "/owner/menu",
+                            label: "Menu catalog",
+                            icon: UtensilsCrossed,
+                            children: [
+                                {
+                                    href: "/owner/menu",
+                                    label: "Menu Items",
+                                    icon: UtensilsCrossed,
+                                },
+                                {
+                                    href: "/owner/qr-menu",
+                                    label: "QR Menu Builder",
+                                    icon: QrCode,
+                                },
+                                {
+                                    href: "/owner/print-menu",
+                                    label: "Print Menu Builder",
+                                    icon: BookOpen,
+                                },
+                                {
+                                    href: "/owner/menu/vip-pricing",
+                                    label: "VIP Pricing",
+                                    icon: Crown,
+                                },
+                                {
+                                    href: "/owner/menu-engineering",
+                                    label: "Menu Engineering",
+                                    icon: BarChart3,
+                                },
+                            ],
+                        },
+                        {
+                            href: "/owner/stations",
+                            label: "Stations",
+                            icon: Warehouse,
+                        },
+                        {
+                            href: "/owner/tables",
+                            label: "Tables",
+                            icon: Store,
+                        },
+                        {
+                            href: "/owner/rooms",
+                            label: "Rooms",
+                            icon: BedDouble,
+                        },
+                        {
+                            href: "/owner/front-desk",
+                            label: "Front desk",
+                            icon: ConciergeBell,
+                        },
+                        {
+                            href: "/owner/waiters",
+                            label: "Waiters",
+                            icon: UserRound,
+                        },
+                        {
+                            href: "/owner/approvals",
+                            label: "Approvals",
+                            icon: ClipboardCheck,
+                        },
+                        {
+                            href: "/owner/audit",
+                            label: "Audit",
+                            icon: ScrollText,
+                        },
+                        {
+                            href: "/owner/reports",
+                            label: "Reports & Audits",
+                            icon: ScrollText,
+                        },
+                    ],
+                },
+                {
+                    title: "People & Money",
+                    items: [
                         {
                             href: "/owner/staff",
                             label: "HR",
@@ -267,11 +346,6 @@ function navSectionsForRole(role: Role): NavSection[] {
                                     href: "/owner/finance/closes",
                                     label: "Closes",
                                     icon: ClipboardCheck,
-                                },
-                                {
-                                    href: "/owner/finance/reports",
-                                    label: "Reports",
-                                    icon: ScrollText,
                                 },
                                 {
                                     href: "/owner/finance/payroll",
@@ -434,11 +508,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                             label: "Rooms",
                             icon: BedDouble,
                         },
-                        /* {
+                        {
                             href: "/manager/outside",
                             label: "Outside Orders",
                             icon: Building2,
-                        }, */
+                        },
                         {
                             href: "/manager/front-desk",
                             label: "Front desk",
@@ -626,6 +700,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                             label: "Daily Close",
                             icon: ClipboardCheck,
                         },
+                        {
+                            href: "/cashier/settings",
+                            label: "Settings",
+                            icon: Store,
+                        },
                     ],
                 },
             ];
@@ -644,11 +723,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                             label: "Rooms",
                             icon: BedDouble,
                         },
-                        /* {
+                        {
                             href: "/waiter/outside",
                             label: "Outside",
                             icon: Building2,
-                        }, */
+                        },
                         {
                             href: "/waiter/ready",
                             label: "Ready",
@@ -847,6 +926,11 @@ export type NavOptions = {
     roomsEnabled?: boolean | null;
     /** When false or undefined, hide multi-branch supply & central prep. */
     hasMainWarehouse?: boolean | null;
+    featureInventory?: boolean | null;
+    featureCentralWarehouse?: boolean | null;
+    featureTelegramBackup?: boolean | null;
+    featureAiAdvisor?: boolean | null;
+    featureOutsideOrders?: boolean | null;
 };
 
 function navForRole(
@@ -872,6 +956,85 @@ function navForRole(
                 items: section.items.filter(
                     item => item.href !== WAITER_ROOMS_HREF,
                 ),
+            }))
+            .filter(section => section.items.length > 0);
+    }
+
+    // 1. Feature: Basic Inventory (Single Store)
+    if (options.featureInventory === false) {
+        sections = sections
+            .map(section => ({
+                ...section,
+                items: section.items.filter(
+                    item =>
+                        !item.href.includes("/inventory") &&
+                        item.href !== "/owner/fresh-prep" &&
+                        item.href !== "/manager/fresh-prep" &&
+                        item.href !== "/store/inventory",
+                ),
+            }))
+            .filter(section => section.items.length > 0);
+    }
+
+    // 2. Feature: Central Warehouse & Multi-Branch Transfers
+    if (options.featureCentralWarehouse === false) {
+        sections = sections
+            .map(section => ({
+                ...section,
+                items: section.items
+                    .filter(item => item.href !== "/owner/branches")
+                    .map(item => {
+                        if (item.children && item.children.length > 0) {
+                            return {
+                                ...item,
+                                children: item.children.filter(
+                                    child =>
+                                        !child.href.endsWith(
+                                            "/inventory/transfers",
+                                        ) &&
+                                        !child.href.endsWith("/inventory/prep"),
+                                ),
+                            };
+                        }
+                        return item;
+                    }),
+            }))
+            .filter(section => section.items.length > 0);
+    }
+
+    // 3. Feature: AI Voice Business Advisor
+    if (options.featureAiAdvisor === false) {
+        sections = sections
+            .map(section => ({
+                ...section,
+                items: section.items.filter(item => item.href !== "/owner/ai"),
+            }))
+            .filter(section => section.items.length > 0);
+    }
+
+    // 4. Feature: Outside Orders & Returnable Materials
+    if (options.featureOutsideOrders === false) {
+        sections = sections
+            .map(section => ({
+                ...section,
+                items: section.items
+                    .filter(
+                        item =>
+                            item.href !== "/waiter/outside" &&
+                            item.href !== "/manager/outside" &&
+                            !item.href.endsWith("/materials"),
+                    )
+                    .map(item => {
+                        if (item.children && item.children.length > 0) {
+                            return {
+                                ...item,
+                                children: item.children.filter(
+                                    child => !child.href.endsWith("/materials"),
+                                ),
+                            };
+                        }
+                        return item;
+                    }),
             }))
             .filter(section => section.items.length > 0);
     }

@@ -25,6 +25,7 @@ export type Bill = {
     generatedAt: string;
     paidAt: string | null;
     version: number;
+    cashierName?: string | null;
     lines: BillLine[];
 };
 
@@ -97,4 +98,10 @@ export type CashierPaymentLogItem = PaymentSummary & {
 export type CashierPaymentDetail = {
     payment: CashierPaymentLogItem;
     bill: Bill;
+};
+
+export type CashierActiveBill = Bill & {
+    tableDisplayName: string;
+    waiterName: string;
+    tableSessionVersion?: number;
 };

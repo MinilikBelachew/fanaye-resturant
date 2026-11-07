@@ -78,9 +78,7 @@ export default function IngredientDetailPage({
         () => ({
             audience,
             ingredientId,
-            ...(isCustomRange
-                ? { from: fromDate, to: toDate }
-                : { period }),
+            ...(isCustomRange ? { from: fromDate, to: toDate } : { period }),
         }),
         [audience, ingredientId, isCustomRange, fromDate, toDate, period],
     );
@@ -117,14 +115,18 @@ export default function IngredientDetailPage({
     }, [orders, orderFilter]);
 
     const totalOrdersIngredientQty = useMemo(() => {
-        return orders.reduce((sum, o) => sum + Number(o.ingredientQtyUsed || 0), 0);
+        return orders.reduce(
+            (sum, o) => sum + Number(o.ingredientQtyUsed || 0),
+            0,
+        );
     }, [orders]);
 
     const totalOrdersPlates = useMemo(() => {
         return orders.reduce((sum, o) => sum + Number(o.orderedQty || 0), 0);
     }, [orders]);
 
-    const ingredientName = usage?.name ?? ordersData?.ingredientName ?? "Ingredient";
+    const ingredientName =
+        usage?.name ?? ordersData?.ingredientName ?? "Ingredient";
     const unit = usage?.unit ?? ordersData?.unit ?? "units";
 
     return (
@@ -252,25 +254,36 @@ export default function IngredientDetailPage({
                             <span>/</span>
                             <span>Inventory</span>
                             <span>/</span>
-                            <span className="text-brand">Stock & Consumption Audit</span>
+                            <span className="text-brand">
+                                Stock & Consumption Audit
+                            </span>
                         </div>
                         <div className="flex flex-wrap items-center gap-3">
                             <h1 className="text-2xl font-bold tracking-tight text-foreground">
                                 {ingredientName}
                             </h1>
-                            <Badge variant="outline" className="rounded-full text-[12px] font-normal">
+                            <Badge
+                                variant="outline"
+                                className="rounded-full text-[12px] font-normal"
+                            >
                                 {unit}
                             </Badge>
                             {usage?.unitCost ? (
-                                <Badge variant="secondary" className="rounded-full text-[12px] font-normal tabular-nums">
-                                    Cost: {formatEtb(Number(usage.unitCost))} / {unit}
+                                <Badge
+                                    variant="secondary"
+                                    className="rounded-full text-[12px] font-normal tabular-nums"
+                                >
+                                    Cost: {formatEtb(Number(usage.unitCost))} /{" "}
+                                    {unit}
                                 </Badge>
                             ) : null}
                         </div>
                     </div>
                     {usage?.from && usage?.to ? (
                         <div className="rounded-xl border border-hairline bg-secondary/30 px-3 py-1.5 text-right">
-                            <p className="text-[11px] font-medium text-slate-gray">Audit Window</p>
+                            <p className="text-[11px] font-medium text-slate-gray">
+                                Audit Window
+                            </p>
                             <p className="text-[12px] font-semibold tabular-nums text-foreground">
                                 {usage.from} → {usage.to}
                             </p>
@@ -294,7 +307,9 @@ export default function IngredientDetailPage({
                             </p>
                             <p className="mt-1 text-xl font-bold tabular-nums text-foreground">
                                 {formatStockQty(usage.openingQty)}{" "}
-                                <span className="text-xs font-normal text-slate-gray">{usage.unit}</span>
+                                <span className="text-xs font-normal text-slate-gray">
+                                    {usage.unit}
+                                </span>
                             </p>
                             <p className="text-[11px] tabular-nums text-slate-gray">
                                 {formatEtb(Number(usage.openingValue))}
@@ -308,7 +323,9 @@ export default function IngredientDetailPage({
                             </p>
                             <p className="mt-1 text-xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
                                 +{formatStockQty(usage.receivedQty)}{" "}
-                                <span className="text-xs font-normal opacity-80">{usage.unit}</span>
+                                <span className="text-xs font-normal opacity-80">
+                                    {usage.unit}
+                                </span>
                             </p>
                             <p className="text-[11px] tabular-nums text-emerald-700/80 dark:text-emerald-400/80">
                                 {formatEtb(Number(usage.receivedValue))}
@@ -322,7 +339,9 @@ export default function IngredientDetailPage({
                             </p>
                             <p className="mt-1 text-xl font-bold tabular-nums text-brand">
                                 −{formatStockQty(usage.consumedQty)}{" "}
-                                <span className="text-xs font-normal opacity-80">{usage.unit}</span>
+                                <span className="text-xs font-normal opacity-80">
+                                    {usage.unit}
+                                </span>
                             </p>
                             <p className="text-[11px] tabular-nums text-brand/80">
                                 {formatEtb(Number(usage.consumedValue))}
@@ -336,7 +355,9 @@ export default function IngredientDetailPage({
                             </p>
                             <p className="mt-1 text-xl font-bold tabular-nums text-amber-600 dark:text-amber-400">
                                 −{formatStockQty(usage.wasteQty)}{" "}
-                                <span className="text-xs font-normal opacity-80">{usage.unit}</span>
+                                <span className="text-xs font-normal opacity-80">
+                                    {usage.unit}
+                                </span>
                             </p>
                             <p className="text-[11px] tabular-nums text-amber-700/80 dark:text-amber-400/80">
                                 {formatEtb(Number(usage.wasteValue))}
@@ -350,7 +371,9 @@ export default function IngredientDetailPage({
                             </p>
                             <p className="mt-1 text-xl font-bold tabular-nums text-foreground">
                                 {formatStockQty(usage.closingQty)}{" "}
-                                <span className="text-xs font-normal text-slate-gray">{usage.unit}</span>
+                                <span className="text-xs font-normal text-slate-gray">
+                                    {usage.unit}
+                                </span>
                             </p>
                             <p className="text-[11px] tabular-nums text-slate-gray">
                                 {formatEtb(Number(usage.closingValue))}
@@ -360,22 +383,44 @@ export default function IngredientDetailPage({
 
                     {/* Stock Bridge Summary Strip */}
                     <div className="flex flex-wrap items-center gap-2 rounded-xl border border-hairline bg-secondary/20 px-4 py-2.5 text-[12px] tabular-nums text-slate-gray">
-                        <span className="font-semibold text-foreground">Bridge:</span>
-                        <span>Started with {formatStockQty(usage.openingQty)} {usage.unit}</span>
+                        <span className="font-semibold text-foreground">
+                            Bridge:
+                        </span>
+                        <span>
+                            Started with {formatStockQty(usage.openingQty)}{" "}
+                            {usage.unit}
+                        </span>
                         <span>→</span>
-                        <span className="text-emerald-600 dark:text-emerald-400">+{formatStockQty(usage.receivedQty)} received</span>
+                        <span className="text-emerald-600 dark:text-emerald-400">
+                            +{formatStockQty(usage.receivedQty)} received
+                        </span>
                         <span>→</span>
-                        <span className="text-brand">−{formatStockQty(usage.consumedQty)} sold in orders</span>
+                        <span className="text-brand">
+                            −{formatStockQty(usage.consumedQty)} sold in orders
+                        </span>
                         <span>→</span>
-                        <span className="text-amber-600 dark:text-amber-400">−{formatStockQty(usage.wasteQty)} waste</span>
-                        {usage.adjustedQty !== 0 || usage.transfersNetQty !== 0 ? (
+                        <span className="text-amber-600 dark:text-amber-400">
+                            −{formatStockQty(usage.wasteQty)} waste
+                        </span>
+                        {usage.adjustedQty !== 0 ||
+                        usage.transfersNetQty !== 0 ? (
                             <>
                                 <span>→</span>
-                                <span>{formatStockQty(usage.transfersNetQty + usage.adjustedQty + usage.otherQty)} adjustments</span>
+                                <span>
+                                    {formatStockQty(
+                                        usage.transfersNetQty +
+                                            usage.adjustedQty +
+                                            usage.otherQty,
+                                    )}{" "}
+                                    adjustments
+                                </span>
                             </>
                         ) : null}
                         <span>=</span>
-                        <span className="font-bold text-foreground">Closing: {formatStockQty(usage.closingQty)} {usage.unit}</span>
+                        <span className="font-bold text-foreground">
+                            Closing: {formatStockQty(usage.closingQty)}{" "}
+                            {usage.unit}
+                        </span>
                     </div>
                 </div>
             ) : null}
@@ -396,7 +441,9 @@ export default function IngredientDetailPage({
                         <UtensilsCrossed className="size-3.5" />
                         <span>Per-Order Breakdown</span>
                         <Badge
-                            variant={activeTab === "orders" ? "secondary" : "outline"}
+                            variant={
+                                activeTab === "orders" ? "secondary" : "outline"
+                            }
                             className="rounded-full px-1.5 py-0 text-[10px]"
                         >
                             {orders.length}
@@ -416,7 +463,9 @@ export default function IngredientDetailPage({
                         <ChefHat className="size-3.5" />
                         <span>Used by Menu Item</span>
                         <Badge
-                            variant={activeTab === "menu" ? "secondary" : "outline"}
+                            variant={
+                                activeTab === "menu" ? "secondary" : "outline"
+                            }
                             className="rounded-full px-1.5 py-0 text-[10px]"
                         >
                             {usage?.byMenu.length ?? 0}
@@ -436,7 +485,11 @@ export default function IngredientDetailPage({
                         <Truck className="size-3.5" />
                         <span>Vendor Receives</span>
                         <Badge
-                            variant={activeTab === "vendors" ? "secondary" : "outline"}
+                            variant={
+                                activeTab === "vendors"
+                                    ? "secondary"
+                                    : "outline"
+                            }
                             className="rounded-full px-1.5 py-0 text-[10px]"
                         >
                             {usage?.receivedByVendor.length ?? 0}
@@ -469,7 +522,8 @@ export default function IngredientDetailPage({
                                     Table & Waiter Consumption Audit Log
                                 </h3>
                                 <p className="text-[11px] text-slate-gray">
-                                    Every individual order item that depleted this ingredient from stock.
+                                    Every individual order item that depleted
+                                    this ingredient from stock.
                                 </p>
                             </div>
                             <div className="flex gap-4 text-[12px] tabular-nums text-slate-gray">
@@ -482,7 +536,10 @@ export default function IngredientDetailPage({
                                 <span>
                                     Ingredient Depleted:{" "}
                                     <strong className="text-brand">
-                                        {formatStockQty(totalOrdersIngredientQty)} {unit}
+                                        {formatStockQty(
+                                            totalOrdersIngredientQty,
+                                        )}{" "}
+                                        {unit}
                                     </strong>
                                 </span>
                             </div>
@@ -506,14 +563,30 @@ export default function IngredientDetailPage({
                                 <table className="w-full min-w-[760px] text-[13px]">
                                     <thead>
                                         <tr className="border-b border-hairline bg-secondary/20 text-left text-[11px] uppercase tracking-[0.06em] text-slate-gray">
-                                            <th className="px-4 py-2.5">Date & Time</th>
-                                            <th className="px-4 py-2.5">Table</th>
-                                            <th className="px-4 py-2.5">Waiter</th>
-                                            <th className="px-4 py-2.5">Menu Item Sold</th>
-                                            <th className="px-4 py-2.5 text-center">Plates</th>
-                                            <th className="px-4 py-2.5 text-right">Qty Used</th>
-                                            <th className="px-4 py-2.5 text-right">Cost at Time</th>
-                                            <th className="px-4 py-2.5 text-center">Order ID</th>
+                                            <th className="px-4 py-2.5">
+                                                Date & Time
+                                            </th>
+                                            <th className="px-4 py-2.5">
+                                                Table
+                                            </th>
+                                            <th className="px-4 py-2.5">
+                                                Waiter
+                                            </th>
+                                            <th className="px-4 py-2.5">
+                                                Menu Item Sold
+                                            </th>
+                                            <th className="px-4 py-2.5 text-center">
+                                                Plates
+                                            </th>
+                                            <th className="px-4 py-2.5 text-right">
+                                                Qty Used
+                                            </th>
+                                            <th className="px-4 py-2.5 text-right">
+                                                Cost at Time
+                                            </th>
+                                            <th className="px-4 py-2.5 text-center">
+                                                Order ID
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-hairline">
@@ -523,7 +596,9 @@ export default function IngredientDetailPage({
                                                 className="transition-colors hover:bg-secondary/30"
                                             >
                                                 <td className="px-4 py-2.5 tabular-nums text-foreground">
-                                                    <span className="font-medium">{order.date}</span>
+                                                    <span className="font-medium">
+                                                        {order.date}
+                                                    </span>
                                                     <span className="ml-1.5 text-[11px] text-slate-gray">
                                                         {order.time}
                                                     </span>
@@ -534,7 +609,9 @@ export default function IngredientDetailPage({
                                                             variant="secondary"
                                                             className="rounded-full px-2 py-0.5 text-[11px] font-medium"
                                                         >
-                                                            {order.tableDisplayName}
+                                                            {
+                                                                order.tableDisplayName
+                                                            }
                                                         </Badge>
                                                     ) : (
                                                         <span className="text-[12px] text-slate-gray">
@@ -545,7 +622,8 @@ export default function IngredientDetailPage({
                                                 <td className="px-4 py-2.5">
                                                     <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
                                                         <UserRound className="size-3 text-slate-gray" />
-                                                        {order.waiterName || "Staff"}
+                                                        {order.waiterName ||
+                                                            "Staff"}
                                                     </span>
                                                 </td>
                                                 <td className="px-4 py-2.5 font-medium text-foreground">
@@ -555,21 +633,33 @@ export default function IngredientDetailPage({
                                                     {order.orderedQty}
                                                 </td>
                                                 <td className="px-4 py-2.5 text-right font-semibold tabular-nums text-brand">
-                                                    {formatStockQty(order.ingredientQtyUsed)}{" "}
+                                                    {formatStockQty(
+                                                        order.ingredientQtyUsed,
+                                                    )}{" "}
                                                     <span className="text-[11px] font-normal text-slate-gray">
                                                         {order.ingredientUnit}
                                                     </span>
                                                 </td>
                                                 <td className="px-4 py-2.5 text-right tabular-nums text-slate-gray">
-                                                    {formatEtb(Number(order.costAtTime))}
+                                                    {formatEtb(
+                                                        Number(
+                                                            order.costAtTime,
+                                                        ),
+                                                    )}
                                                 </td>
                                                 <td className="px-4 py-2.5 text-center">
                                                     {order.orderId ? (
                                                         <span className="rounded bg-secondary/60 px-1.5 py-0.5 font-mono text-[11px] text-slate-gray">
-                                                            #{order.orderId.slice(0, 6)}
+                                                            #
+                                                            {order.orderId.slice(
+                                                                0,
+                                                                6,
+                                                            )}
                                                         </span>
                                                     ) : (
-                                                        <span className="text-slate-gray">—</span>
+                                                        <span className="text-slate-gray">
+                                                            —
+                                                        </span>
                                                     )}
                                                 </td>
                                             </tr>
@@ -589,7 +679,8 @@ export default function IngredientDetailPage({
                                 Consumption by Menu Item
                             </h3>
                             <p className="text-[11px] text-slate-gray">
-                                Total quantities consumed for each recipe sold during the selected period.
+                                Total quantities consumed for each recipe sold
+                                during the selected period.
                             </p>
                         </div>
 
@@ -597,7 +688,8 @@ export default function IngredientDetailPage({
                             <div className="py-12 text-center text-slate-gray">
                                 <ChefHat className="mx-auto size-8 opacity-30" />
                                 <p className="mt-2 text-[13px]">
-                                    No menu items consumed this ingredient during this period.
+                                    No menu items consumed this ingredient
+                                    during this period.
                                 </p>
                             </div>
                         ) : (
@@ -605,17 +697,30 @@ export default function IngredientDetailPage({
                                 <table className="w-full min-w-[640px] text-[13px]">
                                     <thead>
                                         <tr className="border-b border-hairline bg-secondary/20 text-left text-[11px] uppercase tracking-[0.06em] text-slate-gray">
-                                            <th className="px-4 py-2.5">Menu Item</th>
-                                            <th className="px-4 py-2.5 text-center">Plates Sold</th>
-                                            <th className="px-4 py-2.5 text-right">Qty Consumed</th>
-                                            <th className="px-4 py-2.5 text-right">Share</th>
-                                            <th className="px-4 py-2.5 text-right">Total Cost</th>
+                                            <th className="px-4 py-2.5">
+                                                Menu Item
+                                            </th>
+                                            <th className="px-4 py-2.5 text-center">
+                                                Plates Sold
+                                            </th>
+                                            <th className="px-4 py-2.5 text-right">
+                                                Qty Consumed
+                                            </th>
+                                            <th className="px-4 py-2.5 text-right">
+                                                Share
+                                            </th>
+                                            <th className="px-4 py-2.5 text-right">
+                                                Total Cost
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-hairline">
                                         {usage.byMenu.map(item => (
                                             <tr
-                                                key={item.menuItemId ?? item.menuItemName}
+                                                key={
+                                                    item.menuItemId ??
+                                                    item.menuItemName
+                                                }
                                                 className="transition-colors hover:bg-secondary/30"
                                             >
                                                 <td className="px-4 py-3 font-medium text-foreground">
@@ -625,7 +730,10 @@ export default function IngredientDetailPage({
                                                     {item.plateCount}
                                                 </td>
                                                 <td className="px-4 py-3 text-right font-semibold tabular-nums text-foreground">
-                                                    {formatStockQty(item.qtyConsumed)} {usage.unit}
+                                                    {formatStockQty(
+                                                        item.qtyConsumed,
+                                                    )}{" "}
+                                                    {usage.unit}
                                                 </td>
                                                 <td className="px-4 py-3 text-right tabular-nums text-slate-gray">
                                                     <div className="flex items-center justify-end gap-2">
@@ -637,11 +745,15 @@ export default function IngredientDetailPage({
                                                                 }}
                                                             />
                                                         </div>
-                                                        <span className="w-10 text-right">{item.share}%</span>
+                                                        <span className="w-10 text-right">
+                                                            {item.share}%
+                                                        </span>
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-3 text-right font-medium tabular-nums text-foreground">
-                                                    {formatEtb(Number(item.cost))}
+                                                    {formatEtb(
+                                                        Number(item.cost),
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))}
@@ -660,15 +772,18 @@ export default function IngredientDetailPage({
                                 Purchases & Receives History
                             </h3>
                             <p className="text-[11px] text-slate-gray">
-                                Stock received from suppliers during the selected period.
+                                Stock received from suppliers during the
+                                selected period.
                             </p>
                         </div>
 
-                        {!usage?.receivedByVendor || usage.receivedByVendor.length === 0 ? (
+                        {!usage?.receivedByVendor ||
+                        usage.receivedByVendor.length === 0 ? (
                             <div className="py-12 text-center text-slate-gray">
                                 <Truck className="mx-auto size-8 opacity-30" />
                                 <p className="mt-2 text-[13px]">
-                                    No stock received from vendors during this period.
+                                    No stock received from vendors during this
+                                    period.
                                 </p>
                             </div>
                         ) : (
@@ -676,16 +791,27 @@ export default function IngredientDetailPage({
                                 <table className="w-full min-w-[640px] text-[13px]">
                                     <thead>
                                         <tr className="border-b border-hairline bg-secondary/20 text-left text-[11px] uppercase tracking-[0.06em] text-slate-gray">
-                                            <th className="px-4 py-2.5">Vendor</th>
-                                            <th className="px-4 py-2.5 text-center">Receipts / Invoices</th>
-                                            <th className="px-4 py-2.5 text-right">Qty Received</th>
-                                            <th className="px-4 py-2.5 text-right">Total Amount</th>
+                                            <th className="px-4 py-2.5">
+                                                Vendor
+                                            </th>
+                                            <th className="px-4 py-2.5 text-center">
+                                                Receipts / Invoices
+                                            </th>
+                                            <th className="px-4 py-2.5 text-right">
+                                                Qty Received
+                                            </th>
+                                            <th className="px-4 py-2.5 text-right">
+                                                Total Amount
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-hairline">
                                         {usage.receivedByVendor.map(vendor => (
                                             <tr
-                                                key={vendor.vendorId ?? vendor.vendorName}
+                                                key={
+                                                    vendor.vendorId ??
+                                                    vendor.vendorName
+                                                }
                                                 className="transition-colors hover:bg-secondary/30"
                                             >
                                                 <td className="px-4 py-3 font-medium text-foreground">
@@ -695,10 +821,14 @@ export default function IngredientDetailPage({
                                                     {vendor.count} invoices
                                                 </td>
                                                 <td className="px-4 py-3 text-right font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
-                                                    +{formatStockQty(vendor.qty)} {usage.unit}
+                                                    +
+                                                    {formatStockQty(vendor.qty)}{" "}
+                                                    {usage.unit}
                                                 </td>
                                                 <td className="px-4 py-3 text-right font-medium tabular-nums text-foreground">
-                                                    {formatEtb(Number(vendor.amount))}
+                                                    {formatEtb(
+                                                        Number(vendor.amount),
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))}
@@ -712,4 +842,3 @@ export default function IngredientDetailPage({
         </DashboardFrame>
     );
 }
-

@@ -25,7 +25,9 @@ import {
     Utensils,
     Wine,
 } from "lucide-react";
-import DataTable, { type DataTableColumn } from "@/components/custom/organisms/DataTable";
+import DataTable, {
+    type DataTableColumn,
+} from "@/components/custom/organisms/DataTable";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type {
@@ -56,8 +58,12 @@ export default function FbReportView({
 }: FbReportViewProps) {
     const [subTab, setSubTab] = useState<FbSubTab>("overview");
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
-    const [selectedDish, setSelectedDish] = useState<FbReportSoldItem | null>(null);
-    const [selectedDateFilter, setSelectedDateFilter] = useState<string | null>(null);
+    const [selectedDish, setSelectedDish] = useState<FbReportSoldItem | null>(
+        null,
+    );
+    const [selectedDateFilter, setSelectedDateFilter] = useState<string | null>(
+        null,
+    );
 
     // Pagination states for DataTables
     const [soldItemsPage, setSoldItemsPage] = useState(1);
@@ -67,6 +73,54 @@ export default function FbReportView({
 
     const PAGE_SIZE = 10;
 
+    const soldItems = data?.soldItems ?? [];
+    const orderInstances = data?.orderInstances ?? [];
+
+    // Distinct list of categories for filter pills
+    const allCategoriesList = useMemo(() => {
+        const set = new Set<string>();
+        soldItems.forEach(item => {
+            if (item.categoryName) set.add(item.categoryName);
+        });
+        return Array.from(set).sort();
+    }, [soldItems]);
+
+    // Filtered sold items by selected category
+    const filteredSoldItems = useMemo(() => {
+        if (selectedCategory === "all") return soldItems;
+        return soldItems.filter(
+            item =>
+                item.categoryName.toLowerCase() ===
+                selectedCategory.toLowerCase(),
+        );
+    }, [soldItems, selectedCategory]);
+
+    // Filtered order instances for audit log
+    const filteredOrderInstances = useMemo(() => {
+        let list = orderInstances;
+        if (selectedCategory !== "all") {
+            list = list.filter(
+                o =>
+                    o.categoryName.toLowerCase() ===
+                    selectedCategory.toLowerCase(),
+            );
+        }
+        if (selectedDateFilter) {
+            list = list.filter(o =>
+                o.confirmedAt.startsWith(selectedDateFilter),
+            );
+        }
+        return list;
+    }, [orderInstances, selectedCategory, selectedDateFilter]);
+
+    // Orders for the selected dish in Detail Page
+    const dishOrders = useMemo(() => {
+        if (!selectedDish) return [];
+        return orderInstances.filter(
+            o => o.itemName.toLowerCase() === selectedDish.name.toLowerCase(),
+        );
+    }, [orderInstances, selectedDish]);
+
     if (isLoading) {
         return (
             <div className="flex h-80 flex-col items-center justify-center gap-3 rounded-2xl border border-hairline bg-card/60 p-8 text-center backdrop-blur-sm">
@@ -74,8 +128,12 @@ export default function FbReportView({
                     <Utensils className="size-5 animate-pulse" />
                 </div>
                 <div className="space-y-1">
-                    <p className="text-sm font-medium text-foreground">Calculating F&B metrics...</p>
-                    <p className="text-xs text-muted-foreground">Aggregating food, beverage, dish sales, and recipe costs</p>
+                    <p className="text-sm font-medium text-foreground">
+                        Calculating F&B metrics...
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                        Aggregating food, beverage, dish sales, and recipe costs
+                    </p>
                 </div>
             </div>
         );
@@ -86,11 +144,20 @@ export default function FbReportView({
             <div className="flex h-80 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-destructive/30 bg-destructive/5 p-8 text-center">
                 <AlertCircle className="size-7 text-destructive" />
                 <div className="space-y-1">
-                    <p className="text-sm font-medium text-foreground">Failed to load Food & Beverage report</p>
-                    <p className="text-xs text-muted-foreground">Please check your connection and retry.</p>
+                    <p className="text-sm font-medium text-foreground">
+                        Failed to load Food & Beverage report
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                        Please check your connection and retry.
+                    </p>
                 </div>
                 {onRetry && (
-                    <Button variant="outline" size="sm" onClick={onRetry} className="mt-2 h-8 text-xs">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={onRetry}
+                        className="mt-2 h-8 text-xs"
+                    >
                         Try Again
                     </Button>
                 )}
@@ -112,45 +179,10 @@ export default function FbReportView({
         topSellingItems = [],
         topProfitableItems = [],
         dailyVolumes = [],
-        soldItems = [],
-        orderInstances = [],
     } = data;
 
     const isFoodCostHealthy = food.costPct <= 32;
     const isBevCostHealthy = beverage.costPct <= 22;
-
-    // Distinct list of categories for filter pills
-    const allCategoriesList = useMemo(() => {
-        const set = new Set<string>();
-        soldItems.forEach(item => {
-            if (item.categoryName) set.add(item.categoryName);
-        });
-        return Array.from(set).sort();
-    }, [soldItems]);
-
-    // Filtered sold items by selected category
-    const filteredSoldItems = useMemo(() => {
-        if (selectedCategory === "all") return soldItems;
-        return soldItems.filter(item => item.categoryName.toLowerCase() === selectedCategory.toLowerCase());
-    }, [soldItems, selectedCategory]);
-
-    // Filtered order instances for audit log
-    const filteredOrderInstances = useMemo(() => {
-        let list = orderInstances;
-        if (selectedCategory !== "all") {
-            list = list.filter(o => o.categoryName.toLowerCase() === selectedCategory.toLowerCase());
-        }
-        if (selectedDateFilter) {
-            list = list.filter(o => o.confirmedAt.startsWith(selectedDateFilter));
-        }
-        return list;
-    }, [orderInstances, selectedCategory, selectedDateFilter]);
-
-    // Orders for the selected dish in Detail Page
-    const dishOrders = useMemo(() => {
-        if (!selectedDish) return [];
-        return orderInstances.filter(o => o.itemName.toLowerCase() === selectedDish.name.toLowerCase());
-    }, [orderInstances, selectedDish]);
 
     // Format ISO string to readable date & time
     const formatDateTime = (iso: string) => {
@@ -185,7 +217,10 @@ export default function FbReportView({
                                     alt={row.name}
                                     className="size-full object-cover"
                                     onError={e => {
-                                        (e.currentTarget.parentElement as HTMLElement).style.display = "none";
+                                        (
+                                            e.currentTarget
+                                                .parentElement as HTMLElement
+                                        ).style.display = "none";
                                     }}
                                 />
                             </div>
@@ -205,7 +240,9 @@ export default function FbReportView({
                             >
                                 {row.name}
                             </button>
-                            <p className="text-[11px] text-muted-foreground">{row.station}</p>
+                            <p className="text-[11px] text-muted-foreground">
+                                {row.station}
+                            </p>
                         </div>
                     </div>
                 );
@@ -268,7 +305,9 @@ export default function FbReportView({
                     <p className="font-mono text-xs font-medium text-emerald-600 dark:text-emerald-400">
                         +{formatEtb(Number(row.profit))}
                     </p>
-                    <p className="font-mono text-[10.5px] text-muted-foreground">{row.marginPct}%</p>
+                    <p className="font-mono text-[10.5px] text-muted-foreground">
+                        {row.marginPct}%
+                    </p>
                 </div>
             ),
         },
@@ -305,8 +344,12 @@ export default function FbReportView({
                 <div className="flex items-center gap-2 py-0.5">
                     <Calendar className="size-3.5 text-brand" />
                     <div>
-                        <p className="font-medium text-foreground text-[13px]">{row.displayDate}</p>
-                        <p className="font-mono text-[10.5px] text-muted-foreground">{row.date}</p>
+                        <p className="font-medium text-foreground text-[13px]">
+                            {row.displayDate}
+                        </p>
+                        <p className="font-mono text-[10.5px] text-muted-foreground">
+                            {row.date}
+                        </p>
                     </div>
                 </div>
             ),
@@ -411,21 +454,30 @@ export default function FbReportView({
                                     alt={row.itemName}
                                     className="size-full object-cover"
                                     onError={e => {
-                                        (e.currentTarget.parentElement as HTMLElement).style.display = "none";
+                                        (
+                                            e.currentTarget
+                                                .parentElement as HTMLElement
+                                        ).style.display = "none";
                                     }}
                                 />
                             </div>
                         ) : null}
                         <div>
-                            <span className="font-semibold text-foreground text-xs">{row.itemName}</span>
-                            <span className="ml-1 text-[10.5px] text-muted-foreground">({row.categoryName})</span>
+                            <span className="font-semibold text-foreground text-xs">
+                                {row.itemName}
+                            </span>
+                            <span className="ml-1 text-[10.5px] text-muted-foreground">
+                                ({row.categoryName})
+                            </span>
                             {row.specialInstruction && (
                                 <p className="mt-0.5 inline-flex items-center gap-1 rounded bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.2 text-[10px] font-medium text-amber-900 dark:text-amber-200">
                                     📝 {row.specialInstruction}
                                 </p>
                             )}
                             {row.modifiers && row.modifiers.length > 0 && (
-                                <p className="text-[10px] text-muted-foreground">{row.modifiers.join(", ")}</p>
+                                <p className="text-[10px] text-muted-foreground">
+                                    {row.modifiers.join(", ")}
+                                </p>
                             )}
                         </div>
                     </div>
@@ -512,26 +564,33 @@ export default function FbReportView({
                 const isPartial = status === "PARTIAL";
                 return (
                     <div className="text-right">
-                        <span className={cn(
-                            "inline-flex items-center rounded px-1.5 py-0.5 text-[10.5px] font-medium font-mono",
-                            isPaid
-                                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25"
+                        <span
+                            className={cn(
+                                "inline-flex items-center rounded px-1.5 py-0.5 text-[10.5px] font-medium font-mono",
+                                isPaid
+                                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25"
+                                    : isPartial
+                                      ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25"
+                                      : "bg-destructive/10 text-destructive border border-destructive/25",
+                            )}
+                        >
+                            {isPaid
+                                ? "✓ Paid"
                                 : isPartial
-                                  ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25"
-                                  : "bg-destructive/10 text-destructive border border-destructive/25",
-                        )}>
-                            {isPaid ? "✓ Paid" : isPartial ? "Partial" : "Unpaid"}
+                                  ? "Partial"
+                                  : "Unpaid"}
                         </span>
                         {row.amountPaid && (
                             <p className="mt-0.5 text-[10px] font-mono text-muted-foreground">
                                 Paid: {formatEtb(Number(row.amountPaid))}
                             </p>
                         )}
-                        {row.paymentMethods && row.paymentMethods.length > 0 && (
-                            <p className="text-[9.5px] text-muted-foreground">
-                                {row.paymentMethods.join(", ")}
-                            </p>
-                        )}
+                        {row.paymentMethods &&
+                            row.paymentMethods.length > 0 && (
+                                <p className="text-[9.5px] text-muted-foreground">
+                                    {row.paymentMethods.join(", ")}
+                                </p>
+                            )}
                     </div>
                 );
             },
@@ -543,7 +602,8 @@ export default function FbReportView({
     // =========================================================================
     if (selectedDish) {
         const dishImage = imageForDish(selectedDish.name);
-        const ingredientsList: FbReportItemIngredient[] = selectedDish.ingredients ?? [];
+        const ingredientsList: FbReportItemIngredient[] =
+            selectedDish.ingredients ?? [];
 
         return (
             <div className="space-y-6 animate-in fade-in duration-150">
@@ -564,7 +624,11 @@ export default function FbReportView({
                         <div className="flex items-center gap-2.5">
                             {dishImage ? (
                                 <div className="size-9 rounded-full overflow-hidden border border-hairline shrink-0 bg-muted/40 shadow-2xs">
-                                    <img src={dishImage} alt={selectedDish.name} className="size-full object-cover" />
+                                    <img
+                                        src={dishImage}
+                                        alt={selectedDish.name}
+                                        className="size-full object-cover"
+                                    />
                                 </div>
                             ) : (
                                 <div className="flex size-9 items-center justify-center rounded-full bg-brand/10 text-brand">
@@ -588,7 +652,10 @@ export default function FbReportView({
                     </div>
 
                     <div className="text-xs text-muted-foreground font-mono">
-                        Period: <span className="text-foreground font-medium">{data.from} → {data.to}</span>
+                        Period:{" "}
+                        <span className="text-foreground font-medium">
+                            {data.from} → {data.to}
+                        </span>
                     </div>
                 </div>
 
@@ -602,10 +669,13 @@ export default function FbReportView({
                             <span className="font-mono text-2xl font-bold text-foreground">
                                 {selectedDish.quantitySold}
                             </span>
-                            <span className="text-xs text-muted-foreground">servings</span>
+                            <span className="text-xs text-muted-foreground">
+                                servings
+                            </span>
                         </div>
                         <p className="mt-0.5 text-[11.5px] text-muted-foreground font-mono">
-                            Price: {formatEtb(Number(selectedDish.unitPrice))} ea
+                            Price: {formatEtb(Number(selectedDish.unitPrice))}{" "}
+                            ea
                         </p>
                     </div>
 
@@ -633,7 +703,11 @@ export default function FbReportView({
                             </span>
                         </div>
                         <p className="mt-0.5 text-[11.5px] text-muted-foreground font-mono">
-                            Cost share: {selectedDish.marginPct ? (100 - selectedDish.marginPct).toFixed(1) : 0}%
+                            Cost share:{" "}
+                            {selectedDish.marginPct
+                                ? (100 - selectedDish.marginPct).toFixed(1)
+                                : 0}
+                            %
                         </p>
                     </div>
 
@@ -662,7 +736,8 @@ export default function FbReportView({
                                     Ingredients & Recipe Breakdown
                                 </h3>
                                 <p className="text-[11.5px] text-muted-foreground">
-                                    Materials used per plate and total consumption across all orders
+                                    Materials used per plate and total
+                                    consumption across all orders
                                 </p>
                             </div>
                         </div>
@@ -676,34 +751,58 @@ export default function FbReportView({
                             <table className="w-full text-left text-xs">
                                 <thead>
                                     <tr className="border-b border-hairline text-[11px] font-medium uppercase tracking-wider text-muted-foreground bg-secondary/20">
-                                        <th className="py-2 px-3">Ingredient</th>
-                                        <th className="py-2 px-3 text-right">Per Serving</th>
-                                        <th className="py-2 px-3 text-right">Unit Cost</th>
-                                        <th className="py-2 px-3 text-right">Plate Cost</th>
-                                        <th className="py-2 px-3 text-right font-semibold text-foreground">Total Consumed</th>
-                                        <th className="py-2 px-3 text-right font-semibold text-foreground">Total Material Cost</th>
+                                        <th className="py-2 px-3">
+                                            Ingredient
+                                        </th>
+                                        <th className="py-2 px-3 text-right">
+                                            Per Serving
+                                        </th>
+                                        <th className="py-2 px-3 text-right">
+                                            Unit Cost
+                                        </th>
+                                        <th className="py-2 px-3 text-right">
+                                            Plate Cost
+                                        </th>
+                                        <th className="py-2 px-3 text-right font-semibold text-foreground">
+                                            Total Consumed
+                                        </th>
+                                        <th className="py-2 px-3 text-right font-semibold text-foreground">
+                                            Total Material Cost
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-hairline/60">
                                     {ingredientsList.map((ing, idx) => (
-                                        <tr key={idx} className="hover:bg-muted/20 transition-colors">
+                                        <tr
+                                            key={idx}
+                                            className="hover:bg-muted/20 transition-colors"
+                                        >
                                             <td className="py-2.5 px-3 font-medium text-foreground">
                                                 {ing.name}
                                             </td>
                                             <td className="py-2.5 px-3 text-right font-mono text-muted-foreground">
-                                                {ing.quantityPerServing} {ing.unit}
+                                                {ing.quantityPerServing}{" "}
+                                                {ing.unit}
                                             </td>
                                             <td className="py-2.5 px-3 text-right font-mono text-muted-foreground">
-                                                {formatEtb(Number(ing.unitCost))}/{ing.unit}
+                                                {formatEtb(
+                                                    Number(ing.unitCost),
+                                                )}
+                                                /{ing.unit}
                                             </td>
                                             <td className="py-2.5 px-3 text-right font-mono font-medium text-foreground">
-                                                {formatEtb(Number(ing.costPerServing))}
+                                                {formatEtb(
+                                                    Number(ing.costPerServing),
+                                                )}
                                             </td>
                                             <td className="py-2.5 px-3 text-right font-mono font-medium text-foreground">
-                                                {ing.totalQuantityUsed} {ing.unit}
+                                                {ing.totalQuantityUsed}{" "}
+                                                {ing.unit}
                                             </td>
                                             <td className="py-2.5 px-3 text-right font-mono font-medium text-amber-700 dark:text-amber-300">
-                                                {formatEtb(Number(ing.totalCostUsed))}
+                                                {formatEtb(
+                                                    Number(ing.totalCostUsed),
+                                                )}
                                             </td>
                                         </tr>
                                     ))}
@@ -712,7 +811,8 @@ export default function FbReportView({
                         </div>
                     ) : (
                         <div className="py-6 text-center text-xs text-muted-foreground">
-                            No recipe ingredients linked for this item in catalog.
+                            No recipe ingredients linked for this item in
+                            catalog.
                         </div>
                     )}
                 </div>
@@ -727,7 +827,8 @@ export default function FbReportView({
                                     Service Records, Tables, Waiters & Receipts
                                 </h3>
                                 <p className="text-[11.5px] text-muted-foreground">
-                                    Chronological order instances with table, waiter, receipt number, and payment status
+                                    Chronological order instances with table,
+                                    waiter, receipt number, and payment status
                                 </p>
                             </div>
                         </div>
@@ -738,17 +839,23 @@ export default function FbReportView({
                         data={dishOrders}
                         rowKey={row => row.id}
                         searchPlaceholder="Search orders by table, waiter, or receipt #..."
-                        searchText={row => `${row.tableLabel} ${row.waiterName} ${row.billNumber ?? ""} ${row.paymentStatus ?? ""}`}
+                        searchText={row =>
+                            `${row.tableLabel} ${row.waiterName} ${row.billNumber ?? ""} ${row.paymentStatus ?? ""}`
+                        }
                         pagination={{
                             page: dishDetailPage,
-                            totalPages: Math.max(1, Math.ceil(dishOrders.length / PAGE_SIZE)),
+                            totalPages: Math.max(
+                                1,
+                                Math.ceil(dishOrders.length / PAGE_SIZE),
+                            ),
                             total: dishOrders.length,
                             limit: PAGE_SIZE,
                             onPageChange: p => setDishDetailPage(p),
                         }}
                         empty={
                             <div className="py-8 text-center text-xs text-muted-foreground">
-                                No order instances found for this dish in the selected date range.
+                                No order instances found for this dish in the
+                                selected date range.
                             </div>
                         }
                     />
@@ -764,7 +871,10 @@ export default function FbReportView({
         <div className="space-y-6">
             {/* CLEAN, MINIMAL & MODERN SEGMENTED TABS BAR */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-hairline/80 pb-3">
-                <nav className="inline-flex items-center gap-1 rounded-xl bg-secondary/50 p-1 border border-hairline/60" aria-label="F&B sections">
+                <nav
+                    className="inline-flex items-center gap-1 rounded-xl bg-secondary/50 p-1 border border-hairline/60"
+                    aria-label="F&B sections"
+                >
                     <button
                         type="button"
                         onClick={() => setSubTab("overview")}
@@ -896,10 +1006,14 @@ export default function FbReportView({
                                 <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                                     Food Cost Rate
                                 </span>
-                                <div className={cn(
-                                    "rounded-lg p-1.5",
-                                    isFoodCostHealthy ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-destructive/10 text-destructive",
-                                )}>
+                                <div
+                                    className={cn(
+                                        "rounded-lg p-1.5",
+                                        isFoodCostHealthy
+                                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                            : "bg-destructive/10 text-destructive",
+                                    )}
+                                >
                                     <ChefHat className="size-3.5" />
                                 </div>
                             </div>
@@ -908,15 +1022,24 @@ export default function FbReportView({
                                     {food.costPct}%
                                 </span>
                                 <Badge
-                                    variant={isFoodCostHealthy ? "outline" : "danger"}
+                                    variant={
+                                        isFoodCostHealthy ? "outline" : "danger"
+                                    }
                                     className="text-[10px] uppercase font-mono tracking-wider px-1.5 py-0"
                                 >
-                                    {isFoodCostHealthy ? "Target Met" : "High Cost"}
+                                    {isFoodCostHealthy
+                                        ? "Target Met"
+                                        : "High Cost"}
                                 </Badge>
                             </div>
                             <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground">
-                                <span>Food Sales: {formatEtb(Number(food.revenue))}</span>
-                                <span className="font-mono">{food.sharePct}%</span>
+                                <span>
+                                    Food Sales:{" "}
+                                    {formatEtb(Number(food.revenue))}
+                                </span>
+                                <span className="font-mono">
+                                    {food.sharePct}%
+                                </span>
                             </div>
                         </div>
 
@@ -926,10 +1049,14 @@ export default function FbReportView({
                                 <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                                     Beverage Cost Rate
                                 </span>
-                                <div className={cn(
-                                    "rounded-lg p-1.5",
-                                    isBevCostHealthy ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-destructive/10 text-destructive",
-                                )}>
+                                <div
+                                    className={cn(
+                                        "rounded-lg p-1.5",
+                                        isBevCostHealthy
+                                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                            : "bg-destructive/10 text-destructive",
+                                    )}
+                                >
                                     <Wine className="size-3.5" />
                                 </div>
                             </div>
@@ -938,15 +1065,24 @@ export default function FbReportView({
                                     {beverage.costPct}%
                                 </span>
                                 <Badge
-                                    variant={isBevCostHealthy ? "outline" : "danger"}
+                                    variant={
+                                        isBevCostHealthy ? "outline" : "danger"
+                                    }
                                     className="text-[10px] uppercase font-mono tracking-wider px-1.5 py-0"
                                 >
-                                    {isBevCostHealthy ? "Healthy" : "Check Spoilage"}
+                                    {isBevCostHealthy
+                                        ? "Healthy"
+                                        : "Check Spoilage"}
                                 </Badge>
                             </div>
                             <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground">
-                                <span>Drink Sales: {formatEtb(Number(beverage.revenue))}</span>
-                                <span className="font-mono">{beverage.sharePct}%</span>
+                                <span>
+                                    Drink Sales:{" "}
+                                    {formatEtb(Number(beverage.revenue))}
+                                </span>
+                                <span className="font-mono">
+                                    {beverage.sharePct}%
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -961,8 +1097,12 @@ export default function FbReportView({
                                         <ChefHat className="size-4" />
                                     </div>
                                     <div>
-                                        <h3 className="font-semibold text-sm text-foreground">Food Operations</h3>
-                                        <p className="text-[11px] text-muted-foreground">Kitchen & Warm Stations</p>
+                                        <h3 className="font-semibold text-sm text-foreground">
+                                            Food Operations
+                                        </h3>
+                                        <p className="text-[11px] text-muted-foreground">
+                                            Kitchen & Warm Stations
+                                        </p>
                                     </div>
                                 </div>
                                 <span className="rounded bg-secondary px-2 py-0.5 text-xs font-mono text-muted-foreground">
@@ -972,19 +1112,25 @@ export default function FbReportView({
 
                             <div className="mt-4 grid grid-cols-3 gap-3 text-center">
                                 <div className="rounded-lg border border-hairline/60 bg-muted/10 p-2.5">
-                                    <span className="text-[10.5px] text-muted-foreground">Revenue</span>
+                                    <span className="text-[10.5px] text-muted-foreground">
+                                        Revenue
+                                    </span>
                                     <p className="mt-0.5 font-mono text-sm font-semibold text-foreground">
                                         {formatEtb(Number(food.revenue))}
                                     </p>
                                 </div>
                                 <div className="rounded-lg border border-hairline/60 bg-muted/10 p-2.5">
-                                    <span className="text-[10.5px] text-muted-foreground">Recipe Cost</span>
+                                    <span className="text-[10.5px] text-muted-foreground">
+                                        Recipe Cost
+                                    </span>
                                     <p className="mt-0.5 font-mono text-sm font-semibold text-foreground">
                                         {formatEtb(Number(food.cost))}
                                     </p>
                                 </div>
                                 <div className="rounded-lg border border-hairline/60 bg-muted/10 p-2.5">
-                                    <span className="text-[10.5px] text-muted-foreground">Margin</span>
+                                    <span className="text-[10.5px] text-muted-foreground">
+                                        Margin
+                                    </span>
                                     <p className="mt-0.5 font-mono text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                                         {food.marginPct}%
                                     </p>
@@ -1000,8 +1146,12 @@ export default function FbReportView({
                                         <Coffee className="size-4" />
                                     </div>
                                     <div>
-                                        <h3 className="font-semibold text-sm text-foreground">Beverage Operations</h3>
-                                        <p className="text-[11px] text-muted-foreground">Barista, Drinks & Bar</p>
+                                        <h3 className="font-semibold text-sm text-foreground">
+                                            Beverage Operations
+                                        </h3>
+                                        <p className="text-[11px] text-muted-foreground">
+                                            Barista, Drinks & Bar
+                                        </p>
                                     </div>
                                 </div>
                                 <span className="rounded bg-secondary px-2 py-0.5 text-xs font-mono text-muted-foreground">
@@ -1011,19 +1161,25 @@ export default function FbReportView({
 
                             <div className="mt-4 grid grid-cols-3 gap-3 text-center">
                                 <div className="rounded-lg border border-hairline/60 bg-muted/10 p-2.5">
-                                    <span className="text-[10.5px] text-muted-foreground">Revenue</span>
+                                    <span className="text-[10.5px] text-muted-foreground">
+                                        Revenue
+                                    </span>
                                     <p className="mt-0.5 font-mono text-sm font-semibold text-foreground">
                                         {formatEtb(Number(beverage.revenue))}
                                     </p>
                                 </div>
                                 <div className="rounded-lg border border-hairline/60 bg-muted/10 p-2.5">
-                                    <span className="text-[10.5px] text-muted-foreground">Recipe Cost</span>
+                                    <span className="text-[10.5px] text-muted-foreground">
+                                        Recipe Cost
+                                    </span>
                                     <p className="mt-0.5 font-mono text-sm font-semibold text-foreground">
                                         {formatEtb(Number(beverage.cost))}
                                     </p>
                                 </div>
                                 <div className="rounded-lg border border-hairline/60 bg-muted/10 p-2.5">
-                                    <span className="text-[10.5px] text-muted-foreground">Margin</span>
+                                    <span className="text-[10.5px] text-muted-foreground">
+                                        Margin
+                                    </span>
                                     <p className="mt-0.5 font-mono text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                                         {beverage.marginPct}%
                                     </p>
@@ -1040,8 +1196,12 @@ export default function FbReportView({
                                 <div className="flex items-center gap-2">
                                     <Flame className="size-4 text-amber-500" />
                                     <div>
-                                        <h3 className="font-semibold text-sm text-foreground">Top Volume Dishes</h3>
-                                        <p className="text-[11px] text-muted-foreground">Most ordered items in this period</p>
+                                        <h3 className="font-semibold text-sm text-foreground">
+                                            Top Volume Dishes
+                                        </h3>
+                                        <p className="text-[11px] text-muted-foreground">
+                                            Most ordered items in this period
+                                        </p>
                                     </div>
                                 </div>
                                 <Button
@@ -1055,11 +1215,16 @@ export default function FbReportView({
                             </div>
                             <div className="space-y-2">
                                 {topSellingItems.map((item, idx) => {
-                                    const matchingSold = soldItems.find(s => s.name === item.name);
+                                    const matchingSold = soldItems.find(
+                                        s => s.name === item.name,
+                                    );
                                     return (
                                         <div
                                             key={item.name}
-                                            onClick={() => matchingSold && setSelectedDish(matchingSold)}
+                                            onClick={() =>
+                                                matchingSold &&
+                                                setSelectedDish(matchingSold)
+                                            }
                                             className="flex items-center justify-between rounded-lg border border-hairline/60 bg-muted/10 p-2.5 hover:bg-muted/30 cursor-pointer transition-colors"
                                         >
                                             <div className="flex items-center gap-2.5">
@@ -1067,8 +1232,12 @@ export default function FbReportView({
                                                     {idx + 1}
                                                 </span>
                                                 <div>
-                                                    <p className="font-medium text-foreground text-xs">{item.name}</p>
-                                                    <p className="text-[10.5px] text-muted-foreground">{item.station}</p>
+                                                    <p className="font-medium text-foreground text-xs">
+                                                        {item.name}
+                                                    </p>
+                                                    <p className="text-[10.5px] text-muted-foreground">
+                                                        {item.station}
+                                                    </p>
                                                 </div>
                                             </div>
                                             <div className="text-right">
@@ -1076,7 +1245,9 @@ export default function FbReportView({
                                                     {item.quantitySold} sold
                                                 </p>
                                                 <p className="font-mono text-[10.5px] text-muted-foreground">
-                                                    {formatEtb(Number(item.revenue))}
+                                                    {formatEtb(
+                                                        Number(item.revenue),
+                                                    )}
                                                 </p>
                                             </div>
                                         </div>
@@ -1090,28 +1261,42 @@ export default function FbReportView({
                             <div className="flex items-center gap-2 pb-3">
                                 <TrendingUp className="size-4 text-brand" />
                                 <div>
-                                    <h3 className="font-semibold text-sm text-foreground">Top Ingredient Cost Drivers</h3>
-                                    <p className="text-[11px] text-muted-foreground">Highest raw materials cost consumption</p>
+                                    <h3 className="font-semibold text-sm text-foreground">
+                                        Top Ingredient Cost Drivers
+                                    </h3>
+                                    <p className="text-[11px] text-muted-foreground">
+                                        Highest raw materials cost consumption
+                                    </p>
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                {topCostDrivers.map((ing) => (
+                                {topCostDrivers.map(ing => (
                                     <div
                                         key={ing.name}
                                         className="flex items-center justify-between rounded-lg border border-hairline/60 bg-muted/10 p-2.5"
                                     >
                                         <div>
-                                            <p className="font-medium text-foreground text-xs">{ing.name}</p>
+                                            <p className="font-medium text-foreground text-xs">
+                                                {ing.name}
+                                            </p>
                                             <p className="text-[10.5px] text-muted-foreground">
-                                                {ing.quantityConsumed} {ing.unit} @ {formatEtb(Number(ing.unitCost))}/{ing.unit}
+                                                {ing.quantityConsumed}{" "}
+                                                {ing.unit} @{" "}
+                                                {formatEtb(
+                                                    Number(ing.unitCost),
+                                                )}
+                                                /{ing.unit}
                                             </p>
                                         </div>
                                         <div className="text-right">
                                             <p className="font-mono text-xs font-semibold text-foreground">
-                                                {formatEtb(Number(ing.totalCost))}
+                                                {formatEtb(
+                                                    Number(ing.totalCost),
+                                                )}
                                             </p>
                                             <span className="font-mono text-[10.5px] text-muted-foreground">
-                                                {ing.costSharePct}% of total cost
+                                                {ing.costSharePct}% of total
+                                                cost
                                             </span>
                                         </div>
                                     </div>
@@ -1143,7 +1328,11 @@ export default function FbReportView({
                             All Categories ({soldItems.length})
                         </button>
                         {allCategoriesList.map(cat => {
-                            const count = soldItems.filter(i => i.categoryName.toLowerCase() === cat.toLowerCase()).length;
+                            const count = soldItems.filter(
+                                i =>
+                                    i.categoryName.toLowerCase() ===
+                                    cat.toLowerCase(),
+                            ).length;
                             return (
                                 <button
                                     key={cat}
@@ -1154,7 +1343,8 @@ export default function FbReportView({
                                     }}
                                     className={cn(
                                         "rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap transition-all cursor-pointer",
-                                        selectedCategory.toLowerCase() === cat.toLowerCase()
+                                        selectedCategory.toLowerCase() ===
+                                            cat.toLowerCase()
                                             ? "bg-foreground text-background shadow-2xs font-semibold"
                                             : "bg-secondary/60 text-muted-foreground hover:text-foreground border border-hairline/60",
                                     )}
@@ -1170,10 +1360,15 @@ export default function FbReportView({
                         <div className="flex items-center justify-between pb-3">
                             <div>
                                 <h3 className="font-semibold text-sm text-foreground">
-                                    Sold Dishes & Drinks {selectedCategory !== "all" ? `· ${selectedCategory}` : ""}
+                                    Sold Dishes & Drinks{" "}
+                                    {selectedCategory !== "all"
+                                        ? `· ${selectedCategory}`
+                                        : ""}
                                 </h3>
                                 <p className="text-[11.5px] text-muted-foreground">
-                                    Click any dish name or &quot;Inspect&quot; to open its recipe ingredients and order receipts
+                                    Click any dish name or &quot;Inspect&quot;
+                                    to open its recipe ingredients and order
+                                    receipts
                                 </p>
                             </div>
                         </div>
@@ -1183,17 +1378,25 @@ export default function FbReportView({
                             data={filteredSoldItems}
                             rowKey={row => row.id || row.name}
                             searchPlaceholder="Search dishes by name or category..."
-                            searchText={row => `${row.name} ${row.categoryName} ${row.station}`}
+                            searchText={row =>
+                                `${row.name} ${row.categoryName} ${row.station}`
+                            }
                             pagination={{
                                 page: soldItemsPage,
-                                totalPages: Math.max(1, Math.ceil(filteredSoldItems.length / PAGE_SIZE)),
+                                totalPages: Math.max(
+                                    1,
+                                    Math.ceil(
+                                        filteredSoldItems.length / PAGE_SIZE,
+                                    ),
+                                ),
                                 total: filteredSoldItems.length,
                                 limit: PAGE_SIZE,
                                 onPageChange: p => setSoldItemsPage(p),
                             }}
                             empty={
                                 <div className="py-10 text-center text-xs text-muted-foreground">
-                                    No sold items recorded in this category for the selected period.
+                                    No sold items recorded in this category for
+                                    the selected period.
                                 </div>
                             }
                         />
@@ -1206,9 +1409,12 @@ export default function FbReportView({
                 <div className="rounded-xl border border-hairline bg-card p-5 shadow-2xs space-y-3">
                     <div className="flex items-center justify-between pb-2 border-b border-hairline/80">
                         <div>
-                            <h3 className="font-semibold text-sm text-foreground">Daily Volume & Velocity</h3>
+                            <h3 className="font-semibold text-sm text-foreground">
+                                Daily Volume & Velocity
+                            </h3>
                             <p className="text-[11.5px] text-muted-foreground">
-                                Day-by-day count of total items sold, food vs. drink breakdown, and daily revenue
+                                Day-by-day count of total items sold, food vs.
+                                drink breakdown, and daily revenue
                             </p>
                         </div>
                     </div>
@@ -1221,7 +1427,10 @@ export default function FbReportView({
                         searchText={row => `${row.date} ${row.displayDate}`}
                         pagination={{
                             page: dailyPage,
-                            totalPages: Math.max(1, Math.ceil(dailyVolumes.length / PAGE_SIZE)),
+                            totalPages: Math.max(
+                                1,
+                                Math.ceil(dailyVolumes.length / PAGE_SIZE),
+                            ),
                             total: dailyVolumes.length,
                             limit: PAGE_SIZE,
                             onPageChange: p => setDailyPage(p),
@@ -1240,7 +1449,9 @@ export default function FbReportView({
                 <div className="space-y-4">
                     {selectedDateFilter && (
                         <div className="flex items-center gap-2 rounded-lg border border-brand/30 bg-brand/5 px-3 py-2 text-xs">
-                            <span className="font-medium text-foreground">Filtered by Date:</span>
+                            <span className="font-medium text-foreground">
+                                Filtered by Date:
+                            </span>
                             <span className="font-mono text-xs text-brand font-semibold">
                                 {selectedDateFilter}
                             </span>
@@ -1261,7 +1472,9 @@ export default function FbReportView({
                                     All Order Instances & Receipt Audit
                                 </h3>
                                 <p className="text-[11.5px] text-muted-foreground">
-                                    Chronological log of items ordered with table location, waiter, order time, receipt number, and payment status
+                                    Chronological log of items ordered with
+                                    table location, waiter, order time, receipt
+                                    number, and payment status
                                 </p>
                             </div>
                         </div>
@@ -1271,17 +1484,26 @@ export default function FbReportView({
                             data={filteredOrderInstances}
                             rowKey={row => row.id}
                             searchPlaceholder="Search by dish, waiter, table, or receipt #..."
-                            searchText={row => `${row.itemName} ${row.tableLabel} ${row.waiterName} ${row.categoryName} ${row.billNumber ?? ""} ${row.paymentStatus ?? ""}`}
+                            searchText={row =>
+                                `${row.itemName} ${row.tableLabel} ${row.waiterName} ${row.categoryName} ${row.billNumber ?? ""} ${row.paymentStatus ?? ""}`
+                            }
                             pagination={{
                                 page: auditPage,
-                                totalPages: Math.max(1, Math.ceil(filteredOrderInstances.length / PAGE_SIZE)),
+                                totalPages: Math.max(
+                                    1,
+                                    Math.ceil(
+                                        filteredOrderInstances.length /
+                                            PAGE_SIZE,
+                                    ),
+                                ),
                                 total: filteredOrderInstances.length,
                                 limit: PAGE_SIZE,
                                 onPageChange: p => setAuditPage(p),
                             }}
                             empty={
                                 <div className="py-10 text-center text-xs text-muted-foreground">
-                                    No order items found matching the current criteria.
+                                    No order items found matching the current
+                                    criteria.
                                 </div>
                             }
                         />

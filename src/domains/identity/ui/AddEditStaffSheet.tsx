@@ -8,6 +8,7 @@ import {
     Calendar,
     CalendarOff,
     Camera,
+    Check,
     Clock,
     Clock3,
     Copy,
@@ -25,12 +26,17 @@ import {
     Sunset,
     Trash2,
     Truck,
+    Upload,
     User,
     UtensilsCrossed,
     X,
 } from "lucide-react";
 import { formatEthiopianLocalTime } from "@/lib/ethiopian-calendar";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import {
+    DAY_ETHIOPIAN,
+    formatEthiopianShiftRange,
+} from "@/domains/identity/domain/shift";
 import { useAppDispatch, useAppSelector } from "@/context/hooks";
 import { closeAddEditStaff } from "@/context/slices/identitySlice";
 import {
@@ -56,6 +62,8 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { EthiopianPhoneInput } from "@/components/ui/ethiopian-phone-input";
+import { nationalEthiopianDigits } from "@/lib/validators/provisionTenant";
 import { toast } from "@/lib/toast";
 import {
     dayShiftsFromForm,
@@ -69,6 +77,21 @@ import {
     type ShiftDefinitionFormValues,
 } from "@/lib/validators/floor";
 import { cn } from "@/lib/utils";
+
+function cleanPhoneForApi(raw?: string | null): string | undefined {
+    if (!raw) return undefined;
+    const trimmed = raw.trim();
+    if (trimmed === "" || trimmed === "+251" || trimmed === "+251 ")
+        return undefined;
+    const nat = nationalEthiopianDigits(trimmed);
+    if (nat.length === 9) {
+        return `+251${nat}`;
+    }
+    if (trimmed.startsWith("+") && nat.length >= 7) {
+        return trimmed;
+    }
+    return undefined;
+}
 
 function isUuid(id: string) {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
@@ -101,20 +124,37 @@ function format12HourTime(time24: string): string {
     return `${h12}:${mm} ${period}`;
 }
 
-function formatShiftOptionLabel(shift: {
-    name: string;
-    startLocalTime: string;
-    endLocalTime: string;
-}): string {
+function formatShiftOptionLabel(
+    shift: {
+        name: string;
+        startLocalTime: string;
+        endLocalTime: string;
+    },
+    isAmharic = false,
+): string {
     const start12 = format12HourTime(shift.startLocalTime);
     const end12 = format12HourTime(shift.endLocalTime);
-    const ethStart = formatEthiopianLocalTime(shift.startLocalTime).formattedAm;
-    const ethEnd = formatEthiopianLocalTime(shift.endLocalTime).formattedAm;
-    return `${shift.name} · ${start12}–${end12} (${ethStart} – ${ethEnd})`;
+    const ethRange = formatEthiopianShiftRange(
+        shift.startLocalTime,
+        shift.endLocalTime,
+        isAmharic,
+    );
+    return (
+        shift.name +
+        " · " +
+        start12 +
+        "–" +
+        end12 +
+        " (" +
+        (isAmharic ? ethRange : "Eth: " + ethRange) +
+        ")"
+    );
 }
 
 export default function AddEditStaffSheet() {
     const t = useTranslations("managerStaff");
+    const locale = useLocale();
+    const isAmharic = locale === "am";
     const tCommon = useTranslations("common");
     const dispatch = useAppDispatch();
     const isOpen = useAppSelector(state => state.identity.isAddEditOpen);
@@ -185,6 +225,12 @@ export default function AddEditStaffSheet() {
                 id: "cashier",
                 label: t("roleCashier"),
                 description: t("roleCashierDesc"),
+            },
+            {
+                id: "receptionist",
+                label: "Receptionist",
+                description:
+                    "Hotel front desk — guest check-in, check-out, and breakfast redemption",
             },
             {
                 id: "driver",
@@ -263,6 +309,29 @@ export default function AddEditStaffSheet() {
     const [showNewShift, setShowNewShift] = useState(false);
     const [showPin, setShowPin] = useState(false);
     const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+
+    const handlePhotoFileChange = (
+        event: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        void (async () => {
+            try {
+                const uploaded = await uploadPhoto(file).unwrap();
+                form.setValue("photoId", uploaded.file.id, {
+                    shouldDirty: true,
+                });
+                setPhotoPreviewUrl(
+                    filePublicUrl(uploaded.file.path) ||
+                        URL.createObjectURL(file),
+                );
+                toast.success(t("staffPhoto") || "Photo uploaded successfully");
+            } catch (err) {
+                toast.fromUnknown(err, t("photoUploadError"));
+            }
+        })();
+        event.target.value = "";
+    };
 
     const shiftForm = useForm<ShiftDefinitionFormValues>({
         resolver: zodResolver(shiftDefinitionSchema),
@@ -789,6 +858,13 @@ export default function AddEditStaffSheet() {
                     message: t("pinValidationError"),
                 });
                 setSaving(false);
+                const el = document.querySelector(
+                    `[name="pin"], #staff-pin, input[name="pin"]`,
+                );
+                if (el) {
+                    el.scrollIntoView({ behavior: "smooth", block: "center" });
+                    (el as HTMLElement).focus?.();
+                }
                 return;
             }
 
@@ -842,7 +918,7 @@ export default function AddEditStaffSheet() {
                     body: {
                         name: values.name.trim(),
                         role: apiRole,
-                        phone: values.phone?.trim() || undefined,
+                        phone: cleanPhoneForApi(values.phone),
                         email: values.email.trim(),
                         ...(values.pin.trim()
                             ? { pin: values.pin.trim() }
@@ -886,7 +962,7 @@ export default function AddEditStaffSheet() {
                 const created = await createStaff({
                     name: values.name.trim(),
                     role: apiRole,
-                    phone: values.phone?.trim() || undefined,
+                    phone: cleanPhoneForApi(values.phone),
                     email: values.email.trim(),
                     pin: values.pin.trim(),
                     active: values.active,
@@ -989,105 +1065,178 @@ export default function AddEditStaffSheet() {
                         id="staff-form"
                         onSubmit={form.handleSubmit(
                             values => void onSubmit(values),
+                            errors => {
+                                const errorKeys = Object.keys(errors);
+                                if (errorKeys.length > 0) {
+                                    const firstKey = errorKeys[0];
+                                    const el = document.querySelector(
+                                        `[name="${firstKey}"], #${firstKey}, #staff-${firstKey}, [data-field="${firstKey}"], [aria-invalid="true"]`,
+                                    );
+                                    if (el) {
+                                        el.scrollIntoView({
+                                            behavior: "smooth",
+                                            block: "center",
+                                        });
+                                        if (
+                                            "focus" in el &&
+                                            typeof (el as HTMLElement).focus ===
+                                                "function"
+                                        ) {
+                                            (el as HTMLElement).focus();
+                                        }
+                                    }
+                                    toast.error(
+                                        isAmharic
+                                            ? "እባክዎ የተሳሳቱ መረጃዎችን አስተካክለው እንደገና ይሞክሩ።"
+                                            : "Please correct the highlighted fields before saving.",
+                                    );
+                                }
+                            },
                         )}
                         className="app-scroll flex-1 space-y-6 overflow-y-auto p-6 text-[14px]"
                     >
                         <div className="space-y-4">
-                            <h3 className="text-[12px] font-semibold tracking-wider text-slate-gray uppercase">
-                                {t("personalRoleDetails")}
-                            </h3>
+                            <div className="flex items-center justify-between pb-1 border-b border-hairline/60">
+                                <h3 className="text-[12px] font-bold tracking-wider text-muted-foreground uppercase">
+                                    {t("personalRoleDetails")}
+                                </h3>
+                                <span className="text-[11px] font-medium text-slate-400">
+                                    {isAmharic ? "ደረጃ 1 ከ 3" : "Step 1 of 3"}
+                                </span>
+                            </div>
 
-                            <div className="flex items-center gap-4">
-                                <div className="relative size-16 shrink-0 overflow-hidden rounded-full border border-hairline bg-secondary/40">
-                                    {photoPreviewUrl ? (
-                                        <img
-                                            src={photoPreviewUrl}
-                                            alt=""
-                                            className="size-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className="flex size-full items-center justify-center text-slate-gray">
-                                            <User className="size-6" />
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="min-w-0 flex-1 space-y-1.5">
-                                    <p className="text-[13px] font-medium text-foreground">
-                                        {t("staffPhoto")}
-                                    </p>
-                                    <p className="text-[12px] text-slate-gray">
-                                        {t("staffPhotoHint")}
-                                    </p>
-                                    <div className="flex flex-wrap gap-2">
-                                        <label className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-hairline bg-card px-2.5 text-[12px] font-medium text-foreground hover:bg-secondary/60">
-                                            <Camera className="size-3.5" />
-                                            {uploadingPhoto
-                                                ? t("uploadingPhoto")
-                                                : photoPreviewUrl
-                                                  ? t("replacePhoto")
-                                                  : t("uploadPhoto")}
-                                            <input
-                                                type="file"
-                                                accept="image/jpeg,image/png,image/webp,image/gif"
-                                                className="sr-only"
-                                                disabled={uploadingPhoto}
-                                                onChange={event => {
-                                                    const file =
-                                                        event.target.files?.[0];
-                                                    if (!file) return;
-                                                    void (async () => {
-                                                        try {
-                                                            const uploaded =
-                                                                await uploadPhoto(
-                                                                    file,
-                                                                ).unwrap();
-                                                            form.setValue(
-                                                                "photoId",
-                                                                uploaded.file
-                                                                    .id,
-                                                                {
-                                                                    shouldDirty: true,
-                                                                },
-                                                            );
-                                                            setPhotoPreviewUrl(
-                                                                filePublicUrl(
-                                                                    uploaded
-                                                                        .file
-                                                                        .path,
-                                                                ) ||
-                                                                    URL.createObjectURL(
-                                                                        file,
-                                                                    ),
-                                                            );
-                                                        } catch (err) {
-                                                            toast.fromUnknown(
-                                                                err,
-                                                                t(
-                                                                    "photoUploadError",
-                                                                ),
-                                                            );
+                            <div className="rounded-2xl border border-hairline bg-gradient-to-br from-card to-secondary/30 p-4 shadow-2xs transition-all">
+                                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+                                    <div className="relative group shrink-0">
+                                        <div className="relative size-20 sm:size-24 overflow-hidden rounded-2xl border-2 border-hairline/80 bg-secondary/50 shadow-xs transition-all duration-200 group-hover:border-primary/50 group-hover:shadow-md">
+                                            {photoPreviewUrl ? (
+                                                <img
+                                                    src={photoPreviewUrl}
+                                                    alt={nameValue || "Staff"}
+                                                    className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                />
+                                            ) : (
+                                                <div className="flex size-full flex-col items-center justify-center gap-1 text-slate-gray">
+                                                    <User className="size-8 stroke-[1.5] text-slate-400 dark:text-slate-500" />
+                                                    <span className="text-[10px] font-medium text-muted-foreground">
+                                                        {isAmharic
+                                                            ? "ፎቶ የለም"
+                                                            : "No photo"}
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                            {uploadingPhoto && (
+                                                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/60 backdrop-blur-xs text-white">
+                                                    <Loader2 className="size-6 animate-spin text-primary" />
+                                                    <span className="text-[10px] font-medium tracking-tight">
+                                                        {t("uploadingPhoto")}
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                            {!uploadingPhoto && (
+                                                <label className="absolute inset-0 flex cursor-pointer flex-col items-center justify-center gap-1 bg-black/45 backdrop-blur-[2px] opacity-0 transition-opacity duration-200 group-hover:opacity-100 text-white">
+                                                    <Camera className="size-5" />
+                                                    <span className="text-[10px] font-semibold">
+                                                        {photoPreviewUrl
+                                                            ? t("replacePhoto")
+                                                            : t("uploadPhoto")}
+                                                    </span>
+                                                    <input
+                                                        type="file"
+                                                        accept="image/jpeg,image/png,image/webp,image/gif"
+                                                        className="sr-only"
+                                                        disabled={
+                                                            uploadingPhoto
                                                         }
-                                                    })();
-                                                    event.target.value = "";
-                                                }}
-                                            />
-                                        </label>
-                                        {photoPreviewUrl ? (
-                                            <button
-                                                type="button"
-                                                className="h-8 rounded-lg border border-hairline px-2.5 text-[12px] font-medium text-slate-gray"
-                                                onClick={() => {
-                                                    form.setValue(
-                                                        "photoId",
-                                                        "",
-                                                        { shouldDirty: true },
-                                                    );
-                                                    setPhotoPreviewUrl(null);
-                                                }}
-                                            >
-                                                {t("removePhoto")}
-                                            </button>
-                                        ) : null}
+                                                        onChange={
+                                                            handlePhotoFileChange
+                                                        }
+                                                    />
+                                                </label>
+                                            )}
+                                        </div>
+
+                                        {photoPreviewUrl && !uploadingPhoto && (
+                                            <div className="absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full bg-emerald-500 text-white shadow-xs ring-2 ring-card">
+                                                <Check className="size-3 stroke-[2.5]" />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="min-w-0 flex-1 text-center sm:text-left space-y-2">
+                                        <div>
+                                            <div className="flex items-center justify-center sm:justify-start gap-2">
+                                                <p className="text-[13px] font-semibold text-foreground">
+                                                    {t("staffPhoto")}
+                                                </p>
+                                                {photoPreviewUrl ? (
+                                                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                                                        <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                                        {isAmharic
+                                                            ? "ፎቶ ተጭኗል"
+                                                            : "Photo uploaded"}
+                                                    </span>
+                                                ) : (
+                                                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                                        {isAmharic
+                                                            ? "አማራጭ"
+                                                            : "Optional"}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="text-[12px] text-muted-foreground mt-0.5">
+                                                {t("staffPhotoHint")} · JPG,
+                                                PNG, WEBP (Max 5MB)
+                                            </p>
+                                        </div>
+
+                                        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
+                                            <label className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-hairline bg-card px-3 text-[12px] font-medium text-foreground shadow-xs transition-colors hover:bg-secondary/70 hover:border-border">
+                                                <Upload className="size-3.5 text-primary" />
+                                                <span>
+                                                    {uploadingPhoto
+                                                        ? t("uploadingPhoto")
+                                                        : photoPreviewUrl
+                                                          ? t("replacePhoto")
+                                                          : t("uploadPhoto")}
+                                                </span>
+                                                <input
+                                                    type="file"
+                                                    accept="image/jpeg,image/png,image/webp,image/gif"
+                                                    className="sr-only"
+                                                    disabled={uploadingPhoto}
+                                                    onChange={
+                                                        handlePhotoFileChange
+                                                    }
+                                                />
+                                            </label>
+
+                                            {photoPreviewUrl ? (
+                                                <button
+                                                    type="button"
+                                                    className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-hairline bg-card px-3 text-[12px] font-medium text-rose-600 dark:text-rose-400 transition-colors hover:bg-rose-500/10 hover:border-rose-200 dark:hover:border-rose-900/50"
+                                                    onClick={() => {
+                                                        form.setValue(
+                                                            "photoId",
+                                                            "",
+                                                            {
+                                                                shouldDirty: true,
+                                                            },
+                                                        );
+                                                        setPhotoPreviewUrl(
+                                                            null,
+                                                        );
+                                                    }}
+                                                >
+                                                    <Trash2 className="size-3.5" />
+                                                    <span>
+                                                        {t("removePhoto")}
+                                                    </span>
+                                                </button>
+                                            ) : null}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1125,19 +1274,33 @@ export default function AddEditStaffSheet() {
                                         <FormItem>
                                             <FormLabel>
                                                 {t("phoneNumber")}
+                                                {role === "driver" ? (
+                                                    <span className="text-primary ml-1">
+                                                        *
+                                                    </span>
+                                                ) : null}
                                             </FormLabel>
-                                            <div className="relative">
-                                                <Phone className="absolute top-2.5 left-3 size-4 text-slate-gray" />
-                                                <FormControl>
-                                                    <Input
-                                                        placeholder={t(
-                                                            "phonePlaceholder",
-                                                        )}
-                                                        className="h-10 rounded-[10px] pl-9"
-                                                        {...field}
-                                                    />
-                                                </FormControl>
-                                            </div>
+                                            <FormControl>
+                                                <EthiopianPhoneInput
+                                                    id="staff-phone"
+                                                    value={field.value || ""}
+                                                    onChange={val => {
+                                                        const digits =
+                                                            val.replace(
+                                                                /\D/g,
+                                                                "",
+                                                            );
+                                                        if (
+                                                            digits.length <= 3
+                                                        ) {
+                                                            field.onChange("");
+                                                        } else {
+                                                            field.onChange(val);
+                                                        }
+                                                    }}
+                                                    onBlur={field.onBlur}
+                                                />
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -1716,8 +1879,27 @@ export default function AddEditStaffSheet() {
                                                     )}
                                                 >
                                                     <span className="text-[12px] font-bold leading-tight">
-                                                        {day}
+                                                        {isAmharic
+                                                            ? DAY_ETHIOPIAN[day]
+                                                                  ?.am || day
+                                                            : day}
                                                     </span>
+                                                    {isAmharic ? (
+                                                        <span
+                                                            className={cn(
+                                                                "text-[10px] font-ethiopic leading-tight opacity-75 mt-0.5",
+                                                                isDaySelected
+                                                                    ? "text-white/80 dark:text-zinc-950/80"
+                                                                    : "text-muted-foreground",
+                                                            )}
+                                                        >
+                                                            {
+                                                                DAY_ETHIOPIAN[
+                                                                    day
+                                                                ]?.shortAm
+                                                            }
+                                                        </span>
+                                                    ) : null}
                                                     <span
                                                         className={cn(
                                                             "mt-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium leading-none",
@@ -1812,17 +1994,45 @@ export default function AddEditStaffSheet() {
                                                             )}
                                                         />
                                                     )}
-                                                    <span>
-                                                        {shift.name} (
-                                                        {format12HourTime(
-                                                            shift.startLocalTime,
-                                                        )}
-                                                        –
-                                                        {format12HourTime(
-                                                            shift.endLocalTime,
-                                                        )}
-                                                        )
-                                                    </span>
+                                                    <div className="flex flex-col items-start text-left leading-tight">
+                                                        <span>
+                                                            {shift.name}{" "}
+                                                            <span className="font-normal opacity-90">
+                                                                (
+                                                                {format12HourTime(
+                                                                    shift.startLocalTime,
+                                                                )}
+                                                                –
+                                                                {format12HourTime(
+                                                                    shift.endLocalTime,
+                                                                )}
+                                                                )
+                                                            </span>
+                                                        </span>
+                                                        <span
+                                                            className={cn(
+                                                                "text-[10px] mt-0.5",
+                                                                isAmharic
+                                                                    ? "font-ethiopic"
+                                                                    : "",
+                                                                isCurrentShift
+                                                                    ? "text-amber-300 dark:text-amber-600 font-semibold"
+                                                                    : "text-amber-600 dark:text-amber-500 font-medium",
+                                                            )}
+                                                        >
+                                                            {isAmharic
+                                                                ? formatEthiopianShiftRange(
+                                                                      shift.startLocalTime,
+                                                                      shift.endLocalTime,
+                                                                      true,
+                                                                  )
+                                                                : `Eth: ${formatEthiopianShiftRange(
+                                                                      shift.startLocalTime,
+                                                                      shift.endLocalTime,
+                                                                      false,
+                                                                  )}`}
+                                                        </span>
+                                                    </div>
                                                     {role === "waiter" &&
                                                     isCurrentShift ? (
                                                         <span

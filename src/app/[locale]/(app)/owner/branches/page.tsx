@@ -1,66 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import { Building2, MapPin, Plus, Radio, RefreshCw, Users } from "lucide-react";
+import { Building2, ChefHat, Plus, Store, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { useRouter } from "@/i18n/navigation";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
-import KpiCard from "@/components/custom/organisms/KpiCard";
 import PageHeader from "@/components/custom/organisms/PageHeader";
-import { RevenueVsCollectionsChart } from "@/components/custom/organisms/Charts";
-import {
-    useGetBranchRevenueQuery,
-    type BranchRevenuePeriod,
-} from "@/context/services/managerDashboardApi";
-import { useListBranchesQuery } from "@/context/services/branchesApi";
-import { useGetTenantSiteQuery } from "@/context/services/siteApi";
-import { useAppSelector } from "@/context/hooks";
 import { KpiStatsSkeleton } from "@/components/custom/molecules/Skeletons";
 import AddBranchSheet from "@/domains/tenancy/ui/AddBranchSheet";
+import { useListBranchesQuery } from "@/context/services/branchesApi";
+import { useAppSelector } from "@/context/hooks";
 import { cn } from "@/lib/utils";
-
-const POLL_MS = 12000;
-
-const PERIOD_IDS: BranchRevenuePeriod[] = ["month", "quarter", "year"];
 
 export default function BranchesPage() {
     const t = useTranslations("owner");
-    const tManager = useTranslations("manager");
     const tCommon = useTranslations("common");
+    const router = useRouter();
     const session = useAppSelector(state => state.identity.session);
-    const [tab, setTab] = useState<"manage" | "revenue">("manage");
-    const [period, setPeriod] = useState<BranchRevenuePeriod>("month");
     const [addOpen, setAddOpen] = useState(false);
 
-    const { data: branchesRes, isLoading: branchesLoading } =
-        useListBranchesQuery();
-    const { data, isLoading, isFetching, isError } = useGetBranchRevenueQuery(
-        { period },
-        { pollingInterval: POLL_MS, skip: tab !== "revenue" },
-    );
-    const { data: site } = useGetTenantSiteQuery();
-    const revenue = data?.data;
+    const { data: branchesRes, isLoading } = useListBranchesQuery();
     const branches = branchesRes?.data ?? [];
-
-    const branchName =
-        revenue?.branchName || session?.branchName || t("currentBranch");
-    const restaurantName =
-        site?.data?.tenantName || session?.branchName || t("currentBranch");
-    const hasBranch = Boolean(revenue?.branchName || session?.branchId);
-
-    const periodLabel = (id: BranchRevenuePeriod) => {
-        if (id === "month") return t("periodMonth");
-        if (id === "quarter") return t("periodQuarter");
-        return t("periodYear");
-    };
-
     const atLimit =
         branchesRes != null &&
         branchesRes.activeCount >= branchesRes.maxBranches;
 
     return (
         <DashboardFrame>
+            {/* Header row */}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <PageHeader
                     compact
@@ -68,290 +35,171 @@ export default function BranchesPage() {
                     title="Branches"
                     description={t("addBranchDesc")}
                 />
-                <div className="flex flex-wrap items-center gap-2">
-                    <div className="inline-flex rounded-xl border border-hairline p-0.5">
-                        <button
-                            type="button"
-                            onClick={() => setTab("manage")}
-                            className={cn(
-                                "rounded-lg px-3 py-1.5 text-[12px] font-medium",
-                                tab === "manage"
-                                    ? "bg-foreground text-background"
-                                    : "text-slate-gray",
-                            )}
-                        >
-                            {t("manageTab")}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setTab("revenue")}
-                            className={cn(
-                                "rounded-lg px-3 py-1.5 text-[12px] font-medium",
-                                tab === "revenue"
-                                    ? "bg-foreground text-background"
-                                    : "text-slate-gray",
-                            )}
-                        >
-                            {t("revenueTab")}
-                        </button>
-                    </div>
-                    {tab === "manage" ? (
-                        <Button
-                            size="sm"
-                            disabled={atLimit}
-                            onClick={() => setAddOpen(true)}
-                            className="gap-1.5"
-                        >
-                            <Plus className="size-3.5" />
-                            {t("addBranch")}
-                        </Button>
-                    ) : (
-                        <div
-                            className={cn(
-                                "inline-flex items-center gap-1.5 rounded-full border border-hairline px-2.5 py-1 text-[11px] font-medium text-slate-gray",
-                                isFetching && "opacity-80",
-                            )}
-                        >
-                            <Radio
-                                className={cn(
-                                    "size-3",
-                                    isError
-                                        ? "text-red-500"
-                                        : "text-emerald-500",
-                                )}
-                            />
-                            {isError ? tCommon("offline") : tCommon("live")}
-                            {isFetching ? (
-                                <RefreshCw className="size-3 animate-spin" />
-                            ) : null}
-                        </div>
-                    )}
-                </div>
+                <button
+                    type="button"
+                    disabled={atLimit}
+                    onClick={() => setAddOpen(true)}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-foreground px-4 text-[13px] font-semibold text-background hover:bg-foreground/90 disabled:opacity-50"
+                >
+                    <Plus className="size-3.5" />
+                    {t("addBranch")}
+                </button>
             </div>
 
-            {tab === "manage" ? (
-                <>
-                    {branchesRes ? (
-                        <p className="text-[12px] text-slate-gray">
-                            {t("branchLimit", {
-                                active: branchesRes.activeCount,
-                                max: branchesRes.maxBranches,
-                            })}
-                        </p>
-                    ) : null}
-
-                    {branchesLoading ? <KpiStatsSkeleton /> : null}
-
-                    {!branchesLoading && branches.length === 0 ? (
-                        <div className="rounded-[16px] border border-dashed border-hairline bg-card p-6 text-[13px] text-slate-gray">
-                            {t("noBranchesYet")}
-                        </div>
-                    ) : null}
-
-                    <div className="grid gap-3 sm:grid-cols-2">
-                        {branches.map(branch => {
-                            const active = branch.id === session?.branchId;
-                            return (
-                                <article
-                                    key={branch.id}
-                                    className={cn(
-                                        "rounded-[16px] border border-hairline bg-card p-4 shadow-subtle",
-                                        active && "border-brand/40 bg-brand/5",
-                                    )}
-                                >
-                                    <div className="flex items-start justify-between gap-2">
-                                        <div className="flex min-w-0 items-start gap-3">
-                                            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand">
-                                                <Building2 className="size-5" />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <h3 className="truncate text-[15px] font-semibold">
-                                                    {branch.name}
-                                                </h3>
-                                                <p className="mt-0.5 text-[12px] text-slate-gray">
-                                                    {branch.displayCode || "—"}
-                                                    {branch.serviceMode ===
-                                                    "BAKERY"
-                                                        ? " · Bakery"
-                                                        : ""}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        {active ? (
-                                            <Badge variant="success">
-                                                {tCommon("live")}
-                                            </Badge>
-                                        ) : null}
-                                    </div>
-                                    <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-slate-gray">
-                                        <span>
-                                            {t("tablesCount", {
-                                                count: branch.tableCount,
-                                            })}
-                                        </span>
-                                        <span>
-                                            {t("stationsCount", {
-                                                count: branch.stationCount,
-                                            })}
-                                        </span>
-                                        <span>
-                                            {t("staffCountLabel", {
-                                                count: branch.staffCount,
-                                            })}
-                                        </span>
-                                    </div>
-                                    {branch.manager?.name ? (
-                                        <p className="mt-2 flex items-center gap-1.5 text-[12px] text-foreground">
-                                            <Users className="size-3.5 text-slate-gray" />
-                                            {t("managerLabel")}:{" "}
-                                            {branch.manager.name}
-                                        </p>
-                                    ) : null}
-                                </article>
-                            );
-                        })}
-                    </div>
-                </>
-            ) : (
-                <>
-                    <div className="flex max-w-full gap-1.5 overflow-x-auto pb-0.5">
-                        {PERIOD_IDS.map(id => {
-                            const active = period === id;
-                            return (
-                                <button
-                                    key={id}
-                                    type="button"
-                                    onClick={() => setPeriod(id)}
-                                    className={cn(
-                                        "shrink-0 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors",
-                                        active
-                                            ? "border-transparent bg-brand text-white"
-                                            : "border-hairline bg-card text-slate-gray hover:bg-muted/50",
-                                    )}
-                                >
-                                    {periodLabel(id)}
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    {isError ? (
-                        <p className="rounded-[16px] border border-destructive/30 bg-destructive/10 p-4 text-[13px] text-destructive">
-                            {t("loadBranchError")}
-                        </p>
-                    ) : null}
-
-                    {isLoading ? <KpiStatsSkeleton /> : null}
-
-                    {!isLoading && !hasBranch ? (
-                        <div className="rounded-[16px] border border-dashed border-hairline bg-card p-6 text-[13px] text-slate-gray">
-                            {t("noBranchLinked")}
-                        </div>
-                    ) : null}
-
-                    {!isLoading && hasBranch && revenue ? (
-                        <>
-                            <article className="rounded-[16px] border border-hairline bg-card p-4 shadow-subtle sm:p-5">
-                                <div className="flex items-start justify-between gap-3">
-                                    <div className="flex min-w-0 items-start gap-3">
-                                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand">
-                                            <Building2 className="size-5" />
-                                        </div>
-                                        <div className="min-w-0">
-                                            <h2 className="truncate text-[15px] font-semibold tracking-tight">
-                                                {branchName}
-                                            </h2>
-                                            <p className="mt-0.5 flex items-center gap-1 text-[12px] text-slate-gray">
-                                                <MapPin className="size-3.5 shrink-0" />
-                                                {revenue.fromDate} →{" "}
-                                                {revenue.toDate}
-                                            </p>
-                                            <p className="mt-0.5 text-[11px] text-slate-gray">
-                                                {restaurantName}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <Badge variant="success">
-                                        {tCommon("live")}
-                                    </Badge>
-                                </div>
-                            </article>
-
-                            <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-                                <KpiCard
-                                    label={t("revenue")}
-                                    value={revenue.revenueFormatted}
-                                    trend={{
-                                        value: revenue.revenueTrend,
-                                        direction:
-                                            revenue.revenueTrend.startsWith("+")
-                                                ? "up"
-                                                : "neutral",
-                                        label: revenue.revenueTrendLabel,
-                                    }}
-                                    sparkline={{
-                                        badge:
-                                            revenue.revenueTrend.replace(
-                                                /[^0-9%]/g,
-                                                "",
-                                            ) || "0%",
-                                        color: "#e85d04",
-                                        variant: "wave1",
-                                    }}
-                                    tone="brand"
-                                />
-                                <KpiCard
-                                    label={t("collected")}
-                                    value={revenue.collectionsFormatted}
-                                    trend={{
-                                        value: revenue.billedFormatted,
-                                        direction: "neutral",
-                                        label: t("billedInPeriod"),
-                                    }}
-                                    sparkline={{
-                                        badge: revenue.ordersFormatted,
-                                        color: "#046645",
-                                        variant: "wave2",
-                                    }}
-                                    tone="emerald"
-                                />
-                                <KpiCard
-                                    label={t("orders")}
-                                    value={revenue.ordersFormatted}
-                                    hint={t("billsInPeriod")}
-                                    sparkline={{
-                                        badge: revenue.coversFormatted,
-                                        color: "#f97316",
-                                        variant: "wave3",
-                                    }}
-                                    tone="amber"
-                                />
-                                <KpiCard
-                                    label={tManager("avgCheck")}
-                                    value={revenue.avgCheckFormatted}
-                                    trend={{
-                                        value: revenue.coversFormatted,
-                                        direction: "neutral",
-                                        label: t("covers"),
-                                    }}
-                                    sparkline={{
-                                        badge: revenue.coversFormatted,
-                                        color: "#c2410c",
-                                        variant: "wave4",
-                                    }}
-                                    tone="brand"
-                                />
-                            </div>
-
-                            <div className="min-w-0">
-                                <RevenueVsCollectionsChart
-                                    data={revenue.series}
-                                />
-                            </div>
-                        </>
-                    ) : null}
-                </>
+            {/* Count line */}
+            {branchesRes && (
+                <p className="text-[12px] text-slate-gray">
+                    {t("branchLimit", {
+                        active: branchesRes.activeCount,
+                        max: branchesRes.maxBranches,
+                    })}
+                </p>
             )}
+
+            {/* Loading */}
+            {isLoading && <KpiStatsSkeleton />}
+
+            {/* Empty */}
+            {!isLoading && branches.length === 0 && (
+                <div className="rounded-2xl border border-dashed border-hairline bg-card p-8 text-center text-[13px] text-slate-gray">
+                    {t("noBranchesYet")}
+                </div>
+            )}
+
+            {/* Grid */}
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {branches.map(branch => {
+                    const isActive = branch.id === session?.branchId;
+                    const isBakery = branch.serviceMode === "BAKERY";
+
+                    return (
+                        <button
+                            key={branch.id}
+                            type="button"
+                            onClick={() =>
+                                router.push(
+                                    `/owner/branches/${branch.id}` as never,
+                                )
+                            }
+                            className={cn(
+                                "group flex flex-col gap-4 rounded-2xl border bg-card p-5 text-left transition-colors hover:border-foreground/20",
+                                isActive
+                                    ? "border-brand/40"
+                                    : "border-hairline",
+                            )}
+                        >
+                            {/* Top row */}
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                    <div
+                                        className={cn(
+                                            "flex size-10 shrink-0 items-center justify-center rounded-xl",
+                                            isBakery
+                                                ? "bg-amber-50 text-amber-600 dark:bg-amber-950/40"
+                                                : "bg-brand/8 text-brand",
+                                        )}
+                                    >
+                                        {isBakery ? (
+                                            <ChefHat className="size-5" />
+                                        ) : (
+                                            <Store className="size-5" />
+                                        )}
+                                    </div>
+                                    <div>
+                                        <p className="text-[15px] font-semibold leading-tight text-foreground">
+                                            {branch.name}
+                                        </p>
+                                        <p className="mt-0.5 text-[12px] text-slate-gray">
+                                            {branch.displayCode
+                                                ? branch.displayCode
+                                                : "—"}
+                                            {" · "}
+                                            {isBakery ? "Bakery" : "Restaurant"}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Status pill */}
+                                <span
+                                    className={cn(
+                                        "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium",
+                                        isActive
+                                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                                            : branch.status === "ACTIVE"
+                                              ? "bg-secondary text-slate-gray"
+                                              : "bg-red-50 text-red-600 dark:bg-red-950/40",
+                                    )}
+                                >
+                                    {isActive
+                                        ? tCommon("live")
+                                        : branch.status === "ACTIVE"
+                                          ? "Active"
+                                          : "Archived"}
+                                </span>
+                            </div>
+
+                            {/* Stats row */}
+                            <div className="flex flex-wrap gap-x-4 gap-y-1">
+                                {[
+                                    {
+                                        label: t("tablesCount", {
+                                            count: branch.tableCount,
+                                        }),
+                                    },
+                                    {
+                                        label: t("stationsCount", {
+                                            count: branch.stationCount,
+                                        }),
+                                    },
+                                    {
+                                        label: t("staffCountLabel", {
+                                            count: branch.staffCount,
+                                        }),
+                                    },
+                                ].map(s => (
+                                    <span
+                                        key={s.label}
+                                        className="text-[12px] text-slate-gray"
+                                    >
+                                        {s.label}
+                                    </span>
+                                ))}
+                            </div>
+
+                            {/* Manager */}
+                            {branch.manager?.name && (
+                                <div className="flex items-center gap-2 border-t border-hairline pt-3">
+                                    <div className="flex size-6 items-center justify-center rounded-full bg-secondary">
+                                        <Users className="size-3.5 text-slate-gray" />
+                                    </div>
+                                    <p className="text-[12px] text-foreground">
+                                        <span className="text-slate-gray">
+                                            Manager:{" "}
+                                        </span>
+                                        {branch.manager.name}
+                                    </p>
+                                </div>
+                            )}
+                        </button>
+                    );
+                })}
+
+                {/* Add new card */}
+                {!atLimit && (
+                    <button
+                        type="button"
+                        onClick={() => setAddOpen(true)}
+                        className="flex min-h-[160px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-hairline bg-card text-slate-gray transition-colors hover:border-foreground/20 hover:text-foreground"
+                    >
+                        <div className="flex size-9 items-center justify-center rounded-xl border border-hairline bg-background">
+                            <Plus className="size-4" />
+                        </div>
+                        <span className="text-[13px] font-medium">
+                            {t("addBranch")}
+                        </span>
+                    </button>
+                )}
+            </div>
 
             <AddBranchSheet open={addOpen} onClose={() => setAddOpen(false)} />
         </DashboardFrame>

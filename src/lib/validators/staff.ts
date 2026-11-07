@@ -2,13 +2,44 @@ import { z } from "zod";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 
+const optionalEtPhone = z
+    .string()
+    .trim()
+    .optional()
+    .refine(value => {
+        if (!value || value === "" || value === "+251" || value === "+251 ")
+            return true;
+        const digits = value.replace(/\D/g, "");
+        if (digits.length === 0 || digits === "251") return true;
+
+        // Ethiopian mobile: 9 digits after 251 or 0 (starting with 9 or 7)
+        if (digits.startsWith("251")) {
+            return digits.length === 12 && /^251[79]\d{8}$/.test(digits);
+        }
+        if (digits.startsWith("0")) {
+            return digits.length === 10 && /^0[79]\d{8}$/.test(digits);
+        }
+        if (digits.length === 9 && /^[79]\d{8}$/.test(digits)) {
+            return true;
+        }
+        // Allow previously saved international phone numbers (e.g. +1 ...) so existing staff don't fail edit validation
+        if (
+            value.startsWith("+") &&
+            !value.startsWith("+251") &&
+            digits.length >= 7
+        ) {
+            return true;
+        }
+        return false;
+    }, "Enter a valid 9-digit Ethiopian mobile (+251 9X... or +251 7X...).");
+
 export const staffFormSchema = z
     .object({
         name: z.string().trim().min(1, "Staff full name is required."),
         role: z.string().trim().min(1, "Role is required."),
         preparationStationId: z.string().optional().or(z.literal("")),
         stationCode: z.string().optional().or(z.literal("")),
-        phone: z.string().trim().optional(),
+        phone: optionalEtPhone,
         email: z
             .string()
             .trim()
@@ -35,11 +66,21 @@ export const staffFormSchema = z
     })
     .superRefine((data, ctx) => {
         if (data.role === "driver") {
-            if (!data.phone || data.phone.trim().length < 9) {
+            const digits = (data.phone || "").replace(/\D/g, "");
+            const isEt =
+                (digits.startsWith("251") &&
+                    digits.length === 12 &&
+                    /^251[79]\d{8}$/.test(digits)) ||
+                (digits.startsWith("0") &&
+                    digits.length === 10 &&
+                    /^0[79]\d{8}$/.test(digits)) ||
+                (digits.length === 9 && /^[79]\d{8}$/.test(digits));
+            if (!isEt) {
                 ctx.addIssue({
                     code: "custom",
                     path: ["phone"],
-                    message: "Valid phone number is required for drivers.",
+                    message:
+                        "Valid Ethiopian mobile is required for drivers (+251 9X... or +251 7X...).",
                 });
             }
             if (!data.licencePlate || data.licencePlate.trim().length < 2) {

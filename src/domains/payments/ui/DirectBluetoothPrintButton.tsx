@@ -1,15 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Printer, Settings, Loader2, Check, Bluetooth } from "lucide-react";
+import { Printer, Loader2, Check, Bluetooth } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-} from "@/components/ui/dialog";
 import { Bill } from "@/domains/billing/domain/billingApi";
 import { toast } from "@/lib/toast";
 import { encodeReceiptToEscPos } from "@/domains/payments/utils/escposEncoder";
@@ -493,203 +486,38 @@ export const DirectBluetoothPrintButton: React.FC<
 
     return (
         <>
-            <div className="inline-flex rounded-lg shadow-xs">
-                <Button
-                    size="sm"
-                    onClick={handleFastPrint}
-                    disabled={printing}
-                    className={`h-8 gap-1.5 rounded-r-none text-xs font-semibold ${
-                        success
-                            ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                            : "bg-emerald-700 hover:bg-emerald-800 text-white"
-                    }`}
-                    title={
-                        printMode === "bluetooth"
-                            ? `Wireless Direct Print (Bluetooth: ${bleDeviceName || "Ready"})`
-                            : `Station Port Print (${serialConnected ? "USB Ready" : port})`
-                    }
-                >
-                    {printing ? (
-                        <Loader2 className="size-3.5 animate-spin" />
-                    ) : success ? (
-                        <Check className="size-3.5 text-emerald-100" />
-                    ) : printMode === "bluetooth" ? (
-                        <Bluetooth className="size-3.5 text-emerald-200" />
-                    ) : (
-                        <Printer className="size-3.5 text-emerald-200" />
-                    )}
-                    {printing
-                        ? "Printing..."
-                        : success
-                          ? "Printed!"
-                          : printMode === "bluetooth"
-                            ? "Direct Wireless POS"
-                            : "Direct POS Print"}
-                </Button>
-
-                <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                        setTempPort(port);
-                        setTempMode(printMode);
-                        setSettingsOpen(true);
-                    }}
-                    disabled={printing}
-                    className="h-8 px-2 rounded-l-none border-l border-emerald-800/60 bg-emerald-700 hover:bg-emerald-800 text-white"
-                    title={`Configure Printer (Mode: ${printMode.toUpperCase()})`}
-                >
-                    <Settings className="size-3 text-emerald-200" />
-                </Button>
-            </div>
-
-            {/* Station / Bluetooth Setup Modal */}
-            <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-                <DialogContent className="max-w-md rounded-2xl p-5">
-                    <DialogHeader>
-                        <DialogTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                            <Settings className="size-4 text-emerald-600" />
-                            Printer Connection Setup
-                        </DialogTitle>
-                    </DialogHeader>
-
-                    <div className="py-3 space-y-4 text-xs text-slate-600">
-                        {/* Mode Switcher */}
-                        <div>
-                            <label className="block text-[11px] font-semibold text-slate-700 mb-1.5">
-                                Select Print Method for this Device:
-                            </label>
-                            <div className="grid grid-cols-2 gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setTempMode("bluetooth")}
-                                    className={`p-2.5 rounded-xl border text-left transition-all ${
-                                        tempMode === "bluetooth"
-                                            ? "border-emerald-600 bg-emerald-50/70 text-emerald-950 font-bold ring-1 ring-emerald-600"
-                                            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                                    }`}
-                                >
-                                    <div className="flex items-center gap-1.5 mb-1 text-emerald-700">
-                                        <Bluetooth className="size-3.5" />
-                                        <span>Web Bluetooth</span>
-                                    </div>
-                                    <p className="text-[10px] font-normal text-slate-500">
-                                        Best for Tablets, Phones, & Laptops. No
-                                        apps or servers required.
-                                    </p>
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={() => setTempMode("station")}
-                                    className={`p-2.5 rounded-xl border text-left transition-all ${
-                                        tempMode === "station"
-                                            ? "border-emerald-600 bg-emerald-50/70 text-emerald-950 font-bold ring-1 ring-emerald-600"
-                                            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                                    }`}
-                                >
-                                    <div className="flex items-center gap-1.5 mb-1 text-emerald-700">
-                                        <Printer className="size-3.5" />
-                                        <span>Station Port</span>
-                                    </div>
-                                    <p className="text-[10px] font-normal text-slate-500">
-                                        Best for Cashier Counter PCs (USB or
-                                        Bluetooth COM port).
-                                    </p>
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Mode Details */}
-                        {tempMode === "bluetooth" ? (
-                            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-                                <p className="text-[11px] text-slate-700 font-medium">
-                                    Wireless Direct Mode connects this tablet or
-                                    browser directly to your portable thermal
-                                    printer.
-                                </p>
-                                <div className="flex items-center justify-between pt-1">
-                                    <span className="text-[11px] text-slate-500">
-                                        Status:{" "}
-                                        <strong className="text-slate-800">
-                                            {bleDeviceName
-                                                ? `Linked to ${bleDeviceName}`
-                                                : "Not paired yet"}
-                                        </strong>
-                                    </span>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={handlePairBleOnly}
-                                        className="h-7 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50"
-                                    >
-                                        <Bluetooth className="size-3 mr-1" />
-                                        Pair Printer
-                                    </Button>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-[11px] font-semibold text-slate-800">
-                                            Direct PC Printer Connection
-                                        </p>
-                                        <p className="text-[10px] text-slate-500">
-                                            Connects directly from your PC
-                                            browser (Chrome/Edge).
-                                        </p>
-                                    </div>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        type="button"
-                                        onClick={handlePairSerialOnly}
-                                        className="h-7 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 shrink-0"
-                                    >
-                                        <Printer className="size-3 mr-1" />
-                                        {serialConnected
-                                            ? "Change Port"
-                                            : "Select Port"}
-                                    </Button>
-                                </div>
-                                <div className="pt-1 border-t border-slate-200/80">
-                                    <label className="block text-[10px] font-medium text-slate-500 mb-1">
-                                        Station Port Name (fallback):
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={tempPort}
-                                        onChange={e =>
-                                            setTempPort(e.target.value)
-                                        }
-                                        placeholder="COM9"
-                                        className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs uppercase font-mono font-bold text-slate-900 focus:outline-emerald-600"
-                                    />
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    <DialogFooter className="gap-2">
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setSettingsOpen(false)}
-                            className="h-8 text-xs"
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            size="sm"
-                            onClick={handleSaveSettings}
-                            className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold"
-                        >
-                            Save Setting
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <Button
+                size="sm"
+                onClick={handleFastPrint}
+                disabled={printing}
+                className={`h-8 gap-1.5 rounded-lg text-xs font-semibold ${
+                    success
+                        ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                        : "bg-emerald-700 hover:bg-emerald-800 text-white"
+                }`}
+                title={
+                    printMode === "bluetooth"
+                        ? `Wireless Direct Print (Bluetooth: ${bleDeviceName || "Ready"})`
+                        : `Station Port Print (${serialConnected ? "USB Ready" : port})`
+                }
+            >
+                {printing ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                ) : success ? (
+                    <Check className="size-3.5 text-emerald-100" />
+                ) : printMode === "bluetooth" ? (
+                    <Bluetooth className="size-3.5 text-emerald-200" />
+                ) : (
+                    <Printer className="size-3.5 text-emerald-200" />
+                )}
+                {printing
+                    ? "Printing..."
+                    : success
+                      ? "Printed!"
+                      : printMode === "bluetooth"
+                        ? "Direct Wireless POS"
+                        : "Direct POS Print"}
+            </Button>
         </>
     );
 };

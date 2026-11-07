@@ -21,6 +21,15 @@ import {
     type InventoryCategoryItem,
 } from "@/context/services/inventoryApi";
 import { PresetCategoryImportModal } from "@/domains/inventory/ui/PresetCategoryImportModal";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/lib/toast";
 
 interface CategoryManagerModalProps {
@@ -52,6 +61,8 @@ export function CategoryManagerModal({
         useState<InventoryCategoryItem | null>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [presetImportOpen, setPresetImportOpen] = useState(false);
+    const [deleteTarget, setDeleteTarget] =
+        useState<InventoryCategoryItem | null>(null);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -128,17 +139,17 @@ export function CategoryManagerModal({
     }
 
     async function handleDelete(category: InventoryCategoryItem) {
-        const confirmMsg =
-            category.itemCount > 0
-                ? `Category "${category.name}" currently has ${category.itemCount} assigned items. Deleting it will unlink these items. Proceed?`
-                : `Delete category "${category.name}"?`;
+        setDeleteTarget(category);
+    }
 
-        if (!window.confirm(confirmMsg)) return;
-
+    async function executeDelete() {
+        if (!deleteTarget) return;
+        const target = deleteTarget;
+        setDeleteTarget(null);
         try {
-            await deleteCategory(category.id).unwrap();
-            toast.success(`Category "${category.name}" deleted`);
-            if (editingCategory?.id === category.id) {
+            await deleteCategory(target.id).unwrap();
+            toast.success(`Category "${target.name}" deleted`);
+            if (editingCategory?.id === target.id) {
                 resetForm();
             }
         } catch (err) {
@@ -484,6 +495,40 @@ export function CategoryManagerModal({
                 open={presetImportOpen}
                 onClose={() => setPresetImportOpen(false)}
             />
+
+            {/* Delete Confirmation Modal */}
+            <Dialog
+                open={!!deleteTarget}
+                onOpenChange={open => {
+                    if (!open) setDeleteTarget(null);
+                }}
+            >
+                <DialogContent className="max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle>Delete Category?</DialogTitle>
+                        <DialogDescription>
+                            {deleteTarget && deleteTarget.itemCount > 0
+                                ? `Category "${deleteTarget.name}" has ${deleteTarget.itemCount} assigned items. Deleting it will unlink these items. This cannot be undone.`
+                                : `Are you sure you want to delete "${deleteTarget?.name}"? This cannot be undone.`}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="flex-col gap-2 sm:flex-row">
+                        <Button
+                            variant="outline"
+                            onClick={() => setDeleteTarget(null)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            className="bg-destructive text-white hover:bg-destructive/90"
+                            disabled={isDeleting}
+                            onClick={() => void executeDelete()}
+                        >
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

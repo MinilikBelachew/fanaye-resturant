@@ -13,6 +13,13 @@ export type ReconciliationPreview = {
     existingExpectedCash?: string | null;
     sessionStatus?: string | null;
     needsResubmit?: boolean;
+    // Bills breakdown
+    billsCount?: number;
+    billsTotalCash?: string;
+    billsTotalDigital?: string;
+    billsGrandTotal?: string;
+    digitalVerified?: string;
+    digitalPending?: string;
 };
 
 export type Reconciliation = {

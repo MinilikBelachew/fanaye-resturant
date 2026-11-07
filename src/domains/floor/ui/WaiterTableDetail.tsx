@@ -345,126 +345,145 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
 
     return (
         <div className="space-y-6 pb-16 animate-in fade-in duration-150">
-            {/* 1. TOP BREADCRUMB */}
-            <div>
+            {/* 1. TOP BREADCRUMB & CONTEXT BAR */}
+            <div className="flex items-center justify-between">
                 <Link
                     href="/waiter/tables"
-                    className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-brand transition-colors hover:underline"
+                    className="group inline-flex items-center gap-2 rounded-full border border-hairline bg-card px-3.5 py-1.5 text-[12.5px] font-semibold text-muted-foreground transition-all hover:bg-secondary hover:text-foreground shadow-2xs"
                 >
-                    <ArrowLeft className="size-4" />
+                    <ArrowLeft className="size-3.5 transition-transform group-hover:-translate-x-0.5" />
                     <span>{tWaiter("backToFloorOverview")}</span>
                 </Link>
+                <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="inline-block size-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Live Floor Terminal</span>
+                </div>
             </div>
 
-            {/* 2. TABLE HERO HEADER CARD (Modern POS Standard) */}
-            <div className="flex flex-col justify-between gap-4 rounded-[22px] border border-hairline bg-card p-5 shadow-subtle sm:p-6 lg:flex-row lg:items-center">
-                <div>
-                    <div className="flex flex-wrap items-center gap-2.5">
-                        <h1 className="text-[22px] font-semibold tracking-tight text-foreground md:text-[24px]">
-                            {tCommon("table")} {tableNumber(table)}
-                        </h1>
-                        <span
-                            className={cn(
-                                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium",
-                                occupied
-                                    ? "border-brand/30 bg-brand/10 text-brand"
-                                    : "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-                            )}
-                        >
-                            <span
-                                className={cn(
-                                    "size-2 rounded-full",
-                                    occupied
-                                        ? "bg-brand animate-pulse"
-                                        : "bg-emerald-500",
-                                )}
-                            />
-                            <span>
-                                {occupied
-                                    ? `${tWaiter("inService")} · ${sessionLabel(sessionStatus)}`
-                                    : tWaiter("available")}
-                            </span>
-                        </span>
-                    </div>
+            {/* 2. TABLE HERO FLIGHT DECK */}
+            <div className="relative overflow-hidden rounded-[24px] border border-hairline bg-card p-5 sm:p-6 shadow-xs">
+                {/* Subtle decorative background gradient */}
+                <div className="pointer-events-none absolute -top-12 -right-12 size-56 rounded-full bg-primary/5 blur-3xl" />
 
-                    <div className="mt-2.5 flex flex-wrap items-center gap-4 text-[13px] text-slate-gray">
-                        {table.locationName ? (
-                            <div className="flex items-center gap-1 font-medium">
-                                <MapPin className="size-3.5 text-slate-gray/80" />
-                                <span>{table.locationName}</span>
-                            </div>
-                        ) : null}
-
-                        {occupied && table.waiterName ? (
-                            <div className="flex items-center gap-1 font-medium text-foreground">
-                                <User className="size-3.5 text-brand" />
-                                <span>
-                                    {tWaiter("server")}:{" "}
-                                    <strong>{table.waiterName}</strong>
-                                </span>
-                            </div>
-                        ) : null}
-
-                        {table.guestCount ? (
-                            <div className="flex items-center gap-1 font-medium">
-                                <Users className="size-3.5 text-slate-gray/80" />
-                                <span>
-                                    {table.guestCount} {tWaiter("guests")}
-                                </span>
-                            </div>
-                        ) : null}
-                    </div>
-                </div>
-
-                {/* Right Hero Controls: Running Tab & Quick Actions */}
-                <div className="flex flex-wrap items-center gap-3 border-t border-hairline/60 pt-3 lg:border-t-0 lg:pt-0">
-                    {occupied ? (
-                        <div className="rounded-[14px] bg-secondary/50 px-3.5 py-1.5 text-right">
-                            <span className="text-[11px] font-medium text-slate-gray uppercase">
-                                {tWaiter("runningTab")}
-                            </span>
-                            <p className="text-[16px] font-semibold text-foreground">
-                                {formatEtb(runningTotal)}
-                            </p>
+                <div className="relative flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
+                    {/* Left: Table Identifier & Meta Chips */}
+                    <div className="flex items-start gap-4">
+                        {/* Table Number Avatar / Badge */}
+                        <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary font-bold text-xl shadow-xs">
+                            {tableNumber(table)}
                         </div>
-                    ) : null}
 
-                    {pendingKitchenCount > 0 && table.mine ? (
-                        <Button
-                            onClick={() => onSendToKitchen()}
-                            disabled={isSendingToKitchen}
-                            className="h-9 gap-1.5 rounded-full bg-amber-600 hover:bg-amber-700 px-4 text-[13px] font-bold text-white shadow-sm animate-pulse"
-                        >
-                            <ChefHat className="size-4" />
-                            <span>
-                                {isSendingToKitchen
-                                    ? tWaiter("sending")
-                                    : `${tWaiter("sendToKitchen")} (${pendingKitchenCount})`}
-                            </span>
-                        </Button>
-                    ) : null}
+                        <div className="space-y-1.5 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2.5">
+                                <h1 className="text-[22px] font-bold tracking-tight text-foreground sm:text-[24px]">
+                                    {tCommon("table")} {tableNumber(table)}
+                                </h1>
+                                <span
+                                    className={cn(
+                                        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold",
+                                        occupied
+                                            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                                            : "border-hairline bg-secondary text-muted-foreground",
+                                    )}
+                                >
+                                    <span
+                                        className={cn(
+                                            "size-2 rounded-full",
+                                            occupied
+                                                ? "bg-emerald-500 animate-pulse"
+                                                : "bg-slate-400",
+                                        )}
+                                    />
+                                    <span>
+                                        {occupied
+                                            ? `${tWaiter("inService")} · ${sessionLabel(sessionStatus)}`
+                                            : tWaiter("available")}
+                                    </span>
+                                </span>
+                            </div>
 
-                    {canOrder ? (
-                        <Button
-                            onClick={() => setMenuOpen(true)}
-                            className="h-9 rounded-full bg-brand px-4 text-[13px] font-medium text-white shadow-xs hover:bg-brand-deep"
-                        >
-                            <Plus className="mr-1.5 size-4" />
-                            <span>{tWaiter("addOrder")}</span>
-                        </Button>
-                    ) : null}
+                            {/* Meta chips row */}
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-[12.5px] text-muted-foreground">
+                                {table.locationName ? (
+                                    <div className="inline-flex items-center gap-1.5 rounded-md bg-secondary/60 px-2 py-0.5 font-medium">
+                                        <MapPin className="size-3 text-muted-foreground" />
+                                        <span>{table.locationName}</span>
+                                    </div>
+                                ) : null}
 
-                    {!occupied && clockedIn ? (
-                        <Button
-                            className="h-9 rounded-full bg-brand px-5 text-[13px] font-medium text-white shadow-xs hover:bg-brand-deep"
-                            disabled={starting}
-                            onClick={takeTable}
-                        >
-                            {starting
-                                ? tCommon("loading")
-                                : tWaiter("startSession")}
-                        </Button>
-                    ) : null}
+                                {occupied && table.waiterName ? (
+                                    <div className="inline-flex items-center gap-1.5 rounded-md bg-secondary/60 px-2 py-0.5 font-medium text-foreground">
+                                        <User className="size-3 text-primary" />
+                                        <span>
+                                            {tWaiter("server")}:{" "}
+                                            <strong>{table.waiterName}</strong>
+                                        </span>
+                                    </div>
+                                ) : null}
+
+                                {table.guestCount ? (
+                                    <div className="inline-flex items-center gap-1.5 rounded-md bg-secondary/60 px-2 py-0.5 font-medium">
+                                        <Users className="size-3 text-muted-foreground" />
+                                        <span>
+                                            {table.guestCount}{" "}
+                                            {tWaiter("guests")}
+                                        </span>
+                                    </div>
+                                ) : null}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right: Running Tab & Quick Actions */}
+                    <div className="flex flex-wrap items-center gap-3 border-t border-hairline/60 pt-3.5 lg:border-t-0 lg:pt-0 shrink-0">
+                        {occupied ? (
+                            <div className="rounded-[16px] bg-secondary/40 border border-hairline/60 px-4 py-2 text-right shadow-2xs">
+                                <span className="text-[10.5px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                                    {tWaiter("runningTab")}
+                                </span>
+                                <p className="text-[18px] font-bold text-foreground tracking-tight">
+                                    {formatEtb(runningTotal)}
+                                </p>
+                            </div>
+                        ) : null}
+
+                        {pendingKitchenCount > 0 && table.mine ? (
+                            <Button
+                                onClick={() => onSendToKitchen()}
+                                disabled={isSendingToKitchen}
+                                className="h-10 gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 px-4 text-[13px] font-bold text-white shadow-xs animate-pulse"
+                            >
+                                <ChefHat className="size-4" />
+                                <span>
+                                    {isSendingToKitchen
+                                        ? tWaiter("sending")
+                                        : `${tWaiter("sendToKitchen")} (${pendingKitchenCount})`}
+                                </span>
+                            </Button>
+                        ) : null}
+
+                        {canOrder ? (
+                            <Button
+                                onClick={() => setMenuOpen(true)}
+                                className="h-10 gap-1.5 rounded-xl bg-primary hover:bg-primary-deep px-4.5 text-[13px] font-semibold text-primary-foreground shadow-sm shadow-primary/20 transition-all active:scale-95"
+                            >
+                                <Plus className="size-4" />
+                                <span>{tWaiter("addOrder")}</span>
+                            </Button>
+                        ) : null}
+
+                        {!occupied && clockedIn ? (
+                            <Button
+                                className="h-10 rounded-xl bg-primary hover:bg-primary-deep px-5 text-[13px] font-semibold text-primary-foreground shadow-sm transition-all active:scale-95"
+                                disabled={starting}
+                                onClick={takeTable}
+                            >
+                                {starting
+                                    ? tCommon("loading")
+                                    : tWaiter("startSession")}
+                            </Button>
+                        ) : null}
+                    </div>
                 </div>
             </div>
 
@@ -518,26 +537,31 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
 
             {/* 3. SPLIT WORKSPACE: ACTIVE ORDERS (LEFT) & TABLE SUMMARY (RIGHT) */}
             {occupied && table.mine ? (
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
                     {/* LEFT COLUMN: LIVE TICKETS (7 or 8 cols on desktop) */}
-                    <div className="space-y-4 lg:col-span-7 xl:col-span-8">
+                    <div className="space-y-4 md:col-span-7 lg:col-span-7 xl:col-span-8">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h2 className="text-[15px] font-semibold text-foreground">
+                                <h2 className="text-[15px] font-bold text-foreground">
                                     {tWaiter("kitchenTickets")}
                                 </h2>
-                                <p className="text-[12.5px] text-slate-gray">
-                                    {allItemCount} {tCommon("items")}
+                                <p className="text-[12px] text-muted-foreground">
+                                    {allItemCount}{" "}
+                                    {allItemCount === 1
+                                        ? tCommon.has("item")
+                                            ? tCommon("item")
+                                            : "item"
+                                        : tCommon("items")}
                                 </p>
                             </div>
-                            {canOrder ? (
+                            {canOrder && tickets.length > 0 ? (
                                 <Button
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setMenuOpen(true)}
-                                    className="h-8 gap-1.5 rounded-full border-hairline text-xs font-medium"
+                                    className="h-8 gap-1.5 rounded-full border-hairline text-xs font-semibold hover:border-primary/40 hover:text-primary transition-all"
                                 >
-                                    <Plus className="size-3.5 text-brand" />
+                                    <Plus className="size-3.5 text-primary" />
                                     <span>{tWaiter("addMore")}</span>
                                 </Button>
                             ) : null}
@@ -608,7 +632,13 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                                     tWaiter,
                                                     (item as any).delayed,
                                                 );
-                                                const { trayLabel, isSharedTray, cleanInstruction } = parseServingGroup(item.specialInstruction);
+                                                const {
+                                                    trayLabel,
+                                                    isSharedTray,
+                                                    cleanInstruction,
+                                                } = parseServingGroup(
+                                                    item.specialInstruction,
+                                                );
                                                 const extras = [
                                                     item.modifiers
                                                         .map(
@@ -641,11 +671,15 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                                                     </span>
                                                                     {isSharedTray ? (
                                                                         <span className="inline-flex items-center gap-1 rounded bg-amber-500/20 text-amber-950 dark:text-amber-200 border border-amber-500/40 px-1.5 py-0.2 text-[10px] font-bold uppercase tracking-wider">
-                                                                            🍱 {trayLabel}
+                                                                            🍱{" "}
+                                                                            {
+                                                                                trayLabel
+                                                                            }
                                                                         </span>
                                                                     ) : (
                                                                         <span className="inline-flex items-center gap-1 rounded bg-secondary text-slate-gray border border-hairline px-1.5 py-0.2 text-[9.5px] font-medium uppercase tracking-wider">
-                                                                            🍽️ Separate
+                                                                            🍽️
+                                                                            Separate
                                                                         </span>
                                                                     )}
                                                                 </div>
@@ -749,24 +783,24 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                 ))}
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center justify-center gap-3 rounded-[20px] border border-hairline bg-card p-10 text-center text-slate-gray">
-                                <div className="flex size-14 items-center justify-center rounded-full bg-secondary/60">
-                                    <UtensilsCrossed className="size-6 opacity-40 text-brand" />
+                            <div className="relative overflow-hidden flex flex-col items-center justify-center gap-3.5 rounded-[22px] border border-hairline border-dashed bg-card/60 p-8 sm:p-12 text-center text-slate-gray">
+                                <div className="flex size-16 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary shadow-xs">
+                                    <UtensilsCrossed className="size-7" />
                                 </div>
-                                <div>
+                                <div className="space-y-1 max-w-sm">
                                     <p className="text-[16px] font-bold text-foreground">
                                         {tWaiter("noOrders")}
                                     </p>
-                                    <p className="mt-1 text-[13px] text-slate-gray">
+                                    <p className="text-[12.5px] text-muted-foreground leading-relaxed">
                                         {tWaiter("openMenuToOrder")}
                                     </p>
                                 </div>
                                 {canOrder ? (
                                     <Button
                                         onClick={() => setMenuOpen(true)}
-                                        className="mt-2 rounded-full bg-brand px-5 font-bold text-white shadow-sm hover:bg-brand-deep"
+                                        className="mt-2 h-10 gap-2 rounded-xl bg-primary hover:bg-primary-deep px-5 text-[13px] font-semibold text-primary-foreground shadow-sm shadow-primary/20 transition-all active:scale-95"
                                     >
-                                        <Plus className="mr-1.5 size-4" />
+                                        <Plus className="size-4" />
                                         <span>{tWaiter("addFirstOrder")}</span>
                                     </Button>
                                 ) : null}
@@ -775,38 +809,48 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                     </div>
 
                     {/* RIGHT COLUMN: TABLE TAB & ACTIONS (5 or 4 cols on desktop) */}
-                    <div className="space-y-4 lg:col-span-5 xl:col-span-4">
+                    <div className="space-y-4 md:col-span-5 lg:col-span-5 xl:col-span-4">
                         {/* Tab & Bill Summary Card */}
-                        <div className="rounded-[18px] border border-hairline bg-card p-4.5 shadow-subtle space-y-3.5">
-                            <div className="flex items-center justify-between border-b border-hairline pb-2.5">
+                        <div className="rounded-[22px] border border-hairline bg-card p-5 shadow-xs space-y-4">
+                            <div className="flex items-center justify-between border-b border-hairline pb-3">
                                 <div className="flex items-center gap-2">
-                                    <Receipt className="size-4 text-brand" />
-                                    <h3 className="text-[14px] font-semibold text-foreground">
+                                    <Receipt className="size-4 text-primary" />
+                                    <h3 className="text-[14px] font-bold text-foreground">
                                         {tWaiter("tabSummary")}
                                     </h3>
                                 </div>
-                                <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-slate-gray">
+                                <span className="rounded-full bg-secondary/80 px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground border border-hairline/60">
                                     {tCommon("table")} {tableNumber(table)}
                                 </span>
                             </div>
 
-                            <div className="space-y-1.5 text-[13px]">
-                                <div className="flex justify-between text-slate-gray">
+                            <div className="space-y-2 text-[13px]">
+                                <div className="flex justify-between text-muted-foreground">
                                     <span>{tWaiter("itemsOrdered")}</span>
-                                    <span className="font-medium text-foreground">
+                                    <span className="font-semibold text-foreground">
                                         {itemCount}
                                     </span>
                                 </div>
-                                <div className="flex justify-between text-slate-gray">
+                                <div className="flex justify-between text-muted-foreground">
                                     <span>{tCommon("subtotal")}</span>
-                                    <span className="font-medium text-foreground">
+                                    <span className="font-semibold text-foreground">
                                         {formatEtb(runningTotal)}
                                     </span>
                                 </div>
-                                <div className="border-t border-hairline pt-2 flex items-center justify-between text-[15px] font-semibold text-foreground">
-                                    <span>{tWaiter("totalTab")}</span>
-                                    <span>{formatEtb(runningTotal)}</span>
+                                <div className="flex justify-between text-[11.5px] text-muted-foreground/75">
+                                    <span>Tax & Service</span>
+                                    <span>Inclusive 15% VAT</span>
                                 </div>
+                            </div>
+
+                            {/* Total Tab Highlight Box */}
+                            <div className="rounded-xl bg-secondary/40 border border-hairline/60 p-3 flex items-center justify-between">
+                                <span className="text-[13px] font-bold text-foreground">
+                                    {tWaiter("totalTab")}
+                                </span>
+                                <span className="text-[17px] font-bold text-foreground tracking-tight">
+                                    {formatEtb(runningTotal)}
+                                </span>
                             </div>
 
                             {/* Pending Bill Request Notice */}
@@ -874,7 +918,7 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                             <div className="space-y-2 pt-1.5">
                                 {canRequestBill ? (
                                     <Button
-                                        className="h-10 w-full rounded-full bg-brand text-[13px] font-medium text-white shadow-xs hover:bg-brand-deep"
+                                        className="h-10 w-full rounded-xl bg-primary text-[13px] font-semibold text-primary-foreground shadow-sm shadow-primary/20 hover:bg-primary-deep transition-all active:scale-95"
                                         disabled={requesting}
                                         onClick={onRequestBill}
                                     >
@@ -890,7 +934,7 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                 {canClosePaid || canCloseEmpty ? (
                                     <Button
                                         variant="outline"
-                                        className="h-10 w-full rounded-full border-hairline text-[13px] font-medium"
+                                        className="h-10 w-full rounded-xl border-hairline text-[13px] font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary/70 transition-all"
                                         disabled={closing}
                                         onClick={releaseTable}
                                     >
@@ -930,6 +974,7 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                     bill={bill}
                     tableDisplayName={tableNumber(table)}
                     waiterName={table.waiterName || staff?.name || "Server"}
+                    cashierName={bill.cashierName ?? undefined}
                     showSendToWaiter={false}
                     showPrintActions={false}
                 />

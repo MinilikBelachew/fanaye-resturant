@@ -13,7 +13,6 @@ import {
     Save,
     Table2,
     Trash2,
-    UserRound,
     Utensils,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -31,7 +30,7 @@ import { ManagerDiningTableCard } from "@/domains/floor/ui/ManagerDiningTableCar
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Link } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import {
     Form,
     FormControl,
@@ -56,6 +55,8 @@ export default function ManagerFloorConfig() {
     const t = useTranslations("managerTables");
     const tDetail = useTranslations("managerTableDetail");
     const tCommon = useTranslations("common");
+    const pathname = usePathname();
+    const basePath = pathname.startsWith("/owner/") ? "/owner" : "/manager";
     const [selectedShiftId, setSelectedShiftId] = useState<string>("");
     const { data, isLoading, isError } = useAdminFloorLayoutQuery(
         selectedShiftId ? { shiftId: selectedShiftId } : undefined,
@@ -552,73 +553,6 @@ export default function ManagerFloorConfig() {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2.5">
-                            {/* Shift Selector */}
-                            {shifts.length > 0 ? (
-                                <div className="flex flex-wrap items-center gap-1 rounded-full border border-hairline bg-surface-ivory p-0.5 shadow-2xs">
-                                    <span className="pl-2.5 pr-1 text-[11px] font-semibold uppercase tracking-wider text-slate-gray">
-                                        Shift:
-                                    </span>
-                                    {shifts.map(shift => {
-                                        const isSelected =
-                                            (selectedShiftId ||
-                                                data?.selectedShiftId) ===
-                                            shift.id;
-                                        const isLive =
-                                            activeShiftId === shift.id;
-                                        return (
-                                            <button
-                                                key={shift.id}
-                                                type="button"
-                                                onClick={() =>
-                                                    setSelectedShiftId(shift.id)
-                                                }
-                                                className={cn(
-                                                    "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-medium transition-all select-none",
-                                                    isSelected
-                                                        ? "bg-foreground text-background shadow-xs font-semibold"
-                                                        : "text-slate-gray hover:text-foreground",
-                                                )}
-                                                title={`${shift.name} (${shift.startLocalTime}–${shift.endLocalTime})`}
-                                            >
-                                                {isLive ? (
-                                                    <span className="relative flex size-1.5">
-                                                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-                                                        <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500"></span>
-                                                    </span>
-                                                ) : null}
-                                                <span>{shift.name}</span>
-                                                <span
-                                                    className={cn(
-                                                        "text-[10px]",
-                                                        isSelected
-                                                            ? "text-background/70"
-                                                            : "text-slate-gray",
-                                                    )}
-                                                >
-                                                    {shift.startLocalTime}–
-                                                    {shift.endLocalTime}
-                                                </span>
-                                            </button>
-                                        );
-                                    })}
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setSelectedShiftId("all")
-                                        }
-                                        className={cn(
-                                            "rounded-full px-2 py-1 text-[12px] font-medium transition-all select-none",
-                                            selectedShiftId === "all"
-                                                ? "bg-foreground text-background shadow-xs font-semibold"
-                                                : "text-slate-gray hover:text-foreground",
-                                        )}
-                                        title="Show default/permanent assignments without shift filter"
-                                    >
-                                        All
-                                    </button>
-                                </div>
-                            ) : null}
-
                             {/* View Switcher: Cards vs Table with localStorage persistence */}
                             <div className="flex items-center rounded-full border border-hairline bg-surface-ivory p-0.5 shadow-2xs">
                                 <button
@@ -782,9 +716,6 @@ export default function ManagerFloorConfig() {
                                                 <th className="px-4 py-3">
                                                     Status
                                                 </th>
-                                                <th className="px-4 py-3">
-                                                    Assigned Waiter
-                                                </th>
                                                 <th className="px-4 py-3 text-right">
                                                     Actions
                                                 </th>
@@ -801,16 +732,6 @@ export default function ManagerFloorConfig() {
                                                     table.displayNumber
                                                         ? `#${table.displayNumber}`
                                                         : table.displayName;
-                                                const waiterInitials =
-                                                    table.assignedWaiterName
-                                                        ? table.assignedWaiterName
-                                                              .split(" ")
-                                                              .filter(Boolean)
-                                                              .map(p => p[0])
-                                                              .slice(0, 2)
-                                                              .join("")
-                                                              .toUpperCase()
-                                                        : null;
 
                                                 return (
                                                     <tr
@@ -884,31 +805,6 @@ export default function ManagerFloorConfig() {
                                                             </Badge>
                                                         </td>
 
-                                                        {/* Waiter column */}
-                                                        <td className="px-4 py-3">
-                                                            {assigned ? (
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
-                                                                        {
-                                                                            waiterInitials
-                                                                        }
-                                                                    </span>
-                                                                    <span className="truncate font-semibold text-foreground">
-                                                                        {
-                                                                            table.assignedWaiterName
-                                                                        }
-                                                                    </span>
-                                                                </div>
-                                                            ) : (
-                                                                <span className="flex items-center gap-1 text-[12px] text-amber-700 dark:text-amber-400">
-                                                                    <UserRound className="size-3" />
-                                                                    {t(
-                                                                        "noWaiterAssigned",
-                                                                    )}
-                                                                </span>
-                                                            )}
-                                                        </td>
-
                                                         {/* Actions column */}
                                                         <td className="px-4 py-3 text-right">
                                                             <div className="flex items-center justify-end gap-1.5">
@@ -920,7 +816,7 @@ export default function ManagerFloorConfig() {
                                                                     asChild
                                                                 >
                                                                     <Link
-                                                                        href={`/manager/tables/${table.id}`}
+                                                                        href={`${basePath}/tables/${table.id}`}
                                                                     >
                                                                         {tDetail(
                                                                             "viewDetail",

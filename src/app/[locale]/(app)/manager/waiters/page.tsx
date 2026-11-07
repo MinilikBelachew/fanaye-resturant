@@ -21,7 +21,7 @@ import {
     useWaiterPerformanceQuery,
     type WaiterPeriod,
 } from "@/context/services/waiterPerformanceApi";
-import { Link } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import {
     type CalendarMode,
     formatDateRangeLabel,
@@ -37,6 +37,8 @@ export default function ManagerWaitersPage() {
     const tDetail = useTranslations("managerWaiterDetail");
     const tManager = useTranslations("manager");
     const tCommon = useTranslations("common");
+    const pathname = usePathname();
+    const basePath = pathname.startsWith("/owner/") ? "/owner" : "/manager";
 
     const [period, setPeriod] = useState<WaiterPeriod>("day");
     const [customRange, setCustomRange] = useState<{
@@ -278,7 +280,7 @@ export default function ManagerWaitersPage() {
                                                         </span>
                                                         <div>
                                                             <Link
-                                                                href={`/manager/waiters/${row.waiterMembershipId}`}
+                                                                href={`${basePath}/waiters/${row.waiterMembershipId}`}
                                                                 className="font-semibold text-foreground hover:underline"
                                                             >
                                                                 {row.waiterName}
@@ -418,7 +420,7 @@ export default function ManagerWaitersPage() {
                                                         asChild
                                                     >
                                                         <Link
-                                                            href={`/manager/waiters/${row.waiterMembershipId}`}
+                                                            href={`${basePath}/waiters/${row.waiterMembershipId}`}
                                                         >
                                                             {tDetail(
                                                                 "viewDetail",

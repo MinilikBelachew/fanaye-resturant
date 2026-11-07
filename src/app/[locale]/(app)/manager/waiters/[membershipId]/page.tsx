@@ -36,7 +36,7 @@ import {
     type WaiterOrderHistoryItem,
     type WaiterPeriod,
 } from "@/context/services/waiterPerformanceApi";
-import { Link } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
@@ -53,6 +53,8 @@ export default function ManagerWaiterDetailPage({
     const t = useTranslations("managerWaiterDetail");
     const tList = useTranslations("managerWaiters");
     const tManager = useTranslations("manager");
+    const pathname = usePathname();
+    const basePath = pathname.startsWith("/owner/") ? "/owner" : "/manager";
     const tCommon = useTranslations("common");
 
     const [period, setPeriod] = useState<WaiterPeriod>("day");
@@ -159,7 +161,7 @@ export default function ManagerWaiterDetailPage({
                 header: t("colTable"),
                 cell: row => (
                     <Link
-                        href={`/manager/tables/${row.tableId}`}
+                        href={`${basePath}/tables/${row.tableId}`}
                         className="text-[13px] font-medium text-foreground hover:underline"
                     >
                         {row.tableDisplayNumber
@@ -238,7 +240,7 @@ export default function ManagerWaiterDetailPage({
                             className="h-8 rounded-full text-[12px]"
                             asChild
                         >
-                            <Link href="/manager/waiters">
+                            <Link href={`${basePath}/waiters`}>
                                 <ArrowLeft className="size-3.5" />
                                 {t("backToWaiters")}
                             </Link>
@@ -263,7 +265,7 @@ export default function ManagerWaiterDetailPage({
         <DashboardFrame>
             <div className="flex flex-col gap-3">
                 <Link
-                    href="/manager/waiters"
+                    href={`${basePath}/waiters`}
                     className="inline-flex w-fit items-center gap-1.5 text-[12px] text-slate-gray transition-colors hover:text-foreground"
                 >
                     <ArrowLeft className="size-3.5" />
@@ -345,7 +347,7 @@ export default function ManagerWaiterDetailPage({
                             asChild
                         >
                             <Link
-                                href={`/manager/staff/${detail.waiterMembershipId}`}
+                                href={`${basePath}/staff/${detail.waiterMembershipId}`}
                             >
                                 {t("openStaffProfile")}
                             </Link>

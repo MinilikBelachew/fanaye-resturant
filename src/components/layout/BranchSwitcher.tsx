@@ -15,8 +15,10 @@ import { toast } from "@/lib/toast";
 
 export default function BranchSwitcher({
     compact = false,
+    showAlways = false,
 }: {
     compact?: boolean;
+    showAlways?: boolean;
 }) {
     const t = useTranslations("owner");
     const dispatch = useAppDispatch();
@@ -38,10 +40,12 @@ export default function BranchSwitcher({
 
     const branches = data?.data ?? [];
     if (branches.length <= 1 && !open) {
-        return compact ? null : (
+        // compact + single branch → hide unless showAlways is set
+        if (compact && !showAlways) return null;
+        return (
             <div className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-secondary/40 px-2.5 py-1 text-[11px] text-slate-gray">
                 <Building2 className="size-3" />
-                <span className="max-w-[140px] truncate">
+                <span className="max-w-[120px] truncate">
                     {session.branchName || t("currentBranch")}
                 </span>
             </div>

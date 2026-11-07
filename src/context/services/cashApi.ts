@@ -1,6 +1,7 @@
 import type {
     CashDrop,
     WaiterCashSummary,
+    CashCustodyOverviewResponse,
 } from "@/domains/cash/domain/cashApi";
 import { api } from "./index";
 
@@ -96,6 +97,27 @@ export const cashApi = api.injectEndpoints({
             }),
             invalidatesTags: ["Cash"],
         }),
+        getCashCustodyOverview: builder.query<
+            CashCustodyOverviewResponse,
+            {
+                branchId?: string;
+                dateFilter?: string;
+                fromDate?: string;
+                toDate?: string;
+            } | void
+        >({
+            query: arg => ({
+                url: "/cash-custody/overview",
+                method: "GET",
+                params: {
+                    ...(arg?.branchId ? { branchId: arg.branchId } : {}),
+                    ...(arg?.dateFilter ? { dateFilter: arg.dateFilter } : {}),
+                    ...(arg?.fromDate ? { fromDate: arg.fromDate } : {}),
+                    ...(arg?.toDate ? { toDate: arg.toDate } : {}),
+                },
+            }),
+            providesTags: ["Cash"],
+        }),
     }),
 });
 
@@ -106,4 +128,5 @@ export const {
     useCashierCashDropsQuery,
     useReceiveCashDropMutation,
     useResolveCashDropDisputeMutation,
+    useGetCashCustodyOverviewQuery,
 } = cashApi;

@@ -86,8 +86,18 @@ export const editTenantSchema = z.object({
 export type EditTenantValues = z.infer<typeof editTenantSchema>;
 
 export const createBranchFormSchema = z.object({
-    name: z.string().trim().min(2, "Branch name is required."),
-    displayCode: z.string().trim().optional().or(z.literal("")),
+    name: z
+        .string()
+        .trim()
+        .min(2, "Branch name is required.")
+        .max(80, "Name too long."),
+    displayCode: z
+        .string()
+        .trim()
+        .max(8, "Branch code max 8 characters.")
+        .regex(/^[A-Za-z0-9]*$/, "Only letters and numbers allowed.")
+        .optional()
+        .or(z.literal("")),
     tableCount: z.coerce
         .number()
         .int()

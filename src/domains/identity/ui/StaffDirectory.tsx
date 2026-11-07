@@ -125,6 +125,13 @@ function toLegacyStaff(member: AdminStaffMember): Staff {
 function formatMemberShiftCoverages(
     shiftCoverages: AdminStaffMember["shiftCoverages"],
     roleCode: string,
+    stationName?: string | null,
+    labels?: {
+        cashRegister?: string;
+        noTablesAssigned?: string;
+        stationDuty?: string;
+        scheduledShift?: string;
+    },
 ) {
     const map = new Map<
         string,
@@ -168,10 +175,18 @@ function formatMemberShiftCoverages(
 
         let tablesSummary = "";
         if (item.allTables.size === 0) {
-            tablesSummary =
-                roleCode === "CASHIER"
-                    ? "Cash desk custody"
-                    : "Scheduled shift";
+            if (roleCode === "CASHIER") {
+                tablesSummary = labels?.cashRegister || "Cash Register";
+            } else if (roleCode === "STATION_OPERATOR" || stationName) {
+                tablesSummary = stationName
+                    ? `${stationName} Station`
+                    : labels?.stationDuty || "Station Duty";
+            } else if (roleCode === "WAITER") {
+                tablesSummary =
+                    labels?.noTablesAssigned || "No tables assigned";
+            } else {
+                tablesSummary = labels?.scheduledShift || "Scheduled shift";
+            }
         } else if (allSame) {
             tablesSummary = firstTables;
         } else {
@@ -184,8 +199,8 @@ function formatMemberShiftCoverages(
         return {
             key: item.shiftDefinitionId,
             shiftName: item.shiftName,
-            startLocalTime: item.startLocalTime,
-            endLocalTime: item.endLocalTime,
+            startLocalTime: item.startLocalTime.slice(0, 5),
+            endLocalTime: item.endLocalTime.slice(0, 5),
             tablesSummary,
         };
     });
@@ -587,7 +602,13 @@ export default function StaffDirectory({
                                         {t("colCredentials")}
                                     </th>
                                     <th className="px-5 py-3">
-                                        {t("colTablesByShift")}
+                                        {activeTab === "waiters"
+                                            ? t("colTablesByShift")
+                                            : activeTab === "stations"
+                                              ? t("colStationShift")
+                                              : activeTab === "management"
+                                                ? t("colManagementShift")
+                                                : t("colShiftCoverage")}
                                     </th>
                                     <th className="px-5 py-3">
                                         {t("colStatus")}
@@ -710,54 +731,51 @@ export default function StaffDirectory({
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    {isWaiter ||
-                                                    member.roleCode ===
-                                                        "CASHIER" ? (
+                                                    {member.shiftCoverages
+                                                        .length > 0 ? (
                                                         <div className="max-w-md space-y-1.5">
-                                                            {member
-                                                                .shiftCoverages
-                                                                .length ===
-                                                            0 ? (
-                                                                <span className="text-[12px] text-slate-gray italic">
-                                                                    {t(
-                                                                        "noShiftCoverage",
-                                                                    )}
-                                                                </span>
-                                                            ) : (
-                                                                formatMemberShiftCoverages(
-                                                                    member.shiftCoverages,
-                                                                    member.roleCode,
-                                                                ).map(item => (
-                                                                    <div
-                                                                        key={
-                                                                            item.key
+                                                            {formatMemberShiftCoverages(
+                                                                member.shiftCoverages,
+                                                                member.roleCode,
+                                                                member.stationName,
+                                                                {
+                                                                    cashRegister:
+                                                                        t(
+                                                                            "cashRegister",
+                                                                        ),
+                                                                    noTablesAssigned:
+                                                                        t(
+                                                                            "noTablesAssigned",
+                                                                        ),
+                                                                },
+                                                            ).map(item => (
+                                                                <div
+                                                                    key={
+                                                                        item.key
+                                                                    }
+                                                                    className="text-[12px]"
+                                                                >
+                                                                    <span className="font-semibold text-foreground">
+                                                                        {
+                                                                            item.shiftName
+                                                                        }{" "}
+                                                                        (
+                                                                        {
+                                                                            item.startLocalTime
+                                                                        }{" "}
+                                                                        –{" "}
+                                                                        {
+                                                                            item.endLocalTime
                                                                         }
-                                                                        className="text-[12px]"
-                                                                    >
-                                                                        <span className="font-semibold text-foreground">
-                                                                            {
-                                                                                item.shiftName
-                                                                            }{" "}
-                                                                            (
-                                                                            {
-                                                                                item.startLocalTime
-                                                                            }
-                                                                            {
-                                                                                " – "
-                                                                            }
-                                                                            {
-                                                                                item.endLocalTime
-                                                                            }
-                                                                            ):
-                                                                        </span>{" "}
-                                                                        <span className="text-slate-gray">
-                                                                            {
-                                                                                item.tablesSummary
-                                                                            }
-                                                                        </span>
-                                                                    </div>
-                                                                ))
-                                                            )}
+                                                                        ):
+                                                                    </span>{" "}
+                                                                    <span className="text-slate-gray">
+                                                                        {
+                                                                            item.tablesSummary
+                                                                        }
+                                                                    </span>
+                                                                </div>
+                                                            ))}
                                                             {isWaiter ? (
                                                                 <button
                                                                     type="button"
@@ -775,6 +793,35 @@ export default function StaffDirectory({
                                                                 </button>
                                                             ) : null}
                                                         </div>
+                                                    ) : isWaiter ? (
+                                                        <div className="space-y-1">
+                                                            <span className="text-[12px] text-slate-gray italic">
+                                                                {t(
+                                                                    "noShiftCoverage",
+                                                                )}
+                                                            </span>
+                                                            <div>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        openAssign(
+                                                                            member,
+                                                                        )
+                                                                    }
+                                                                    className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors"
+                                                                >
+                                                                    <Plus className="size-3" />
+                                                                    {t(
+                                                                        "assignByShift",
+                                                                    )}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ) : member.stationName ? (
+                                                        <span className="text-[12px] font-medium text-foreground">
+                                                            {member.stationName}{" "}
+                                                            Station
+                                                        </span>
                                                     ) : (
                                                         <span className="text-[12px] text-slate-gray">
                                                             —

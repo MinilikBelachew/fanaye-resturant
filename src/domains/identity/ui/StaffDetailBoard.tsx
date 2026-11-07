@@ -945,7 +945,7 @@ export default function StaffDetailBoard({
                                     ) : (
                                         <p className="mt-2 text-[11px] text-slate-gray">
                                             {member.roleCode === "CASHIER"
-                                                ? "Cash desk custody"
+                                                ? "Front Cash Register"
                                                 : "Scheduled shift rotation"}
                                         </p>
                                     )}

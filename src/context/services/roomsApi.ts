@@ -36,6 +36,7 @@ export type RoomStay = {
     checkInAt: string;
     plannedCheckOutAt: string;
     checkedOutAt: string | null;
+    guestIdImageUrl?: string | null;
 };
 
 export type MyRoomCard = {
@@ -131,6 +132,7 @@ export const roomsApi = api.injectEndpoints({
                 kids?: number;
                 mealPlan?: "NONE" | "BREAKFAST";
                 plannedCheckOutAt: string;
+                guestIdImageUrl?: string;
             }
         >({
             query: body => ({

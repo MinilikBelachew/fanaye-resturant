@@ -67,6 +67,7 @@ function ManagerReportsContent() {
     const tCommon = useTranslations("common");
     const router = useRouter();
     const pathname = usePathname();
+    const basePath = pathname.startsWith("/owner/") ? "/owner" : "/manager";
     const searchParams = useSearchParams();
 
     const [datePickerOpen, setDatePickerOpen] = useState(false);
@@ -363,10 +364,18 @@ function ManagerReportsContent() {
                     </div>
 
                     {section === "waiters" && report?.waiters ? (
-                        <WaitersReport data={report!.waiters} t={t} />
+                        <WaitersReport
+                            data={report!.waiters}
+                            t={t}
+                            basePath={basePath}
+                        />
                     ) : null}
                     {section === "cancels" && report?.cancels ? (
-                        <CancelsReport data={report!.cancels} t={t} />
+                        <CancelsReport
+                            data={report!.cancels}
+                            t={t}
+                            basePath={basePath}
+                        />
                     ) : null}
                     {section === "inventory" && report?.inventory ? (
                         <InventoryReport
@@ -375,13 +384,18 @@ function ManagerReportsContent() {
                             period={isCustomRange ? undefined : period}
                             from={fromDate || undefined}
                             to={toDate || undefined}
+                            basePath={basePath}
                         />
                     ) : null}
                     {section === "cash" && report?.cash ? (
                         <CashReport data={report!.cash} t={t} />
                     ) : null}
                     {section === "stations" && report?.stations ? (
-                        <StationsReport data={report!.stations} t={t} />
+                        <StationsReport
+                            data={report!.stations}
+                            t={t}
+                            basePath={basePath}
+                        />
                     ) : null}
                     {section === "fb" ? (
                         <FbReportView
@@ -459,9 +473,11 @@ function StatGrid({
 function WaitersReport({
     data,
     t,
+    basePath,
 }: {
     data: NonNullable<ManagerReportsData["waiters"]>;
     t: TReports;
+    basePath: string;
 }) {
     return (
         <>
@@ -507,7 +523,7 @@ function WaitersReport({
                             className="h-8 rounded-full text-[12px]"
                             asChild
                         >
-                            <Link href="/manager/waiters">
+                            <Link href={`${basePath}/waiters`}>
                                 {t("openBoard")}
                                 <ChevronRight className="size-3.5" />
                             </Link>
@@ -522,7 +538,7 @@ function WaitersReport({
                             {data.rows.map(row => (
                                 <Link
                                     key={row.waiterMembershipId}
-                                    href={`/manager/waiters/${row.waiterMembershipId}`}
+                                    href={`${basePath}/waiters/${row.waiterMembershipId}`}
                                     className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-secondary/30"
                                 >
                                     <div className="flex min-w-0 items-center gap-3">
@@ -560,9 +576,11 @@ function WaitersReport({
 function CancelsReport({
     data,
     t,
+    basePath,
 }: {
     data: NonNullable<ManagerReportsData["cancels"]>;
     t: TReports;
+    basePath: string;
 }) {
     return (
         <>
@@ -624,7 +642,7 @@ function CancelsReport({
                             className="h-8 rounded-full text-[12px]"
                             asChild
                         >
-                            <Link href="/manager/approvals">
+                            <Link href={`${basePath}/approvals`}>
                                 {t("openApprovals")}
                                 <ChevronRight className="size-3.5" />
                             </Link>
@@ -704,12 +722,14 @@ function InventoryReport({
     period,
     from,
     to,
+    basePath,
 }: {
     data: NonNullable<ManagerReportsData["inventory"]>;
     t: TReports;
     period?: ReportsPeriod;
     from?: string;
     to?: string;
+    basePath: string;
 }) {
     return (
         <>
@@ -769,7 +789,7 @@ function InventoryReport({
                         className="h-8 rounded-full text-[12px]"
                         asChild
                     >
-                        <Link href="/manager/inventory">
+                        <Link href={`${basePath}/inventory`}>
                             {t("openInventory")}
                             <ChevronRight className="size-3.5" />
                         </Link>
@@ -813,7 +833,7 @@ function InventoryReport({
                             : undefined
                     }
                     {...(from && to ? { from, to } : {})}
-                    detailBasePath="/manager/reports/inventory"
+                    detailBasePath={`${basePath}/reports/inventory`}
                 />
             </section>
         </>
@@ -923,9 +943,11 @@ function CashReport({
 function StationsReport({
     data,
     t,
+    basePath,
 }: {
     data: NonNullable<ManagerReportsData["stations"]>;
     t: TReports;
+    basePath: string;
 }) {
     return (
         <>
@@ -972,7 +994,7 @@ function StationsReport({
                         className="h-8 rounded-full text-[12px]"
                         asChild
                     >
-                        <Link href="/manager/stations">
+                        <Link href={`${basePath}/stations`}>
                             {t("openStations")}
                             <ChevronRight className="size-3.5" />
                         </Link>
@@ -987,7 +1009,7 @@ function StationsReport({
                         {data.rows.map(row => (
                             <Link
                                 key={row.stationId}
-                                href={`/manager/stations/${row.stationId}`}
+                                href={`${basePath}/stations/${row.stationId}`}
                                 className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-secondary/30"
                             >
                                 <div className="min-w-0">

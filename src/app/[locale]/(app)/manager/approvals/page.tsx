@@ -30,7 +30,7 @@ import {
     type ApprovalQueueItem,
     type ApprovalRequestType,
 } from "@/context/services/ordersApi";
-import { Link } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { formatEtb } from "@/lib/money";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -83,14 +83,16 @@ function statusTone(
     }
 }
 
-function detailHref(row: ApprovalQueueItem) {
+function detailHref(row: ApprovalQueueItem, basePath: string) {
     const kind = row.type === "CANCELLATION" ? "cancellation" : "change";
-    return `/manager/approvals/${kind}/${row.requestId}`;
+    return `${basePath}/approvals/${kind}/${row.requestId}`;
 }
 
 export default function ManagerApprovalsPage() {
     const t = useTranslations("managerApprovals");
     const tCommon = useTranslations("common");
+    const pathname = usePathname();
+    const basePath = pathname.startsWith("/owner/") ? "/owner" : "/manager";
     const [tab, setTab] = useState<"pending" | "history">("pending");
     const [period, setPeriod] = useState<ApprovalPeriod>("day");
     const [typeFilter, setTypeFilter] = useState<ApprovalRequestType | "ALL">(
@@ -276,7 +278,7 @@ export default function ManagerApprovalsPage() {
                         className="h-8 rounded-full text-[12px]"
                         asChild
                     >
-                        <Link href={detailHref(row)}>
+                        <Link href={detailHref(row, basePath)}>
                             {t("viewDetail")}
                             <ChevronRight className="size-3.5" />
                         </Link>
@@ -578,7 +580,9 @@ export default function ManagerApprovalsPage() {
                                             className="h-8 rounded-full text-[12px]"
                                             asChild
                                         >
-                                            <Link href={detailHref(row)}>
+                                            <Link
+                                                href={detailHref(row, basePath)}
+                                            >
                                                 {t("viewDetail")}
                                                 <ChevronRight className="size-3.5" />
                                             </Link>

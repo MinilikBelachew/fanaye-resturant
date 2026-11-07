@@ -19,6 +19,7 @@ import { formatEtb } from "@/lib/money";
 import { toast } from "@/lib/toast";
 import { useAppSelector } from "@/context/hooks";
 import { QrCodeSvg } from "@/components/common/QrCodeSvg";
+import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { DirectBluetoothPrintButton } from "@/domains/payments/ui/DirectBluetoothPrintButton";
 
 interface CashierReceiptModalProps {
@@ -29,7 +30,7 @@ interface CashierReceiptModalProps {
     waiterName?: string;
     restaurantName?: string;
     branchName?: string;
-    cashierName?: string;
+    cashierName?: string | null;
     showSendToWaiter?: boolean;
     showPrintActions?: boolean;
     hideTable?: boolean;
@@ -59,6 +60,7 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
     const [sendBillToWaiter, { isLoading: isSending }] =
         useSendBillToWaiterMutation();
     const session = useAppSelector(state => state.identity.session);
+    const staff = useAppSelector(selectCurrentStaff);
     const sessionBranchName = session?.branchName;
     const effectiveBranchName =
         bill?.branchName ||
@@ -82,7 +84,13 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
 
     const displayTable = tableDisplayName || tCashier("diningTableFallback");
     const displayWaiter = waiterName || tCashier("floorServerFallback");
-    const displayCashier = cashierName || tReceipt("cashier");
+    const displayCashier =
+        cashierName ||
+        (staff?.role === "cashier" ? staff.name : null) ||
+        session?.displayName ||
+        staff?.name ||
+        bill.cashierName ||
+        tReceipt("cashier");
     const generatedTime = bill.generatedAt
         ? new Date(bill.generatedAt).toLocaleString([], {
               timeZone: "Africa/Addis_Ababa",
@@ -289,7 +297,7 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
             : `https://example.com/${locale}/receipt/${bill.billId}`;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-xs p-3 sm:p-6 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/65 backdrop-blur-xs p-3 sm:items-center sm:p-6 animate-in fade-in duration-200">
             {/* Standard React Compatible Print Stylesheet */}
             <style
                 dangerouslySetInnerHTML={{
@@ -346,7 +354,7 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
 
             <div className="relative flex max-h-[95vh] w-full max-w-3xl flex-col rounded-3xl bg-white shadow-2xl overflow-hidden print:m-0 print:max-h-none print:w-auto print:rounded-none print:shadow-none">
                 {/* Modal Header & Quick Action Buttons */}
-                <div className="no-print flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/80 px-6 py-4">
+                <div className="no-print flex flex-col gap-3 border-b border-slate-100 bg-slate-50/80 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3 sm:px-6 sm:py-4">
                     <div className="flex items-center gap-2.5">
                         <div className="flex size-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600">
                             <Printer className="size-4" />
@@ -363,7 +371,7 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         {/* Paper Width Selector */}
                         <div className="flex items-center rounded-lg bg-slate-200/80 p-0.5 text-[11px] font-semibold">
                             <button
@@ -637,9 +645,9 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
                 </div>
 
                 {/* Footer info bar */}
-                <div className="no-print bg-slate-50 px-6 py-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                    <span className="flex items-center gap-1">
-                        <Lightbulb className="size-3.5 text-amber-500 shrink-0" />
+                <div className="no-print bg-slate-50 px-4 py-2.5 border-t border-slate-100 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:px-6 text-xs text-slate-500">
+                    <span className="flex items-start gap-1.5">
+                        <Lightbulb className="size-3.5 text-amber-500 shrink-0 mt-0.5" />
                         {showSendToWaiter ? (
                             <span>
                                 Click{" "}
@@ -658,7 +666,7 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
                         size="sm"
                         variant="ghost"
                         onClick={() => onOpenChange(false)}
-                        className="text-xs h-7"
+                        className="text-xs h-7 self-end sm:self-auto"
                     >
                         Close
                     </Button>

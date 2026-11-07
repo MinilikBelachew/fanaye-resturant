@@ -137,6 +137,11 @@ export interface TenantDetail {
     active: boolean;
     provisionedAt: string;
     branchesList?: TenantBranchSummary[];
+    featureInventory?: boolean;
+    featureCentralWarehouse?: boolean;
+    featureTelegramBackup?: boolean;
+    featureAiAdvisor?: boolean;
+    featureOutsideOrders?: boolean;
 }
 
 export interface TenantListResponse {
@@ -196,6 +201,11 @@ export interface UpdateTenantPayload {
     branchName?: string;
     branchCode?: string;
     hours?: string;
+    featureInventory?: boolean;
+    featureCentralWarehouse?: boolean;
+    featureTelegramBackup?: boolean;
+    featureAiAdvisor?: boolean;
+    featureOutsideOrders?: boolean;
 }
 
 export interface SubscriptionPlan {

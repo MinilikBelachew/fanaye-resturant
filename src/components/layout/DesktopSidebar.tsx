@@ -8,6 +8,7 @@ import SidebarNav from "@/components/layout/SidebarNav";
 import { useSidebarUi } from "@/components/layout/SidebarUi";
 import { navForRole } from "@/domains/identity/application/nav";
 import { useGetInventoryNetworkStatusQuery } from "@/context/services/inventoryApi";
+import { useGetTenantSiteQuery } from "@/context/services/siteApi";
 import { isStationRole } from "@/domains/identity/domain/role";
 import { useCurrentStationQueue } from "@/domains/fulfillment/application/useCurrentStationQueue";
 import RoleSwitcher from "@/domains/identity/ui/RoleSwitcher";
@@ -28,6 +29,9 @@ export default function DesktopSidebar({ className }: { className?: string }) {
         staff?.role === "owner" ||
         staff?.role === "manager" ||
         staff?.role === "store_manager";
+    const { data: siteRes } = useGetTenantSiteQuery();
+    const site = siteRes?.data;
+
     const { data: networkRes } = useGetInventoryNetworkStatusQuery(undefined, {
         skip: !isInventoryRole,
     });
@@ -40,6 +44,11 @@ export default function DesktopSidebar({ className }: { className?: string }) {
         serviceMode: session?.serviceMode,
         roomsEnabled: session?.roomsEnabled === true,
         hasMainWarehouse,
+        featureInventory: site?.featureInventory,
+        featureCentralWarehouse: site?.featureCentralWarehouse,
+        featureTelegramBackup: site?.featureTelegramBackup,
+        featureAiAdvisor: site?.featureAiAdvisor,
+        featureOutsideOrders: site?.featureOutsideOrders,
     });
 
     async function logOut() {

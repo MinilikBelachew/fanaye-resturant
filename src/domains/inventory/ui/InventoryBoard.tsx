@@ -641,15 +641,15 @@ export default function InventoryBoard({
         }
     }
 
-    async function onDisableMainWarehouse() {
-        if (
-            !window.confirm(
-                t("disableMainConfirm") ||
-                    "Turn off main warehouse? This switches back to restaurant stores only. Main must be empty, with no pending transfers or supply asks.",
-            )
-        ) {
-            return;
-        }
+    const [showDisableWarehouseModal, setShowDisableWarehouseModal] =
+        useState(false);
+
+    function onDisableMainWarehouse() {
+        setShowDisableWarehouseModal(true);
+    }
+
+    async function executeDisableMainWarehouse() {
+        setShowDisableWarehouseModal(false);
         try {
             await disableMainWarehouse().unwrap();
             if (branchStores.length > 0 && branchStores[0]?.id) {
@@ -3173,6 +3173,48 @@ export default function InventoryBoard({
                 open={driverModalOpen}
                 onClose={() => setDriverModalOpen(false)}
             />
+
+            {/* Disable Main Warehouse Confirmation Modal */}
+            {showDisableWarehouseModal && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+                    <div className="w-full max-w-sm rounded-2xl border border-hairline bg-card p-6 shadow-2xl space-y-4">
+                        <div className="space-y-1.5">
+                            <h3 className="text-[15px] font-semibold text-foreground">
+                                {t("disableMainConfirm") ||
+                                    "Turn Off Main Warehouse?"}
+                            </h3>
+                            <p className="text-[13px] text-slate-gray leading-relaxed">
+                                {
+                                    "This switches back to restaurant stores only. The main warehouse must be empty with no pending transfers or supply requests."
+                                }
+                            </p>
+                        </div>
+                        <div className="flex items-center justify-end gap-2 pt-2">
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setShowDisableWarehouseModal(false)
+                                }
+                                className="rounded-xl border border-hairline bg-card px-4 py-2 text-[13px] font-medium hover:bg-secondary text-foreground transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                disabled={disablingMain.isLoading}
+                                onClick={() =>
+                                    void executeDisableMainWarehouse()
+                                }
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 px-4 py-2 text-[13px] font-semibold text-white shadow-xs disabled:opacity-60 transition-colors"
+                            >
+                                {disablingMain.isLoading
+                                    ? "Disabling..."
+                                    : t("disableMainAction") || "Turn off main"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

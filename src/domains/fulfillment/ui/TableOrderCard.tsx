@@ -68,7 +68,10 @@ function DishRow({
                                 alt={ticket.itemName}
                                 className="size-full object-cover"
                                 onError={e => {
-                                    (e.currentTarget.parentElement as HTMLElement).style.display = "none";
+                                    (
+                                        e.currentTarget
+                                            .parentElement as HTMLElement
+                                    ).style.display = "none";
                                 }}
                             />
                         </div>
@@ -80,7 +83,10 @@ function DishRow({
                                 {ticket.quantity}×
                             </span>
                             <Link
-                                href={stationOrderPath(role, ticket.orderItemId)}
+                                href={stationOrderPath(
+                                    role,
+                                    ticket.orderItemId,
+                                )}
                                 className="text-[16px] sm:text-[17px] font-bold text-foreground hover:text-brand hover:underline transition-colors tracking-tight leading-snug"
                             >
                                 {ticket.itemName}
@@ -141,7 +147,10 @@ export default function TableOrderCard({
     const pendingItems = group.allTickets.filter(t => t.state !== "READY");
     const allAreReady = pendingItems.length === 0;
 
-    const elapsedMinutes = Math.max(1, Math.round(group.maxElapsedSeconds / 60));
+    const elapsedMinutes = Math.max(
+        1,
+        Math.round(group.maxElapsedSeconds / 60),
+    );
 
     return (
         <article
@@ -192,7 +201,9 @@ export default function TableOrderCard({
                                 {readyCount}/{totalCount} Ready
                             </span>
                         ) : (
-                            <span>{readyCount}/{totalCount} Ready</span>
+                            <span>
+                                {readyCount}/{totalCount} Ready
+                            </span>
                         )}
                     </span>
                     <div className="flex items-center gap-1.5 rounded-full bg-card border border-hairline px-2.5 py-1 font-mono text-[12px] font-semibold text-muted-foreground shadow-2xs">
@@ -213,7 +224,9 @@ export default function TableOrderCard({
                             </span>
                             <span className="text-[11px] text-muted-foreground">
                                 {group.tray1Items.length}{" "}
-                                {group.tray1Items.length === 1 ? "dish" : "dishes"}
+                                {group.tray1Items.length === 1
+                                    ? "dish"
+                                    : "dishes"}
                             </span>
                         </div>
                         <div className="space-y-2 pl-0.5">
@@ -315,7 +328,8 @@ export default function TableOrderCard({
                         </span>
                     ) : (
                         <span>
-                            {pendingItems.length} of {group.allTickets.length} remaining
+                            {pendingItems.length} of {group.allTickets.length}{" "}
+                            remaining
                         </span>
                     )}
                 </span>
@@ -326,4 +340,3 @@ export default function TableOrderCard({
         </article>
     );
 }
-
