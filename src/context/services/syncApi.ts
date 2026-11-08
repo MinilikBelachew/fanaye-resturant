@@ -9,6 +9,8 @@ export type SyncStatusResponse = {
     lastSyncedAt: string | null;
     pendingOrdersCount: number;
     pendingBillsCount: number;
+    localServerIp?: string;
+    availableIps?: { name: string; ip: string }[];
 };
 
 export type PullFromCloudRequest = {

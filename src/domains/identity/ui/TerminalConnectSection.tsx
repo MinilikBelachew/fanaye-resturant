@@ -27,6 +27,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/lib/toast";
 
+import { useGetSyncStatusQuery } from "@/context/services/syncApi";
+
 interface StationLink {
     title: string;
     path: string;
@@ -93,17 +95,32 @@ const STATIONS: StationLink[] = [
 ];
 
 export default function TerminalConnectSection() {
+    const { data: syncStatus } = useGetSyncStatusQuery();
     const [origin, setOrigin] = useState<string>("");
     const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
     const [copiedPath, setCopiedPath] = useState<string | null>(null);
 
+    const [customIp, setCustomIp] = useState<string>("");
+
+    const detectedIps = syncStatus?.availableIps || [];
+
     useEffect(() => {
         if (typeof window !== "undefined") {
-            const currentOrigin = window.location.origin;
-            setOrigin(currentOrigin);
+            const currentPort = window.location.port
+                ? `:${window.location.port}`
+                : "";
+            const hostIp = customIp || syncStatus?.localServerIp;
+
+            // If the backend detected a real local IP or user picked/typed one, use it!
+            const effectiveOrigin =
+                hostIp && hostIp !== "localhost"
+                    ? `http://${hostIp}${currentPort || ":3000"}`
+                    : window.location.origin;
+
+            setOrigin(effectiveOrigin);
 
             // Generate high-resolution QR code for the main floor app
-            QRCode.toDataURL(currentOrigin, {
+            QRCode.toDataURL(effectiveOrigin, {
                 width: 260,
                 margin: 2,
                 color: {
@@ -114,7 +131,7 @@ export default function TerminalConnectSection() {
                 .then(setQrCodeUrl)
                 .catch(() => {});
         }
-    }, []);
+    }, [syncStatus?.localServerIp, customIp]);
 
     const copyToClipboard = (text: string, path: string) => {
         if (typeof navigator !== "undefined") {
@@ -184,23 +201,58 @@ export default function TerminalConnectSection() {
                         </div>
                     </div>
 
-                    {isLocalhost && (
-                        <div className="mt-3 flex items-start gap-2.5 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-900 dark:text-amber-200">
-                            <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-                            <div>
-                                <p className="font-medium">
-                                    Connecting from staff phones or tablets?
-                                </p>
-                                <p className="text-muted-foreground mt-0.5">
-                                    You are viewing from the main PC. On waiter
-                                    phones, connect them to your restaurant
-                                    Wi-Fi (or PC Mobile Hotspot) and enter your
-                                    PC's IP address (e.g.{" "}
-                                    <code>http://192.168.137.1:3000</code>).
-                                </p>
-                            </div>
+                    {/* Available Network IPs and Custom IP Picker */}
+                    <div className="mt-4 pt-4 border-t border-border/50">
+                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                            Select Network Interface or Enter Static IP:
                         </div>
-                    )}
+                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                            {detectedIps.map(item => (
+                                <Button
+                                    key={item.ip}
+                                    type="button"
+                                    size="sm"
+                                    variant={
+                                        (!customIp &&
+                                            syncStatus?.localServerIp ===
+                                                item.ip) ||
+                                        customIp === item.ip
+                                            ? "default"
+                                            : "outline"
+                                    }
+                                    className="h-8 text-xs font-mono"
+                                    onClick={() => setCustomIp(item.ip)}
+                                >
+                                    <span className="font-semibold mr-1.5">
+                                        {item.name}:
+                                    </span>{" "}
+                                    {item.ip}
+                                </Button>
+                            ))}
+                            {customIp && (
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-8 text-xs text-muted-foreground"
+                                    onClick={() => setCustomIp("")}
+                                >
+                                    Reset to Default
+                                </Button>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="text"
+                                placeholder="Or type custom static IP (e.g. 192.168.1.150)..."
+                                value={customIp}
+                                onChange={e =>
+                                    setCustomIp(e.target.value.trim())
+                                }
+                                className="flex-1 max-w-sm h-8 px-3 rounded-md border border-input bg-background text-xs font-mono placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                            />
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
 
