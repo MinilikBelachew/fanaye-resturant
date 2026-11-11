@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, ImageOff, Loader2, Receipt } from "lucide-react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
+import { ArrowLeft, ImageOff, Receipt } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useCashierPaymentDetailQuery } from "@/context/services/billingApi";
@@ -30,7 +31,7 @@ export default function CashierPaymentDetail({
     if (isLoading) {
         return (
             <div className="flex items-center gap-2 rounded-[14px] border border-hairline bg-card p-6 text-[13px] text-slate-gray">
-                <Loader2 className="size-4 animate-spin" />
+                <RestorchSpinner className="size-4 " />
                 {tCommon("loading")}
             </div>
         );

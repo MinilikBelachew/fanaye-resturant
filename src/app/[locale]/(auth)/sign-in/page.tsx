@@ -1,5 +1,6 @@
 "use client";
 import { RestorchLogo } from "@/components/common/RestorchLogo";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 
 import { useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
@@ -16,7 +17,6 @@ import {
     EyeOff,
     Globe,
     KeyRound,
-    Loader2,
     Lock,
     Mail,
     RefreshCw,
@@ -111,9 +111,25 @@ export default function SignInPage() {
             if (id && name) {
                 setConfiguredTenantId(id);
                 setConfiguredTenantName(name);
+            } else {
+                // Auto-pair for local Wi-Fi terminals / waiter phones:
+                // Check if this offline server has a paired restaurant. If so, auto-pair immediately!
+                verifyTenant({ identifier: "" })
+                    .unwrap()
+                    .then(res => {
+                        if (res?.tenant) {
+                            handlePairRestaurant({
+                                id: res.tenant.id,
+                                name: res.tenant.name,
+                            });
+                        }
+                    })
+                    .catch(() => {
+                        // Multi-tenant or fresh install: keep manual pairing form visible
+                    });
             }
         }
-    }, []);
+    }, [verifyTenant]);
 
     // After refresh restores the session (and sets HttpOnly fanaye_session),
     // honor middleware ?next= so existing users are not stuck on sign-in.
@@ -1043,7 +1059,7 @@ export default function SignInPage() {
                             >
                                 {isFirstTimeLoading ? (
                                     <>
-                                        <Loader2 className="size-3.5 animate-spin" />
+                                        <RestorchSpinner className="size-3.5 " />
                                         <span>Downloading...</span>
                                     </>
                                 ) : (

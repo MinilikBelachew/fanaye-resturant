@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import Image from "next/image";
-import { CheckCircle2, AlertTriangle, X, Loader2, Boxes } from "lucide-react";
+import { CheckCircle2, AlertTriangle, X, Boxes } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -325,7 +326,7 @@ export default function ReturnMaterialsModal({
                         >
                             {isLoading ? (
                                 <>
-                                    <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                                    <RestorchSpinner className="mr-1.5 size-3.5 " />
                                     {t("submitting")}
                                 </>
                             ) : (

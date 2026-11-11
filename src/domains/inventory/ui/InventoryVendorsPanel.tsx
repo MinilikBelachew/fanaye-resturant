@@ -1,12 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useLocale } from "next-intl";
 import {
     AlertTriangle,
     Building2,
     Globe,
-    Loader2,
     MapPin,
     Pencil,
     Phone,
@@ -412,7 +412,7 @@ export function InventoryVendorsPanel() {
                                         colSpan={7}
                                         className="py-12 text-center text-slate-gray"
                                     >
-                                        <Loader2 className="mx-auto size-6 animate-spin text-emerald-600 mb-2" />
+                                        <RestorchSpinner className="mx-auto size-6 text-emerald-600 mb-2" />
                                         <span>
                                             {isAm
                                                 ? "አቅራቢዎች በመጫን ላይ..."
@@ -789,7 +789,7 @@ export function InventoryVendorsPanel() {
                                     className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-5 text-[13px] font-semibold shadow-xs disabled:opacity-60 transition-colors"
                                 >
                                     {(isCreating || isUpdating) && (
-                                        <Loader2 className="size-4 animate-spin" />
+                                        <RestorchSpinner className="size-4 " />
                                     )}
                                     <span>
                                         {editingVendor
@@ -857,7 +857,7 @@ export function InventoryVendorsPanel() {
                                 className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-5 text-[13px] font-semibold shadow-xs disabled:opacity-60 transition-colors"
                             >
                                 {isDeleting && (
-                                    <Loader2 className="size-4 animate-spin" />
+                                    <RestorchSpinner className="size-4 " />
                                 )}
                                 <span>{isAm ? "አዎ ሰርዝ" : "Delete Vendor"}</span>
                             </button>

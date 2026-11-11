@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     Camera,
     Check,
     ImagePlus,
-    Loader2,
     ScanLine,
     Trash2,
     Upload,
@@ -253,7 +253,7 @@ export default function MenuScanSheet({
                                     className="gap-2"
                                 >
                                     {scanning ? (
-                                        <Loader2 className="size-4 animate-spin" />
+                                        <RestorchSpinner className="size-4 " />
                                     ) : (
                                         <Camera className="size-4" />
                                     )}
@@ -449,7 +449,7 @@ export default function MenuScanSheet({
                             className="gap-2"
                         >
                             {importing ? (
-                                <Loader2 className="size-4 animate-spin" />
+                                <RestorchSpinner className="size-4 " />
                             ) : (
                                 <Check className="size-4" />
                             )}

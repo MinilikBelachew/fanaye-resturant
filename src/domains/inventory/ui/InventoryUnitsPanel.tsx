@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useLocale } from "next-intl";
 import {
     AlertTriangle,
     ArrowLeftRight,
-    Loader2,
     Lock,
     Pencil,
     Plus,
@@ -359,7 +359,7 @@ export function InventoryUnitsPanel() {
                                             colSpan={5}
                                             className="py-12 text-center text-slate-gray"
                                         >
-                                            <Loader2 className="mx-auto size-6 animate-spin text-sky-600 mb-2" />
+                                            <RestorchSpinner className="mx-auto size-6 text-sky-600 mb-2" />
                                             <span>
                                                 {isAm
                                                     ? "መለኪያዎች በመጫን ላይ..."
@@ -493,7 +493,7 @@ export function InventoryUnitsPanel() {
                                             colSpan={5}
                                             className="py-12 text-center text-slate-gray"
                                         >
-                                            <Loader2 className="mx-auto size-6 animate-spin text-sky-600 mb-2" />
+                                            <RestorchSpinner className="mx-auto size-6 text-sky-600 mb-2" />
                                             <span>
                                                 {isAm
                                                     ? "ለውጦች በመጫን ላይ..."
@@ -708,7 +708,7 @@ export function InventoryUnitsPanel() {
                                         className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white px-5 text-[13px] font-semibold shadow-xs disabled:opacity-60 transition-colors"
                                     >
                                         {(creatingUnit || updatingUnit) && (
-                                            <Loader2 className="size-4 animate-spin" />
+                                            <RestorchSpinner className="size-4 " />
                                         )}
                                         <span>
                                             {editingUnit
@@ -810,7 +810,7 @@ export function InventoryUnitsPanel() {
                                         className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white px-5 text-[13px] font-semibold shadow-xs disabled:opacity-60 transition-colors"
                                     >
                                         {(creatingConv || updatingConv) && (
-                                            <Loader2 className="size-4 animate-spin" />
+                                            <RestorchSpinner className="size-4 " />
                                         )}
                                         <span>
                                             {editingConv
@@ -866,7 +866,7 @@ export function InventoryUnitsPanel() {
                                 className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-5 text-[13px] font-semibold shadow-xs disabled:opacity-60 transition-colors"
                             >
                                 {(deletingUnit || deletingConv) && (
-                                    <Loader2 className="size-4 animate-spin" />
+                                    <RestorchSpinner className="size-4 " />
                                 )}
                                 <span>Delete</span>
                             </button>

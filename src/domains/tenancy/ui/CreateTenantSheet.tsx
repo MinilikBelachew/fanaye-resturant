@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { Controller, useForm } from "react-hook-form";
 import {
     X,
@@ -9,7 +10,6 @@ import {
     UserCheck,
     UtensilsCrossed,
     Check,
-    Loader2,
     Layers,
     ChefHat,
     Coffee,
@@ -1545,7 +1545,7 @@ export default function CreateTenantSheet({
                             >
                                 {isLoading ? (
                                     <>
-                                        <Loader2 className="size-3.5 animate-spin" />
+                                        <RestorchSpinner className="size-3.5 " />
                                         {t("create.provisioning")}
                                     </>
                                 ) : (

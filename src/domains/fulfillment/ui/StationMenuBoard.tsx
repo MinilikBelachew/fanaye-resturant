@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Loader2, UtensilsCrossed } from "lucide-react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
+import { UtensilsCrossed } from "lucide-react";
 import {
     useClearStationItemSoldOutMutation,
     useMarkStationItemSoldOutMutation,
@@ -101,7 +102,7 @@ export default function StationMenuBoard({ role }: { role: StationRole }) {
                 </p>
             ) : isLoading ? (
                 <div className="flex items-center justify-center p-16 text-slate-gray">
-                    <Loader2 className="size-5 animate-spin" />
+                    <RestorchSpinner className="size-5 " />
                 </div>
             ) : isError ? (
                 <div className="rounded-2xl border border-hairline bg-card p-6">

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { use, useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     BellRing,
     Check,
@@ -11,7 +12,6 @@ import {
     Flame,
     Info,
     Leaf,
-    Loader2,
     MessageSquarePlus,
     Minus,
     Plus,
@@ -370,7 +370,7 @@ export default function GuestTableOrderingPage({
         return (
             <div className="flex min-h-svh flex-col items-center justify-center gap-3 bg-slate-950 p-6 text-white">
                 <div className="relative flex size-16 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-500">
-                    <Loader2 className="size-8 animate-spin" />
+                    <RestorchSpinner className="size-8 " />
                 </div>
                 <h2 className="text-base font-bold">
                     Connecting to Dining Floor…
@@ -1163,7 +1163,7 @@ export default function GuestTableOrderingPage({
                                         className="w-full gap-2 rounded-2xl bg-slate-900 py-6 text-sm font-bold text-white hover:bg-slate-800 shadow-xl dark:bg-amber-500 dark:text-slate-950 dark:hover:bg-amber-400"
                                     >
                                         {isSubmittingOrder ? (
-                                            <Loader2 className="size-4 animate-spin" />
+                                            <RestorchSpinner className="size-4 " />
                                         ) : (
                                             <Send className="size-4 text-amber-400" />
                                         )}
@@ -1416,7 +1416,7 @@ export default function GuestTableOrderingPage({
                                     className="w-full gap-2 rounded-2xl bg-amber-600 py-6 text-sm font-bold text-white hover:bg-amber-700 shadow-md disabled:opacity-60"
                                 >
                                     {isSubmittingFeedback ? (
-                                        <Loader2 className="size-4 animate-spin" />
+                                        <RestorchSpinner className="size-4 " />
                                     ) : (
                                         <Send className="size-4" />
                                     )}

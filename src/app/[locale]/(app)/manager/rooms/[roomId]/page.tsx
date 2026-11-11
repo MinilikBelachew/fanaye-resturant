@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useMemo, useRef, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     ArrowLeft,
     BedDouble,
@@ -8,7 +9,6 @@ import {
     Camera,
     CheckCircle2,
     Coffee,
-    Loader2,
     LogIn,
     LogOut,
     Phone,
@@ -112,7 +112,7 @@ function IdImageField({
                     className="flex h-24 w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-hairline bg-secondary/40 text-slate-gray hover:border-foreground/30 hover:bg-secondary/80 disabled:opacity-50"
                 >
                     {isLoading ? (
-                        <Loader2 className="size-5 animate-spin" />
+                        <RestorchSpinner className="size-5 " />
                     ) : (
                         <>
                             <Upload className="size-5" />
@@ -445,7 +445,7 @@ function CheckInSheet({
                             className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-brand px-5 text-[13px] font-semibold text-white hover:bg-brand/90 disabled:opacity-50"
                         >
                             {isLoading ? (
-                                <Loader2 className="size-4 animate-spin" />
+                                <RestorchSpinner className="size-4 " />
                             ) : (
                                 <LogIn className="size-4" />
                             )}
@@ -592,7 +592,7 @@ function StayCard({
                         className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-hairline bg-card px-3 text-[12px] font-medium hover:bg-secondary disabled:opacity-50"
                     >
                         {redeeming ? (
-                            <Loader2 className="size-3.5 animate-spin" />
+                            <RestorchSpinner className="size-3.5 " />
                         ) : (
                             <CheckCircle2 className="size-3.5 text-brand" />
                         )}
@@ -606,7 +606,7 @@ function StayCard({
                     className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-xl bg-foreground px-3 text-[12px] font-semibold text-background hover:bg-foreground/90 disabled:opacity-50"
                 >
                     {checkingOut ? (
-                        <Loader2 className="size-3.5 animate-spin" />
+                        <RestorchSpinner className="size-3.5 " />
                     ) : (
                         <LogOut className="size-3.5" />
                     )}
@@ -659,7 +659,7 @@ export default function RoomDetailPage({
         return (
             <DashboardFrame>
                 <div className="flex min-h-[200px] items-center justify-center gap-2 text-[13px] text-slate-gray">
-                    <Loader2 className="size-4 animate-spin" />
+                    <RestorchSpinner className="size-4 " />
                     Loading…
                 </div>
             </DashboardFrame>

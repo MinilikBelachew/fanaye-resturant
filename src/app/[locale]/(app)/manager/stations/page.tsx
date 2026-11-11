@@ -5,7 +5,6 @@ import {
     ChevronRight,
     Clock,
     Edit3,
-    Loader2,
     Plus,
     Power,
     PowerOff,
@@ -17,6 +16,7 @@ import {
     X,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { Button } from "@/components/ui/button";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
@@ -102,7 +102,7 @@ function DeleteModal({
                         className="flex-1 h-10 inline-flex items-center justify-center gap-2 rounded-xl bg-destructive text-[13px] font-semibold text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
                     >
                         {isDeleting ? (
-                            <Loader2 className="size-4 animate-spin" />
+                            <RestorchSpinner className="size-4 " />
                         ) : (
                             <Trash2 className="size-4" />
                         )}
@@ -435,7 +435,7 @@ export default function ManagerStationsPage() {
                                         )}
                                     >
                                         {isToggling ? (
-                                            <Loader2 className="size-3.5 animate-spin" />
+                                            <RestorchSpinner className="size-3.5 " />
                                         ) : isEnabled ? (
                                             <Power className="size-3.5" />
                                         ) : (

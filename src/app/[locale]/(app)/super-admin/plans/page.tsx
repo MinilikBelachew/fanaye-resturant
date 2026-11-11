@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     CreditCard,
-    Loader2,
     Pencil,
     Plus,
     RefreshCw,
@@ -180,7 +180,7 @@ export default function SuperAdminPlansPage() {
 
             {isLoading ? (
                 <div className="flex items-center gap-2 py-16 text-[13px] text-slate-gray">
-                    <Loader2 className="size-4 animate-spin" />
+                    <RestorchSpinner className="size-4 " />
                     Loading plans…
                 </div>
             ) : plans.length === 0 ? (

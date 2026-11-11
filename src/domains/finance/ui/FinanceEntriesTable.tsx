@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     Ban,
     ChevronLeft,
     ChevronRight,
-    Loader2,
     Pencil,
     Plus,
     RefreshCw,
@@ -491,7 +491,7 @@ export default function FinanceEntriesTable({
                             >
                                 <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
                                     {isFetching ? (
-                                        <Loader2 className="size-3.5 animate-spin text-slate-gray" />
+                                        <RestorchSpinner className="size-3.5 text-slate-gray" />
                                     ) : null}
                                     <span className="text-slate-gray">
                                         {t("totalsIncome")}{" "}

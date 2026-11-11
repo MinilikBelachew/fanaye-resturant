@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useTranslations } from "next-intl";
 import { Controller, useForm } from "react-hook-form";
-import { Building2, Loader2, MapPin, UserCheck, X } from "lucide-react";
+import { Building2, MapPin, ShieldCheck, UserCheck, X } from "lucide-react";
 import {
     type TenantDetail,
     useUpdateSuperAdminTenantMutation,
@@ -52,6 +53,8 @@ function valuesFromTenant(
     codes: string[] = [],
 ): EditTenantValues {
     const primary = tenant.branchesList?.[0];
+    const rawManager = tenant.manager === "—" ? "" : tenant.manager || "";
+    const rawOwner = tenant.owner === "—" ? "" : tenant.owner || "";
     return {
         name: tenant.name || "",
         legalName: tenant.legalName || "",
@@ -63,10 +66,16 @@ function valuesFromTenant(
         area: tenant.area || "Bole",
         address: tenant.address || "",
         hours: tenant.hours || "08:00 – 23:00",
-        managerName: tenant.manager || "",
+        removeOwner: false,
+        ownerName: rawOwner,
+        ownerEmail: tenant.ownerEmail || "",
+        ownerPhone: maskEthiopianPhone(tenant.ownerPhone || "+251 "),
+        ownerPassword: "",
+        removeManager: false,
+        managerName: rawManager,
         managerEmail: tenant.managerEmail || "",
         managerPhone: maskEthiopianPhone(
-            tenant.managerPhone || tenant.phone || "+251 ",
+            tenant.managerPhone || (rawManager ? tenant.phone : "") || "+251 ",
         ),
         managerPassword: "",
     };
@@ -122,6 +131,9 @@ export default function EditTenantSheet({
         mode: "onTouched",
     });
 
+    const isRemovingOwner = form.watch("removeOwner");
+    const isRemovingManager = form.watch("removeManager");
+
     useEffect(() => {
         if (!open) return;
         form.reset(
@@ -155,6 +167,26 @@ export default function EditTenantSheet({
 
         const payload = parsed.data;
         try {
+            const hasOwnerInput =
+                !payload.removeOwner &&
+                (Boolean(payload.ownerName?.trim()) ||
+                    Boolean(payload.ownerEmail?.trim()) ||
+                    Boolean(
+                        payload.ownerPhone?.trim() &&
+                            payload.ownerPhone.trim() !== "+251",
+                    ) ||
+                    Boolean(payload.ownerPassword?.trim()));
+
+            const hasManagerInput =
+                !payload.removeManager &&
+                (Boolean(payload.managerName?.trim()) ||
+                    Boolean(payload.managerEmail?.trim()) ||
+                    Boolean(
+                        payload.managerPhone?.trim() &&
+                            payload.managerPhone.trim() !== "+251",
+                    ) ||
+                    Boolean(payload.managerPassword?.trim()));
+
             await updateTenant({
                 id: tenant.id,
                 body: {
@@ -166,23 +198,38 @@ export default function EditTenantSheet({
                     area: payload.area.trim(),
                     address: payload.address.trim(),
                     hours: payload.hours.trim(),
-                    phone: payload.managerPhone.trim(),
+                    phone:
+                        payload.ownerPhone?.trim() ||
+                        payload.managerPhone?.trim() ||
+                        tenant.phone ||
+                        undefined,
                     email:
+                        payload.ownerEmail?.trim() ||
                         payload.managerEmail?.trim() ||
                         tenant.email?.trim() ||
-                        `hello@${
-                            payload.name
-                                .trim()
-                                .toLowerCase()
-                                .replace(/[^a-z0-9]+/g, "") || "restaurant"
-                        }.et`,
-                    managerName: payload.managerName.trim(),
-                    managerEmail: payload.managerEmail?.trim() || undefined,
-                    managerPhone: payload.managerPhone.trim(),
-                    managerPassword:
-                        payload.managerPassword?.trim() || undefined,
+                        undefined,
                     branchName: payload.branchName.trim(),
                     branchCode: payload.branchCode?.trim() || undefined,
+
+                    removeOwner: payload.removeOwner ? true : undefined,
+                    ...(hasOwnerInput
+                        ? {
+                              ownerName: payload.ownerName?.trim() || undefined,
+                              ownerEmail: payload.ownerEmail?.trim() || undefined,
+                              ownerPhone: payload.ownerPhone?.trim() || undefined,
+                              ownerPassword: payload.ownerPassword?.trim() || undefined,
+                          }
+                        : {}),
+
+                    removeManager: payload.removeManager ? true : undefined,
+                    ...(hasManagerInput
+                        ? {
+                              managerName: payload.managerName?.trim() || undefined,
+                              managerEmail: payload.managerEmail?.trim() || undefined,
+                              managerPhone: payload.managerPhone?.trim() || undefined,
+                              managerPassword: payload.managerPassword?.trim() || undefined,
+                          }
+                        : {}),
                 },
             }).unwrap();
 
@@ -503,110 +550,251 @@ export default function EditTenantSheet({
                             </section>
 
                             <section className="space-y-3">
-                                <div className="flex items-center gap-2 text-foreground">
-                                    <UserCheck className="size-3.5 text-slate-gray" />
-                                    <h3 className="text-[12px] font-semibold">
-                                        {t("edit.sectionHouseManager")}
-                                    </h3>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-foreground">
+                                        <ShieldCheck className="size-3.5 text-slate-gray" />
+                                        <h3 className="text-[12px] font-semibold">
+                                            {t("edit.sectionOwnerAdmin")}
+                                        </h3>
+                                    </div>
+                                    <label className="flex cursor-pointer items-center gap-1.5 text-[11px] font-medium text-destructive hover:opacity-80">
+                                        <input
+                                            type="checkbox"
+                                            className="size-3.5 rounded border-hairline accent-destructive"
+                                            {...form.register("removeOwner")}
+                                        />
+                                        <span>{t("edit.removeOwner")}</span>
+                                    </label>
                                 </div>
-                                <div className="grid gap-3 sm:grid-cols-2">
-                                    <FormField
-                                        control={form.control}
-                                        name="managerName"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>
-                                                    {t("edit.managerName")}
-                                                </FormLabel>
-                                                <FormControl>
-                                                    <Input
-                                                        className={fieldClass}
-                                                        {...field}
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="managerPhone"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>
-                                                    {t("edit.phone")}
-                                                </FormLabel>
-                                                <FormControl>
-                                                    <EthiopianPhoneInput
-                                                        value={field.value}
-                                                        onChange={
-                                                            field.onChange
-                                                        }
-                                                        onBlur={field.onBlur}
-                                                        name={field.name}
-                                                        ref={field.ref}
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="managerEmail"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>
-                                                    {t("edit.loginEmail")}
-                                                </FormLabel>
-                                                <FormControl>
-                                                    <Input
-                                                        type="email"
-                                                        className={fieldClass}
-                                                        {...field}
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="managerPassword"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>
-                                                    {t("edit.managerPassword")}
-                                                </FormLabel>
-                                                <FormControl>
-                                                    <Input
-                                                        type="password"
-                                                        className={cn(
-                                                            fieldClass,
-                                                            "font-mono",
+
+                                {isRemovingOwner ? (
+                                    <div className="rounded-[10px] border border-destructive/20 bg-destructive/10 px-3 py-2 text-[12px] text-destructive">
+                                        {t("edit.removeOwnerDesc")}
+                                    </div>
+                                ) : (
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        <FormField
+                                            control={form.control}
+                                            name="ownerName"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>
+                                                        {t("edit.ownerName")}
+                                                    </FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            className={fieldClass}
+                                                            {...field}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="ownerPhone"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>
+                                                        {t("edit.phone")}
+                                                    </FormLabel>
+                                                    <FormControl>
+                                                        <EthiopianPhoneInput
+                                                            value={field.value}
+                                                            onChange={
+                                                                field.onChange
+                                                            }
+                                                            onBlur={field.onBlur}
+                                                            name={field.name}
+                                                            ref={field.ref}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="ownerEmail"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>
+                                                        {t("edit.loginEmail")}
+                                                    </FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            type="email"
+                                                            className={fieldClass}
+                                                            {...field}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="ownerPassword"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>
+                                                        {t("edit.ownerPassword")}
+                                                    </FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            type="password"
+                                                            className={cn(
+                                                                fieldClass,
+                                                                "font-mono",
+                                                            )}
+                                                            placeholder={t(
+                                                                "edit.ownerPasswordPlaceholder",
+                                                            )}
+                                                            autoComplete="new-password"
+                                                            {...field}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                    <p className="text-[11px] text-slate-gray">
+                                                        {t(
+                                                            "edit.ownerPasswordHint",
                                                         )}
-                                                        placeholder={t(
-                                                            "edit.managerPasswordPlaceholder",
-                                                        )}
-                                                        autoComplete="new-password"
-                                                        {...field}
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                                <p className="text-[11px] text-slate-gray">
-                                                    {t(
-                                                        "edit.managerPasswordHint",
-                                                    )}
-                                                </p>
-                                                {field.value ? (
-                                                    <PasswordLiveChecks
-                                                        value={field.value}
-                                                    />
-                                                ) : null}
-                                            </FormItem>
-                                        )}
-                                    />
+                                                    </p>
+                                                    {field.value ? (
+                                                        <PasswordLiveChecks
+                                                            value={field.value}
+                                                        />
+                                                    ) : null}
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                )}
+                            </section>
+
+                            <section className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-foreground">
+                                        <UserCheck className="size-3.5 text-slate-gray" />
+                                        <h3 className="text-[12px] font-semibold">
+                                            {t("edit.sectionHouseManager")}
+                                        </h3>
+                                    </div>
+                                    <label className="flex cursor-pointer items-center gap-1.5 text-[11px] font-medium text-destructive hover:opacity-80">
+                                        <input
+                                            type="checkbox"
+                                            className="size-3.5 rounded border-hairline accent-destructive"
+                                            {...form.register("removeManager")}
+                                        />
+                                        <span>{t("edit.removeManager")}</span>
+                                    </label>
                                 </div>
+
+                                {isRemovingManager ? (
+                                    <div className="rounded-[10px] border border-destructive/20 bg-destructive/10 px-3 py-2 text-[12px] text-destructive">
+                                        {t("edit.removeManagerDesc")}
+                                    </div>
+                                ) : (
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        <FormField
+                                            control={form.control}
+                                            name="managerName"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>
+                                                        {t("edit.managerName")}
+                                                    </FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            className={fieldClass}
+                                                            {...field}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="managerPhone"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>
+                                                        {t("edit.phone")}
+                                                    </FormLabel>
+                                                    <FormControl>
+                                                        <EthiopianPhoneInput
+                                                            value={field.value}
+                                                            onChange={
+                                                                field.onChange
+                                                            }
+                                                            onBlur={field.onBlur}
+                                                            name={field.name}
+                                                            ref={field.ref}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="managerEmail"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>
+                                                        {t("edit.loginEmail")}
+                                                    </FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            type="email"
+                                                            className={fieldClass}
+                                                            {...field}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="managerPassword"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>
+                                                        {t("edit.managerPassword")}
+                                                    </FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            type="password"
+                                                            className={cn(
+                                                                fieldClass,
+                                                                "font-mono",
+                                                            )}
+                                                            placeholder={t(
+                                                                "edit.managerPasswordPlaceholder",
+                                                            )}
+                                                            autoComplete="new-password"
+                                                            {...field}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                    <p className="text-[11px] text-slate-gray">
+                                                        {t(
+                                                            "edit.managerPasswordHint",
+                                                        )}
+                                                    </p>
+                                                    {field.value ? (
+                                                        <PasswordLiveChecks
+                                                            value={field.value}
+                                                        />
+                                                    ) : null}
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                )}
                             </section>
 
                             {errorMsg ? (
@@ -630,7 +818,7 @@ export default function EditTenantSheet({
                                 className="inline-flex h-8 items-center gap-1.5 rounded-full bg-foreground px-4 text-[12px] font-semibold text-background hover:bg-foreground/90 disabled:opacity-60"
                             >
                                 {isLoading ? (
-                                    <Loader2 className="size-3.5 animate-spin" />
+                                    <RestorchSpinner className="size-3.5 " />
                                 ) : null}
                                 {t("edit.saveChanges")}
                             </button>

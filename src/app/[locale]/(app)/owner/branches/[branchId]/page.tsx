@@ -1,12 +1,12 @@
 "use client";
 
 import { use, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     ArrowLeft,
     Building2,
     ChefHat,
     Check,
-    Loader2,
     Pencil,
     Store,
     Users,
@@ -157,7 +157,7 @@ export default function BranchDetailPage({
         return (
             <DashboardFrame>
                 <div className="flex min-h-[200px] items-center justify-center gap-2 text-[13px] text-slate-gray">
-                    <Loader2 className="size-4 animate-spin" />
+                    <RestorchSpinner className="size-4 " />
                     Loading…
                 </div>
             </DashboardFrame>
@@ -256,7 +256,7 @@ export default function BranchDetailPage({
                                 className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-foreground px-4 text-[13px] font-semibold text-background disabled:opacity-50"
                             >
                                 {saving ? (
-                                    <Loader2 className="size-3.5 animate-spin" />
+                                    <RestorchSpinner className="size-3.5 " />
                                 ) : (
                                     <Check className="size-3.5" />
                                 )}

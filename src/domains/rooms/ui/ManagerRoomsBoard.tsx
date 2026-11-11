@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     BedDouble,
     Coffee,
-    Loader2,
     Plus,
     Settings2,
     User,
@@ -270,7 +270,7 @@ function AddRoomSheet({
                             className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-foreground px-5 text-[13px] font-semibold text-background hover:bg-foreground/90 disabled:opacity-50"
                         >
                             {isLoading ? (
-                                <Loader2 className="size-4 animate-spin" />
+                                <RestorchSpinner className="size-4 " />
                             ) : (
                                 <Plus className="size-4" />
                             )}
@@ -511,7 +511,7 @@ export default function ManagerRoomsBoard() {
 
             {settingsLoading ? (
                 <div className="flex min-h-[180px] items-center justify-center gap-2 text-[13px] text-slate-gray">
-                    <Loader2 className="size-4 animate-spin" />
+                    <RestorchSpinner className="size-4 " />
                     Loading…
                 </div>
             ) : (

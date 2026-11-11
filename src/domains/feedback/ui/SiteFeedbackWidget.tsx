@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     CheckCircle2,
-    Loader2,
     MessageSquarePlus,
     Send,
     Star,
@@ -172,7 +172,7 @@ export default function SiteFeedbackWidget({ slug }: { slug: string }) {
                                     className="w-full gap-2 rounded-2xl bg-amber-600 py-6 text-sm font-bold text-white hover:bg-amber-700 shadow-md disabled:opacity-60"
                                 >
                                     {isLoading ? (
-                                        <Loader2 className="size-4 animate-spin" />
+                                        <RestorchSpinner className="size-4 " />
                                     ) : (
                                         <Send className="size-4" />
                                     )}

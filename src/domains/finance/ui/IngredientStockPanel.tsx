@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronRight, Loader2 } from "lucide-react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
+import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import DataTable, {
@@ -183,7 +184,7 @@ export default function IngredientStockPanel({
     if (isLoading) {
         return (
             <div className="flex items-center justify-center gap-2 py-12 text-[13px] text-slate-gray">
-                <Loader2 className="size-4 animate-spin" />
+                <RestorchSpinner className="size-4 " />
                 {t("loading")}
             </div>
         );

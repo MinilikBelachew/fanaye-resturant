@@ -1,6 +1,7 @@
 "use client";
 
-import { Loader2, Radio } from "lucide-react";
+import { Radio } from "lucide-react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -93,7 +94,7 @@ export default function LiveOpsPage() {
 
                 {isLoading ? (
                     <div className="flex items-center justify-center gap-2 py-16 text-[13px] text-slate-gray">
-                        <Loader2 className="size-4 animate-spin" />
+                        <RestorchSpinner className="size-4 " />
                         {t("liveOps.loadingLiveFloors")}
                     </div>
                 ) : branches.length === 0 ? (

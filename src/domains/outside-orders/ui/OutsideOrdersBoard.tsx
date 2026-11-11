@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     Boxes,
     Building2,
@@ -11,7 +12,6 @@ import {
     Clock,
     Coffee,
     Filter,
-    Loader2,
     MapPin,
     Package,
     Plus,
@@ -313,7 +313,7 @@ export default function OutsideOrdersBoard({
             {/* Orders Grid */}
             {isLoading ? (
                 <div className="rounded-xl border bg-card p-16 text-center">
-                    <Loader2 className="size-6 animate-spin mx-auto mb-3 text-muted-foreground" />
+                    <RestorchSpinner className="size-6 mx-auto mb-3 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground">
                         Loading orders...
                     </p>

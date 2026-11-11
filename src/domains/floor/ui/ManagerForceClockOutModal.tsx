@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     AlertTriangle,
     Banknote,
     CheckCircle2,
     Clock,
     DollarSign,
-    Loader2,
     ShieldAlert,
     Table2,
     UserCheck,
@@ -747,7 +747,7 @@ export const ManagerForceClockOutModal: React.FC<
                         }
                     >
                         {isLoading ? (
-                            <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                            <RestorchSpinner className="mr-1.5 size-3.5 " />
                         ) : isCashier ? (
                             <Banknote className="mr-1.5 size-3.5" />
                         ) : (

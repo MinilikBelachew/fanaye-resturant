@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Plus, Tag, X } from "lucide-react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
+import { Plus, Tag, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -223,7 +224,7 @@ export default function FinanceCategoryManager({
                             disabled={isCreating}
                         >
                             {isCreating ? (
-                                <Loader2 className="size-3.5 animate-spin" />
+                                <RestorchSpinner className="size-3.5 " />
                             ) : (
                                 <Plus className="size-3.5" />
                             )}
@@ -306,7 +307,7 @@ export default function FinanceCategoryManager({
                                                         }
                                                     >
                                                         {isSaving ? (
-                                                            <Loader2 className="size-3.5 animate-spin" />
+                                                            <RestorchSpinner className="size-3.5 " />
                                                         ) : null}
                                                         {t("save")}
                                                     </Button>

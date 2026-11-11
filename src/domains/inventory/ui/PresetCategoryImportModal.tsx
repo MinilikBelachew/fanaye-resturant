@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useLocale } from "next-intl";
 import {
     Check,
     CheckSquare,
     FolderPlus,
-    Loader2,
     Sparkles,
     Square,
     X,
@@ -338,7 +338,7 @@ export function PresetCategoryImportModal({
                         >
                             {isImporting ? (
                                 <>
-                                    <Loader2 className="size-3.5 animate-spin" />
+                                    <RestorchSpinner className="size-3.5 " />
                                     <span>
                                         {isAm ? "በመጨመር ላይ..." : "Adding..."}
                                     </span>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { Button } from "@/components/ui/button";
 import { QrCodeSvg } from "@/components/common/QrCodeSvg";
 import { AdminTableQrItem, QrMenuConfig } from "@/context/services/qrMenuApi";
@@ -12,7 +13,6 @@ import {
     Download,
     FileDown,
     Layers,
-    Loader2,
     Palette,
     Printer,
     Scissors,
@@ -425,7 +425,7 @@ export const TableQrCardModal: React.FC<TableQrCardModalProps> = ({
                                 className="gap-1.5 shadow-none"
                             >
                                 {isExportingPdf ? (
-                                    <Loader2 className="size-3.5 animate-spin" />
+                                    <RestorchSpinner className="size-3.5 " />
                                 ) : (
                                     <FileDown className="size-3.5" />
                                 )}

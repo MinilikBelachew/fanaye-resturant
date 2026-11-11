@@ -1,10 +1,10 @@
 "use client";
 
 import { use, useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     ArrowLeft,
     Clock,
-    Loader2,
     RefreshCw,
     Ticket,
     UserRound,
@@ -289,7 +289,7 @@ export default function ManagerStationDetailPage({
         return (
             <DashboardFrame>
                 <div className="flex flex-col items-center justify-center rounded-2xl border border-hairline bg-card py-16">
-                    <Loader2 className="size-6 animate-spin text-primary" />
+                    <RestorchSpinner className="size-6 text-primary" />
                     <p className="mt-2 text-[12px] text-slate-gray">
                         {t("loadingDetail")}
                     </p>

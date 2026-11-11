@@ -1,13 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import Image from "next/image";
 import {
     Boxes,
     CheckCircle2,
     AlertTriangle,
     X,
-    Loader2,
     RefreshCw,
     Search,
     User,
@@ -276,7 +276,7 @@ export default function KitchenMaterialsAuditModal({
                 <div className="flex-1 overflow-y-auto space-y-3.5 my-3 pr-1">
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center p-12 text-center text-xs text-muted-foreground">
-                            <Loader2 className="size-6 animate-spin mb-2 text-primary" />
+                            <RestorchSpinner className="size-6 mb-2 text-primary" />
                             Loading returnable tableware status...
                         </div>
                     ) : filteredIssues.length === 0 ? (

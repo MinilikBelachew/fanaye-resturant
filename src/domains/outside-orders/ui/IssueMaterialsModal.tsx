@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import Image from "next/image";
 import {
     Boxes,
     X,
-    Loader2,
     Check,
     Search,
     Filter,
@@ -327,7 +327,7 @@ export default function IssueMaterialsModal({
                 <div className="flex-1 overflow-y-auto p-4">
                     {loadingMaterials ? (
                         <div className="flex items-center justify-center py-20">
-                            <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                            <RestorchSpinner className="size-6 text-muted-foreground" />
                         </div>
                     ) : paginatedMaterials.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -542,7 +542,7 @@ export default function IssueMaterialsModal({
                         >
                             {isLoading ? (
                                 <>
-                                    <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                                    <RestorchSpinner className="mr-1.5 size-3.5 " />
                                     {t("assigning")}
                                 </>
                             ) : (

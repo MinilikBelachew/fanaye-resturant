@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useTranslations } from "next-intl";
 import {
     ArrowLeftRight,
-    Loader2,
     Lock,
     Pencil,
     Plus,
@@ -178,7 +178,7 @@ function UnitsSection() {
     if (isLoading) {
         return (
             <div className="flex items-center gap-2 py-8 text-[13px] text-slate-gray">
-                <Loader2 className="size-4 animate-spin" />
+                <RestorchSpinner className="size-4 " />
                 {t("loading")}
             </div>
         );
@@ -263,7 +263,7 @@ function UnitsSection() {
                         className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-emerald-600 px-4 text-[12px] font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
                     >
                         {(creating || updating) && (
-                            <Loader2 className="size-3.5 animate-spin" />
+                            <RestorchSpinner className="size-3.5 " />
                         )}
                         {editing ? t("save") : t("unitsAddAction")}
                     </button>
@@ -412,7 +412,7 @@ function ConversionsSection() {
     if (isLoading) {
         return (
             <div className="flex items-center gap-2 py-8 text-[13px] text-slate-gray">
-                <Loader2 className="size-4 animate-spin" />
+                <RestorchSpinner className="size-4 " />
                 {t("loading")}
             </div>
         );
@@ -494,7 +494,7 @@ function ConversionsSection() {
                             className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-emerald-600 px-4 text-[12px] font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
                         >
                             {(creating || updating) && (
-                                <Loader2 className="size-3.5 animate-spin" />
+                                <RestorchSpinner className="size-3.5 " />
                             )}
                             {editing ? t("save") : t("unitsAddAction")}
                         </button>

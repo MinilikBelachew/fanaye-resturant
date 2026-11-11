@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useTranslations } from "next-intl";
 import { Render, type Data } from "@puckeditor/core";
 import "@puckeditor/core/puck.css";
@@ -13,7 +14,6 @@ import {
     Eye,
     Globe,
     Layers,
-    Loader2,
     Mail,
     MapPin,
     Monitor,
@@ -506,7 +506,7 @@ export default function TemplateCustomizer({
                         className="gap-1.5 rounded-xl text-xs font-medium border-hairline"
                     >
                         {busy ? (
-                            <Loader2 className="size-3.5 animate-spin" />
+                            <RestorchSpinner className="size-3.5 " />
                         ) : (
                             <Save className="size-3.5" />
                         )}
@@ -521,7 +521,7 @@ export default function TemplateCustomizer({
                         className="gap-1.5 rounded-xl bg-brand hover:bg-brand/90 text-white text-xs font-semibold shadow-xs"
                     >
                         {publishing ? (
-                            <Loader2 className="size-3.5 animate-spin" />
+                            <RestorchSpinner className="size-3.5 " />
                         ) : (
                             <Rocket className="size-3.5" />
                         )}

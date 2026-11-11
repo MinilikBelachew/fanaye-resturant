@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useLocale, useTranslations } from "next-intl";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
@@ -19,7 +20,6 @@ import {
 import { useRealtimePollMs } from "@/domains/notifications/application/useRealtimePollMs";
 import { getEthiopianDateDetails } from "@/lib/ethiopian-calendar";
 import { toast } from "@/lib/toast";
-import { Loader2 } from "lucide-react";
 
 const HOURS_PER_DAY = 8;
 const DISPLAY_KEY = "fanaye.leaveDisplayUnit";
@@ -261,7 +261,7 @@ export default function MyLeaveBoard() {
                     className="h-10 self-end rounded-xl bg-brand px-4 text-[13px] font-semibold text-white disabled:opacity-60"
                 >
                     {requesting.isLoading ? (
-                        <Loader2 className="size-4 animate-spin" />
+                        <RestorchSpinner className="size-4 " />
                     ) : (
                         t("requestLeave")
                     )}
@@ -282,7 +282,7 @@ export default function MyLeaveBoard() {
             <div className="overflow-hidden rounded-2xl border border-hairline">
                 {isLoading ? (
                     <div className="flex justify-center py-12 text-slate-gray">
-                        <Loader2 className="size-5 animate-spin" />
+                        <RestorchSpinner className="size-5 " />
                     </div>
                 ) : rows.length === 0 ? (
                     <p className="px-4 py-8 text-center text-[13px] text-slate-gray">

@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useTranslations } from "next-intl";
 import {
     Building2,
-    Loader2,
     Pencil,
     Plus,
     Trash2,
@@ -374,7 +374,7 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                     </div>
                     {isUpdatingFeatures && (
                         <div className="flex items-center gap-1.5 text-xs text-primary font-medium">
-                            <Loader2 className="size-3.5 animate-spin" />
+                            <RestorchSpinner className="size-3.5 " />
                             <span>Updating...</span>
                         </div>
                     )}
@@ -802,8 +802,12 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                         value={tenant.email}
                     />
                     <Fact
+                        label={t("detail.factOwner")}
+                        value={tenant.owner || "—"}
+                    />
+                    <Fact
                         label={t("detail.factHouseManager")}
-                        value={tenant.manager}
+                        value={tenant.manager || "—"}
                     />
                     <Fact
                         label={t("detail.factOperatingHours")}
@@ -922,7 +926,7 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                                 className="inline-flex h-8 min-w-[120px] items-center justify-center gap-1.5 rounded-full bg-destructive px-3.5 text-[12px] font-medium text-white hover:bg-destructive/90 disabled:opacity-50"
                             >
                                 {isDeleting ? (
-                                    <Loader2 className="size-3.5 animate-spin" />
+                                    <RestorchSpinner className="size-3.5 " />
                                 ) : (
                                     <Trash2 className="size-3.5" />
                                 )}

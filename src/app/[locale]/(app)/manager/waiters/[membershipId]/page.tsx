@@ -6,7 +6,6 @@ import {
     CalendarDays,
     Clock3,
     LayoutGrid,
-    Loader2,
     Mail,
     Phone,
     RefreshCw,

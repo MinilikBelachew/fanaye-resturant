@@ -1,13 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     Boxes,
     Check,
     Coffee,
     Filter,
     Layers,
-    Loader2,
     Package,
     Plus,
     RefreshCw,
@@ -319,7 +319,7 @@ export function InventoryMaterialsPanel() {
             {/* Materials Table / List */}
             {isLoading ? (
                 <div className="flex items-center justify-center gap-2 rounded-xl border border-border/60 bg-card/20 py-16 text-xs text-muted-foreground">
-                    <Loader2 className="size-4 animate-spin" />
+                    <RestorchSpinner className="size-4 " />
                     Loading restaurant materials catalog…
                 </div>
             ) : materials.length === 0 ? (
@@ -850,7 +850,7 @@ function MaterialFormModal({
                             className="h-8 gap-1.5 px-4 text-xs font-medium"
                         >
                             {(creating || updating) && (
-                                <Loader2 className="size-3 animate-spin" />
+                                <RestorchSpinner className="size-3 " />
                             )}
                             <span>
                                 {isEdit ? "Update Material" : "Save Material"}
@@ -968,7 +968,7 @@ function AdjustBalanceModal({
                             className="h-8 gap-1.5 px-4 text-xs font-medium"
                         >
                             {isLoading && (
-                                <Loader2 className="size-3 animate-spin" />
+                                <RestorchSpinner className="size-3 " />
                             )}
                             <span>Update Balance</span>
                         </Button>

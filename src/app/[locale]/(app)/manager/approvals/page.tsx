@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     Check,
     ChevronRight,
     ClipboardList,
-    Loader2,
     RefreshCw,
     Replace,
     X,
@@ -425,7 +425,7 @@ export default function ManagerApprovalsPage() {
                 <>
                     {isLoading ? (
                         <div className="flex items-center gap-2 text-slate-gray">
-                            <Loader2 className="size-4 animate-spin" />
+                            <RestorchSpinner className="size-4 " />
                             {t("loading")}
                         </div>
                     ) : null}
@@ -550,7 +550,7 @@ export default function ManagerApprovalsPage() {
                                             }
                                         >
                                             {approveBusy ? (
-                                                <Loader2 className="size-3.5 animate-spin" />
+                                                <RestorchSpinner className="size-3.5 " />
                                             ) : (
                                                 <Check className="size-3.5" />
                                             )}
@@ -567,7 +567,7 @@ export default function ManagerApprovalsPage() {
                                             }
                                         >
                                             {rejectBusy ? (
-                                                <Loader2 className="size-3.5 animate-spin" />
+                                                <RestorchSpinner className="size-3.5 " />
                                             ) : (
                                                 <X className="size-3.5" />
                                             )}

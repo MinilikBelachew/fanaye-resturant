@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
@@ -8,7 +9,6 @@ import {
     Building2,
     ChefHat,
     Info,
-    Loader2,
     Lock,
     Mail,
     Store,
@@ -458,7 +458,7 @@ export default function AddBranchSheet({
                             >
                                 {isLoading ? (
                                     <>
-                                        <Loader2 className="size-3.5 animate-spin" />
+                                        <RestorchSpinner className="size-3.5 " />
                                         {t("creatingBranch")}
                                     </>
                                 ) : (

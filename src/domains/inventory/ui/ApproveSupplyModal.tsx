@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useTranslations } from "next-intl";
 import {
     useDispatchSupplyRequestMutation,
@@ -17,7 +18,6 @@ import {
     ArrowRight,
     Check,
     CheckCircle2,
-    Loader2,
     PackageCheck,
     Phone,
     Plus,
@@ -260,7 +260,7 @@ export function ApproveSupplyModal({
 
                                 {driversLoading ? (
                                     <div className="flex items-center gap-2 py-2 text-xs text-slate-gray">
-                                        <Loader2 className="size-3.5 animate-spin" />
+                                        <RestorchSpinner className="size-3.5 " />
                                         Loading drivers...
                                     </div>
                                 ) : activeDrivers.length === 0 ? (
@@ -438,7 +438,7 @@ export function ApproveSupplyModal({
                         >
                             {isApproving ? (
                                 <>
-                                    <Loader2 className="size-3.5 animate-spin" />
+                                    <RestorchSpinner className="size-3.5 " />
                                     Approving & Dispatching...
                                 </>
                             ) : (

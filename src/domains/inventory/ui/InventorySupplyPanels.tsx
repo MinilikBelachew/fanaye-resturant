@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useTranslations } from "next-intl";
 import {
     useApproveSupplyRequestMutation,
@@ -31,7 +32,6 @@ import {
     ChevronUp,
     Clock,
     FileCheck,
-    Loader2,
     Truck,
     X,
     XCircle,
@@ -249,7 +249,7 @@ export function RequestSupplyPanel() {
                 disabled={!canSubmit && triedSubmit}
             >
                 {creating.isLoading ? (
-                    <Loader2 className="size-3.5 animate-spin" />
+                    <RestorchSpinner className="size-3.5 " />
                 ) : null}
                 {t("submitSupplyRequest")}
             </PrimaryActionButton>
@@ -324,7 +324,7 @@ export function PendingSupplyPanel() {
     if (isLoading) {
         return (
             <div className="flex items-center gap-2 text-[13px] text-slate-gray py-8 justify-center">
-                <Loader2 className="size-4 animate-spin text-brand" />
+                <RestorchSpinner className="size-4 text-brand" />
                 {t("loadingSupply")}
             </div>
         );
@@ -588,7 +588,7 @@ export function MySupplyRequestsPanel() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center gap-2 py-8 text-[13px] text-slate-gray">
-                <Loader2 className="size-4 animate-spin text-brand" />
+                <RestorchSpinner className="size-4 text-brand" />
                 {t("loadingSupply")}
             </div>
         );

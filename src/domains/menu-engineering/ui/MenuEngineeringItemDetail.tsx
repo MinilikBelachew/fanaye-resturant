@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     AlertTriangle,
     ArrowLeft,
     ChevronRight,
     Flame,
-    Loader2,
     Target,
     ArrowUpRight,
     ArrowDownRight,
@@ -329,7 +329,7 @@ export default function MenuEngineeringItemDetail({
         return (
             <div className="flex h-[320px] items-center justify-center">
                 <div className="flex flex-col items-center gap-2">
-                    <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                    <RestorchSpinner className="size-5 text-muted-foreground" />
                     <p className="text-xs text-muted-foreground">
                         Loading dish performance…
                     </p>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useLocale, useTranslations } from "next-intl";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
@@ -25,7 +26,7 @@ import { useRealtimePollMs } from "@/domains/notifications/application/useRealti
 import { Link } from "@/i18n/navigation";
 import { getEthiopianDateDetails } from "@/lib/ethiopian-calendar";
 import { toast } from "@/lib/toast";
-import { ArrowLeft, Loader2, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 
 function parseLocalDate(iso: string): Date | null {
     if (!iso) return null;
@@ -388,7 +389,7 @@ export default function StaffLeaveBoard({
                         className="h-10 rounded-xl bg-brand px-4 text-[13px] font-semibold text-white disabled:opacity-60"
                     >
                         {creatingType.isLoading ? (
-                            <Loader2 className="size-4 animate-spin" />
+                            <RestorchSpinner className="size-4 " />
                         ) : (
                             t("createLeaveType")
                         )}
@@ -479,7 +480,7 @@ export default function StaffLeaveBoard({
                     className="h-10 self-end rounded-xl bg-brand px-4 text-[13px] font-semibold text-white disabled:opacity-60"
                 >
                     {creating.isLoading ? (
-                        <Loader2 className="size-4 animate-spin" />
+                        <RestorchSpinner className="size-4 " />
                     ) : (
                         t("createLeave")
                     )}
@@ -520,7 +521,7 @@ export default function StaffLeaveBoard({
             <div className="mt-3 overflow-hidden rounded-2xl border border-hairline">
                 {isLoading ? (
                     <div className="flex justify-center py-12 text-slate-gray">
-                        <Loader2 className="size-5 animate-spin" />
+                        <RestorchSpinner className="size-5 " />
                     </div>
                 ) : rows.length === 0 ? (
                     <p className="px-4 py-8 text-center text-[13px] text-slate-gray">

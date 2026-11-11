@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import Image from "next/image";
 import {
     AlertTriangle,
@@ -11,7 +12,6 @@ import {
     Clock,
     Coffee,
     ExternalLink,
-    Loader2,
     MapPin,
     MessageSquarePlus,
     Phone,
@@ -154,7 +154,7 @@ export default function OutsideOrderDetailModal({
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
                 <div className="w-full max-w-2xl rounded-xl border border-border/80 bg-background p-8 text-center text-xs text-muted-foreground">
-                    <Loader2 className="size-5 animate-spin mx-auto mb-2 text-primary" />
+                    <RestorchSpinner className="size-5 mx-auto mb-2 text-primary" />
                     Loading outside order details...
                 </div>
             </div>
@@ -554,7 +554,7 @@ export default function OutsideOrderDetailModal({
                             >
                                 {closing ? (
                                     <>
-                                        <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                                        <RestorchSpinner className="mr-1.5 size-3.5 " />
                                         Closing...
                                     </>
                                 ) : (

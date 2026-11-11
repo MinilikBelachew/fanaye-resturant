@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Loader2, Pencil, Phone, Plus, Truck, X } from "lucide-react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
+import { Check, Pencil, Phone, Plus, Truck, X } from "lucide-react";
 import {
     useCreateDriverMutation,
     useListDriversQuery,
@@ -263,7 +264,7 @@ export function DriverManagementModal({
                                     className="flex h-8 items-center gap-1.5 rounded-xl bg-amber-600 px-4 text-xs font-medium text-white shadow-sm hover:bg-amber-700 disabled:opacity-50"
                                 >
                                     {isCreating || isUpdating ? (
-                                        <Loader2 className="size-3.5 animate-spin" />
+                                        <RestorchSpinner className="size-3.5 " />
                                     ) : (
                                         <Check className="size-3.5" />
                                     )}
@@ -280,7 +281,7 @@ export function DriverManagementModal({
                 <div className="flex-1 overflow-y-auto pr-1">
                     {isLoading ? (
                         <div className="flex items-center justify-center py-10 text-xs text-slate-gray">
-                            <Loader2 className="mr-2 size-4 animate-spin" />
+                            <RestorchSpinner className="mr-2 size-4 " />
                             Loading drivers...
                         </div>
                     ) : drivers.length === 0 ? (

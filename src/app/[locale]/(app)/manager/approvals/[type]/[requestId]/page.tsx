@@ -1,12 +1,12 @@
 "use client";
 
 import { use, useState, type ComponentType } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     ArrowLeft,
     Check,
     Clock3,
     LayoutGrid,
-    Loader2,
     RefreshCw,
     Replace,
     ShoppingBag,
@@ -408,7 +408,7 @@ export default function ManagerApprovalDetailPage({
                                     onClick={() => void decide("approve")}
                                 >
                                     {busy === "approve" ? (
-                                        <Loader2 className="size-3.5 animate-spin" />
+                                        <RestorchSpinner className="size-3.5 " />
                                     ) : (
                                         <Check className="size-3.5" />
                                     )}
@@ -422,7 +422,7 @@ export default function ManagerApprovalDetailPage({
                                     onClick={() => void decide("reject")}
                                 >
                                     {busy === "reject" ? (
-                                        <Loader2 className="size-3.5 animate-spin" />
+                                        <RestorchSpinner className="size-3.5 " />
                                     ) : (
                                         <X className="size-3.5" />
                                     )}

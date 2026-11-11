@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Printer, Loader2, Check, Bluetooth } from "lucide-react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
+import { Printer, Check, Bluetooth } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Bill } from "@/domains/billing/domain/billingApi";
 import { toast } from "@/lib/toast";
@@ -502,7 +503,7 @@ export const DirectBluetoothPrintButton: React.FC<
                 }
             >
                 {printing ? (
-                    <Loader2 className="size-3.5 animate-spin" />
+                    <RestorchSpinner className="size-3.5 " />
                 ) : success ? (
                     <Check className="size-3.5 text-emerald-100" />
                 ) : printMode === "bluetooth" ? (

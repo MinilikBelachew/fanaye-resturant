@@ -11,6 +11,7 @@ function validateStrongPassword(pass: string): string | null {
 }
 
 import { useEffect, useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -25,7 +26,6 @@ import {
     Eye,
     EyeOff,
     Lock,
-    Loader2,
     MapPin,
     Moon,
     Phone,
@@ -215,12 +215,32 @@ export default function AddEditStaffSheet() {
             ];
         }
 
-        const canManageStore =
+        const isOwner =
             !sessionRoleCode ||
             sessionRoleCode === "OWNER_ADMIN" ||
+            editingStaff?.role === "manager" ||
             editingStaff?.role === "store_manager";
 
         const baseRoles = [
+            ...(isOwner
+                ? [
+                      {
+                          id: "manager",
+                          label: t("roleManager", {
+                              defaultValue: "Branch Manager",
+                          }),
+                          description: t("roleManagerDesc", {
+                              defaultValue:
+                                  "Full branch operations, floor oversight, approvals, cash custody drops & daily close",
+                          }),
+                      },
+                      {
+                          id: "store_manager",
+                          label: t("roleStoreManager"),
+                          description: t("roleStoreManagerDesc"),
+                      },
+                  ]
+                : []),
             {
                 id: "waiter",
                 label: t("roleWaiter"),
@@ -248,15 +268,6 @@ export default function AddEditStaffSheet() {
                 description:
                     "Inter-branch stock delivery & fleet transport across all branches",
             },
-            ...(canManageStore
-                ? [
-                      {
-                          id: "store_manager",
-                          label: t("roleStoreManager"),
-                          description: t("roleStoreManagerDesc"),
-                      },
-                  ]
-                : []),
         ];
 
         const stationRoles = activeStations.map(st => ({
@@ -869,13 +880,23 @@ export default function AddEditStaffSheet() {
                 "owner",
                 "MANAGER",
                 "OWNER_ADMIN",
+                "store_manager",
+                "STORE_MANAGER",
             ].includes(values.role);
             if (isManagerOrOwner) {
-                if (!isEditMode && !values.password?.trim()) {
+                const isPromotingToManager =
+                    isEditMode &&
+                    editingStaff?.role !== "manager" &&
+                    editingStaff?.role !== "owner" &&
+                    editingStaff?.role !== "store_manager";
+                if (
+                    (!isEditMode || isPromotingToManager) &&
+                    !values.password?.trim()
+                ) {
                     form.setError("password", {
                         type: "manual",
                         message:
-                            "A password is required for Manager and Owner accounts.",
+                            "A password is required when creating or promoting to a Manager account.",
                     });
                     setSaving(false);
                     return;
@@ -1180,7 +1201,7 @@ export default function AddEditStaffSheet() {
 
                                             {uploadingPhoto && (
                                                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/60 backdrop-blur-xs text-white">
-                                                    <Loader2 className="size-6 animate-spin text-primary" />
+                                                    <RestorchSpinner className="size-6 text-primary" />
                                                     <span className="text-[10px] font-medium tracking-tight">
                                                         {t("uploadingPhoto")}
                                                     </span>
@@ -1372,7 +1393,14 @@ export default function AddEditStaffSheet() {
                                             <FormItem>
                                                 <FormLabel>
                                                     Login Password{" "}
-                                                    {!isEditMode ? (
+                                                    {!isEditMode ||
+                                                    (isEditMode &&
+                                                        editingStaff?.role !==
+                                                            "manager" &&
+                                                        editingStaff?.role !==
+                                                            "owner" &&
+                                                        editingStaff?.role !==
+                                                            "store_manager") ? (
                                                         <span className="text-primary">
                                                             *
                                                         </span>
@@ -1389,7 +1417,13 @@ export default function AddEditStaffSheet() {
                                                             }
                                                             autoComplete="new-password"
                                                             placeholder={
-                                                                isEditMode
+                                                                isEditMode &&
+                                                                (editingStaff?.role ===
+                                                                    "manager" ||
+                                                                    editingStaff?.role ===
+                                                                        "owner" ||
+                                                                    editingStaff?.role ===
+                                                                        "store_manager")
                                                                     ? "Leave blank to keep current"
                                                                     : "Enter strong password (min 8 chars)"
                                                             }
@@ -2282,7 +2316,7 @@ export default function AddEditStaffSheet() {
 
                                             {floorLoading ? (
                                                 <div className="flex items-center gap-2 py-2 text-[12px] text-slate-gray">
-                                                    <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
+                                                    <RestorchSpinner className="size-3.5 text-muted-foreground" />
                                                     <span>
                                                         {t("loadingFloor")}
                                                     </span>
@@ -2587,7 +2621,7 @@ export default function AddEditStaffSheet() {
                             >
                                 {saving ? (
                                     <>
-                                        <Loader2 className="size-3.5 animate-spin" />
+                                        <RestorchSpinner className="size-3.5 " />
                                         <span>{t("deleting")}</span>
                                     </>
                                 ) : (

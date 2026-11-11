@@ -1,10 +1,10 @@
 ﻿"use client";
 
 import { useId, useMemo, useRef, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     Check,
     ImagePlus,
-    Loader2,
     Search,
     Sparkles,
     Upload,
@@ -184,7 +184,7 @@ export function ItemImagePicker({
                             className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-hairline bg-card px-2.5 text-[12px] font-medium hover:bg-secondary disabled:opacity-60 transition-colors"
                         >
                             {isUploading ? (
-                                <Loader2 className="size-3.5 animate-spin" />
+                                <RestorchSpinner className="size-3.5 " />
                             ) : (
                                 <Upload className="size-3.5 text-slate-gray" />
                             )}

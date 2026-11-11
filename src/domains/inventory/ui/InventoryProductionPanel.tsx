@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useTranslations } from "next-intl";
 import {
     useListInventoryBalancesQuery,
@@ -20,7 +21,6 @@ import { UnitPicker } from "@/domains/inventory/ui/UnitPicker";
 import { toBaseQtyClient } from "@/domains/inventory/application/unitMath";
 import { formatEtb, formatQty } from "@/lib/money";
 import { toast } from "@/lib/toast";
-import { Loader2 } from "lucide-react";
 
 type ProduceInput = {
     ingredientId: string;
@@ -570,7 +570,7 @@ export default function InventoryProductionPanel({
                         disabled={!canPost && triedSubmit}
                     >
                         {posting.isLoading ? (
-                            <Loader2 className="size-3.5 animate-spin" />
+                            <RestorchSpinner className="size-3.5 " />
                         ) : null}
                         {t("postProduction")}
                     </PrimaryActionButton>
@@ -583,7 +583,7 @@ export default function InventoryProductionPanel({
                 </h3>
                 {loadingBatches ? (
                     <div className="flex items-center gap-2 text-[13px] text-slate-gray">
-                        <Loader2 className="size-4 animate-spin" />
+                        <RestorchSpinner className="size-4 " />
                         {t("loadingProduction")}
                     </div>
                 ) : batches.length === 0 ? (

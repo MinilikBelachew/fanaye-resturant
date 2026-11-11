@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { Loader2, Trash2, X } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useAppDispatch, useAppSelector } from "@/context/hooks";
 import { closeStationSheet } from "@/context/slices/stationSlice";
@@ -380,7 +381,7 @@ export default function AddEditStationSheet() {
                             className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-primary-deep disabled:opacity-50"
                         >
                             {isSubmitting ? (
-                                <Loader2 className="size-4 animate-spin" />
+                                <RestorchSpinner className="size-4 " />
                             ) : null}
                             <span>
                                 {editingStation

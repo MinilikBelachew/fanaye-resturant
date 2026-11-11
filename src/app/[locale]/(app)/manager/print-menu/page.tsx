@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useRef, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
 import { StudioSkeleton } from "@/components/custom/molecules/Skeletons";
@@ -47,7 +48,6 @@ import {
     Layers,
     LayoutGrid,
     Leaf,
-    Loader2,
     Palette,
     Printer,
     QrCode,
@@ -441,7 +441,7 @@ export default function ManagerPrintMenuPage() {
                         className="gap-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shadow-xs"
                     >
                         {isExportingPdf ? (
-                            <Loader2 className="size-4 animate-spin text-white" />
+                            <RestorchSpinner className="size-4 text-white" />
                         ) : (
                             <FileDown className="size-4" />
                         )}

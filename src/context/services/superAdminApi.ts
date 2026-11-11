@@ -126,6 +126,9 @@ export interface TenantDetail {
     manager: string;
     managerEmail?: string;
     managerPhone?: string;
+    owner?: string;
+    ownerEmail?: string;
+    ownerPhone?: string;
     hours: string;
     concept: string;
     branches: number;
@@ -198,6 +201,12 @@ export interface UpdateTenantPayload {
     managerPhone?: string;
     managerEmail?: string;
     managerPassword?: string;
+    removeManager?: boolean;
+    ownerName?: string;
+    ownerPhone?: string;
+    ownerEmail?: string;
+    ownerPassword?: string;
+    removeOwner?: boolean;
     branchName?: string;
     branchCode?: string;
     hours?: string;

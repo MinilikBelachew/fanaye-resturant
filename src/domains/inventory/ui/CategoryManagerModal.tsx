@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useLocale } from "next-intl";
 import {
     Check,
     FolderPlus,
-    Loader2,
     Pencil,
     Plus,
     Sparkles,
@@ -317,7 +317,7 @@ export function CategoryManagerModal({
                                     className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 px-3.5 py-1.5 text-[12px] font-semibold text-white shadow-xs disabled:opacity-60 transition-colors"
                                 >
                                     {isCreating || isUpdating ? (
-                                        <Loader2 className="size-3.5 animate-spin" />
+                                        <RestorchSpinner className="size-3.5 " />
                                     ) : (
                                         <Check className="size-3.5" />
                                     )}
@@ -367,7 +367,7 @@ export function CategoryManagerModal({
                     {/* List of Categories */}
                     {isLoading ? (
                         <div className="flex h-32 items-center justify-center text-slate-gray">
-                            <Loader2 className="size-5 animate-spin text-emerald-600" />
+                            <RestorchSpinner className="size-5 text-emerald-600" />
                         </div>
                     ) : categories.length === 0 ? (
                         <div className="rounded-xl border border-hairline p-8 text-center text-slate-gray space-y-3 bg-secondary/10">

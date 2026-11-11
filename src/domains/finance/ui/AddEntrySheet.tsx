@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, ReceiptText, X } from "lucide-react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
+import { ReceiptText, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -382,7 +383,7 @@ export default function AddEntrySheet({
                         >
                             {isPending ? (
                                 <>
-                                    <Loader2 className="mr-2 size-4 animate-spin" />
+                                    <RestorchSpinner className="mr-2 size-4 " />
                                     {t("saving")}
                                 </>
                             ) : (

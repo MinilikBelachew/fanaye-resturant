@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export interface RestorchSpinnerProps {
@@ -10,14 +10,29 @@ export interface RestorchSpinnerProps {
 }
 
 /**
- * High-performance, lightweight inline brand spinner for buttons, badges, and small controls.
- * Uses the official Restorch Swirl Torch mark.
+ * Ultra-fast, lightweight inline brand spinner replacing generic Loader2.
+ * Uses the official Restorch Intro video animation (transparent alpha WebM + MP4),
+ * adapting seamlessly across light and dark mode with zero layout shift.
  */
 export function RestorchSpinner({
     className = "size-4",
     size,
     pulseOnly = false,
 }: RestorchSpinnerProps) {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const [videoFailed, setVideoFailed] = useState(false);
+
+    useEffect(() => {
+        if (!videoRef.current || videoFailed) return;
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(() => {
+                // Autoplay may be restricted in some low-power modes
+                setVideoFailed(true);
+            });
+        }
+    }, [videoFailed]);
+
     const style = size ? { width: size, height: size } : undefined;
 
     return (
@@ -26,17 +41,53 @@ export function RestorchSpinner({
             aria-label="Loading"
             style={style}
             className={cn(
-                "inline-flex shrink-0 items-center justify-center select-none pointer-events-none",
-                pulseOnly ? "animate-pulse" : "animate-spin",
+                "relative inline-flex shrink-0 items-center justify-center select-none pointer-events-none overflow-hidden",
                 className,
             )}
         >
-            <img
-                src="/images/branding/restorch-mark-square.png"
-                alt=""
-                className="size-full object-contain drop-shadow-xs"
-                crossOrigin="anonymous"
-            />
+            {!videoFailed ? (
+                <video
+                    ref={videoRef}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    onError={() => setVideoFailed(true)}
+                    className="size-full object-contain pointer-events-none drop-shadow-xs"
+                >
+                    <source
+                        src="/images/branding/Restorch_Pictogram_Intro_4K_Alpha.webm"
+                        type="video/webm"
+                    />
+                    <source
+                        src="/images/branding/Restorch_Pictogram_Intro_4K.mp4"
+                        type="video/mp4"
+                    />
+                </video>
+            ) : (
+                <>
+                    {/* Light Mode Fallback */}
+                    <img
+                        src="/images/branding/restorch-mark.png"
+                        alt=""
+                        className={cn(
+                            "size-full object-contain drop-shadow-xs dark:hidden",
+                            pulseOnly ? "animate-pulse" : "animate-spin",
+                        )}
+                        crossOrigin="anonymous"
+                    />
+                    {/* Dark Mode Fallback */}
+                    <img
+                        src="/images/branding/restorch-mark-square.png"
+                        alt=""
+                        className={cn(
+                            "size-full object-contain drop-shadow-xs hidden dark:block",
+                            pulseOnly ? "animate-pulse" : "animate-spin",
+                        )}
+                        crossOrigin="anonymous"
+                    />
+                </>
+            )}
         </span>
     );
 }

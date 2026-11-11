@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useTranslations } from "next-intl";
 import { useAppSelector } from "@/context/hooks";
 import {
@@ -95,7 +96,6 @@ import {
     Boxes,
     ChefHat,
     ClipboardCheck,
-    Loader2,
     Pencil,
     Ruler,
     Store,
@@ -1168,7 +1168,7 @@ export default function InventoryBoard({
                             >
                                 {enablingMain.isLoading ||
                                 disablingMain.isLoading ? (
-                                    <Loader2 className="absolute inset-0 m-auto size-3 animate-spin text-white" />
+                                    <RestorchSpinner className="absolute inset-0 m-auto size-3 text-white" />
                                 ) : (
                                     <span
                                         className={cn(
@@ -1229,7 +1229,7 @@ export default function InventoryBoard({
                                     className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 text-[13px] font-medium text-rose-700 hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-400"
                                 >
                                     {disablingMain.isLoading ? (
-                                        <Loader2 className="size-3.5 animate-spin" />
+                                        <RestorchSpinner className="size-3.5 " />
                                     ) : (
                                         <Trash2 className="size-3.5" />
                                     )}
@@ -1250,7 +1250,7 @@ export default function InventoryBoard({
                                     className="inline-flex h-10 items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 text-[13px] font-semibold text-white disabled:opacity-60"
                                 >
                                     {updatingLocation.isLoading ? (
-                                        <Loader2 className="size-3.5 animate-spin" />
+                                        <RestorchSpinner className="size-3.5 " />
                                     ) : null}
                                     {t("saveStore")}
                                 </button>
@@ -1374,7 +1374,7 @@ export default function InventoryBoard({
                                 className="inline-flex h-10 items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 text-[13px] font-semibold text-white disabled:opacity-60"
                             >
                                 {updatingIngredient.isLoading ? (
-                                    <Loader2 className="size-3.5 animate-spin" />
+                                    <RestorchSpinner className="size-3.5 " />
                                 ) : null}
                                 {t("saveIngredient")}
                             </button>
@@ -1421,7 +1421,7 @@ export default function InventoryBoard({
                                 )}
                             >
                                 {confirmBusy ? (
-                                    <Loader2 className="size-3.5 animate-spin" />
+                                    <RestorchSpinner className="size-3.5 " />
                                 ) : null}
                                 {confirmDialog.confirmLabel}
                             </button>
@@ -1461,7 +1461,7 @@ export default function InventoryBoard({
                                 className="inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
                             >
                                 {enablingMain.isLoading ? (
-                                    <Loader2 className="size-4 animate-spin" />
+                                    <RestorchSpinner className="size-4 " />
                                 ) : null}
                                 Enable Main Warehouse
                             </button>
@@ -1499,7 +1499,7 @@ export default function InventoryBoard({
                                 className="inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
                             >
                                 {enablingMain.isLoading ? (
-                                    <Loader2 className="size-4 animate-spin" />
+                                    <RestorchSpinner className="size-4 " />
                                 ) : null}
                                 Enable Main Warehouse
                             </button>
@@ -2101,7 +2101,7 @@ export default function InventoryBoard({
                             className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-[13px] font-semibold text-white disabled:opacity-60"
                         >
                             {creating.isLoading ? (
-                                <Loader2 className="size-4 animate-spin" />
+                                <RestorchSpinner className="size-4 " />
                             ) : null}
                             {t("create")}
                         </button>
@@ -2205,7 +2205,7 @@ export default function InventoryBoard({
                     ) : null}
                     <PrimaryActionButton loading={wasting.isLoading}>
                         {wasting.isLoading ? (
-                            <Loader2 className="size-4 animate-spin" />
+                            <RestorchSpinner className="size-4 " />
                         ) : null}
                         {t("logWaste")}
                     </PrimaryActionButton>
@@ -2376,7 +2376,7 @@ export default function InventoryBoard({
                             >
                                 {yielding.isLoading ||
                                 updatingYield.isLoading ? (
-                                    <Loader2 className="size-4 animate-spin" />
+                                    <RestorchSpinner className="size-4 " />
                                 ) : null}
                                 {editingYieldId
                                     ? t("saveYieldTest")
@@ -2400,7 +2400,7 @@ export default function InventoryBoard({
                         </h3>
                         {yieldTestsLoading ? (
                             <div className="flex items-center gap-2 text-[13px] text-slate-gray">
-                                <Loader2 className="size-4 animate-spin" />
+                                <RestorchSpinner className="size-4 " />
                                 {t("loadingYields")}
                             </div>
                         ) : (yieldTestsRes?.data ?? []).length === 0 ? (
@@ -2533,7 +2533,7 @@ export default function InventoryBoard({
                             className="inline-flex h-10 items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 text-[13px] font-semibold text-white disabled:opacity-60"
                         >
                             {starting.isLoading ? (
-                                <Loader2 className="size-4 animate-spin" />
+                                <RestorchSpinner className="size-4 " />
                             ) : null}
                             {t("startCount")}
                         </button>
@@ -3138,7 +3138,7 @@ export default function InventoryBoard({
                                 className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-[13px] font-semibold text-white shadow-xs disabled:opacity-60"
                             >
                                 {updatingIngredient.isLoading ? (
-                                    <Loader2 className="size-4 animate-spin" />
+                                    <RestorchSpinner className="size-4 " />
                                 ) : null}
                                 <span>{t("save")}</span>
                             </button>
@@ -3297,7 +3297,7 @@ function IngredientSelect({
 function LoadingRow() {
     return (
         <div className="flex items-center justify-center p-10 text-slate-gray">
-            <Loader2 className="size-5 animate-spin" />
+            <RestorchSpinner className="size-5 " />
         </div>
     );
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Loader2, Pencil, Rocket, Sparkles } from "lucide-react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
+import { Check, Pencil, Rocket, Sparkles } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -436,7 +437,7 @@ export default function WebsiteTemplatePicker({
                             onClick={() => onApply(selected, "publish")}
                         >
                             {busy ? (
-                                <Loader2 className="size-3.5 animate-spin" />
+                                <RestorchSpinner className="size-3.5 " />
                             ) : (
                                 <Rocket className="size-3.5" />
                             )}
@@ -449,7 +450,7 @@ export default function WebsiteTemplatePicker({
                             onClick={() => onApply(selected, "customize")}
                         >
                             {busy ? (
-                                <Loader2 className="size-3.5 animate-spin" />
+                                <RestorchSpinner className="size-3.5 " />
                             ) : (
                                 <Pencil className="size-3.5" />
                             )}

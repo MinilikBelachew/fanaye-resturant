@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useLocale, useTranslations } from "next-intl";
 import {
     AlertTriangle,
@@ -11,7 +12,6 @@ import {
     Filter,
     HelpCircle,
     Landmark,
-    Loader2,
     RefreshCw,
     Search,
     ShieldAlert,
@@ -533,7 +533,7 @@ export default function CashCustodyBoard({
 
                     {isLoading ? (
                         <div className="p-12 text-center text-sm text-muted-foreground">
-                            <Loader2 className="size-6 animate-spin mx-auto text-primary mb-2" />
+                            <RestorchSpinner className="size-6 mx-auto text-primary mb-2" />
                             {isAmharic
                                 ? "የአስተናጋጆች መረጃ በመጫን ላይ..."
                                 : "Loading waiter cash pouches..."}
@@ -723,7 +723,7 @@ export default function CashCustodyBoard({
 
                     {isLoading ? (
                         <div className="p-12 text-center text-sm text-muted-foreground">
-                            <Loader2 className="size-6 animate-spin mx-auto text-primary mb-2" />
+                            <RestorchSpinner className="size-6 mx-auto text-primary mb-2" />
                             {isAmharic
                                 ? "የመሳቢያዎች መረጃ በመጫን ላይ..."
                                 : "Loading cashier drawer sessions..."}
@@ -1426,7 +1426,7 @@ function DisputeResolutionModal({
                     >
                         {isResolving ? (
                             <>
-                                <Loader2 className="size-4 animate-spin" />
+                                <RestorchSpinner className="size-4 " />
                                 {isAmharic
                                     ? "በማስቀመጥ ላይ..."
                                     : "Saving resolution..."}

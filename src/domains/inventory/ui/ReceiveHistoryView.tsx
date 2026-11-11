@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useTranslations } from "next-intl";
 import {
     ArrowDownToLine,
@@ -12,7 +13,6 @@ import {
     Filter,
     Image as ImageIcon,
     Inbox,
-    Loader2,
     Phone,
     Plus,
     Receipt,
@@ -283,7 +283,7 @@ export function ReceiveHistoryView({
                                         className="py-12 text-center text-slate-gray"
                                     >
                                         <div className="flex flex-col items-center justify-center gap-2">
-                                            <Loader2 className="size-6 animate-spin text-emerald-600" />
+                                            <RestorchSpinner className="size-6 text-emerald-600" />
                                             <span>{t("loadingSupply")}</span>
                                         </div>
                                     </td>

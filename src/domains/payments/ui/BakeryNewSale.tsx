@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { Link } from "@/i18n/navigation";
 import {
     Minus,
@@ -10,7 +11,6 @@ import {
     CakeSlice,
     Clock3,
     FileDown,
-    Loader2,
     Printer,
 } from "lucide-react";
 import { useWaiterMenuQuery } from "@/context/services/ordersApi";
@@ -407,7 +407,7 @@ export default function BakeryNewSale() {
                         className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-hairline bg-card text-[12px] font-medium disabled:opacity-50"
                     >
                         {exportingPdf ? (
-                            <Loader2 className="size-3.5 animate-spin" />
+                            <RestorchSpinner className="size-3.5 " />
                         ) : (
                             <FileDown className="size-3.5" />
                         )}

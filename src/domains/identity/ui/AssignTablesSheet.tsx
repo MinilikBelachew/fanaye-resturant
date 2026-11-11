@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useLocale } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,7 +12,6 @@ import {
     Check,
     Clock3,
     Copy,
-    Loader2,
     MapPin,
     Moon,
     Plus,
@@ -959,7 +959,7 @@ export default function AssignTablesSheet({
 
                             {floorLoading ? (
                                 <div className="flex items-center gap-2 py-2 text-[12px] text-slate-gray">
-                                    <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
+                                    <RestorchSpinner className="size-3.5 text-muted-foreground" />
                                     <span>Loading shift floor layout…</span>
                                 </div>
                             ) : null}

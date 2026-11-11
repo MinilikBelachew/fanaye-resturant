@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
 import { StudioSkeleton } from "@/components/custom/molecules/Skeletons";
@@ -31,7 +32,6 @@ import {
     ExternalLink,
     FileDown,
     Link2,
-    Loader2,
     Save,
     Upload,
     Wifi,
@@ -287,7 +287,7 @@ export default function ManagerQrMenuPage() {
                         className="gap-1.5 shadow-none"
                     >
                         {isSaving ? (
-                            <Loader2 className="size-3.5 animate-spin" />
+                            <RestorchSpinner className="size-3.5 " />
                         ) : (
                             <Save className="size-3.5" />
                         )}
@@ -347,7 +347,7 @@ export default function ManagerQrMenuPage() {
                                         }
                                     >
                                         {isSavingSlug ? (
-                                            <Loader2 className="size-3.5 animate-spin" />
+                                            <RestorchSpinner className="size-3.5 " />
                                         ) : null}
                                         {t("saveSlug")}
                                     </Button>
@@ -556,7 +556,7 @@ export default function ManagerQrMenuPage() {
                                         className="shrink-0 gap-1.5 shadow-none"
                                     >
                                         {isUploadingBanner ? (
-                                            <Loader2 className="size-3.5 animate-spin" />
+                                            <RestorchSpinner className="size-3.5 " />
                                         ) : (
                                             <Upload className="size-3.5" />
                                         )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState, useEffect } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { usePathname, useRouter } from "next/navigation";
 import {
     AlertTriangle,
@@ -13,7 +14,6 @@ import {
     FileDown,
     Flame,
     Info,
-    Loader2,
     Percent,
     Printer,
     RefreshCw,
@@ -524,7 +524,7 @@ function TargetsPopover({
                                 className="h-7.5 gap-1.5 px-3 text-xs font-medium"
                             >
                                 {saving ? (
-                                    <Loader2 className="size-3 animate-spin" />
+                                    <RestorchSpinner className="size-3 " />
                                 ) : (
                                     <Save className="size-3" />
                                 )}
@@ -1591,7 +1591,7 @@ export default function MenuEngineeringBoard() {
 
             {isLoading ? (
                 <div className="flex items-center justify-center gap-2 rounded-xl border border-border/60 bg-card/20 py-16 text-xs text-muted-foreground">
-                    <Loader2 className="size-4 animate-spin" />
+                    <RestorchSpinner className="size-4 " />
                     Analysing menu performance…
                 </div>
             ) : isError ? (

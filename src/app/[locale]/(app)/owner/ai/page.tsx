@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     Bot,
-    Loader2,
     Mic,
     Radio,
     Settings,
@@ -517,7 +517,7 @@ export default function OwnerAiPage() {
                                                 </span>
                                             </div>
                                         ) : isTranscribing || isLoading ? (
-                                            <Loader2 className="size-8 animate-spin" />
+                                            <RestorchSpinner className="size-8 " />
                                         ) : isPlayingAudio ? (
                                             <Volume2 className="size-8 animate-bounce" />
                                         ) : (

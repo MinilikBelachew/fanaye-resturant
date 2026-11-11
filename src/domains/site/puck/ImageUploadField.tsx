@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Loader2, Upload, X } from "lucide-react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
+import { Upload, X } from "lucide-react";
 import { useUploadMenuImageMutation } from "@/context/services/menuApi";
 import { filePublicUrl } from "@/domains/catalog/application/mapAdminMenu";
 
@@ -59,7 +60,7 @@ export function ImageUploadField({
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-hairline px-3 py-2.5 text-[12px] font-medium hover:bg-surface-ivory disabled:opacity-60"
             >
                 {isLoading ? (
-                    <Loader2 className="size-3.5 animate-spin" />
+                    <RestorchSpinner className="size-3.5 " />
                 ) : (
                     <Upload className="size-3.5" />
                 )}
@@ -149,7 +150,7 @@ export function GalleryUploadField({
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-hairline px-3 py-2.5 text-[12px] font-medium hover:bg-surface-ivory disabled:opacity-60"
             >
                 {isLoading ? (
-                    <Loader2 className="size-3.5 animate-spin" />
+                    <RestorchSpinner className="size-3.5 " />
                 ) : (
                     <Upload className="size-3.5" />
                 )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     ArrowLeft,
     CalendarRange,
@@ -9,7 +10,6 @@ import {
     FileText,
     History,
     Layers,
-    Loader2,
     Package,
     RefreshCw,
     Search,
@@ -295,7 +295,7 @@ export default function IngredientDetailPage({
             {/* KPI Cards: The Stock Bridge */}
             {isUsageLoading ? (
                 <div className="flex items-center justify-center py-12 text-slate-gray">
-                    <Loader2 className="size-6 animate-spin" />
+                    <RestorchSpinner className="size-6 " />
                 </div>
             ) : usage ? (
                 <div className="space-y-4">
@@ -547,7 +547,7 @@ export default function IngredientDetailPage({
 
                         {isOrdersLoading ? (
                             <div className="flex items-center justify-center py-12 text-slate-gray">
-                                <Loader2 className="size-5 animate-spin" />
+                                <RestorchSpinner className="size-5 " />
                             </div>
                         ) : filteredOrders.length === 0 ? (
                             <div className="py-12 text-center text-slate-gray">

@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     CircleUserRound,
     Eye,
     EyeOff,
-    Loader2,
     Lock,
     LogOut,
     Monitor,
@@ -444,7 +444,7 @@ export default function AccountMenu({
                                 >
                                     {isUpdatingPassword ? (
                                         <>
-                                            <Loader2 className="size-3.5 animate-spin" />
+                                            <RestorchSpinner className="size-3.5 " />
                                             <span>Saving...</span>
                                         </>
                                     ) : (

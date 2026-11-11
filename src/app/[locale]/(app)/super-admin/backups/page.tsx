@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     AlertTriangle,
     ArrowUpRight,
@@ -12,7 +13,6 @@ import {
     Download,
     FileArchive,
     HardDriveDownload,
-    Loader2,
     Play,
     RefreshCw,
     Search,
@@ -277,7 +277,7 @@ export default function SuperAdminBackupsPage() {
                         </CardDescription>
                         <CardTitle className="text-3xl font-black">
                             {isLoading ? (
-                                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                                <RestorchSpinner className="h-6 w-6 text-muted-foreground" />
                             ) : (
                                 (overview?.totalTenants ?? 0)
                             )}
@@ -297,7 +297,7 @@ export default function SuperAdminBackupsPage() {
                         </CardDescription>
                         <CardTitle className="text-3xl font-black text-emerald-600 dark:text-emerald-400">
                             {isLoading ? (
-                                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                                <RestorchSpinner className="h-6 w-6 text-muted-foreground" />
                             ) : (
                                 `${overview?.linkedTenants ?? 0} / ${overview?.totalTenants ?? 0}`
                             )}
@@ -396,7 +396,7 @@ export default function SuperAdminBackupsPage() {
                         >
                             {isTriggeringAll ? (
                                 <>
-                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <RestorchSpinner className="h-4 w-4 " />
                                     Exporting & Sending...
                                 </>
                             ) : (
@@ -479,7 +479,7 @@ export default function SuperAdminBackupsPage() {
                             >
                                 {isUpdatingSettings ? (
                                     <>
-                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        <RestorchSpinner className="h-4 w-4 " />
                                         Saving...
                                     </>
                                 ) : (
@@ -543,7 +543,7 @@ export default function SuperAdminBackupsPage() {
                                             className="py-12 text-center text-muted-foreground"
                                         >
                                             <div className="flex items-center justify-center gap-2">
-                                                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                                                <RestorchSpinner className="h-5 w-5 text-primary" />
                                                 Loading restaurant backup
                                                 catalog...
                                             </div>
@@ -672,7 +672,7 @@ export default function SuperAdminBackupsPage() {
                                                     >
                                                         {activeSendingTenantId ===
                                                         tenant.tenantId ? (
-                                                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                            <RestorchSpinner className="h-3.5 w-3.5 " />
                                                         ) : (
                                                             <Send className="h-3.5 w-3.5 text-primary" />
                                                         )}
@@ -761,7 +761,7 @@ export default function SuperAdminBackupsPage() {
                         >
                             {isTriggeringAll ? (
                                 <>
-                                    <Loader2 className="size-3.5 animate-spin" />
+                                    <RestorchSpinner className="size-3.5 " />
                                     Dispatching Backups...
                                 </>
                             ) : (

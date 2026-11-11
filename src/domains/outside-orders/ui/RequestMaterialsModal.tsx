@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { MessageSquarePlus, X, Loader2 } from "lucide-react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
+import { MessageSquarePlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRequestMaterialsMutation } from "@/context/services/outsideOrdersApi";
 import { toast } from "@/lib/toast";
@@ -102,7 +103,7 @@ export default function RequestMaterialsModal({
                         >
                             {isSubmitting ? (
                                 <>
-                                    <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                                    <RestorchSpinner className="mr-1.5 size-3.5 " />
                                     Sending...
                                 </>
                             ) : (

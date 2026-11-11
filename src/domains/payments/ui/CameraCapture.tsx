@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { Button } from "@/components/ui/button";
 import {
     Camera,
@@ -8,7 +9,6 @@ import {
     RotateCcw,
     Check,
     X,
-    Loader2,
 } from "lucide-react";
 
 export default function CameraCapture({
@@ -172,7 +172,7 @@ export default function CameraCapture({
                             >
                                 {isProcessing ? (
                                     <>
-                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        <RestorchSpinner className="h-4 w-4 " />
                                         Scanning & Verifying...
                                     </>
                                 ) : (

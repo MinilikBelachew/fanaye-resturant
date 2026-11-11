@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useTranslations } from "next-intl";
-import { Loader2 } from "lucide-react";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
 import { toast } from "@/lib/toast";
@@ -243,7 +243,7 @@ export default function WebsiteStudioPage() {
         return (
             <DashboardFrame>
                 <div className="flex min-h-[360px] items-center justify-center gap-2 text-xs text-slate-gray">
-                    <Loader2 className="size-4 animate-spin text-brand" />
+                    <RestorchSpinner className="size-4 text-brand" />
                     <span>{t("loadingEditor")}</span>
                 </div>
             </DashboardFrame>
@@ -318,9 +318,7 @@ export default function WebsiteStudioPage() {
 
 // import {
 
-//     Loader2,
-
-//     ExternalLink,
+//     //     ExternalLink,
 
 //     Globe2,
 
@@ -1458,7 +1456,7 @@ export default function WebsiteStudioPage() {
 
 //                 <div className="flex min-h-[320px] items-center justify-center gap-2 text-[13px] text-slate-gray">
 
-//                     <Loader2 className="size-4 animate-spin text-brand" />
+//                     <RestorchSpinner className="size-4 text-brand" />
 
 //                     {t("loadingEditor")}
 

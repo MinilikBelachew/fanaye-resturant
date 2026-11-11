@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useLocale } from "next-intl";
 import {
     AlertTriangle,
     FolderPlus,
-    Loader2,
     Pencil,
     Plus,
     Search,
@@ -217,7 +217,7 @@ export function InventoryCategoriesPanel() {
                                         colSpan={6}
                                         className="py-12 text-center text-slate-gray"
                                     >
-                                        <Loader2 className="mx-auto size-6 animate-spin text-emerald-600 mb-2" />
+                                        <RestorchSpinner className="mx-auto size-6 text-emerald-600 mb-2" />
                                         <span>
                                             {isAm
                                                 ? "ምድቦች በመጫን ላይ…"
@@ -515,7 +515,7 @@ export function InventoryCategoriesPanel() {
                                     className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-5 text-[13px] font-semibold shadow-xs disabled:opacity-60 transition-colors"
                                 >
                                     {(isCreating || isUpdating) && (
-                                        <Loader2 className="size-4 animate-spin" />
+                                        <RestorchSpinner className="size-4 " />
                                     )}
                                     <span>
                                         {editingCategory
@@ -607,7 +607,7 @@ export function InventoryCategoriesPanel() {
                                 className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-5 text-[13px] font-semibold shadow-xs disabled:opacity-60 transition-colors"
                             >
                                 {isDeleting && (
-                                    <Loader2 className="size-4 animate-spin" />
+                                    <RestorchSpinner className="size-4 " />
                                 )}
                                 <span>
                                     {isAm ? "ምድብ ሰርዝ" : "Delete Category"}

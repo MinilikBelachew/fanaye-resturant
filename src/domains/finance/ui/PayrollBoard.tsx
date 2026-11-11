@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, MoreHorizontal, Plus } from "lucide-react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
+import { MoreHorizontal, Plus } from "lucide-react";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import DataTable, {
     type DataTableColumn,
@@ -133,7 +134,7 @@ export default function PayrollBoard() {
                         className="gap-2"
                     >
                         {creating.isLoading ? (
-                            <Loader2 className="size-4 animate-spin" />
+                            <RestorchSpinner className="size-4 " />
                         ) : (
                             <Plus className="size-4" />
                         )}

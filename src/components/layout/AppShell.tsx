@@ -60,19 +60,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         return (
             <div className="flex h-svh w-full items-center justify-center bg-background">
                 <RestorchLoader
-                    size="lg"
-                    label="Restorch OS"
-                    subLabel="Initializing session..."
-                />
-            </div>
-        );
-    }
-
-    if (!hydrated) {
-        return (
-            <div className="flex h-svh w-full items-center justify-center bg-background">
-                <RestorchLoader
-                    size="lg"
+                    variant="reveal"
+                    size="xl"
                     label="Restorch OS"
                     subLabel="Initializing session..."
                 />

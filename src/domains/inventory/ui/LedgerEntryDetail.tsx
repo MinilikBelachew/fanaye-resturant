@@ -1,6 +1,7 @@
 "use client";
 
 import { use } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useTranslations } from "next-intl";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
@@ -8,7 +9,7 @@ import { useGetInventoryLedgerEntryQuery } from "@/context/services/inventoryApi
 import { Link } from "@/i18n/navigation";
 import { formatEtb, formatQty } from "@/lib/money";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 export default function LedgerEntryDetail({
     params,
@@ -64,7 +65,7 @@ export default function LedgerEntryDetail({
 
             {isLoading ? (
                 <div className="flex justify-center py-16">
-                    <Loader2 className="size-6 animate-spin text-slate-gray" />
+                    <RestorchSpinner className="size-6 text-slate-gray" />
                 </div>
             ) : isError || !entry ? (
                 <p className="rounded-2xl border border-hairline px-4 py-10 text-center text-[13px] text-slate-gray">

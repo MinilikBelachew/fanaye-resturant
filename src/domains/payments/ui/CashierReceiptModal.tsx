@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useRef, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     Check,
     FileDown,
     Lightbulb,
-    Loader2,
     Printer,
     Send,
     X,
@@ -409,7 +409,7 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
                                     className="h-8 gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-xs"
                                 >
                                     {isExportingPdf ? (
-                                        <Loader2 className="size-3.5 animate-spin" />
+                                        <RestorchSpinner className="size-3.5 " />
                                     ) : (
                                         <FileDown className="size-3.5" />
                                     )}
@@ -453,7 +453,7 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
                                 }`}
                             >
                                 {isSending ? (
-                                    <Loader2 className="size-3.5 animate-spin" />
+                                    <RestorchSpinner className="size-3.5 " />
                                 ) : sentSuccess ? (
                                     <Check className="size-3.5 text-emerald-600" />
                                 ) : (

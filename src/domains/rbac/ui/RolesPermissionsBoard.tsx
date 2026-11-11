@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, RefreshCw, Shield } from "lucide-react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
+import { RefreshCw, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RestorchLoader } from "@/components/common/RestorchLoader";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -232,7 +233,7 @@ export default function RolesPermissionsBoard() {
                                     onClick={() => void handleSave()}
                                 >
                                     {saving ? (
-                                        <Loader2 className="size-3.5 animate-spin" />
+                                        <RestorchSpinner className="size-3.5 " />
                                     ) : null}
                                     Save
                                 </Button>
@@ -243,7 +244,7 @@ export default function RolesPermissionsBoard() {
 
                 {rolePermsLoading ? (
                     <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground">
-                        <Loader2 className="size-4 animate-spin" />
+                        <RestorchSpinner className="size-4 " />
                         Loading role permissions…
                     </div>
                 ) : (

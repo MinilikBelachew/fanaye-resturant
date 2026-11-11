@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     Calendar,
     CheckCircle2,
     Clock3,
     Globe,
     HardDriveDownload,
-    Loader2,
     Save,
     Settings,
     Truck,
@@ -226,7 +226,7 @@ export default function OwnerSettingsPage() {
                         className="self-start gap-2 rounded-full"
                     >
                         {saving ? (
-                            <Loader2 className="size-3.5 animate-spin" />
+                            <RestorchSpinner className="size-3.5 " />
                         ) : (
                             <Save className="size-3.5" />
                         )}

@@ -8,6 +8,17 @@ const etPhone = z
         return digits.length === 12 && /^251[79]\d{8}$/.test(digits);
     }, "Enter a full Ethiopian mobile (+251 9X XXX XXXX).");
 
+const optionalEtPhone = z
+    .string()
+    .trim()
+    .optional()
+    .or(z.literal(""))
+    .refine(value => {
+        if (!value || value === "+251 ") return true;
+        const digits = value.replace(/\D/g, "");
+        return digits.length === 12 && /^251[79]\d{8}$/.test(digits);
+    }, "Enter a full Ethiopian mobile (+251 9X XXX XXXX).");
+
 const tempPassword = z
     .string()
     .min(8, "Password must be at least 8 characters.")
@@ -75,11 +86,23 @@ export const editTenantSchema = z.object({
     area: z.string().trim().min(1, "Area is required."),
     address: z.string().trim().min(2, "Address is required."),
     hours: z.string().trim().min(1, "Hours are required."),
-    managerName: z.string().trim().min(2, "Manager name is required."),
+
+    // Owner management
+    removeOwner: z.boolean().default(false),
+    ownerName: z.string().trim().optional().or(z.literal("")),
+    ownerEmail: z
+        .union([z.literal(""), z.string().trim().email("Enter a valid email.")])
+        .optional(),
+    ownerPhone: optionalEtPhone,
+    ownerPassword: z.union([z.literal(""), tempPassword]).optional(),
+
+    // Manager management
+    removeManager: z.boolean().default(false),
+    managerName: z.string().trim().optional().or(z.literal("")),
     managerEmail: z
         .union([z.literal(""), z.string().trim().email("Enter a valid email.")])
         .optional(),
-    managerPhone: etPhone,
+    managerPhone: optionalEtPhone,
     managerPassword: z.union([z.literal(""), tempPassword]).optional(),
 });
 

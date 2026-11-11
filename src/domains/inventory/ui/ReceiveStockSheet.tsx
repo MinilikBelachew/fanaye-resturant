@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useTranslations } from "next-intl";
 import {
     ArrowDownToLine,
     Image as ImageIcon,
-    Loader2,
     Phone,
     Plus,
     Receipt,
@@ -543,7 +543,7 @@ export function ReceiveStockSheet({
                                             className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-emerald-600 px-4 text-[12px] font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
                                         >
                                             {isCreatingVendor ? (
-                                                <Loader2 className="size-3.5 animate-spin" />
+                                                <RestorchSpinner className="size-3.5 " />
                                             ) : (
                                                 <Plus className="size-3.5" />
                                             )}
@@ -667,7 +667,7 @@ export function ReceiveStockSheet({
                                     className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-hairline bg-card/60 px-4 py-3 transition-colors hover:border-emerald-500/40 hover:bg-card"
                                 >
                                     {isUploadingReceipt ? (
-                                        <Loader2 className="size-4 animate-spin text-emerald-600" />
+                                        <RestorchSpinner className="size-4 text-emerald-600" />
                                     ) : (
                                         <UploadCloud className="size-4 text-slate-gray" />
                                     )}
@@ -956,7 +956,7 @@ export function ReceiveStockSheet({
                                 className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 text-[13px] font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 disabled:opacity-60"
                             >
                                 {isSubmitting ? (
-                                    <Loader2 className="size-4 animate-spin" />
+                                    <RestorchSpinner className="size-4 " />
                                 ) : (
                                     <ArrowDownToLine className="size-4" />
                                 )}

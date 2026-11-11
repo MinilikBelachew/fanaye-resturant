@@ -11,6 +11,7 @@ function validateStrongPassword(pass: string): string | null {
 }
 
 import { useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { createPortal } from "react-dom";
 import {
     Building2,
@@ -19,7 +20,6 @@ import {
     Eye,
     EyeOff,
     KeyRound,
-    Loader2,
     Lock,
     MoreVertical,
     Plus,
@@ -1399,7 +1399,7 @@ export default function StaffDirectory({
                             >
                                 {isDeletingStaff ? (
                                     <>
-                                        <Loader2 className="size-3.5 animate-spin" />
+                                        <RestorchSpinner className="size-3.5 " />
                                         <span>{t("deleting")}</span>
                                     </>
                                 ) : (

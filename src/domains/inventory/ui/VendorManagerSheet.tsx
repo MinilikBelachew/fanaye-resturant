@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     Check,
     Globe,
-    Loader2,
     MapPin,
     Pencil,
     Phone,
@@ -392,7 +392,7 @@ export function VendorManagerSheet({
                                     className="flex h-9 items-center gap-1.5 rounded-xl bg-emerald-600 px-4 text-[12px] font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
                                 >
                                     {isCreating || isUpdating ? (
-                                        <Loader2 className="size-3.5 animate-spin" />
+                                        <RestorchSpinner className="size-3.5 " />
                                     ) : (
                                         <Check className="size-3.5" />
                                     )}
@@ -409,7 +409,7 @@ export function VendorManagerSheet({
                 <div className="app-scroll flex-1 overflow-y-auto p-6">
                     {isLoading ? (
                         <div className="flex items-center justify-center gap-2 py-10 text-[13px] text-slate-gray">
-                            <Loader2 className="size-4 animate-spin" />
+                            <RestorchSpinner className="size-4 " />
                             {t("loading")}
                         </div>
                     ) : vendors.length === 0 ? (

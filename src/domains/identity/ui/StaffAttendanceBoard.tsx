@@ -6,7 +6,7 @@ import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
 import { useListHrAttendanceQuery } from "@/context/services/hrApi";
 import { Link } from "@/i18n/navigation";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { RestorchLoader } from "@/components/common/RestorchLoader";
 
 export default function StaffAttendanceBoard({

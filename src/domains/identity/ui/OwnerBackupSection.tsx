@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     AlertTriangle,
     ArrowUpRight,
@@ -14,7 +15,6 @@ import {
     HardDriveDownload,
     HelpCircle,
     Info,
-    Loader2,
     RefreshCw,
     Send,
     ShieldAlert,
@@ -428,7 +428,7 @@ export default function OwnerBackupSection({
                                     className="flex-1 h-9 gap-1.5 rounded-xl font-semibold text-xs"
                                 >
                                     {isSending ? (
-                                        <Loader2 className="size-3.5 animate-spin" />
+                                        <RestorchSpinner className="size-3.5 " />
                                     ) : (
                                         <Send className="size-3.5" />
                                     )}
@@ -524,7 +524,7 @@ export default function OwnerBackupSection({
                             className="w-full h-9 gap-1.5 rounded-xl font-semibold text-xs"
                         >
                             {isDownloading ? (
-                                <Loader2 className="size-3.5 animate-spin" />
+                                <RestorchSpinner className="size-3.5 " />
                             ) : (
                                 <Download className="size-3.5" />
                             )}
@@ -616,7 +616,7 @@ export default function OwnerBackupSection({
                             className="w-full sm:w-auto h-9 px-4 gap-1.5 rounded-xl bg-amber-600 text-white font-semibold text-xs hover:bg-amber-700 disabled:opacity-50 shrink-0"
                         >
                             {isRestoring ? (
-                                <Loader2 className="size-3.5 animate-spin" />
+                                <RestorchSpinner className="size-3.5 " />
                             ) : (
                                 <Upload className="size-3.5" />
                             )}
@@ -627,7 +627,7 @@ export default function OwnerBackupSection({
                     {/* Inspecting state */}
                     {isInspecting && (
                         <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-4 flex items-center justify-center gap-2 text-xs text-primary font-medium animate-pulse">
-                            <Loader2 className="size-4 animate-spin" />
+                            <RestorchSpinner className="size-4 " />
                             <span>
                                 Inspecting and verifying archive structure...
                             </span>
@@ -816,7 +816,7 @@ export default function OwnerBackupSection({
                         >
                             {isRestoring ? (
                                 <>
-                                    <Loader2 className="size-3.5 animate-spin" />
+                                    <RestorchSpinner className="size-3.5 " />
                                     Restoring Data...
                                 </>
                             ) : (
@@ -879,7 +879,7 @@ export default function OwnerBackupSection({
                         >
                             {isUnlinking ? (
                                 <>
-                                    <Loader2 className="size-3.5 animate-spin" />
+                                    <RestorchSpinner className="size-3.5 " />
                                     Disconnecting...
                                 </>
                             ) : (

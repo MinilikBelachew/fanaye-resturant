@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     useCashierPaymentsQuery,
     useLazyGetBillQuery,
@@ -16,7 +17,7 @@ import { exportElementToPdf } from "@/lib/pdfExport";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { useRouter } from "@/i18n/navigation";
-import { FileDown, LayoutGrid, Loader2, Receipt, Table2 } from "lucide-react";
+import { FileDown, LayoutGrid, Receipt, Table2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { CashierPaymentsSkeleton } from "@/components/custom/molecules/Skeletons";
 import { useAppSelector } from "@/context/hooks";
@@ -177,7 +178,7 @@ export default function CashierPaymentsLog() {
                         className="h-8 gap-1.5 px-2 text-[12px] font-normal"
                     >
                         {loadingBillId === row.billId ? (
-                            <Loader2 className="size-3.5 animate-spin" />
+                            <RestorchSpinner className="size-3.5 " />
                         ) : (
                             <Receipt className="size-3.5" />
                         )}
@@ -265,7 +266,7 @@ export default function CashierPaymentsLog() {
                         className="h-8 gap-1.5 rounded-full text-[12px] font-normal"
                     >
                         {isExportingPdf ? (
-                            <Loader2 className="size-3.5 animate-spin" />
+                            <RestorchSpinner className="size-3.5 " />
                         ) : (
                             <FileDown className="size-3.5" />
                         )}
@@ -344,7 +345,7 @@ export default function CashierPaymentsLog() {
                                         className="h-8 gap-1.5 rounded-full text-[12px] font-normal"
                                     >
                                         {loadingBillId === payment.billId ? (
-                                            <Loader2 className="size-3.5 animate-spin" />
+                                            <RestorchSpinner className="size-3.5 " />
                                         ) : (
                                             <Receipt className="size-3.5" />
                                         )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useCallback, useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useSearchParams } from "next/navigation";
 import {
     Ban,
@@ -8,7 +9,6 @@ import {
     ChefHat,
     ChevronRight,
     Clock3,
-    Loader2,
     Package,
     RefreshCw,
     Replace,
@@ -417,7 +417,7 @@ export default function ManagerReportsPage() {
             fallback={
                 <DashboardFrame>
                     <div className="flex items-center justify-center py-20 text-slate-gray">
-                        <Loader2 className="size-5 animate-spin" />
+                        <RestorchSpinner className="size-5 " />
                     </div>
                 </DashboardFrame>
             }

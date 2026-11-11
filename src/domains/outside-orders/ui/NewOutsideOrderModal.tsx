@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     Building2,
     Coffee,
     Store,
     MapPin,
     X,
-    Loader2,
     Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -243,7 +243,7 @@ export default function NewOutsideOrderModal({
                         >
                             {isLoading ? (
                                 <>
-                                    <Loader2 className="mr-2 size-4 animate-spin" />
+                                    <RestorchSpinner className="mr-2 size-4 " />
                                     Opening Order...
                                 </>
                             ) : (

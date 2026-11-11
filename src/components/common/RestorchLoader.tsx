@@ -8,11 +8,12 @@ export type LoaderSize = "xs" | "sm" | "md" | "lg" | "xl" | number;
 
 export interface RestorchLoaderProps {
     size?: LoaderSize;
-    variant?: "auto" | "loop" | "reveal" | "mark" | "video";
+    variant?: "auto" | "intro" | "loop" | "reveal" | "mark" | "video";
     fullscreen?: boolean;
     label?: string;
     subLabel?: string;
     className?: string;
+    mode?: "auto" | "light" | "dark";
 }
 
 const SIZE_MAP: Record<string, number> = {
@@ -30,6 +31,7 @@ export function RestorchLoader({
     label,
     subLabel,
     className,
+    mode = "auto",
 }: RestorchLoaderProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [videoFailed, setVideoFailed] = useState(false);
@@ -37,27 +39,31 @@ export function RestorchLoader({
     const pixelSize =
         typeof size === "number"
             ? size
-            : (SIZE_MAP[size] ?? (fullscreen ? 96 : 48));
+            : (SIZE_MAP[size] ?? (fullscreen ? 112 : 48));
 
-    const isReveal = variant === "reveal";
-    // For tiny sizes (< 32px), the video overhead is unnecessary; use mark variant
-    const useVideo =
-        (variant === "video" ||
-            variant === "loop" ||
-            variant === "reveal" ||
-            (variant === "auto" && pixelSize >= 32)) &&
-        !videoFailed;
+    // Resolve active animation variant
+    const activeVariant =
+        variant !== "auto"
+            ? variant
+            : fullscreen || size === "xl"
+              ? "reveal"
+              : pixelSize < 32 || size === "xs" || size === "sm"
+                ? "intro"
+                : "loop";
+
+    const isReveal = activeVariant === "reveal";
+    const isIntro = activeVariant === "intro";
 
     useEffect(() => {
-        if (!useVideo || !videoRef.current) return;
+        if (!videoRef.current || videoFailed) return;
         const playPromise = videoRef.current.play();
         if (playPromise !== undefined) {
             playPromise.catch(() => {
-                // Autoplay may be restricted or paused by power saver
+                // Autoplay may be restricted in power-save mode
                 setVideoFailed(true);
             });
         }
-    }, [useVideo]);
+    }, [activeVariant, videoFailed]);
 
     const content = (
         <div
@@ -70,7 +76,7 @@ export function RestorchLoader({
                 className="relative inline-flex items-center justify-center shrink-0"
                 style={{ width: pixelSize, height: pixelSize }}
             >
-                {useVideo ? (
+                {!videoFailed ? (
                     <video
                         ref={videoRef}
                         autoPlay
@@ -83,36 +89,68 @@ export function RestorchLoader({
                     >
                         {isReveal ? (
                             <>
+                                {/* 8s High-End Reveal with Alpha Transparency */}
                                 <source
                                     src="/images/branding/Restorch_Reveal_8s_4K_Alpha.webm"
                                     type="video/webm"
                                 />
+                                {mode === "light" && (
+                                    <source
+                                        src="/images/branding/restorch-logo-light (2).mp4"
+                                        type="video/mp4"
+                                    />
+                                )}
+                                {mode === "dark" && (
+                                    <source
+                                        src="/images/branding/restorch-logo-navy (2).mp4"
+                                        type="video/mp4"
+                                    />
+                                )}
                                 <source
                                     src="/images/branding/Restorch_Reveal_8s_4K.mp4"
                                     type="video/mp4"
                                 />
                             </>
+                        ) : isIntro ? (
+                            <>
+                                {/* 4K Intro Animation with Alpha Transparency for small / compact spaces */}
+                                <source
+                                    src="/images/branding/Restorch_Pictogram_Intro_4K_Alpha.webm"
+                                    type="video/webm"
+                                />
+                                <source
+                                    src="/images/branding/Restorch_Pictogram_Intro_4K.mp4"
+                                    type="video/mp4"
+                                />
+                            </>
                         ) : (
                             <>
-                                {/* Short 2.5s Alpha channel WebM for seamless transparent looping */}
+                                {/* 1080p Continuous Looping Animation for Cards & Tables */}
                                 <source
                                     src="/images/branding/Restorch_Pictogram_Loop_1080_Alpha.webm"
                                     type="video/webm"
                                 />
-                                {/* Short 2.5s High-compatibility MP4 fallback */}
                                 <source
                                     src="/images/branding/Restorch_Pictogram_Loop_1080.mp4"
                                     type="video/mp4"
                                 />
                             </>
                         )}
-                        {/* Nested fallback for older clients */}
+                        {/* Nested fallback image for older browsers */}
+                        <Image
+                            src="/images/branding/restorch-mark.png"
+                            alt="Loading..."
+                            width={pixelSize}
+                            height={pixelSize}
+                            className="size-full object-contain animate-pulse dark:hidden"
+                            priority
+                        />
                         <Image
                             src="/images/branding/restorch-mark-square.png"
                             alt="Loading..."
                             width={pixelSize}
                             height={pixelSize}
-                            className="size-full object-contain animate-pulse"
+                            className="size-full object-contain animate-pulse hidden dark:block"
                             priority
                         />
                     </video>
@@ -121,12 +159,22 @@ export function RestorchLoader({
                         className="relative flex items-center justify-center animate-pulse"
                         style={{ width: pixelSize, height: pixelSize }}
                     >
+                        {/* Light Mode Fallback Image */}
+                        <Image
+                            src="/images/branding/restorch-mark.png"
+                            alt="Loading..."
+                            width={pixelSize}
+                            height={pixelSize}
+                            className="size-full object-contain drop-shadow-sm dark:hidden"
+                            priority
+                        />
+                        {/* Dark Mode Fallback Image */}
                         <Image
                             src="/images/branding/restorch-mark-square.png"
                             alt="Loading..."
                             width={pixelSize}
                             height={pixelSize}
-                            className="size-full object-contain drop-shadow-sm"
+                            className="size-full object-contain drop-shadow-sm hidden dark:block"
                             priority
                         />
                     </div>
@@ -154,14 +202,8 @@ export function RestorchLoader({
 
     if (fullscreen) {
         return (
-            <div
-                role="status"
-                aria-live="polite"
-                className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-xl animate-in fade-in duration-300"
-            >
-                <div className="flex flex-col items-center justify-center p-6 rounded-3xl border border-border/40 bg-card/50 shadow-2xl backdrop-blur-2xl max-w-sm mx-4 text-center">
-                    {content}
-                </div>
+            <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background/95 backdrop-blur-md animate-in fade-in duration-200">
+                {content}
             </div>
         );
     }

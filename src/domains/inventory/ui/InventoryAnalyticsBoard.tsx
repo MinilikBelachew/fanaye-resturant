@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useTranslations } from "next-intl";
 import {
     Boxes,
-    Loader2,
     Trash2,
     TrendingUp,
     Truck,
@@ -425,7 +425,7 @@ export default function InventoryAnalyticsBoard() {
 
             {isLoading && !analytics ? (
                 <div className="flex items-center justify-center gap-2 rounded-2xl border border-hairline bg-surface-card py-16 text-sm text-slate-gray">
-                    <Loader2 className="size-4 animate-spin" />
+                    <RestorchSpinner className="size-4 " />
                     {t("analyticsLoading")}
                 </div>
             ) : isError || !analytics ? (

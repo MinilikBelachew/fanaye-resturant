@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useLocale } from "next-intl";
 import {
     AlertTriangle,
     CheckCircle2,
-    Loader2,
     Pencil,
     Phone,
     Plus,
@@ -235,7 +235,7 @@ export function InventoryDriversPanel() {
                                         colSpan={6}
                                         className="py-12 text-center text-slate-gray"
                                     >
-                                        <Loader2 className="mx-auto size-6 animate-spin text-amber-600 mb-2" />
+                                        <RestorchSpinner className="mx-auto size-6 text-amber-600 mb-2" />
                                         <span>
                                             {isAm
                                                 ? "አሽከርካሪዎች በመጫን ላይ..."
@@ -505,7 +505,7 @@ export function InventoryDriversPanel() {
                                     className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white px-5 text-[13px] font-semibold shadow-xs disabled:opacity-60 transition-colors"
                                 >
                                     {(isCreating || isUpdating) && (
-                                        <Loader2 className="size-4 animate-spin" />
+                                        <RestorchSpinner className="size-4 " />
                                     )}
                                     <span>
                                         {editingDriver
@@ -557,7 +557,7 @@ export function InventoryDriversPanel() {
                                 className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-5 text-[13px] font-semibold shadow-xs disabled:opacity-60 transition-colors"
                             >
                                 {isDeleting && (
-                                    <Loader2 className="size-4 animate-spin" />
+                                    <RestorchSpinner className="size-4 " />
                                 )}
                                 <span>Delete Driver</span>
                             </button>

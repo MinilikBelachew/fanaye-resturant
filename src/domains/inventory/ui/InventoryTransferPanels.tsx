@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useTranslations } from "next-intl";
 import {
     useAcceptInventoryTransferMutation,
@@ -30,7 +31,6 @@ import { formatQty } from "@/lib/money";
 import { toast } from "@/lib/toast";
 import {
     CheckCircle2,
-    Loader2,
     MapPin,
     Phone,
     Plus,
@@ -490,7 +490,7 @@ export function SendTransferPanel() {
                         className="px-6"
                     >
                         {isSubmitting ? (
-                            <Loader2 className="size-3.5 animate-spin" />
+                            <RestorchSpinner className="size-3.5 " />
                         ) : (
                             <Send className="size-3.5" />
                         )}
@@ -564,7 +564,7 @@ export function OutgoingTransfersPanel() {
     if (isLoading) {
         return (
             <div className="flex items-center gap-2 text-[13px] text-slate-gray">
-                <Loader2 className="size-4 animate-spin" />
+                <RestorchSpinner className="size-4 " />
                 {t("loadingTransfers")}
             </div>
         );
@@ -667,7 +667,7 @@ export function OutgoingTransfersPanel() {
                                     className="flex h-9 items-center gap-1.5 rounded-xl bg-amber-600 px-4 text-xs font-medium text-white shadow-sm hover:bg-amber-700 disabled:opacity-50"
                                 >
                                     {isDispatching ? (
-                                        <Loader2 className="size-3.5 animate-spin" />
+                                        <RestorchSpinner className="size-3.5 " />
                                     ) : (
                                         <Truck className="size-3.5" />
                                     )}
@@ -926,7 +926,7 @@ export function IncomingTransfersPanel() {
     if (isLoading) {
         return (
             <div className="flex items-center gap-2 text-[13px] text-slate-gray">
-                <Loader2 className="size-4 animate-spin" />
+                <RestorchSpinner className="size-4 " />
                 {t("loadingTransfers")}
             </div>
         );

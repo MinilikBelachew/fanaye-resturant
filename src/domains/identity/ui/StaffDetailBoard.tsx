@@ -11,6 +11,7 @@ function validateStrongPassword(pass: string): string | null {
 }
 
 import { use, useEffect, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     ArrowLeft,
     CalendarDays,
@@ -18,7 +19,6 @@ import {
     Eye,
     EyeOff,
     KeyRound,
-    Loader2,
     Lock,
     Mail,
     Phone,
@@ -309,7 +309,7 @@ export default function StaffDetailBoard({
         return (
             <DashboardFrame>
                 <div className="flex flex-col items-center justify-center rounded-2xl border border-hairline bg-card py-16">
-                    <Loader2 className="size-6 animate-spin text-primary" />
+                    <RestorchSpinner className="size-6 text-primary" />
                     <p className="mt-2 text-[12px] text-slate-gray">
                         {t("loading")}
                     </p>
@@ -475,7 +475,7 @@ export default function StaffDetailBoard({
                         disabled={updatingStaff.isLoading}
                     >
                         {updatingStaff.isLoading ? (
-                            <Loader2 className="size-3.5 animate-spin" />
+                            <RestorchSpinner className="size-3.5 " />
                         ) : null}
                         {t("saveHr")}
                     </Button>
@@ -1061,7 +1061,7 @@ function HrField({
 function RefreshHint({ label }: { label: string }) {
     return (
         <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline px-2.5 py-1 text-[11px] text-slate-gray">
-            <Loader2 className="size-3 animate-spin" />
+            <RestorchSpinner className="size-3 " />
             {label}
         </span>
     );
@@ -1144,7 +1144,7 @@ function CredentialModal({
                     onClick={onSubmit}
                 >
                     {loading ? (
-                        <Loader2 className="size-4 animate-spin" />
+                        <RestorchSpinner className="size-4 " />
                     ) : null}
                     {submitLabel}
                 </Button>

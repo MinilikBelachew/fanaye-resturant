@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     Cloud,
     CloudOff,
@@ -12,7 +13,6 @@ import {
     Database,
     Zap,
     Info,
-    Loader2,
 } from "lucide-react";
 import {
     Card,
@@ -398,7 +398,7 @@ export default function CloudSyncSection() {
                         >
                             {isPulling ? (
                                 <>
-                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <RestorchSpinner className="h-4 w-4 " />
                                     Fetching & Caching Images...
                                 </>
                             ) : (

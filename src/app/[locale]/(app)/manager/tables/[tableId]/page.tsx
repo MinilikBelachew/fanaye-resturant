@@ -5,7 +5,6 @@ import {
     ArrowLeft,
     Copy,
     ExternalLink,
-    Loader2,
     QrCode,
     RefreshCw,
     UserRound,

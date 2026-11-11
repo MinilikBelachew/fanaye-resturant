@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useTranslations } from "next-intl";
 import {
     Area,
@@ -14,7 +15,6 @@ import {
 } from "recharts";
 import { useGetInventoryMovementSeriesQuery } from "@/context/services/inventoryApi";
 import { formatEtb } from "@/lib/money";
-import { Loader2 } from "lucide-react";
 
 export default function InventoryMovementChart({
     from,
@@ -91,7 +91,7 @@ export default function InventoryMovementChart({
             <div className="mt-4 h-[260px] w-full">
                 {isLoading ? (
                     <div className="flex h-full items-center justify-center text-slate-gray">
-                        <Loader2 className="size-5 animate-spin" />
+                        <RestorchSpinner className="size-5 " />
                     </div>
                 ) : isError ? (
                     <div className="flex h-full items-center justify-center text-[13px] text-slate-gray">
