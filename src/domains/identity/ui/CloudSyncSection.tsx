@@ -186,7 +186,7 @@ export default function CloudSyncSection() {
                 <CardHeader className="pb-3">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-soft text-primary">
                                 {isConnected ? (
                                     <Cloud className="h-5 w-5 text-emerald-600" />
                                 ) : (

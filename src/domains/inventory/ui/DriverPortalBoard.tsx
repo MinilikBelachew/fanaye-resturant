@@ -93,7 +93,7 @@ export default function DriverPortalBoard() {
             <div className="relative overflow-hidden rounded-2xl border border-hairline bg-card p-4.5 shadow-xs">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                        <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                        <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary-soft text-primary">
                             <Truck className="size-6" />
                         </div>
                         <div>

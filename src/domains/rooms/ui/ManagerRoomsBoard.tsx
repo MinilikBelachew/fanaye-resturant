@@ -2,14 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
-import {
-    BedDouble,
-    Coffee,
-    Plus,
-    Settings2,
-    User,
-    X,
-} from "lucide-react";
+import { BedDouble, Coffee, Plus, Settings2, User, X } from "lucide-react";
 import {
     useArchiveHotelRoomMutation,
     useCreateHotelRoomMutation,
@@ -139,7 +132,7 @@ function AddRoomSheet({
                 {/* Header */}
                 <div className="flex items-start justify-between border-b border-hairline px-6 py-4">
                     <div className="flex items-center gap-3">
-                        <div className="flex size-9 items-center justify-center rounded-xl bg-brand/10">
+                        <div className="flex size-9 items-center justify-center rounded-xl bg-brand-soft">
                             <BedDouble className="size-4 text-brand" />
                         </div>
                         <div>
@@ -288,7 +281,7 @@ function StatusBadge({ status }: { status: string }) {
     const s = status.toUpperCase();
     const cls =
         s === "OCCUPIED"
-            ? "bg-brand/8 text-brand"
+            ? "bg-brand-soft text-brand"
             : s === "AVAILABLE"
               ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
               : "bg-secondary text-slate-gray";
@@ -378,7 +371,7 @@ export default function ManagerRoomsBoard() {
                             className={cn(
                                 "flex size-8 shrink-0 items-center justify-center rounded-lg",
                                 row.status === "OCCUPIED"
-                                    ? "bg-brand/8 text-brand"
+                                    ? "bg-brand-soft text-brand"
                                     : "bg-secondary text-slate-gray",
                             )}
                         >
@@ -459,7 +452,7 @@ export default function ManagerRoomsBoard() {
                                 e.stopPropagation();
                                 void onArchive(row.id, row.roomNumber);
                             }}
-                            className="h-7 rounded-lg px-2.5 text-[12px] font-medium text-destructive hover:bg-destructive/8"
+                            className="h-7 rounded-lg px-2.5 text-[12px] font-medium text-destructive hover:bg-destructive-soft-hover"
                         >
                             Archive
                         </button>

@@ -321,7 +321,7 @@ export default function StaffDetailBoard({
     if (isError || !member) {
         return (
             <DashboardFrame>
-                <div className="flex flex-col items-center justify-center rounded-2xl border border-destructive/20 bg-destructive/5 py-12 text-center">
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-destructive-border bg-destructive-soft py-12 text-center">
                     <p className="text-[13px] text-destructive">
                         {t("loadError")}
                     </p>
@@ -1143,9 +1143,7 @@ function CredentialModal({
                     disabled={loading}
                     onClick={onSubmit}
                 >
-                    {loading ? (
-                        <RestorchSpinner className="size-4 " />
-                    ) : null}
+                    {loading ? <RestorchSpinner className="size-4 " /> : null}
                     {submitLabel}
                 </Button>
             </div>

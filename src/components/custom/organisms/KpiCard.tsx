@@ -176,7 +176,7 @@ export default function KpiCard({
                 {icon ? (
                     <div
                         className={cn(
-                            "flex items-center justify-center rounded-full bg-primary/10 text-primary",
+                            "flex items-center justify-center rounded-full bg-primary-soft text-primary",
                             compact ? "size-6" : "size-8",
                         )}
                     >
@@ -225,8 +225,8 @@ export default function KpiCard({
                                 className={cn(
                                     "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-medium",
                                     isDown
-                                        ? "bg-destructive/10 text-destructive"
-                                        : "bg-primary/10 text-primary",
+                                        ? "bg-destructive-soft text-destructive"
+                                        : "bg-primary-soft text-primary",
                                 )}
                             >
                                 {isDown ? (

@@ -2659,7 +2659,11 @@
         "installBody": "ለፈጣን የሰራተኛ መዳረሻ ወደ መነሻ ስክሪንዎ ያክሉ — እንደ መተግበሪያ ይሰራል።",
         "install": "ጫን",
         "notNow": "አሁን አይደለም",
-        "dismiss": "ዝጋ"
+        "dismiss": "ዝጋ",
+        "singleTabTitle": "መተግበሪያው ቀድሞውኑ በሌላ ትር ውስጥ ተከፍቷል",
+        "singleTabBody": "ድርብ ትዕዛዞችን፣ የፕሪንተር ግጭቶችን ወይም ያልተመሳሰሉ ስክሪኖችን ለመከላከል በአንድ ጊዜ አንድ የRestorch OS ትር ብቻ ንቁ መሆን ይችላል።",
+        "useThisTab": "ይህን ትር ተጠቀም",
+        "singleTabHint": "ይህን ትር መዝጋት ወይም ወደ እሱ መቀየር ይችላሉ።"
     },
     "websiteStudio": {
         "layoutTemplates": "የአቀማመጥ ቅድመ-ቅርጾች",

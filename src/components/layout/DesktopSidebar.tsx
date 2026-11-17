@@ -3,7 +3,10 @@
 import { LogOut } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useAppDispatch, useAppSelector } from "@/context/hooks";
-import { performSignOut } from "@/domains/identity/application/signOut";
+import {
+    getPostSignOutPath,
+    performSignOut,
+} from "@/domains/identity/application/signOut";
 import SidebarNav from "@/components/layout/SidebarNav";
 import { useSidebarUi } from "@/components/layout/SidebarUi";
 import { navForRole } from "@/domains/identity/application/nav";
@@ -52,8 +55,9 @@ export default function DesktopSidebar({ className }: { className?: string }) {
     });
 
     async function logOut() {
+        const role = staff?.role;
         await performSignOut(dispatch);
-        router.push("/sign-in");
+        router.push(getPostSignOutPath(role));
     }
 
     return (

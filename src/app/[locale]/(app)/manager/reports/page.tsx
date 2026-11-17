@@ -337,7 +337,7 @@ function ManagerReportsContent() {
             ) : null}
 
             {activeError ? (
-                <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-8 text-center text-[13px] text-destructive">
+                <div className="rounded-2xl border border-destructive-border bg-destructive-soft px-4 py-8 text-center text-[13px] text-destructive">
                     {t("loadError")}
                 </div>
             ) : null}
@@ -356,7 +356,7 @@ function ManagerReportsContent() {
                         {isCustomRange && (
                             <>
                                 <span className="opacity-40">·</span>
-                                <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-medium text-brand">
+                                <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-medium text-brand">
                                     {fromDate} → {toDate}
                                 </span>
                             </>
@@ -542,7 +542,7 @@ function WaitersReport({
                                     className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-secondary/30"
                                 >
                                     <div className="flex min-w-0 items-center gap-3">
-                                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-[13px] font-semibold text-brand">
+                                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[13px] font-semibold text-brand">
                                             {row.waiterName
                                                 .charAt(0)
                                                 .toUpperCase()}

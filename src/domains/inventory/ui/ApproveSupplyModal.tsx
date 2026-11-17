@@ -126,7 +126,7 @@ export function ApproveSupplyModal({
                     {/* Header */}
                     <div className="flex items-start justify-between gap-4 pb-4 border-b border-hairline">
                         <div className="flex items-center gap-3">
-                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand/10 text-brand">
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-soft text-brand">
                                 <PackageCheck className="size-5" />
                             </div>
                             <div>
@@ -188,12 +188,12 @@ export function ApproveSupplyModal({
                                     onClick={() => setDeliveryMode("driver")}
                                     className={`flex flex-col items-start gap-1 rounded-2xl border p-3 text-left transition-all ${
                                         deliveryMode === "driver"
-                                            ? "border-brand bg-brand/5 ring-1 ring-brand/30"
+                                            ? "border-brand bg-brand-soft ring-1 ring-brand/30"
                                             : "border-hairline bg-surface-card hover:bg-surface-ivory/50"
                                     }`}
                                 >
                                     <div className="flex w-full items-center justify-between">
-                                        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand/10 text-brand">
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-soft text-brand">
                                             <Truck className="size-4" />
                                         </div>
                                         {deliveryMode === "driver" && (
@@ -215,7 +215,7 @@ export function ApproveSupplyModal({
                                     onClick={() => setDeliveryMode("direct")}
                                     className={`flex flex-col items-start gap-1 rounded-2xl border p-3 text-left transition-all ${
                                         deliveryMode === "direct"
-                                            ? "border-brand bg-brand/5 ring-1 ring-brand/30"
+                                            ? "border-brand bg-brand-soft ring-1 ring-brand/30"
                                             : "border-hairline bg-surface-card hover:bg-surface-ivory/50"
                                     }`}
                                 >
@@ -315,7 +315,7 @@ export function ApproveSupplyModal({
                                         {selectedDriver && (
                                             <div className="flex items-center justify-between rounded-xl bg-surface-card border border-hairline p-2.5 text-xs">
                                                 <div className="flex items-center gap-2">
-                                                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand/10 text-brand">
+                                                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-soft text-brand">
                                                         <Truck className="size-3.5" />
                                                     </div>
                                                     <div>

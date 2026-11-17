@@ -202,7 +202,7 @@ function RunPicker({
                         className={cn(
                             "min-w-[10rem] shrink-0 rounded-xl border px-3 py-2 text-left transition-colors",
                             active
-                                ? "border-brand/40 bg-brand/5"
+                                ? "border-brand-border bg-brand-soft"
                                 : "border-hairline bg-card hover:bg-secondary/40",
                         )}
                     >

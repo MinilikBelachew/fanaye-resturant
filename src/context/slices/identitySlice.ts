@@ -8,12 +8,21 @@ import { shiftsApi } from "@/context/services/shiftsApi";
 import { API_BASE_URL } from "@/context/env";
 
 const STAFF_LIST_STORAGE_KEY = "fanaye.demo.staffList.v1";
+export const IMPERSONATION_STORAGE_KEY = "fanaye.impersonation.v1";
+
+export interface ImpersonationState {
+    token: string;
+    tokenExpires: number;
+    returnTo: string;
+    tenantName?: string | null;
+}
 
 interface IdentityState {
     apiBaseUrl: string;
     accessToken: string | null;
     tokenExpires: number | null;
     session: AuthContext | null;
+    impersonation: ImpersonationState | null;
     staffMembers: Staff[];
     hydrated: boolean;
     isAddEditOpen: boolean;
@@ -27,6 +36,7 @@ const initialState: IdentityState = {
     accessToken: null,
     tokenExpires: null,
     session: null,
+    impersonation: null,
     staffMembers: [],
     hydrated: false,
     isAddEditOpen: false,
@@ -64,6 +74,59 @@ export const identitySlice = createSlice({
             state.session = null;
             state.accessToken = null;
             state.tokenExpires = null;
+            state.impersonation = null;
+            try {
+                sessionStorage.removeItem(IMPERSONATION_STORAGE_KEY);
+            } catch {
+                // Ignore unavailable storage
+            }
+        },
+        startImpersonation: (
+            state,
+            action: PayloadAction<{
+                token: string;
+                tokenExpires: number;
+                context: AuthContext;
+                returnTo: string;
+            }>,
+        ) => {
+            const imp: ImpersonationState = {
+                token: action.payload.token,
+                tokenExpires: action.payload.tokenExpires,
+                returnTo: action.payload.returnTo,
+                tenantName:
+                    action.payload.context.tenantName ??
+                    action.payload.context.branchName ??
+                    null,
+            };
+            state.accessToken = action.payload.token;
+            state.tokenExpires = action.payload.tokenExpires;
+            state.session = action.payload.context;
+            state.impersonation = imp;
+            try {
+                sessionStorage.setItem(
+                    IMPERSONATION_STORAGE_KEY,
+                    JSON.stringify(imp),
+                );
+            } catch {
+                // Ignore unavailable storage
+            }
+        },
+        restoreImpersonation: (
+            state,
+            action: PayloadAction<ImpersonationState>,
+        ) => {
+            state.accessToken = action.payload.token;
+            state.tokenExpires = action.payload.tokenExpires;
+            state.impersonation = action.payload;
+        },
+        stopImpersonation: state => {
+            state.impersonation = null;
+            try {
+                sessionStorage.removeItem(IMPERSONATION_STORAGE_KEY);
+            } catch {
+                // Ignore unavailable storage
+            }
         },
         markHydrated: state => {
             state.hydrated = true;
@@ -215,6 +278,12 @@ export const identitySlice = createSlice({
             state.session = null;
             state.accessToken = null;
             state.tokenExpires = null;
+            state.impersonation = null;
+            try {
+                sessionStorage.removeItem(IMPERSONATION_STORAGE_KEY);
+            } catch {
+                // Ignore
+            }
         });
         builder.addMatcher(
             shiftsApi.endpoints.currentShift.matchFulfilled,
@@ -250,6 +319,9 @@ export const {
     setSession,
     setAccessToken,
     clearSession,
+    startImpersonation,
+    restoreImpersonation,
+    stopImpersonation,
     markHydrated,
     hydrateStaff,
     addStaff,

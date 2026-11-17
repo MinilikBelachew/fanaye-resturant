@@ -67,6 +67,103 @@ export type ActiveShiftSummary = {
     drawerOpeningFloat?: string;
 };
 
+export type ShiftHandoverHistoryItem = {
+    id: string;
+    kind: "CASHIER" | "WAITER";
+    handedOverAt: string;
+    outgoingName: string;
+    incomingName: string;
+    countedAmount?: string;
+    floatForNextCashier?: string;
+    safeDropAmount?: string;
+    varianceAmount?: string;
+    transferredCashAmount?: string;
+    tablesTransferredCount?: number;
+    tablesTransferredNames?: string[];
+    notes?: string;
+};
+
+export type ShiftHandoversResponse = {
+    items: ShiftHandoverHistoryItem[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    summary: {
+        totalCount: number;
+        cashierCount: number;
+        waiterCount: number;
+        varianceCount: number;
+    };
+};
+
+export type ManagerHandoversQueryParams = {
+    from?: string;
+    to?: string;
+    kind?: "ALL" | "CASHIER" | "WAITER";
+    search?: string;
+    page?: number;
+    limit?: number;
+};
+
+export type ShiftHandoverDetail = {
+    id: string;
+    kind: "CASHIER" | "WAITER";
+    handedOverAt: string;
+    outgoingName: string;
+    incomingName: string;
+    notes?: string;
+    money: {
+        openingFloat?: string;
+        cashCollected: string;
+        nonCashCollected: string;
+        cashDropsReceived?: string;
+        cashDropsGiven?: string;
+        expectedCash?: string;
+        countedAmount?: string;
+        floatForNextCashier?: string;
+        safeDropAmount?: string;
+        varianceAmount?: string;
+        transferredCashAmount?: string;
+        openTablesTotalValue?: string;
+    };
+    stationBreakdown: Array<{
+        stationName: string;
+        itemCount: number;
+        totalAmount: string;
+    }>;
+    tables: Array<{
+        tableSessionId: string;
+        tableName: string;
+        locationName?: string;
+        guestCount?: number | null;
+        openedAt: string;
+        ordersCount: number;
+        itemsCount: number;
+        totalAmount: string;
+        items: Array<{
+            id: string;
+            itemName: string;
+            quantity: number;
+            unitPrice: string;
+            totalPrice: string;
+            stationName: string;
+            state: string;
+        }>;
+    }>;
+    paymentMethods: Array<{
+        method: string;
+        count: number;
+        totalAmount: string;
+    }>;
+    cashDrops: Array<{
+        id: string;
+        waiterName: string;
+        amount: string;
+        receivedAt?: string | null;
+    }>;
+};
+
 import type {
     ClockInRequest,
     ClockOutRequest,
@@ -207,6 +304,24 @@ export const shiftsApi = api.injectEndpoints({
             }),
             invalidatesTags: ["Shift"],
         }),
+        managerHandovers: builder.query<
+            ShiftHandoversResponse,
+            ManagerHandoversQueryParams | void
+        >({
+            query: params => ({
+                url: "/shifts/manager/handovers",
+                method: "GET",
+                params: params ?? undefined,
+            }),
+            providesTags: ["Shift"],
+        }),
+        managerHandoverDetail: builder.query<ShiftHandoverDetail, string>({
+            query: id => ({
+                url: `/shifts/manager/handovers/${id}`,
+                method: "GET",
+            }),
+            providesTags: ["Shift"],
+        }),
     }),
     overrideExisting: true,
 });
@@ -232,3 +347,6 @@ export const useManagerForceCloseCashierDrawerMutation =
     shiftsApi.useManagerForceCloseCashierDrawerMutation;
 export const useDeleteShiftDefinitionMutation =
     shiftsApi.useDeleteShiftDefinitionMutation;
+export const useManagerHandoversQuery = shiftsApi.useManagerHandoversQuery;
+export const useManagerHandoverDetailQuery =
+    shiftsApi.useManagerHandoverDetailQuery;

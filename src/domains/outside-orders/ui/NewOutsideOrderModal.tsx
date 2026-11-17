@@ -2,14 +2,7 @@
 
 import { useState } from "react";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
-import {
-    Building2,
-    Coffee,
-    Store,
-    MapPin,
-    X,
-    Sparkles,
-} from "lucide-react";
+import { Building2, Coffee, Store, MapPin, X, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -81,7 +74,7 @@ export default function NewOutsideOrderModal({
                 {/* Header */}
                 <div className="flex items-center justify-between border-b px-6 py-4">
                     <div className="flex items-center gap-3">
-                        <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <div className="size-10 rounded-xl bg-primary-soft flex items-center justify-center">
                             <Building2 className="size-5 text-primary" />
                         </div>
                         <div>
@@ -117,7 +110,7 @@ export default function NewOutsideOrderModal({
                                     className={cn(
                                         "flex flex-col items-center gap-2 rounded-xl border-2 p-4 text-center transition-all",
                                         destinationType === type
-                                            ? "border-primary bg-primary/5 shadow-sm"
+                                            ? "border-primary bg-primary-soft shadow-sm"
                                             : "border-border hover:border-border/80 hover:bg-muted/30",
                                     )}
                                 >

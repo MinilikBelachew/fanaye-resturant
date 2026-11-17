@@ -591,7 +591,7 @@ export default function StaffScheduleMatrix({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setWeekOffset(0)}
-                                className="h-8 px-2 text-xs font-semibold text-brand hover:bg-brand/10"
+                                className="h-8 px-2 text-xs font-semibold text-brand hover:bg-brand-soft-hover"
                             >
                                 {t("jumpToToday")}
                             </Button>
@@ -747,7 +747,7 @@ export default function StaffScheduleMatrix({
                                                 className={cn(
                                                     "px-3 py-3 text-center min-w-[105px]",
                                                     day.isToday &&
-                                                        "bg-brand/10 text-brand font-bold border-x border-brand/20",
+                                                        "bg-brand-soft text-brand font-bold border-x border-brand-border",
                                                 )}
                                             >
                                                 <div className="flex flex-col items-center">
@@ -971,7 +971,7 @@ export default function StaffScheduleMatrix({
                                                             className={cn(
                                                                 "px-2 py-3 text-center align-middle",
                                                                 day.isToday &&
-                                                                    "bg-brand/[0.04] border-x border-brand/20",
+                                                                    "bg-brand/[0.04] border-x border-brand-border",
                                                             )}
                                                         >
                                                             {isWorking ? (

@@ -302,7 +302,7 @@ export default function DispatcherBoard() {
                     ))}
                 </div>
             ) : isError ? (
-                <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-[13px]">
+                <div className="rounded-2xl border border-destructive-border bg-destructive-soft p-4 text-[13px]">
                     Could not load calls.{" "}
                     <button
                         type="button"

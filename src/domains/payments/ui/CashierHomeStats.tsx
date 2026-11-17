@@ -314,7 +314,7 @@ export default function CashierHomeStats() {
             </div>
 
             {isError ? (
-                <p className="rounded-[14px] border border-destructive/30 bg-destructive/10 p-3 text-[12px] text-destructive">
+                <p className="rounded-[14px] border border-destructive-border bg-destructive-soft p-3 text-[12px] text-destructive">
                     {t("telemetryError")}
                 </p>
             ) : null}

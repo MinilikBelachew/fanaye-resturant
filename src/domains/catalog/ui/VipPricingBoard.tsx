@@ -195,7 +195,7 @@ export default function VipPricingBoard() {
 
     if (isError) {
         return (
-            <p className="rounded-[12px] border border-destructive/30 bg-destructive/5 px-4 py-3 text-[13px] text-destructive">
+            <p className="rounded-[12px] border border-destructive-border bg-destructive-soft px-4 py-3 text-[13px] text-destructive">
                 {t("loadError")}
             </p>
         );

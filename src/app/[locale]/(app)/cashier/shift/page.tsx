@@ -332,7 +332,7 @@ export default function CashierShiftPage() {
                                         <p className="text-[17px] font-normal tracking-tight text-foreground">
                                             {staff?.name ?? tCommon("cashier")}
                                         </p>
-                                        <span className="rounded-full bg-brand/10 px-2.5 py-0.5 text-[11px] font-normal text-brand">
+                                        <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-[11px] font-normal text-brand">
                                             {tRoles.has("cashier")
                                                 ? tRoles("cashier")
                                                 : tCommon("cashier")}
@@ -445,7 +445,7 @@ export default function CashierShiftPage() {
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        className="border-brand/40 text-brand hover:bg-brand/10 hover:text-brand"
+                                        className="border-brand-border text-brand hover:bg-brand-soft-hover hover:text-brand"
                                         disabled={busy}
                                         onClick={() => setOpenHandover(true)}
                                     >
@@ -493,7 +493,7 @@ export default function CashierShiftPage() {
                                     <p className="text-[12px] font-medium tracking-[0.06em] text-slate-gray uppercase">
                                         {t("expectedInDrawer")}
                                     </p>
-                                    <span className="flex size-8 items-center justify-center rounded-full bg-brand/10 text-brand">
+                                    <span className="flex size-8 items-center justify-center rounded-full bg-brand-soft text-brand">
                                         <Wallet className="size-4" />
                                     </span>
                                 </div>
@@ -660,7 +660,7 @@ export default function CashierShiftPage() {
                                         className={cn(
                                             "flex flex-1 flex-col items-center rounded-xl border p-2 text-center transition-colors",
                                             cell.isToday
-                                                ? "border-brand/40 bg-brand/5"
+                                                ? "border-brand-border bg-brand-soft"
                                                 : hasShift
                                                   ? "border-hairline bg-card"
                                                   : "border-dashed border-hairline bg-secondary/30 opacity-60",

@@ -35,6 +35,7 @@ import {
     type PinTenantMatch,
 } from "@/context/services/authApi";
 import { useFirstTimeSetupMutation } from "@/context/services/syncApi";
+import { unlockFloorKiosk } from "@/context/services/floorKioskApi";
 import { homePathForRole } from "@/domains/identity/application/homePath";
 import { mapRoleCodeToRole } from "@/domains/identity/application/mapAuthToStaff";
 import { performSignOut } from "@/domains/identity/application/signOut";
@@ -97,6 +98,17 @@ export default function SignInPage() {
     // First-Time Cloud Setup modal states
     const [showFirstTimeModal, setShowFirstTimeModal] =
         useState<boolean>(false);
+
+    // Option 1: Paired Shared Waiter Tablet boots straight to /floor-kiosk with zero PIN
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const isPaired =
+            localStorage.getItem("restorch_floor_kiosk_paired") === "1";
+        const kioskToken = localStorage.getItem("restorch_floor_kiosk_token");
+        if (isPaired && kioskToken) {
+            router.replace("/floor-kiosk");
+        }
+    }, [router]);
     const [setupCloudUrl, setSetupCloudUrl] = useState<string>("");
     const [setupEmail, setSetupEmail] = useState<string>("");
     const [setupPassword, setSetupPassword] = useState<string>("");
@@ -246,13 +258,47 @@ export default function SignInPage() {
                 };
 
                 if (
-                    errObj?.error === "MULTIPLE_TENANTS_FOUND" &&
                     errObj?.matches &&
-                    errObj.matches.length > 0
+                    errObj.matches.length > 0 &&
+                    errObj?.error === "MULTIPLE_TENANTS_FOUND"
                 ) {
                     setMultipleMatches(errObj.matches);
                     setPendingPin(code);
                     return;
+                }
+
+                // If not a personal staff PIN, check if it matches the branch Global Floor PIN
+                try {
+                    const storedTenant =
+                        configuredTenantId ||
+                        (typeof window !== "undefined"
+                            ? localStorage.getItem("terminal_tenant_id") ||
+                              localStorage.getItem("tenant_slug") ||
+                              localStorage.getItem("selected_tenant_id") ||
+                              undefined
+                            : undefined);
+                    const kiosk = await unlockFloorKiosk({
+                        tenantIdentifier: storedTenant,
+                        pin: code,
+                    });
+                    if (typeof window !== "undefined") {
+                        localStorage.setItem(
+                            "restorch_floor_kiosk_token",
+                            kiosk.kioskToken,
+                        );
+                        localStorage.setItem(
+                            "restorch_floor_kiosk_tenant_id",
+                            kiosk.tenantId,
+                        );
+                        localStorage.setItem(
+                            "restorch_floor_kiosk_branch_name",
+                            kiosk.branchName,
+                        );
+                    }
+                    router.push("/floor-kiosk");
+                    return;
+                } catch {
+                    // Fall through to normal invalid PIN error
                 }
 
                 let message = t("pinError");
@@ -703,7 +749,7 @@ export default function SignInPage() {
                                                 handleKeypadPress(String(num))
                                             }
                                             disabled={isPinLoading}
-                                            className="h-11 sm:h-12 rounded-[14px] border border-hairline bg-surface-ivory/60 dark:bg-secondary/40 text-[18px] sm:text-[19px] font-semibold text-foreground hover:bg-primary/10 hover:border-primary/40 hover:text-primary active:scale-95 transition-all flex items-center justify-center select-none shadow-2xs disabled:opacity-50"
+                                            className="h-11 sm:h-12 rounded-[14px] border border-hairline bg-surface-ivory/60 dark:bg-secondary/40 text-[18px] sm:text-[19px] font-semibold text-foreground hover:bg-primary-soft-hover hover:border-primary-border hover:text-primary active:scale-95 transition-all flex items-center justify-center select-none shadow-2xs disabled:opacity-50"
                                         >
                                             {num}
                                         </button>
@@ -722,7 +768,7 @@ export default function SignInPage() {
                                         type="button"
                                         onClick={() => handleKeypadPress("0")}
                                         disabled={isPinLoading}
-                                        className="h-11 sm:h-12 rounded-[14px] border border-hairline bg-surface-ivory/60 dark:bg-secondary/40 text-[18px] sm:text-[19px] font-semibold text-foreground hover:bg-primary/10 hover:border-primary/40 hover:text-primary active:scale-95 transition-all flex items-center justify-center select-none shadow-2xs disabled:opacity-50"
+                                        className="h-11 sm:h-12 rounded-[14px] border border-hairline bg-surface-ivory/60 dark:bg-secondary/40 text-[18px] sm:text-[19px] font-semibold text-foreground hover:bg-primary-soft-hover hover:border-primary-border hover:text-primary active:scale-95 transition-all flex items-center justify-center select-none shadow-2xs disabled:opacity-50"
                                     >
                                         0
                                     </button>

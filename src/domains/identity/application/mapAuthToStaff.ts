@@ -16,6 +16,8 @@ export function mapRoleCodeToRole(
     switch (roleCode) {
         case "PLATFORM_SUPER_ADMIN":
             return "super_admin";
+        case "MARKET_REPORTER":
+            return "market_reporter";
         case "OWNER_ADMIN":
             return "owner";
         case "MANAGER":

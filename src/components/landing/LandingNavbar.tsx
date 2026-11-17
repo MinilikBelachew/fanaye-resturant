@@ -1,60 +1,147 @@
 "use client";
 
 import { useState } from "react";
-import { Link } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { ThemeToggleButton } from "@/components/theme/ThemeSwitcher";
 import { LocaleSwitcher } from "@/components/theme/LocaleSwitcher";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { ArrowUpRight, Menu, X } from "lucide-react";
 import { RestorchLogo } from "@/components/common/RestorchLogo";
+import { useCalendarMode } from "@/hooks/useCalendarMode";
 
 export default function LandingNavbar() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const pathname = usePathname();
+    const locale = useLocale();
+    const isAm = locale === "am";
     const t = useTranslations("nav");
+    const { calendarMode, setCalendarMode } = useCalendarMode();
 
     const navLinks = [
-        { name: t("stations"), href: "#stations", active: true },
-        { name: t("howItWorks"), href: "#how-it-works" },
-        { name: t("roles"), href: "#roles" },
-        { name: t("pricing"), href: "#pricing" },
+        {
+            name: isAm ? "መድረክ" : "Platform",
+            href: "/#connected-platform",
+            isRoute: false,
+        },
+        {
+            name: t("howItWorks"),
+            href: "/#how-it-works",
+            isRoute: false,
+        },
+        {
+            name: isAm ? "የገበያ ዋጋ" : "Market Prices",
+            href: "/market-prices",
+            isRoute: true,
+        },
+        {
+            name: isAm ? "ምስክርነቶች" : "Testimonials",
+            href: "/#testimonials",
+            isRoute: false,
+        },
+        {
+            name: isAm ? "ጥያቄዎች" : "FAQ",
+            href: "/#faq",
+            isRoute: false,
+        },
     ];
 
+    const isMarketPrices = pathname?.startsWith("/market-prices");
+
     return (
-        <header className="fixed top-4 sm:top-6 inset-x-0 mx-auto z-50 w-[94%] max-w-6xl">
-            <div className="relative rounded-full border border-white/50 dark:border-white/10 bg-background/60 dark:bg-background/40 px-5 sm:px-7 py-3 backdrop-blur-2xl shadow-sm transition-all">
+        <header className="fixed top-4 sm:top-5 inset-x-0 mx-auto z-50 w-[94%] max-w-6xl">
+            <div className="relative rounded-full border border-border/70 dark:border-white/10 bg-background/80 dark:bg-[#0B0F17]/80 px-4 sm:px-6 py-2.5 backdrop-blur-xl shadow-[0_8px_30px_rgba(15,23,42,0.06)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)] transition-all">
                 <div className="flex items-center justify-between gap-4">
-                    {/* Brand: LUMEN style clean logo + uppercase bold title */}
                     <Link
                         href="/"
                         className="group flex items-center gap-2 shrink-0 transition-opacity hover:opacity-90"
                     >
-                        <RestorchLogo variant="full" height={28} priority />
+                        <RestorchLogo variant="full" height={26} priority />
                     </Link>
 
-                    {/* Centered Navigation Links in One Clean Line */}
-                    <nav className="hidden md:flex items-center gap-7 lg:gap-9">
-                        {navLinks.map(link => (
-                            <a
-                                key={link.name}
-                                href={link.href}
-                                className="relative py-1 text-xs sm:text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground whitespace-nowrap group"
-                            >
-                                <span>{link.name}</span>
-                                {link.active && (
-                                    <span className="absolute -bottom-1 left-0 right-0 h-[1.5px] rounded-full bg-foreground" />
-                                )}
-                            </a>
-                        ))}
+                    {/* Centered Navigation Links */}
+                    <nav className="hidden md:flex items-center gap-5 lg:gap-7">
+                        {navLinks.map(link => {
+                            const isActive =
+                                link.isRoute &&
+                                link.href === "/market-prices" &&
+                                isMarketPrices;
+
+                            return link.isRoute ? (
+                                <Link
+                                    key={link.href}
+                                    href={link.href}
+                                    className={`relative py-1 text-xs sm:text-[13px] font-medium transition-colors whitespace-nowrap ${
+                                        isActive
+                                            ? "text-orange-600 dark:text-orange-400 font-semibold"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    }`}
+                                >
+                                    <span>{link.name}</span>
+                                    {isActive ? (
+                                        <span className="absolute -bottom-1 left-0 right-0 h-[1.5px] rounded-full bg-orange-500" />
+                                    ) : null}
+                                </Link>
+                            ) : (
+                                <a
+                                    key={link.href}
+                                    href={link.href}
+                                    className="relative py-1 text-xs sm:text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground whitespace-nowrap"
+                                >
+                                    <span>{link.name}</span>
+                                </a>
+                            );
+                        })}
                     </nav>
 
-                    {/* Right Action Hub: Locale Switcher, Theme Toggle, Dark Pill CTA */}
-                    <div className="flex items-center gap-2.5 shrink-0">
+                    {/* Right Actions */}
+                    <div className="flex items-center gap-2 shrink-0">
                         <LocaleSwitcher />
-                        <ThemeToggleButton className="hidden sm:flex border border-white/40 dark:border-white/10 bg-background/50 size-8 rounded-full" />
+
+                        {/* EC / GC Calendar Switcher */}
+                        <div
+                            className="hidden sm:inline-flex items-center rounded-full border border-border/70 dark:border-white/10 bg-background/60 p-0.5 text-[10px] font-mono font-semibold"
+                            role="group"
+                            aria-label="Calendar mode"
+                        >
+                            <button
+                                type="button"
+                                onClick={() => setCalendarMode("ETHIOPIAN")}
+                                className={`rounded-full px-2 py-1 transition-colors ${
+                                    calendarMode === "ETHIOPIAN"
+                                        ? "bg-orange-500 text-white"
+                                        : "text-muted-foreground hover:text-foreground"
+                                }`}
+                                title={
+                                    isAm
+                                        ? "የኢትዮጵያ ዘመን አቆጣጠር"
+                                        : "Ethiopian Calendar"
+                                }
+                            >
+                                EC
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setCalendarMode("GREGORIAN")}
+                                className={`rounded-full px-2 py-1 transition-colors ${
+                                    calendarMode === "GREGORIAN"
+                                        ? "bg-foreground text-background"
+                                        : "text-muted-foreground hover:text-foreground"
+                                }`}
+                                title={
+                                    isAm
+                                        ? "የፈረንጆች ዘመን አቆጣጠር"
+                                        : "Gregorian Calendar"
+                                }
+                            >
+                                GC
+                            </button>
+                        </div>
+
+                        <ThemeToggleButton className="hidden sm:flex border border-border/70 dark:border-white/10 bg-background/60 size-8 rounded-full" />
 
                         <Link
                             href="/sign-in"
-                            className="inline-flex items-center justify-center gap-1.5 rounded-full bg-foreground hover:bg-foreground/90 text-background px-5 sm:px-6 py-2.5 text-xs sm:text-[13px] font-semibold transition-all duration-200 active:scale-[0.98] whitespace-nowrap"
+                            className="inline-flex items-center justify-center gap-1.5 rounded-full bg-foreground hover:bg-foreground/90 text-background px-4 sm:px-5 py-2 text-xs sm:text-[13px] font-semibold transition-all duration-200 active:scale-[0.98] whitespace-nowrap"
                         >
                             <span>{t("getStarted")}</span>
                             <ArrowUpRight className="size-3.5 stroke-[2.5]" />
@@ -64,7 +151,7 @@ export default function LandingNavbar() {
                         <button
                             type="button"
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                            className="flex md:hidden size-8 items-center justify-center rounded-full border border-white/40 bg-background/50 text-foreground"
+                            className="flex md:hidden size-8 items-center justify-center rounded-full border border-border/70 bg-background/60 text-foreground"
                             aria-label="Toggle navigation menu"
                         >
                             {mobileMenuOpen ? (
@@ -78,21 +165,56 @@ export default function LandingNavbar() {
 
                 {/* Mobile Dropdown Menu */}
                 {mobileMenuOpen && (
-                    <div className="md:hidden mt-3 pt-3 border-t border-border/40 space-y-2 animate-in fade-in">
-                        <div className="flex items-center justify-between pb-2">
+                    <div className="md:hidden mt-3 pt-3 border-t border-border/40 space-y-1.5 animate-in fade-in">
+                        <div className="flex items-center justify-between gap-2 pb-2">
                             <LocaleSwitcher />
+                            <div className="inline-flex items-center rounded-full border border-border/70 bg-background/60 p-0.5 text-[10px] font-mono font-semibold">
+                                <button
+                                    type="button"
+                                    onClick={() => setCalendarMode("ETHIOPIAN")}
+                                    className={`rounded-full px-2 py-1 ${
+                                        calendarMode === "ETHIOPIAN"
+                                            ? "bg-orange-500 text-white"
+                                            : "text-muted-foreground"
+                                    }`}
+                                >
+                                    EC
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setCalendarMode("GREGORIAN")}
+                                    className={`rounded-full px-2 py-1 ${
+                                        calendarMode === "GREGORIAN"
+                                            ? "bg-foreground text-background"
+                                            : "text-muted-foreground"
+                                    }`}
+                                >
+                                    GC
+                                </button>
+                            </div>
                             <ThemeToggleButton className="size-8" />
                         </div>
-                        {navLinks.map(link => (
-                            <a
-                                key={link.name}
-                                href={link.href}
-                                onClick={() => setMobileMenuOpen(false)}
-                                className="block rounded-lg px-3 py-2 text-xs font-medium text-foreground hover:bg-secondary/60"
-                            >
-                                {link.name}
-                            </a>
-                        ))}
+                        {navLinks.map(link =>
+                            link.isRoute ? (
+                                <Link
+                                    key={link.href}
+                                    href={link.href}
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="block rounded-xl px-3 py-2 text-xs font-medium text-foreground hover:bg-secondary/60"
+                                >
+                                    {link.name}
+                                </Link>
+                            ) : (
+                                <a
+                                    key={link.href}
+                                    href={link.href}
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="block rounded-xl px-3 py-2 text-xs font-medium text-foreground hover:bg-secondary/60"
+                                >
+                                    {link.name}
+                                </a>
+                            ),
+                        )}
                         <div className="pt-2">
                             <Link
                                 href="/sign-in"

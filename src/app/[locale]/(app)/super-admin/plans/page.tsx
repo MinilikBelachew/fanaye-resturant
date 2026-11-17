@@ -2,14 +2,7 @@
 
 import { useState } from "react";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
-import {
-    CreditCard,
-    Pencil,
-    Plus,
-    RefreshCw,
-    Trash2,
-    X,
-} from "lucide-react";
+import { CreditCard, Pencil, Plus, RefreshCw, Trash2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -173,7 +166,7 @@ export default function SuperAdminPlansPage() {
             </div>
 
             {error ? (
-                <div className="rounded-[14px] border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive">
+                <div className="rounded-[14px] border border-destructive-border bg-destructive-soft p-4 text-xs text-destructive">
                     Could not load plans from the server.
                 </div>
             ) : null}

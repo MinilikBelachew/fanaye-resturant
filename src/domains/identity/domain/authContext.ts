@@ -12,6 +12,8 @@ export type AuthContext = {
     email: string | null;
     phone: string | null;
     tenantId: string | null;
+    tenantName?: string | null;
+    impersonatedBy?: string | null;
     branchId: string | null;
     branchName: string | null;
     serviceMode: string | null;

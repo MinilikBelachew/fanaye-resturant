@@ -146,7 +146,7 @@ export default function WaiterHandoverModal({
                 {/* Header */}
                 <div className="flex items-start justify-between border-b border-hairline pb-3">
                     <div>
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-normal text-brand">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-normal text-brand">
                             <ShieldCheck className="size-3.5" />
                             Shift Handover & Custody Transfer
                         </span>
@@ -169,7 +169,7 @@ export default function WaiterHandoverModal({
                 </div>
 
                 {error ? (
-                    <div className="mt-4 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-normal text-destructive">
+                    <div className="mt-4 rounded-xl border border-destructive-border bg-destructive-soft p-3 text-xs font-normal text-destructive">
                         {error}
                     </div>
                 ) : null}
@@ -184,7 +184,7 @@ export default function WaiterHandoverModal({
                                     <UtensilsCrossed className="size-4 text-brand" />
                                     Active Tables
                                 </span>
-                                <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs font-normal text-brand">
+                                <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-normal text-brand">
                                     {openTablesCount}{" "}
                                     {openTablesCount === 1 ? "Table" : "Tables"}
                                 </span>
@@ -277,7 +277,7 @@ export default function WaiterHandoverModal({
                                                 className={cn(
                                                     "w-full flex items-center justify-between rounded-xl border p-2.5 text-left text-xs transition-colors cursor-pointer",
                                                     isSelected
-                                                        ? "border-brand bg-brand/10 text-foreground"
+                                                        ? "border-brand bg-brand-soft text-foreground"
                                                         : "border-hairline bg-card hover:bg-secondary/40 text-foreground",
                                                 )}
                                             >
@@ -335,7 +335,7 @@ export default function WaiterHandoverModal({
                                 type="button"
                                 onClick={handleContinueToPin}
                                 disabled={!selectedCandidateId}
-                                className="w-full flex items-center justify-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-xs font-normal text-brand-foreground hover:bg-brand/90 transition-colors cursor-pointer disabled:opacity-50"
+                                className="w-full flex items-center justify-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-xs font-normal text-white hover:bg-brand/90 transition-colors cursor-pointer disabled:opacity-50"
                             >
                                 Continue to Waiter PIN Confirmation
                                 <ArrowRight className="size-4" />
@@ -414,7 +414,7 @@ export default function WaiterHandoverModal({
                                 type="button"
                                 onClick={handleConfirmHandover}
                                 disabled={submitting || incomingPin.length < 4}
-                                className="flex-2 flex items-center justify-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-xs font-normal text-brand-foreground hover:bg-brand/90 transition-colors cursor-pointer disabled:opacity-50"
+                                className="flex-2 flex items-center justify-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-xs font-normal text-white hover:bg-brand/90 transition-colors cursor-pointer disabled:opacity-50"
                             >
                                 {submitting
                                     ? "Confirming Handover..."
@@ -490,7 +490,7 @@ export default function WaiterHandoverModal({
                         <button
                             type="button"
                             onClick={handleClose}
-                            className="w-full rounded-xl bg-brand px-4 py-2.5 text-xs font-normal text-brand-foreground hover:bg-brand/90 transition-colors cursor-pointer"
+                            className="w-full rounded-xl bg-brand px-4 py-2.5 text-xs font-normal text-white hover:bg-brand/90 transition-colors cursor-pointer"
                         >
                             Done
                         </button>

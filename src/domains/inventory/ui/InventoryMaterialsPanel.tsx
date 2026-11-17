@@ -666,7 +666,7 @@ function MaterialFormModal({
                                         className={cn(
                                             "group relative flex flex-col items-center gap-1 rounded-lg border p-1 text-center transition-all",
                                             active
-                                                ? "border-primary bg-primary/5"
+                                                ? "border-primary bg-primary-soft"
                                                 : "border-border/60 hover:border-border",
                                         )}
                                     >

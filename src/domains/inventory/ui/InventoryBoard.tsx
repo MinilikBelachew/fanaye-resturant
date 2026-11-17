@@ -2190,7 +2190,7 @@ export default function InventoryBoard({
                         onChange={v => setWasteForm(s => ({ ...s, note: v }))}
                     />
                     {wasteQty > 0 && selectedWaste ? (
-                        <div className="rounded-xl bg-destructive/5 px-3 py-2 text-[12px]">
+                        <div className="rounded-xl bg-destructive-soft px-3 py-2 text-[12px]">
                             <span className="text-slate-gray">
                                 {t("wasteLineTotal")}
                             </span>

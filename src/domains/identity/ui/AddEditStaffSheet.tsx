@@ -1664,9 +1664,9 @@ export default function AddEditStaffSheet() {
                         </div>
 
                         {role === "driver" ? (
-                            <div className="space-y-4 rounded-2xl border border-primary/25 bg-primary/[0.04] p-4.5 dark:border-primary/30 dark:bg-primary/[0.07]">
+                            <div className="space-y-4 rounded-2xl border border-primary-border bg-primary/[0.04] p-4.5 dark:border-primary-border dark:bg-primary/[0.07]">
                                 <div className="flex items-center gap-3">
-                                    <div className="flex size-9 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-primary">
+                                    <div className="flex size-9 items-center justify-center rounded-xl border border-primary-border bg-primary-soft text-primary">
                                         <Truck className="size-5" />
                                     </div>
                                     <div>

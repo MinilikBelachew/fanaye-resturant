@@ -1574,7 +1574,11 @@
         "installBody": "Add to your home screen for faster staff access — works like an app.",
         "install": "Install",
         "notNow": "Not now",
-        "dismiss": "Dismiss"
+        "dismiss": "Dismiss",
+        "singleTabTitle": "App is already open in another tab",
+        "singleTabBody": "To prevent duplicate orders, printer conflicts, or out-of-sync screens, only one Restorch OS tab can be active at a time.",
+        "useThisTab": "Use this tab instead",
+        "singleTabHint": "You can close this tab or switch to it."
     },
     "menuSheets": {
         "addModifierTitle": "Add modifier group",

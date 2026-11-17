@@ -215,19 +215,26 @@ export default function EditTenantSheet({
                     ...(hasOwnerInput
                         ? {
                               ownerName: payload.ownerName?.trim() || undefined,
-                              ownerEmail: payload.ownerEmail?.trim() || undefined,
-                              ownerPhone: payload.ownerPhone?.trim() || undefined,
-                              ownerPassword: payload.ownerPassword?.trim() || undefined,
+                              ownerEmail:
+                                  payload.ownerEmail?.trim() || undefined,
+                              ownerPhone:
+                                  payload.ownerPhone?.trim() || undefined,
+                              ownerPassword:
+                                  payload.ownerPassword?.trim() || undefined,
                           }
                         : {}),
 
                     removeManager: payload.removeManager ? true : undefined,
                     ...(hasManagerInput
                         ? {
-                              managerName: payload.managerName?.trim() || undefined,
-                              managerEmail: payload.managerEmail?.trim() || undefined,
-                              managerPhone: payload.managerPhone?.trim() || undefined,
-                              managerPassword: payload.managerPassword?.trim() || undefined,
+                              managerName:
+                                  payload.managerName?.trim() || undefined,
+                              managerEmail:
+                                  payload.managerEmail?.trim() || undefined,
+                              managerPhone:
+                                  payload.managerPhone?.trim() || undefined,
+                              managerPassword:
+                                  payload.managerPassword?.trim() || undefined,
                           }
                         : {}),
                 },
@@ -568,7 +575,7 @@ export default function EditTenantSheet({
                                 </div>
 
                                 {isRemovingOwner ? (
-                                    <div className="rounded-[10px] border border-destructive/20 bg-destructive/10 px-3 py-2 text-[12px] text-destructive">
+                                    <div className="rounded-[10px] border border-destructive-border bg-destructive-soft px-3 py-2 text-[12px] text-destructive">
                                         {t("edit.removeOwnerDesc")}
                                     </div>
                                 ) : (
@@ -583,7 +590,9 @@ export default function EditTenantSheet({
                                                     </FormLabel>
                                                     <FormControl>
                                                         <Input
-                                                            className={fieldClass}
+                                                            className={
+                                                                fieldClass
+                                                            }
                                                             {...field}
                                                         />
                                                     </FormControl>
@@ -605,7 +614,9 @@ export default function EditTenantSheet({
                                                             onChange={
                                                                 field.onChange
                                                             }
-                                                            onBlur={field.onBlur}
+                                                            onBlur={
+                                                                field.onBlur
+                                                            }
                                                             name={field.name}
                                                             ref={field.ref}
                                                         />
@@ -625,7 +636,9 @@ export default function EditTenantSheet({
                                                     <FormControl>
                                                         <Input
                                                             type="email"
-                                                            className={fieldClass}
+                                                            className={
+                                                                fieldClass
+                                                            }
                                                             {...field}
                                                         />
                                                     </FormControl>
@@ -639,7 +652,9 @@ export default function EditTenantSheet({
                                             render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel>
-                                                        {t("edit.ownerPassword")}
+                                                        {t(
+                                                            "edit.ownerPassword",
+                                                        )}
                                                     </FormLabel>
                                                     <FormControl>
                                                         <Input
@@ -692,7 +707,7 @@ export default function EditTenantSheet({
                                 </div>
 
                                 {isRemovingManager ? (
-                                    <div className="rounded-[10px] border border-destructive/20 bg-destructive/10 px-3 py-2 text-[12px] text-destructive">
+                                    <div className="rounded-[10px] border border-destructive-border bg-destructive-soft px-3 py-2 text-[12px] text-destructive">
                                         {t("edit.removeManagerDesc")}
                                     </div>
                                 ) : (
@@ -707,7 +722,9 @@ export default function EditTenantSheet({
                                                     </FormLabel>
                                                     <FormControl>
                                                         <Input
-                                                            className={fieldClass}
+                                                            className={
+                                                                fieldClass
+                                                            }
                                                             {...field}
                                                         />
                                                     </FormControl>
@@ -729,7 +746,9 @@ export default function EditTenantSheet({
                                                             onChange={
                                                                 field.onChange
                                                             }
-                                                            onBlur={field.onBlur}
+                                                            onBlur={
+                                                                field.onBlur
+                                                            }
                                                             name={field.name}
                                                             ref={field.ref}
                                                         />
@@ -749,7 +768,9 @@ export default function EditTenantSheet({
                                                     <FormControl>
                                                         <Input
                                                             type="email"
-                                                            className={fieldClass}
+                                                            className={
+                                                                fieldClass
+                                                            }
                                                             {...field}
                                                         />
                                                     </FormControl>
@@ -763,7 +784,9 @@ export default function EditTenantSheet({
                                             render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel>
-                                                        {t("edit.managerPassword")}
+                                                        {t(
+                                                            "edit.managerPassword",
+                                                        )}
                                                     </FormLabel>
                                                     <FormControl>
                                                         <Input
@@ -798,7 +821,7 @@ export default function EditTenantSheet({
                             </section>
 
                             {errorMsg ? (
-                                <p className="rounded-[10px] border border-destructive/20 bg-destructive/10 px-3 py-2 text-[12px] text-destructive">
+                                <p className="rounded-[10px] border border-destructive-border bg-destructive-soft px-3 py-2 text-[12px] text-destructive">
                                     {errorMsg}
                                 </p>
                             ) : null}

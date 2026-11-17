@@ -282,7 +282,7 @@ export default function AddEditStationSheet() {
                                                 className={cn(
                                                     "rounded-xl border px-3 py-2.5 text-left transition-colors",
                                                     field.value === option.value
-                                                        ? "border-primary bg-primary/5"
+                                                        ? "border-primary bg-primary-soft"
                                                         : "border-hairline bg-background hover:bg-secondary/40",
                                                 )}
                                             >
@@ -351,7 +351,7 @@ export default function AddEditStationSheet() {
                                 "inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-medium transition-colors disabled:opacity-50",
                                 confirmDelete
                                     ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    : "text-destructive hover:bg-destructive/10",
+                                    : "text-destructive hover:bg-destructive-soft-hover",
                             )}
                         >
                             <Trash2 className="size-4" />

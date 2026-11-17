@@ -273,7 +273,7 @@ export default function ManagerWaitersPage() {
                                             >
                                                 <td className="px-5 py-4">
                                                     <div className="flex items-center gap-3">
-                                                        <span className="flex size-9 items-center justify-center rounded-full bg-brand/10 text-[13px] font-semibold text-brand">
+                                                        <span className="flex size-9 items-center justify-center rounded-full bg-brand-soft text-[13px] font-semibold text-brand">
                                                             {row.waiterName
                                                                 .charAt(0)
                                                                 .toUpperCase()}

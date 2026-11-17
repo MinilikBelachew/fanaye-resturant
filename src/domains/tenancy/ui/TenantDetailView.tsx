@@ -4,7 +4,10 @@ import { useState } from "react";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useTranslations } from "next-intl";
 import {
+    Activity,
     Building2,
+    Crown,
+    Eye,
     Pencil,
     Plus,
     Trash2,
@@ -19,6 +22,7 @@ import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import { RestorchLoader } from "@/components/common/RestorchLoader";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { useImpersonation } from "@/domains/identity/application/useImpersonation";
 import { Link, useRouter } from "@/i18n/navigation";
 import {
     useDeleteSuperAdminTenantMutation,
@@ -38,6 +42,9 @@ const EditTenantSheet = dynamic(() => import("./EditTenantSheet"), {
     ssr: false,
 });
 const AddBranchSheet = dynamic(() => import("./AddBranchSheet"), {
+    ssr: false,
+});
+const TenantActivityBoard = dynamic(() => import("./TenantActivityBoard"), {
     ssr: false,
 });
 
@@ -79,6 +86,9 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
     const [addBranchOpen, setAddBranchOpen] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [deleteConfirmName, setDeleteConfirmName] = useState("");
+    const [activeTab, setActiveTab] = useState<"overview" | "activity">(
+        "overview",
+    );
     const {
         data: response,
         isLoading,
@@ -92,6 +102,7 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
         useUpdateSuperAdminTenantMutation();
     const [deleteTenant, { isLoading: isDeleting }] =
         useDeleteSuperAdminTenantMutation();
+    const { impersonate, isStarting: isImpersonating } = useImpersonation();
     const tenant = response?.data;
 
     if (isLoading) {
@@ -113,7 +124,7 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                 >
                     {t("detail.backToTenants")}
                 </Link>
-                <div className="mt-8 rounded-2xl border border-destructive/20 bg-destructive/10 p-8 text-center">
+                <div className="mt-8 rounded-2xl border border-destructive-border bg-destructive-soft p-8 text-center">
                     <h2 className="text-[16px] font-semibold text-destructive">
                         {t("detail.notFoundTitle")}
                     </h2>
@@ -197,7 +208,39 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                         </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                    <button
+                        type="button"
+                        disabled={isImpersonating}
+                        onClick={() =>
+                            void impersonate({
+                                tenantId: tenant.id,
+                                targetRole: "OWNER_ADMIN",
+                                returnTo: `/super-admin/tenants/${tenant.id}`,
+                            })
+                        }
+                        className="inline-flex h-8 items-center gap-1.5 rounded-full border border-hairline bg-card px-3 text-[12px] font-medium text-foreground hover:bg-secondary disabled:opacity-50"
+                        title="Impersonate this restaurant's Owner account"
+                    >
+                        <Crown className="size-3.5 text-amber-500" />
+                        <span>View as Owner</span>
+                    </button>
+                    <button
+                        type="button"
+                        disabled={isImpersonating}
+                        onClick={() =>
+                            void impersonate({
+                                tenantId: tenant.id,
+                                targetRole: "MANAGER",
+                                returnTo: `/super-admin/tenants/${tenant.id}`,
+                            })
+                        }
+                        className="inline-flex h-8 items-center gap-1.5 rounded-full border border-hairline bg-card px-3 text-[12px] font-medium text-foreground hover:bg-secondary disabled:opacity-50"
+                        title="Impersonate this restaurant's Branch Manager account"
+                    >
+                        <Eye className="size-3.5 text-primary" />
+                        <span>View as Manager</span>
+                    </button>
                     <button
                         type="button"
                         onClick={() => setEditOpen(true)}
@@ -212,7 +255,7 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                             setDeleteConfirmName("");
                             setDeleteOpen(true);
                         }}
-                        className="inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[12px] font-medium text-destructive hover:bg-destructive/10"
+                        className="inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[12px] font-medium text-destructive hover:bg-destructive-soft-hover"
                     >
                         <Trash2 className="size-3.5" />
                         {t("detail.deleteRestaurant")}
@@ -242,596 +285,694 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                 ))}
             </div>
 
-            <section className="mt-6">
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                        <h2 className="text-[14px] font-semibold text-foreground">
-                            {t("detail.provisionedBranches")}
-                        </h2>
-                        {branchesRes ? (
-                            <p className="mt-0.5 text-[12px] text-slate-gray">
-                                {tOwner("branchLimit", {
-                                    active: branchesRes.activeCount,
-                                    max: branchesRes.maxBranches,
-                                })}
-                            </p>
-                        ) : null}
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => setAddBranchOpen(true)}
-                        className="inline-flex h-8 items-center gap-1.5 rounded-full border border-hairline bg-card px-3 text-[12px] font-medium text-foreground hover:bg-secondary"
-                    >
-                        <Plus className="size-3.5" />
-                        {tOwner("addBranch")}
-                    </button>
+            {/* Tab Switcher: Overview vs Activity & Movement */}
+            <div className="mt-5 flex items-center gap-2 border-b border-hairline pb-2">
+                <button
+                    type="button"
+                    onClick={() => setActiveTab("overview")}
+                    className={cn(
+                        "inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-[13px] font-semibold transition-colors",
+                        activeTab === "overview"
+                            ? "bg-foreground text-background"
+                            : "text-slate-gray hover:bg-secondary hover:text-foreground",
+                    )}
+                >
+                    <Building2 className="size-3.5" />
+                    <span>Overview & Settings</span>
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setActiveTab("activity")}
+                    className={cn(
+                        "inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-[13px] font-semibold transition-colors",
+                        activeTab === "activity"
+                            ? "bg-foreground text-background"
+                            : "text-slate-gray hover:bg-secondary hover:text-foreground",
+                    )}
+                >
+                    <Activity className="size-3.5" />
+                    <span>Activity & Movement</span>
+                </button>
+            </div>
+
+            {activeTab === "activity" ? (
+                <div className="mt-5">
+                    <TenantActivityBoard fixedTenantId={tenant.id} />
                 </div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                    {branches.map(
-                        (b: {
-                            id: string;
-                            name: string;
-                            displayCode?: string | null;
-                            status: string;
-                            tableCount?: number;
-                            tablesCount?: number;
-                            staffCount: number;
-                            timezone?: string;
-                            serviceMode?: string;
-                            manager?: { name: string | null } | null;
-                        }) => (
-                            <div
-                                key={b.id}
-                                className="flex items-center justify-between gap-3 rounded-2xl border border-hairline bg-card px-4 py-3"
-                            >
-                                <div className="min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        <span className="rounded-md bg-secondary px-1.5 py-0.5 font-mono text-[10px] font-medium text-slate-gray">
-                                            {b.displayCode ||
-                                                t("detail.branchFallbackCode")}
-                                        </span>
-                                        <p className="truncate text-[13px] font-semibold text-foreground">
-                                            {b.name}
-                                        </p>
-                                        <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-slate-gray">
-                                            {b.serviceMode === "BAKERY"
-                                                ? "Bakery"
-                                                : "Restaurant"}
-                                        </span>
-                                    </div>
-                                    <p className="mt-1 text-[12px] text-slate-gray">
-                                        {t("detail.branchMeta", {
-                                            tablesCount:
-                                                b.tableCount ??
-                                                b.tablesCount ??
-                                                0,
-                                            staffCount: b.staffCount,
-                                            timezone:
-                                                b.timezone ||
-                                                "Africa/Addis_Ababa",
+            ) : (
+                <>
+                    <section className="mt-6">
+                        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                                <h2 className="text-[14px] font-semibold text-foreground">
+                                    {t("detail.provisionedBranches")}
+                                </h2>
+                                {branchesRes ? (
+                                    <p className="mt-0.5 text-[12px] text-slate-gray">
+                                        {tOwner("branchLimit", {
+                                            active: branchesRes.activeCount,
+                                            max: branchesRes.maxBranches,
                                         })}
-                                        {b.manager?.name
-                                            ? ` · ${b.manager.name}`
-                                            : ""}
                                     </p>
-                                </div>
-                                <div className="flex shrink-0 flex-col items-end gap-1">
-                                    <Badge
-                                        variant={
-                                            b.status === "ACTIVE"
-                                                ? "success"
-                                                : "secondary"
-                                        }
+                                ) : null}
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setAddBranchOpen(true)}
+                                className="inline-flex h-8 items-center gap-1.5 rounded-full border border-hairline bg-card px-3 text-[12px] font-medium text-foreground hover:bg-secondary"
+                            >
+                                <Plus className="size-3.5" />
+                                {tOwner("addBranch")}
+                            </button>
+                        </div>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                            {branches.map(
+                                (b: {
+                                    id: string;
+                                    name: string;
+                                    displayCode?: string | null;
+                                    status: string;
+                                    tableCount?: number;
+                                    tablesCount?: number;
+                                    staffCount: number;
+                                    timezone?: string;
+                                    serviceMode?: string;
+                                    manager?: { name: string | null } | null;
+                                }) => (
+                                    <div
+                                        key={b.id}
+                                        className="flex items-center justify-between gap-3 rounded-2xl border border-hairline bg-card px-4 py-3"
                                     >
-                                        {b.status}
-                                    </Badge>
-                                    <button
-                                        type="button"
-                                        className="text-[11px] text-slate-gray underline-offset-2 hover:underline"
-                                        onClick={() =>
-                                            void updateBranch({
-                                                branchId: b.id,
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className="rounded-md bg-secondary px-1.5 py-0.5 font-mono text-[10px] font-medium text-slate-gray">
+                                                    {b.displayCode ||
+                                                        t(
+                                                            "detail.branchFallbackCode",
+                                                        )}
+                                                </span>
+                                                <p className="truncate text-[13px] font-semibold text-foreground">
+                                                    {b.name}
+                                                </p>
+                                                <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-slate-gray">
+                                                    {b.serviceMode === "BAKERY"
+                                                        ? "Bakery"
+                                                        : "Restaurant"}
+                                                </span>
+                                            </div>
+                                            <p className="mt-1 text-[12px] text-slate-gray">
+                                                {t("detail.branchMeta", {
+                                                    tablesCount:
+                                                        b.tableCount ??
+                                                        b.tablesCount ??
+                                                        0,
+                                                    staffCount: b.staffCount,
+                                                    timezone:
+                                                        b.timezone ||
+                                                        "Africa/Addis_Ababa",
+                                                })}
+                                                {b.manager?.name
+                                                    ? ` · ${b.manager.name}`
+                                                    : ""}
+                                            </p>
+                                        </div>
+                                        <div className="flex shrink-0 flex-col items-end gap-1">
+                                            <Badge
+                                                variant={
+                                                    b.status === "ACTIVE"
+                                                        ? "success"
+                                                        : "secondary"
+                                                }
+                                            >
+                                                {b.status}
+                                            </Badge>
+                                            <div className="flex items-center gap-2.5">
+                                                <button
+                                                    type="button"
+                                                    disabled={isImpersonating}
+                                                    className="inline-flex items-center gap-1 text-[11px] font-medium text-primary underline-offset-2 hover:underline disabled:opacity-50"
+                                                    onClick={() =>
+                                                        void impersonate({
+                                                            tenantId: tenant.id,
+                                                            targetRole:
+                                                                "MANAGER",
+                                                            branchId: b.id,
+                                                            returnTo: `/super-admin/tenants/${tenant.id}`,
+                                                        })
+                                                    }
+                                                >
+                                                    <Eye className="size-3" />
+                                                    <span>Open Manager</span>
+                                                </button>
+                                                <span className="text-slate-gray/40">
+                                                    ·
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    className="text-[11px] text-slate-gray underline-offset-2 hover:underline"
+                                                    onClick={() =>
+                                                        void updateBranch({
+                                                            branchId: b.id,
+                                                            body: {
+                                                                tenantId,
+                                                                serviceMode:
+                                                                    b.serviceMode ===
+                                                                    "BAKERY"
+                                                                        ? "RESTAURANT"
+                                                                        : "BAKERY",
+                                                            },
+                                                        })
+                                                            .unwrap()
+                                                            .then(() =>
+                                                                refetchBranches(),
+                                                            )
+                                                            .catch(() =>
+                                                                toast.error(
+                                                                    "Could not update branch type.",
+                                                                ),
+                                                            )
+                                                    }
+                                                >
+                                                    {b.serviceMode === "BAKERY"
+                                                        ? "Make restaurant"
+                                                        : "Make bakery"}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ),
+                            )}
+                        </div>
+                    </section>
+
+                    {/* SaaS Subscription Feature Entitlements Card */}
+                    <section className="mt-6 overflow-hidden rounded-2xl border border-hairline bg-card">
+                        <div className="border-b border-hairline px-4 py-3 flex items-center justify-between">
+                            <div>
+                                <h2 className="text-[14px] font-semibold text-foreground">
+                                    Subscription Features & Add-Ons
+                                </h2>
+                                <p className="text-[12px] text-slate-gray">
+                                    Master switch controls for this restaurant's
+                                    subscribed SaaS modules.
+                                </p>
+                            </div>
+                            {isUpdatingFeatures && (
+                                <div className="flex items-center gap-1.5 text-xs text-primary font-medium">
+                                    <RestorchSpinner className="size-3.5 " />
+                                    <span>Updating...</span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="grid gap-3 p-4 sm:grid-cols-2">
+                            {/* Toggle 1: Basic Inventory */}
+                            <div className="flex items-start justify-between rounded-xl border border-hairline p-3.5 bg-background/50 hover:bg-background transition-colors">
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 shrink-0 mt-0.5">
+                                        <Package className="size-4" />
+                                    </div>
+                                    <div className="space-y-0.5">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[13px] font-semibold text-foreground">
+                                                Basic Inventory Tracking
+                                            </span>
+                                            <Badge
+                                                variant={
+                                                    tenant.featureInventory !==
+                                                    false
+                                                        ? "success"
+                                                        : "secondary"
+                                                }
+                                            >
+                                                {tenant.featureInventory !==
+                                                false
+                                                    ? "Enabled"
+                                                    : "Pure POS"}
+                                            </Badge>
+                                        </div>
+                                        <p className="text-[11px] text-slate-gray">
+                                            Track ingredients, stock counts &
+                                            waste logs inside this restaurant.
+                                            When OFF, runs pure POS.
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={
+                                        tenant.featureInventory !== false
+                                    }
+                                    disabled={isUpdatingFeatures}
+                                    onClick={async () => {
+                                        const nextVal =
+                                            tenant.featureInventory === false
+                                                ? true
+                                                : false;
+                                        try {
+                                            await updateTenantMutation({
+                                                id: tenantId,
                                                 body: {
-                                                    tenantId,
-                                                    serviceMode:
-                                                        b.serviceMode ===
-                                                        "BAKERY"
-                                                            ? "RESTAURANT"
-                                                            : "BAKERY",
+                                                    featureInventory: nextVal,
                                                 },
-                                            })
-                                                .unwrap()
-                                                .then(() => refetchBranches())
-                                                .catch(() =>
-                                                    toast.error(
-                                                        "Could not update branch type.",
-                                                    ),
-                                                )
+                                            }).unwrap();
+                                            toast.success(
+                                                nextVal
+                                                    ? "Basic Inventory Enabled"
+                                                    : "Switched to Pure POS (No Inventory)",
+                                            );
+                                            void refetch();
+                                        } catch (err: any) {
+                                            toast.error(
+                                                err?.data?.message ||
+                                                    "Failed to update feature.",
+                                            );
                                         }
-                                    >
-                                        {b.serviceMode === "BAKERY"
-                                            ? "Make restaurant"
-                                            : "Make bakery"}
-                                    </button>
-                                </div>
-                            </div>
-                        ),
-                    )}
-                </div>
-            </section>
-
-            {/* SaaS Subscription Feature Entitlements Card */}
-            <section className="mt-6 overflow-hidden rounded-2xl border border-hairline bg-card">
-                <div className="border-b border-hairline px-4 py-3 flex items-center justify-between">
-                    <div>
-                        <h2 className="text-[14px] font-semibold text-foreground">
-                            Subscription Features & Add-Ons
-                        </h2>
-                        <p className="text-[12px] text-slate-gray">
-                            Master switch controls for this restaurant's
-                            subscribed SaaS modules.
-                        </p>
-                    </div>
-                    {isUpdatingFeatures && (
-                        <div className="flex items-center gap-1.5 text-xs text-primary font-medium">
-                            <RestorchSpinner className="size-3.5 " />
-                            <span>Updating...</span>
-                        </div>
-                    )}
-                </div>
-
-                <div className="grid gap-3 p-4 sm:grid-cols-2">
-                    {/* Toggle 1: Basic Inventory */}
-                    <div className="flex items-start justify-between rounded-xl border border-hairline p-3.5 bg-background/50 hover:bg-background transition-colors">
-                        <div className="flex items-start gap-3">
-                            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 shrink-0 mt-0.5">
-                                <Package className="size-4" />
-                            </div>
-                            <div className="space-y-0.5">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[13px] font-semibold text-foreground">
-                                        Basic Inventory Tracking
-                                    </span>
-                                    <Badge
-                                        variant={
+                                    }}
+                                    className={cn(
+                                        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden",
+                                        tenant.featureInventory !== false
+                                            ? "bg-emerald-600"
+                                            : "bg-slate-300 dark:bg-slate-700",
+                                    )}
+                                >
+                                    <span
+                                        className={cn(
+                                            "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out",
                                             tenant.featureInventory !== false
-                                                ? "success"
-                                                : "secondary"
-                                        }
-                                    >
-                                        {tenant.featureInventory !== false
-                                            ? "Enabled"
-                                            : "Pure POS"}
-                                    </Badge>
-                                </div>
-                                <p className="text-[11px] text-slate-gray">
-                                    Track ingredients, stock counts & waste logs
-                                    inside this restaurant. When OFF, runs pure
-                                    POS.
-                                </p>
+                                                ? "translate-x-4"
+                                                : "translate-x-0",
+                                        )}
+                                    />
+                                </button>
                             </div>
-                        </div>
-                        <button
-                            type="button"
-                            role="switch"
-                            aria-checked={tenant.featureInventory !== false}
-                            disabled={isUpdatingFeatures}
-                            onClick={async () => {
-                                const nextVal =
-                                    tenant.featureInventory === false
-                                        ? true
-                                        : false;
-                                try {
-                                    await updateTenantMutation({
-                                        id: tenantId,
-                                        body: { featureInventory: nextVal },
-                                    }).unwrap();
-                                    toast.success(
-                                        nextVal
-                                            ? "Basic Inventory Enabled"
-                                            : "Switched to Pure POS (No Inventory)",
-                                    );
-                                    void refetch();
-                                } catch (err: any) {
-                                    toast.error(
-                                        err?.data?.message ||
-                                            "Failed to update feature.",
-                                    );
-                                }
-                            }}
-                            className={cn(
-                                "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden",
-                                tenant.featureInventory !== false
-                                    ? "bg-emerald-600"
-                                    : "bg-slate-300 dark:bg-slate-700",
-                            )}
-                        >
-                            <span
-                                className={cn(
-                                    "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out",
-                                    tenant.featureInventory !== false
-                                        ? "translate-x-4"
-                                        : "translate-x-0",
-                                )}
-                            />
-                        </button>
-                    </div>
 
-                    {/* Toggle 2: Central Warehouse & Transfers */}
-                    <div className="flex items-start justify-between rounded-xl border border-hairline p-3.5 bg-background/50 hover:bg-background transition-colors">
-                        <div className="flex items-start gap-3">
-                            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-600 shrink-0 mt-0.5">
-                                <Warehouse className="size-4" />
-                            </div>
-                            <div className="space-y-0.5">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[13px] font-semibold text-foreground">
-                                        Central Warehouse & Transfers
-                                    </span>
-                                    <Badge
-                                        variant={
+                            {/* Toggle 2: Central Warehouse & Transfers */}
+                            <div className="flex items-start justify-between rounded-xl border border-hairline p-3.5 bg-background/50 hover:bg-background transition-colors">
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 rounded-lg bg-blue-500/10 text-blue-600 shrink-0 mt-0.5">
+                                        <Warehouse className="size-4" />
+                                    </div>
+                                    <div className="space-y-0.5">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[13px] font-semibold text-foreground">
+                                                Central Warehouse & Transfers
+                                            </span>
+                                            <Badge
+                                                variant={
+                                                    tenant.featureCentralWarehouse !==
+                                                    false
+                                                        ? "success"
+                                                        : "secondary"
+                                                }
+                                            >
+                                                {tenant.featureCentralWarehouse !==
+                                                false
+                                                    ? "Enabled"
+                                                    : "Single Store"}
+                                            </Badge>
+                                        </div>
+                                        <p className="text-[11px] text-slate-gray">
+                                            Multi-branch inventory network,
+                                            central prep & inter-branch supply
+                                            requests.
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={
+                                        tenant.featureCentralWarehouse !== false
+                                    }
+                                    disabled={isUpdatingFeatures}
+                                    onClick={async () => {
+                                        const nextVal =
+                                            tenant.featureCentralWarehouse ===
+                                            false
+                                                ? true
+                                                : false;
+                                        try {
+                                            await updateTenantMutation({
+                                                id: tenantId,
+                                                body: {
+                                                    featureCentralWarehouse:
+                                                        nextVal,
+                                                },
+                                            }).unwrap();
+                                            toast.success(
+                                                nextVal
+                                                    ? "Central Warehouse Enabled"
+                                                    : "Switched to Standalone Store",
+                                            );
+                                            void refetch();
+                                        } catch (err: any) {
+                                            toast.error(
+                                                err?.data?.message ||
+                                                    "Failed to update feature.",
+                                            );
+                                        }
+                                    }}
+                                    className={cn(
+                                        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden",
+                                        tenant.featureCentralWarehouse !== false
+                                            ? "bg-emerald-600"
+                                            : "bg-slate-300 dark:bg-slate-700",
+                                    )}
+                                >
+                                    <span
+                                        className={cn(
+                                            "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out",
                                             tenant.featureCentralWarehouse !==
-                                            false
-                                                ? "success"
-                                                : "secondary"
-                                        }
-                                    >
-                                        {tenant.featureCentralWarehouse !==
-                                        false
-                                            ? "Enabled"
-                                            : "Single Store"}
-                                    </Badge>
-                                </div>
-                                <p className="text-[11px] text-slate-gray">
-                                    Multi-branch inventory network, central prep
-                                    & inter-branch supply requests.
-                                </p>
+                                                false
+                                                ? "translate-x-4"
+                                                : "translate-x-0",
+                                        )}
+                                    />
+                                </button>
                             </div>
-                        </div>
-                        <button
-                            type="button"
-                            role="switch"
-                            aria-checked={
-                                tenant.featureCentralWarehouse !== false
-                            }
-                            disabled={isUpdatingFeatures}
-                            onClick={async () => {
-                                const nextVal =
-                                    tenant.featureCentralWarehouse === false
-                                        ? true
-                                        : false;
-                                try {
-                                    await updateTenantMutation({
-                                        id: tenantId,
-                                        body: {
-                                            featureCentralWarehouse: nextVal,
-                                        },
-                                    }).unwrap();
-                                    toast.success(
-                                        nextVal
-                                            ? "Central Warehouse Enabled"
-                                            : "Switched to Standalone Store",
-                                    );
-                                    void refetch();
-                                } catch (err: any) {
-                                    toast.error(
-                                        err?.data?.message ||
-                                            "Failed to update feature.",
-                                    );
-                                }
-                            }}
-                            className={cn(
-                                "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden",
-                                tenant.featureCentralWarehouse !== false
-                                    ? "bg-emerald-600"
-                                    : "bg-slate-300 dark:bg-slate-700",
-                            )}
-                        >
-                            <span
-                                className={cn(
-                                    "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out",
-                                    tenant.featureCentralWarehouse !== false
-                                        ? "translate-x-4"
-                                        : "translate-x-0",
-                                )}
-                            />
-                        </button>
-                    </div>
 
-                    {/* Toggle 3: Telegram Cloud Backups */}
-                    <div className="flex items-start justify-between rounded-xl border border-hairline p-3.5 bg-background/50 hover:bg-background transition-colors">
-                        <div className="flex items-start gap-3">
-                            <div className="p-2 rounded-lg bg-sky-500/10 text-sky-600 shrink-0 mt-0.5">
-                                <Send className="size-4" />
-                            </div>
-                            <div className="space-y-0.5">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[13px] font-semibold text-foreground">
-                                        Automated Telegram Backups
-                                    </span>
-                                    <Badge
-                                        variant={
+                            {/* Toggle 3: Telegram Cloud Backups */}
+                            <div className="flex items-start justify-between rounded-xl border border-hairline p-3.5 bg-background/50 hover:bg-background transition-colors">
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 rounded-lg bg-sky-500/10 text-sky-600 shrink-0 mt-0.5">
+                                        <Send className="size-4" />
+                                    </div>
+                                    <div className="space-y-0.5">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[13px] font-semibold text-foreground">
+                                                Automated Telegram Backups
+                                            </span>
+                                            <Badge
+                                                variant={
+                                                    tenant.featureTelegramBackup !==
+                                                    false
+                                                        ? "success"
+                                                        : "secondary"
+                                                }
+                                            >
+                                                {tenant.featureTelegramBackup !==
+                                                false
+                                                    ? "Enabled"
+                                                    : "Disabled"}
+                                            </Badge>
+                                        </div>
+                                        <p className="text-[11px] text-slate-gray">
+                                            Automatic midnight .sql.gz exports
+                                            delivered to the owner's Telegram
+                                            bot.
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={
+                                        tenant.featureTelegramBackup !== false
+                                    }
+                                    disabled={isUpdatingFeatures}
+                                    onClick={async () => {
+                                        const nextVal =
+                                            tenant.featureTelegramBackup ===
+                                            false
+                                                ? true
+                                                : false;
+                                        try {
+                                            await updateTenantMutation({
+                                                id: tenantId,
+                                                body: {
+                                                    featureTelegramBackup:
+                                                        nextVal,
+                                                },
+                                            }).unwrap();
+                                            toast.success(
+                                                nextVal
+                                                    ? "Telegram Auto-Backups Enabled"
+                                                    : "Telegram Auto-Backups Disabled",
+                                            );
+                                            void refetch();
+                                        } catch (err: any) {
+                                            toast.error(
+                                                err?.data?.message ||
+                                                    "Failed to update feature.",
+                                            );
+                                        }
+                                    }}
+                                    className={cn(
+                                        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden",
+                                        tenant.featureTelegramBackup !== false
+                                            ? "bg-emerald-600"
+                                            : "bg-slate-300 dark:bg-slate-700",
+                                    )}
+                                >
+                                    <span
+                                        className={cn(
+                                            "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out",
                                             tenant.featureTelegramBackup !==
-                                            false
-                                                ? "success"
-                                                : "secondary"
-                                        }
-                                    >
-                                        {tenant.featureTelegramBackup !== false
-                                            ? "Enabled"
-                                            : "Disabled"}
-                                    </Badge>
-                                </div>
-                                <p className="text-[11px] text-slate-gray">
-                                    Automatic midnight .sql.gz exports delivered
-                                    to the owner's Telegram bot.
-                                </p>
+                                                false
+                                                ? "translate-x-4"
+                                                : "translate-x-0",
+                                        )}
+                                    />
+                                </button>
                             </div>
-                        </div>
-                        <button
-                            type="button"
-                            role="switch"
-                            aria-checked={
-                                tenant.featureTelegramBackup !== false
-                            }
-                            disabled={isUpdatingFeatures}
-                            onClick={async () => {
-                                const nextVal =
-                                    tenant.featureTelegramBackup === false
-                                        ? true
-                                        : false;
-                                try {
-                                    await updateTenantMutation({
-                                        id: tenantId,
-                                        body: {
-                                            featureTelegramBackup: nextVal,
-                                        },
-                                    }).unwrap();
-                                    toast.success(
-                                        nextVal
-                                            ? "Telegram Auto-Backups Enabled"
-                                            : "Telegram Auto-Backups Disabled",
-                                    );
-                                    void refetch();
-                                } catch (err: any) {
-                                    toast.error(
-                                        err?.data?.message ||
-                                            "Failed to update feature.",
-                                    );
-                                }
-                            }}
-                            className={cn(
-                                "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden",
-                                tenant.featureTelegramBackup !== false
-                                    ? "bg-emerald-600"
-                                    : "bg-slate-300 dark:bg-slate-700",
-                            )}
-                        >
-                            <span
-                                className={cn(
-                                    "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out",
-                                    tenant.featureTelegramBackup !== false
-                                        ? "translate-x-4"
-                                        : "translate-x-0",
-                                )}
-                            />
-                        </button>
-                    </div>
 
-                    {/* Toggle 5: Outside Orders & Returnable Materials */}
-                    <div className="flex items-start justify-between rounded-xl border border-hairline p-3.5 bg-background/50 hover:bg-background transition-colors sm:col-span-2">
-                        <div className="flex items-start gap-3">
-                            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 shrink-0 mt-0.5">
-                                <Building2 className="size-4" />
-                            </div>
-                            <div className="space-y-0.5">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[13px] font-semibold text-foreground">
-                                        Outside Orders & Returnable Materials
-                                        Tracking
-                                    </span>
-                                    <Badge
-                                        variant={
+                            {/* Toggle 5: Outside Orders & Returnable Materials */}
+                            <div className="flex items-start justify-between rounded-xl border border-hairline p-3.5 bg-background/50 hover:bg-background transition-colors sm:col-span-2">
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 shrink-0 mt-0.5">
+                                        <Building2 className="size-4" />
+                                    </div>
+                                    <div className="space-y-0.5">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[13px] font-semibold text-foreground">
+                                                Outside Orders & Returnable
+                                                Materials Tracking
+                                            </span>
+                                            <Badge
+                                                variant={
+                                                    tenant.featureOutsideOrders !==
+                                                    false
+                                                        ? "success"
+                                                        : "secondary"
+                                                }
+                                            >
+                                                {tenant.featureOutsideOrders !==
+                                                false
+                                                    ? "Enabled"
+                                                    : "In-House Only"}
+                                            </Badge>
+                                        </div>
+                                        <p className="text-[11px] text-slate-gray">
+                                            Enables orders for neighboring
+                                            offices/buildings in Waiter &
+                                            Manager, and unlocks the Kitchen/Bar
+                                            Returnable Materials tableware audit
+                                            log.
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={
+                                        tenant.featureOutsideOrders !== false
+                                    }
+                                    disabled={isUpdatingFeatures}
+                                    onClick={async () => {
+                                        const nextVal =
+                                            tenant.featureOutsideOrders ===
+                                            false
+                                                ? true
+                                                : false;
+                                        try {
+                                            await updateTenantMutation({
+                                                id: tenantId,
+                                                body: {
+                                                    featureOutsideOrders:
+                                                        nextVal,
+                                                },
+                                            }).unwrap();
+                                            toast.success(
+                                                nextVal
+                                                    ? "Outside Orders & Tableware Tracking Enabled"
+                                                    : "Outside Orders Disabled (In-House Only)",
+                                            );
+                                            void refetch();
+                                        } catch (err: any) {
+                                            toast.error(
+                                                err?.data?.message ||
+                                                    "Failed to update feature.",
+                                            );
+                                        }
+                                    }}
+                                    className={cn(
+                                        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden",
+                                        tenant.featureOutsideOrders !== false
+                                            ? "bg-emerald-600"
+                                            : "bg-slate-300 dark:bg-slate-700",
+                                    )}
+                                >
+                                    <span
+                                        className={cn(
+                                            "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out",
                                             tenant.featureOutsideOrders !==
-                                            false
-                                                ? "success"
-                                                : "secondary"
-                                        }
-                                    >
-                                        {tenant.featureOutsideOrders !== false
-                                            ? "Enabled"
-                                            : "In-House Only"}
-                                    </Badge>
-                                </div>
-                                <p className="text-[11px] text-slate-gray">
-                                    Enables orders for neighboring
-                                    offices/buildings in Waiter & Manager, and
-                                    unlocks the Kitchen/Bar Returnable Materials
-                                    tableware audit log.
-                                </p>
+                                                false
+                                                ? "translate-x-4"
+                                                : "translate-x-0",
+                                        )}
+                                    />
+                                </button>
                             </div>
-                        </div>
-                        <button
-                            type="button"
-                            role="switch"
-                            aria-checked={tenant.featureOutsideOrders !== false}
-                            disabled={isUpdatingFeatures}
-                            onClick={async () => {
-                                const nextVal =
-                                    tenant.featureOutsideOrders === false
-                                        ? true
-                                        : false;
-                                try {
-                                    await updateTenantMutation({
-                                        id: tenantId,
-                                        body: { featureOutsideOrders: nextVal },
-                                    }).unwrap();
-                                    toast.success(
-                                        nextVal
-                                            ? "Outside Orders & Tableware Tracking Enabled"
-                                            : "Outside Orders Disabled (In-House Only)",
-                                    );
-                                    void refetch();
-                                } catch (err: any) {
-                                    toast.error(
-                                        err?.data?.message ||
-                                            "Failed to update feature.",
-                                    );
-                                }
-                            }}
-                            className={cn(
-                                "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden",
-                                tenant.featureOutsideOrders !== false
-                                    ? "bg-emerald-600"
-                                    : "bg-slate-300 dark:bg-slate-700",
-                            )}
-                        >
-                            <span
-                                className={cn(
-                                    "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out",
-                                    tenant.featureOutsideOrders !== false
-                                        ? "translate-x-4"
-                                        : "translate-x-0",
-                                )}
-                            />
-                        </button>
-                    </div>
 
-                    {/* Toggle 4: AI Voice Business Advisor */}
-                    <div className="flex items-start justify-between rounded-xl border border-hairline p-3.5 bg-background/50 hover:bg-background transition-colors">
-                        <div className="flex items-start gap-3">
-                            <div className="p-2 rounded-lg bg-purple-500/10 text-purple-600 shrink-0 mt-0.5">
-                                <Bot className="size-4" />
-                            </div>
-                            <div className="space-y-0.5">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[13px] font-semibold text-foreground">
-                                        AI Voice Business Advisor
-                                    </span>
-                                    <Badge
-                                        variant={
+                            {/* Toggle 4: AI Voice Business Advisor */}
+                            <div className="flex items-start justify-between rounded-xl border border-hairline p-3.5 bg-background/50 hover:bg-background transition-colors">
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 rounded-lg bg-purple-500/10 text-purple-600 shrink-0 mt-0.5">
+                                        <Bot className="size-4" />
+                                    </div>
+                                    <div className="space-y-0.5">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[13px] font-semibold text-foreground">
+                                                AI Voice Business Advisor
+                                            </span>
+                                            <Badge
+                                                variant={
+                                                    tenant.featureAiAdvisor !==
+                                                    false
+                                                        ? "success"
+                                                        : "secondary"
+                                                }
+                                            >
+                                                {tenant.featureAiAdvisor !==
+                                                false
+                                                    ? "Enabled"
+                                                    : "Disabled"}
+                                            </Badge>
+                                        </div>
+                                        <p className="text-[11px] text-slate-gray">
+                                            Voice-powered speech assistant with
+                                            instant business intelligence
+                                            analytics.
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={
+                                        tenant.featureAiAdvisor !== false
+                                    }
+                                    disabled={isUpdatingFeatures}
+                                    onClick={async () => {
+                                        const nextVal =
+                                            tenant.featureAiAdvisor === false
+                                                ? true
+                                                : false;
+                                        try {
+                                            await updateTenantMutation({
+                                                id: tenantId,
+                                                body: {
+                                                    featureAiAdvisor: nextVal,
+                                                },
+                                            }).unwrap();
+                                            toast.success(
+                                                nextVal
+                                                    ? "AI Voice Advisor Enabled"
+                                                    : "AI Voice Advisor Disabled",
+                                            );
+                                            void refetch();
+                                        } catch (err: any) {
+                                            toast.error(
+                                                err?.data?.message ||
+                                                    "Failed to update feature.",
+                                            );
+                                        }
+                                    }}
+                                    className={cn(
+                                        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden",
+                                        tenant.featureAiAdvisor !== false
+                                            ? "bg-emerald-600"
+                                            : "bg-slate-300 dark:bg-slate-700",
+                                    )}
+                                >
+                                    <span
+                                        className={cn(
+                                            "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out",
                                             tenant.featureAiAdvisor !== false
-                                                ? "success"
-                                                : "secondary"
-                                        }
-                                    >
-                                        {tenant.featureAiAdvisor !== false
-                                            ? "Enabled"
-                                            : "Disabled"}
-                                    </Badge>
-                                </div>
-                                <p className="text-[11px] text-slate-gray">
-                                    Voice-powered speech assistant with instant
-                                    business intelligence analytics.
-                                </p>
+                                                ? "translate-x-4"
+                                                : "translate-x-0",
+                                        )}
+                                    />
+                                </button>
                             </div>
                         </div>
-                        <button
-                            type="button"
-                            role="switch"
-                            aria-checked={tenant.featureAiAdvisor !== false}
-                            disabled={isUpdatingFeatures}
-                            onClick={async () => {
-                                const nextVal =
-                                    tenant.featureAiAdvisor === false
-                                        ? true
-                                        : false;
-                                try {
-                                    await updateTenantMutation({
-                                        id: tenantId,
-                                        body: { featureAiAdvisor: nextVal },
-                                    }).unwrap();
-                                    toast.success(
-                                        nextVal
-                                            ? "AI Voice Advisor Enabled"
-                                            : "AI Voice Advisor Disabled",
-                                    );
-                                    void refetch();
-                                } catch (err: any) {
-                                    toast.error(
-                                        err?.data?.message ||
-                                            "Failed to update feature.",
-                                    );
-                                }
-                            }}
-                            className={cn(
-                                "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden",
-                                tenant.featureAiAdvisor !== false
-                                    ? "bg-emerald-600"
-                                    : "bg-slate-300 dark:bg-slate-700",
-                            )}
-                        >
-                            <span
-                                className={cn(
-                                    "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out",
-                                    tenant.featureAiAdvisor !== false
-                                        ? "translate-x-4"
-                                        : "translate-x-0",
-                                )}
-                            />
-                        </button>
-                    </div>
-                </div>
-            </section>
+                    </section>
 
-            <section className="mt-6 overflow-hidden rounded-2xl border border-hairline bg-card">
-                <div className="border-b border-hairline px-4 py-3">
-                    <h2 className="text-[14px] font-semibold text-foreground">
-                        {t("detail.specTitle")}
-                    </h2>
-                    <p className="text-[12px] text-slate-gray">
-                        {t("detail.specSubtitle")}
-                    </p>
-                </div>
-                <div className="grid gap-x-6 gap-y-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
-                    <Fact label={t("detail.factCity")} value={tenant.city} />
-                    <Fact
-                        label={t("detail.factAreaDistrict")}
-                        value={tenant.area || t("detail.defaultArea")}
-                    />
-                    <Fact
-                        label={t("detail.factPhysicalAddress")}
-                        value={tenant.address}
-                    />
-                    <Fact
-                        label={t("detail.factPrimaryPhone")}
-                        value={tenant.phone}
-                    />
-                    <Fact
-                        label={t("detail.factContactEmail")}
-                        value={tenant.email}
-                    />
-                    <Fact
-                        label={t("detail.factOwner")}
-                        value={tenant.owner || "—"}
-                    />
-                    <Fact
-                        label={t("detail.factHouseManager")}
-                        value={tenant.manager || "—"}
-                    />
-                    <Fact
-                        label={t("detail.factOperatingHours")}
-                        value={tenant.hours}
-                    />
-                    <Fact
-                        label={t("detail.factConceptCuisine")}
-                        value={tenant.concept}
-                    />
-                    <Fact
-                        label={t("detail.factSubscriptionSla")}
-                        value={tenant.plan}
-                    />
-                    <Fact
-                        label={t("detail.factProvisionedOn")}
-                        value={tenant.provisionedAt}
-                    />
-                    <Fact
-                        label={t("detail.factTenantUuid")}
-                        value={tenant.id}
-                        mono
-                    />
-                </div>
-            </section>
+                    <section className="mt-6 overflow-hidden rounded-2xl border border-hairline bg-card">
+                        <div className="border-b border-hairline px-4 py-3">
+                            <h2 className="text-[14px] font-semibold text-foreground">
+                                {t("detail.specTitle")}
+                            </h2>
+                            <p className="text-[12px] text-slate-gray">
+                                {t("detail.specSubtitle")}
+                            </p>
+                        </div>
+                        <div className="grid gap-x-6 gap-y-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
+                            <Fact
+                                label={t("detail.factCity")}
+                                value={tenant.city}
+                            />
+                            <Fact
+                                label={t("detail.factAreaDistrict")}
+                                value={tenant.area || t("detail.defaultArea")}
+                            />
+                            <Fact
+                                label={t("detail.factPhysicalAddress")}
+                                value={tenant.address}
+                            />
+                            <Fact
+                                label={t("detail.factPrimaryPhone")}
+                                value={tenant.phone}
+                            />
+                            <Fact
+                                label={t("detail.factContactEmail")}
+                                value={tenant.email}
+                            />
+                            <Fact
+                                label={t("detail.factOwner")}
+                                value={tenant.owner || "—"}
+                            />
+                            <Fact
+                                label={t("detail.factHouseManager")}
+                                value={tenant.manager || "—"}
+                            />
+                            <Fact
+                                label={t("detail.factOperatingHours")}
+                                value={tenant.hours}
+                            />
+                            <Fact
+                                label={t("detail.factConceptCuisine")}
+                                value={tenant.concept}
+                            />
+                            <Fact
+                                label={t("detail.factSubscriptionSla")}
+                                value={tenant.plan}
+                            />
+                            <Fact
+                                label={t("detail.factProvisionedOn")}
+                                value={tenant.provisionedAt}
+                            />
+                            <Fact
+                                label={t("detail.factTenantUuid")}
+                                value={tenant.id}
+                                mono
+                            />
+                        </div>
+                    </section>
+                </>
+            )}
 
             {addBranchOpen ? (
                 <AddBranchSheet

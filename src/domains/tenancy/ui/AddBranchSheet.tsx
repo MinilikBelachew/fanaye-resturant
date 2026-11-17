@@ -146,7 +146,7 @@ export default function AddBranchSheet({
                 {/* Header */}
                 <div className="flex items-start justify-between gap-3 border-b border-hairline px-6 py-4">
                     <div className="flex items-start gap-3">
-                        <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand/10">
+                        <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-soft">
                             <Building2 className="size-4 text-brand" />
                         </div>
                         <div>
@@ -427,7 +427,7 @@ export default function AddBranchSheet({
 
                         {/* Submit error */}
                         {errorMsg && (
-                            <div className="flex items-start gap-2.5 rounded-xl border border-destructive/20 bg-destructive/8 px-4 py-3">
+                            <div className="flex items-start gap-2.5 rounded-xl border border-destructive-border bg-destructive-soft px-4 py-3">
                                 <Info className="mt-0.5 size-4 shrink-0 text-destructive" />
                                 <p className="text-[12px] text-destructive">
                                     {errorMsg}

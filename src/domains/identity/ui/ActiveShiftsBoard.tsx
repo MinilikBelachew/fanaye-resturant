@@ -5,6 +5,7 @@ import {
     Activity,
     AlertTriangle,
     ArrowLeft,
+    ArrowRightLeft,
     Banknote,
     Clock,
     DollarSign,
@@ -183,18 +184,30 @@ export default function ActiveShiftsBoard({
                         title="Active Staff Shifts"
                         description="Real-time shift custody, tables, and cashier register drawers across all working staff."
                     />
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => refetch()}
-                        disabled={isFetching}
-                        className="gap-1.5 self-start sm:self-auto text-xs font-semibold"
-                    >
-                        <RefreshCw
-                            className={`size-3.5 ${isFetching ? "animate-spin text-brand" : ""}`}
-                        />
-                        Refresh Live
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                        <Link href={`${basePath}/handovers`}>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1.5 text-xs font-semibold"
+                            >
+                                <ArrowRightLeft className="size-3.5 text-brand" />
+                                Shift Handovers
+                            </Button>
+                        </Link>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => refetch()}
+                            disabled={isFetching}
+                            className="gap-1.5 text-xs font-semibold"
+                        >
+                            <RefreshCw
+                                className={`size-3.5 ${isFetching ? "animate-spin text-brand" : ""}`}
+                            />
+                            Refresh Live
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Expired Shifts Action Banner */}
@@ -441,7 +454,7 @@ export default function ActiveShiftsBoard({
                                                 {/* Staff Info */}
                                                 <td className="px-5 py-3.5">
                                                     <div className="flex items-center gap-3">
-                                                        <span className="flex size-8 items-center justify-center rounded-full bg-brand/10 text-xs font-bold text-brand">
+                                                        <span className="flex size-8 items-center justify-center rounded-full bg-brand-soft text-xs font-bold text-brand">
                                                             {session.staffName
                                                                 .charAt(0)
                                                                 .toUpperCase()}

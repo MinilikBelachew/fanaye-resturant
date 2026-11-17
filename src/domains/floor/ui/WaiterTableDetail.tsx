@@ -65,7 +65,7 @@ function itemStateInfo(
                 <AlertTriangle className="size-3 text-destructive animate-pulse" />
             ),
             badgeClass:
-                "bg-destructive/15 text-destructive border-destructive/40 font-bold",
+                "bg-destructive-soft text-destructive border-destructive-border font-bold",
         };
     }
     if (state === "CONFIRMED") {
@@ -363,13 +363,13 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
             {/* 2. TABLE HERO FLIGHT DECK */}
             <div className="relative overflow-hidden rounded-[24px] border border-hairline bg-card p-5 sm:p-6 shadow-xs">
                 {/* Subtle decorative background gradient */}
-                <div className="pointer-events-none absolute -top-12 -right-12 size-56 rounded-full bg-primary/5 blur-3xl" />
+                <div className="pointer-events-none absolute -top-12 -right-12 size-56 rounded-full bg-primary-soft blur-3xl" />
 
                 <div className="relative flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
                     {/* Left: Table Identifier & Meta Chips */}
                     <div className="flex items-start gap-4">
                         {/* Table Number Avatar / Badge */}
-                        <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary font-bold text-xl shadow-xs">
+                        <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary-soft border border-primary-border text-primary font-bold text-xl shadow-xs">
                             {tableNumber(table)}
                         </div>
 
@@ -488,7 +488,7 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
             </div>
 
             {error ? (
-                <div className="rounded-[14px] border border-destructive/30 bg-destructive/10 p-3.5 text-[13px] font-medium text-destructive">
+                <div className="rounded-[14px] border border-destructive-border bg-destructive-soft p-3.5 text-[13px] font-medium text-destructive">
                     {error}
                 </div>
             ) : null}
@@ -559,7 +559,7 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setMenuOpen(true)}
-                                    className="h-8 gap-1.5 rounded-full border-hairline text-xs font-semibold hover:border-primary/40 hover:text-primary transition-all"
+                                    className="h-8 gap-1.5 rounded-full border-hairline text-xs font-semibold hover:border-primary-border hover:text-primary transition-all"
                                 >
                                     <Plus className="size-3.5 text-primary" />
                                     <span>{tWaiter("addMore")}</span>
@@ -658,7 +658,7 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                                                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                                             <div className="min-w-0 flex-1">
                                                                 <div className="flex items-center gap-2">
-                                                                    <span className="flex size-5 items-center justify-center rounded bg-brand/10 text-[11px] font-semibold text-brand">
+                                                                    <span className="flex size-5 items-center justify-center rounded bg-brand-soft text-[11px] font-semibold text-brand">
                                                                         {
                                                                             item.quantity
                                                                         }
@@ -784,7 +784,7 @@ export default function WaiterTableDetail({ tableId }: { tableId: string }) {
                             </div>
                         ) : (
                             <div className="relative overflow-hidden flex flex-col items-center justify-center gap-3.5 rounded-[22px] border border-hairline border-dashed bg-card/60 p-8 sm:p-12 text-center text-slate-gray">
-                                <div className="flex size-16 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary shadow-xs">
+                                <div className="flex size-16 items-center justify-center rounded-2xl bg-primary-soft border border-primary-border text-primary shadow-xs">
                                     <UtensilsCrossed className="size-7" />
                                 </div>
                                 <div className="space-y-1 max-w-sm">

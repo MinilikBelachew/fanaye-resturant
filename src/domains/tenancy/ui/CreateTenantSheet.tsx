@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
@@ -526,7 +526,7 @@ export default function CreateTenantSheet({
                 </nav>
 
                 {errorMsg ? (
-                    <div className="mx-5 mt-3 flex items-center justify-between gap-3 rounded-[12px] border border-destructive/20 bg-destructive/10 px-3 py-2 text-[12px] text-destructive">
+                    <div className="mx-5 mt-3 flex items-center justify-between gap-3 rounded-[12px] border border-destructive-border bg-destructive-soft px-3 py-2 text-[12px] text-destructive">
                         <span>{errorMsg}</span>
                         <button
                             type="button"

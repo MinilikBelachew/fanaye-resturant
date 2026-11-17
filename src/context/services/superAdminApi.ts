@@ -1,4 +1,119 @@
 import { api } from "./index";
+import type { AuthContext } from "@/domains/identity/domain/authContext";
+
+export interface ImpersonateSessionPayload {
+    membershipId?: string;
+    tenantId?: string;
+    targetRole?: "OWNER_ADMIN" | "MANAGER";
+    branchId?: string;
+}
+
+export interface ImpersonateSessionResponse {
+    token: string;
+    tokenExpires: number;
+    context: AuthContext;
+}
+
+export interface TenantActivitySummary {
+    totalGmv: number;
+    avgDailyGmv: number;
+    cashVolume: number;
+    digitalVolume: number;
+    totalBills: number;
+    paidBills: number;
+    unpaidBills: number;
+    totalOrders: number;
+    totalTableSessions: number;
+    activeTablesCount: number;
+    totalTablesCount: number;
+    openTableSessionsCount: number;
+    activeStaffShiftsCount: number;
+    totalStaffShiftsCount: number;
+    cashDropsVolume: number;
+    expensesVolume: number;
+}
+
+export interface TenantActivityBranchItem {
+    id: string;
+    name: string;
+    displayCode: string;
+    serviceMode: string;
+    tenantId: string;
+    tenantName: string;
+    totalTables: number;
+    activeTables: number;
+    openSessions: number;
+    periodGmv: number;
+}
+
+export interface TenantActivityDailyRow {
+    date: string;
+    branchId: string;
+    branchName: string;
+    tenantId: string;
+    tenantName: string;
+    totalGmv: number;
+    cashSales: number;
+    digitalSales: number;
+    billsCount: number;
+    paidBillsCount: number;
+    ordersCount: number;
+    tableSessionsCount: number;
+    shiftsCount: number;
+    cashDropsTotal: number;
+    expensesTotal: number;
+    dailyCloseStatus: string;
+    cashVariance: number;
+}
+
+export interface TenantActivityTableItem {
+    tableId: string;
+    tableName: string;
+    tableNumber: string;
+    isVip: boolean;
+    branchId: string;
+    branchName: string;
+    tenantId: string;
+    tenantName: string;
+    status: string;
+    isOccupied: boolean;
+    sessionId: string | null;
+    waiterName: string | null;
+    guestCount: number | null;
+    openedAt: string | null;
+    runningBillTotal: number;
+    billStatus: string | null;
+    ordersCount: number;
+}
+
+export interface TenantActivityMovementItem {
+    id: string;
+    timestamp: string;
+    category: "SALES" | "TABLES" | "CASH" | "INVENTORY" | "SHIFTS" | "AUDIT";
+    title: string;
+    subtitle: string;
+    amount: number | null;
+    status: string;
+    actorName: string;
+    branchName: string;
+    tenantName: string;
+}
+
+export interface TenantActivityResponse {
+    summary: TenantActivitySummary;
+    branches: TenantActivityBranchItem[];
+    dailyBreakdown: TenantActivityDailyRow[];
+    activeTables: TenantActivityTableItem[];
+    movements: TenantActivityMovementItem[];
+}
+
+export interface TenantActivityQuery {
+    tenantId?: string;
+    branchId?: string;
+    startDate?: string;
+    endDate?: string;
+    movementType?: string;
+}
 
 export interface SuperAdminKpis {
     liveTenantsCount: number;
@@ -613,6 +728,28 @@ export const superAdminApi = api.injectEndpoints({
                 "Auth",
             ],
         }),
+
+        impersonateSuperAdminSession: builder.mutation<
+            ImpersonateSessionResponse,
+            ImpersonateSessionPayload
+        >({
+            query: body => ({
+                url: "/super-admin/impersonate",
+                method: "POST",
+                body,
+            }),
+        }),
+
+        getSuperAdminTenantActivity: builder.query<
+            TenantActivityResponse,
+            TenantActivityQuery | void
+        >({
+            query: params => ({
+                url: "/super-admin/activity",
+                method: "GET",
+                params: params ?? undefined,
+            }),
+        }),
     }),
 });
 
@@ -638,4 +775,6 @@ export const {
     useGetSuperAdminPermissionsQuery,
     useGetSuperAdminRolePermissionsQuery,
     useSetSuperAdminRolePermissionsMutation,
+    useImpersonateSuperAdminSessionMutation,
+    useGetSuperAdminTenantActivityQuery,
 } = superAdminApi;

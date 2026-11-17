@@ -88,7 +88,7 @@ export default function SuperAdminPage() {
             </div>
 
             {error ? (
-                <div className="rounded-[14px] border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive">
+                <div className="rounded-[14px] border border-destructive-border bg-destructive-soft p-4 text-xs text-destructive">
                     {t("dashboard.errorLoadTelemetry")}
                 </div>
             ) : null}

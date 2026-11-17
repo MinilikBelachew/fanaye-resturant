@@ -142,7 +142,7 @@ export default function CashierHandoverModal({
                 {/* Header */}
                 <div className="flex items-start justify-between border-b border-hairline pb-3">
                     <div>
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-normal text-brand">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-normal text-brand">
                             <ShieldCheck className="size-3.5" />
                             Shift Handover & Drawer Transfer
                         </span>
@@ -163,7 +163,7 @@ export default function CashierHandoverModal({
                 </div>
 
                 {error ? (
-                    <div className="mt-4 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs font-normal text-destructive">
+                    <div className="mt-4 rounded-xl border border-destructive-border bg-destructive-soft p-3 text-xs font-normal text-destructive">
                         {error}
                     </div>
                 ) : null}
@@ -284,7 +284,7 @@ export default function CashierHandoverModal({
                                                 className={cn(
                                                     "w-full flex items-center justify-between rounded-xl border p-2.5 text-left text-xs transition-colors cursor-pointer",
                                                     isSelected
-                                                        ? "border-brand bg-brand/10 text-foreground"
+                                                        ? "border-brand bg-brand-soft text-foreground"
                                                         : "border-hairline bg-card hover:bg-secondary/40 text-foreground",
                                                 )}
                                             >
@@ -355,7 +355,7 @@ export default function CashierHandoverModal({
                                 type="button"
                                 onClick={handleContinueToPin}
                                 disabled={!selectedCandidateId || counted <= 0}
-                                className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-4 py-2 text-xs font-normal text-brand-foreground hover:bg-brand/90 transition-colors disabled:opacity-50 cursor-pointer"
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-4 py-2 text-xs font-normal text-white hover:bg-brand/90 transition-colors disabled:opacity-50 cursor-pointer"
                             >
                                 Next: Verify Incoming Cashier
                                 <ArrowRight className="size-3.5" />
@@ -446,7 +446,7 @@ export default function CashierHandoverModal({
                                 type="button"
                                 onClick={handleConfirmHandover}
                                 disabled={submitting || incomingPin.length < 4}
-                                className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-5 py-2 text-xs font-normal text-brand-foreground hover:bg-brand/90 transition-colors disabled:opacity-50 cursor-pointer"
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-5 py-2 text-xs font-normal text-white hover:bg-brand/90 transition-colors disabled:opacity-50 cursor-pointer"
                             >
                                 {submitting
                                     ? "Transferring Drawer..."
@@ -517,7 +517,7 @@ export default function CashierHandoverModal({
                             <button
                                 type="button"
                                 onClick={handleClose}
-                                className="rounded-xl bg-brand px-6 py-2.5 text-xs font-normal text-brand-foreground hover:bg-brand/90 transition-colors cursor-pointer"
+                                className="rounded-xl bg-brand px-6 py-2.5 text-xs font-normal text-white hover:bg-brand/90 transition-colors cursor-pointer"
                             >
                                 Finish & Exit
                             </button>

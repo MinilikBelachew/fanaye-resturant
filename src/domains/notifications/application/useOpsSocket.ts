@@ -96,6 +96,18 @@ function invalidateForType(
     if (type.startsWith("inventory.")) {
         dispatch(api.util.invalidateTags(["Inventory", "Notifications"]));
     }
+    if (type.startsWith("marketing.")) {
+        dispatch(api.util.invalidateTags(["Marketing", "Notifications"]));
+    }
+    if (type.startsWith("talent.")) {
+        dispatch(api.util.invalidateTags(["Talent", "Notifications"]));
+    }
+    if (type.startsWith("market.prices")) {
+        dispatch(api.util.invalidateTags(["MarketPrices"]));
+    }
+    if (type.startsWith("testimonials.")) {
+        dispatch(api.util.invalidateTags(["Marketing"]));
+    }
 }
 
 export function useOpsSocket() {

@@ -228,7 +228,7 @@ function CheckInSheet({
                 {/* Header */}
                 <div className="flex items-start justify-between border-b border-hairline px-6 py-4">
                     <div className="flex items-center gap-3">
-                        <div className="flex size-9 items-center justify-center rounded-xl bg-brand/10">
+                        <div className="flex size-9 items-center justify-center rounded-xl bg-brand-soft">
                             <LogIn className="size-4 text-brand" />
                         </div>
                         <div>
@@ -532,7 +532,7 @@ function StayRow({
         <div className="flex flex-col gap-3 rounded-2xl border border-hairline bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
             {/* Left */}
             <div className="flex items-center gap-3">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand/8 text-brand">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">
                     <BedDouble className="size-4" />
                 </div>
                 <div>

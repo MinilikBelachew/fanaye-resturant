@@ -36,6 +36,7 @@ import {
     useSuspendSuperAdminStaffMutation,
     type PlatformStaffMember,
 } from "@/context/services/superAdminApi";
+import { useImpersonation } from "@/domains/identity/application/useImpersonation";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
@@ -136,6 +137,7 @@ export default function StaffDirectoryPage() {
         useResetSuperAdminStaffPasswordMutation();
     const [suspendStaff, { isLoading: suspending }] =
         useSuspendSuperAdminStaffMutation();
+    const { impersonate, isStarting: isImpersonating } = useImpersonation();
 
     // Modals state
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -405,6 +407,27 @@ export default function StaffDirectoryPage() {
                         row.membershipStatus === "INACTIVE";
                     return (
                         <div className="flex items-center justify-end gap-1.5">
+                            {/* Impersonate Staff Member Button */}
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={isSuspended || isImpersonating}
+                                onClick={() =>
+                                    void impersonate({
+                                        membershipId: row.membershipId,
+                                        returnTo: "/super-admin/staff",
+                                    })
+                                }
+                                className="h-8 gap-1.5 px-2.5 rounded-lg text-[12px] border-hairline hover:border-amber-500/40 hover:text-amber-600"
+                                title="Impersonate this staff member"
+                            >
+                                <Eye className="size-3.5" />
+                                <span className="hidden sm:inline">
+                                    Impersonate
+                                </span>
+                            </Button>
+
                             {/* Change PIN Button */}
                             <Button
                                 type="button"
@@ -414,7 +437,7 @@ export default function StaffDirectoryPage() {
                                     setPinTarget(row);
                                     setPinValue("");
                                 }}
-                                className="h-8 gap-1.5 px-2.5 rounded-lg text-[12px] border-hairline hover:border-primary/40 hover:text-primary"
+                                className="h-8 gap-1.5 px-2.5 rounded-lg text-[12px] border-hairline hover:border-primary-border hover:text-primary"
                                 title={t("staff.titleChangePin")}
                             >
                                 <KeyRound className="size-3.5" />
@@ -541,7 +564,7 @@ export default function StaffDirectoryPage() {
                 empty={
                     isLoading ? (
                         <div className="flex items-center justify-center gap-2 py-10 text-[13px] text-slate-gray">
-                            <span className="size-4 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                            <span className="size-4 rounded-full border-2 border-primary-border border-t-primary animate-spin" />
                             <span>{t("staff.loadingStaff")}</span>
                         </div>
                     ) : (

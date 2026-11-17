@@ -117,7 +117,7 @@ export default function StationTicketActions({
                 secondaryBtnClass,
                 overlay
                     ? "text-red-200 border-red-300/30 hover:bg-red-500/20"
-                    : "text-destructive hover:bg-destructive/10",
+                    : "text-destructive hover:bg-destructive-soft-hover",
             )}
             onClick={() => setCannotPrepareModal(true)}
         >

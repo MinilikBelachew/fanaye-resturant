@@ -227,7 +227,7 @@ export default function ManagerWaiterDetailPage({
     if (isError || !detail) {
         return (
             <DashboardFrame>
-                <div className="flex flex-col items-center justify-center rounded-2xl border border-destructive/20 bg-destructive/5 py-12 text-center">
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-destructive-border bg-destructive-soft py-12 text-center">
                     <p className="text-[13px] text-destructive">
                         {t("loadError")}
                     </p>
@@ -273,7 +273,7 @@ export default function ManagerWaiterDetailPage({
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex items-start gap-3">
-                        <span className="flex size-14 items-center justify-center rounded-2xl bg-brand/10 text-[20px] font-semibold text-brand">
+                        <span className="flex size-14 items-center justify-center rounded-2xl bg-brand-soft text-[20px] font-semibold text-brand">
                             {detail.waiterName.charAt(0).toUpperCase()}
                         </span>
                         <PageHeader
@@ -519,7 +519,7 @@ export default function ManagerWaiterDetailPage({
             </div>
 
             {ordersError ? (
-                <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-6 text-center">
+                <div className="rounded-2xl border border-destructive-border bg-destructive-soft px-4 py-6 text-center">
                     <p className="text-[13px] text-destructive">
                         {t("ordersError")}
                     </p>

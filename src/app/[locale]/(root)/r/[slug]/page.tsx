@@ -1,17 +1,14 @@
 "use client";
 
 import { use } from "react";
-import { Render, type Data } from "@puckeditor/core";
-import "@puckeditor/core/puck.css";
 import { RestorchLoader } from "@/components/common/RestorchLoader";
 import { useGetPublicSiteQuery } from "@/context/services/siteApi";
-import {
-    SiteRenderContext,
-    bindSiteRender,
-    sitePuckConfig,
-} from "@/domains/site/puck/sitePuckConfig";
-import { SiteFontLoader } from "@/domains/site/puck/siteTypography";
 import SiteFeedbackWidget from "@/domains/feedback/ui/SiteFeedbackWidget";
+import SiteTemplateRenderer from "@/domains/site/templates/SiteTemplateRenderer";
+import {
+    normalizeTemplateId,
+    resolveTemplateConfig,
+} from "@/domains/site/templates/restaurantTemplates";
 
 export default function PublicRestaurantSitePage({
     params,
@@ -41,68 +38,31 @@ export default function PublicRestaurantSitePage({
     }
 
     const site = data.data;
+    const siteData = (site.data ?? {}) as Record<string, unknown>;
+    const templateId = normalizeTemplateId(siteData.templateId);
+    const config = resolveTemplateConfig(templateId, siteData, site.theme);
 
-    const bgStyle = (() => {
-        if (
-            site.theme.backgroundType === "gradient" &&
-            site.theme.backgroundGradient
-        ) {
-            return site.theme.backgroundGradient;
-        }
-        if (
-            site.theme.backgroundType === "image" &&
-            site.theme.backgroundImageUrl
-        ) {
-            const opacity = site.theme.backgroundOverlayOpacity ?? 0.85;
-            const isDark =
-                site.theme.textColor === "#f8fafc" ||
-                site.theme.textColor === "#ffffff";
-            const overlay = isDark
-                ? `rgba(15, 23, 42, ${opacity})`
-                : `rgba(255, 255, 255, ${opacity})`;
-            return `linear-gradient(${overlay}, ${overlay}), url("${site.theme.backgroundImageUrl}") center/cover fixed no-repeat`;
-        }
-        return site.theme.backgroundColor || "#fffaf5";
-    })();
-
-    const renderContext = {
-        theme: site.theme,
-        tenantName: site.tenantName,
+    const mergedProfile = {
+        ...site.profile,
         phone: site.phone ?? site.profile?.phone ?? null,
         email: site.email ?? site.profile?.email ?? null,
         city: site.city ?? site.profile?.city ?? null,
         address: site.address ?? site.profile?.address ?? null,
         hours: site.hours ?? site.profile?.hours ?? null,
-        tagline: site.profile?.tagline ?? null,
-        story: site.profile?.story ?? null,
-        instagram: site.profile?.instagram ?? null,
-        facebook: site.profile?.facebook ?? null,
-        tiktok: site.profile?.tiktok ?? null,
-        telegram: site.profile?.telegram ?? null,
-        menuItems: site.menuItems,
     };
-    bindSiteRender(renderContext);
 
     return (
-        <SiteRenderContext.Provider value={renderContext}>
-            <SiteFontLoader />
-            <main
-                style={
-                    {
-                        "--site-font-display":
-                            site.theme.fontDisplay || "Georgia, serif",
-                        "--site-font-body":
-                            site.theme.fontBody || "system-ui, sans-serif",
-                        color: site.theme.textColor,
-                        background: bgStyle,
-                        fontFamily: "var(--site-font-body)",
-                        minHeight: "100svh",
-                    } as React.CSSProperties
-                }
-            >
-                <Render config={sitePuckConfig} data={site.data as Data} />
-            </main>
+        <>
+            <SiteTemplateRenderer
+                templateId={templateId}
+                slug={slug}
+                tenantName={site.tenantName}
+                config={config}
+                profile={mergedProfile}
+                menuItems={site.menuItems}
+                logoUrl={site.theme?.logoUrl}
+            />
             <SiteFeedbackWidget slug={slug} />
-        </SiteRenderContext.Provider>
+        </>
     );
 }

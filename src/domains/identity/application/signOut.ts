@@ -21,3 +21,17 @@ export async function performSignOut(dispatch: AppDispatch) {
     dispatch(clearSession());
     dispatch(api.util.resetApiState());
 }
+
+export function getPostSignOutPath(role?: string): string {
+    if (typeof window !== "undefined") {
+        const hasKioskToken = Boolean(
+            window.localStorage.getItem("restorch_floor_kiosk_token"),
+        );
+        const isPaired =
+            window.localStorage.getItem("restorch_floor_kiosk_paired") === "1";
+        if (hasKioskToken && (isPaired || role === "waiter")) {
+            return "/floor-kiosk";
+        }
+    }
+    return "/sign-in";
+}

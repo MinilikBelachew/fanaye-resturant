@@ -12,7 +12,10 @@ import {
     useUpdateAdminModifierGroupMutation,
 } from "@/context/services/menuApi";
 import { catalogModifiersToApi } from "@/domains/catalog/application/mapAdminMenu";
-import type { AdminModifierGroup, AdminModifierOption } from "@/domains/catalog/domain/menuApi";
+import type {
+    AdminModifierGroup,
+    AdminModifierOption,
+} from "@/domains/catalog/domain/menuApi";
 import type { ModifierOption } from "@/domains/catalog/domain/modifiers";
 import { Button } from "@/components/ui/button";
 import {
@@ -298,7 +301,11 @@ export default function CreateModifierGroupSheet({
                                             </div>
                                             <p className="mt-1 truncate text-[11px] text-slate-gray">
                                                 {group.options
-                                                    ?.map((o: AdminModifierOption) => o.name)
+                                                    ?.map(
+                                                        (
+                                                            o: AdminModifierOption,
+                                                        ) => o.name,
+                                                    )
                                                     .join(" · ") ||
                                                     "No options configured"}
                                             </p>
@@ -388,7 +395,7 @@ export default function CreateModifierGroupSheet({
                                                             "rounded-[12px] border px-2 py-2 text-left transition-all",
                                                             field.value ===
                                                                 entry.value
-                                                                ? "border-brand bg-brand/10 ring-1 ring-brand"
+                                                                ? "border-brand bg-brand-soft ring-1 ring-brand"
                                                                 : "border-hairline bg-surface-ivory hover:border-slate-300",
                                                         )}
                                                     >

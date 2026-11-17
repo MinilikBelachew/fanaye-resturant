@@ -159,9 +159,9 @@ export default function OwnerPage() {
     ];
 
     const toneClass = {
-        ok: "border-primary/20 text-primary bg-primary/5",
+        ok: "border-primary-border text-primary bg-primary-soft",
         warn: "border-border text-foreground bg-muted/40",
-        bad: "border-destructive/25 text-destructive bg-destructive/5",
+        bad: "border-destructive-border text-destructive bg-destructive-soft",
     };
 
     return (
@@ -306,7 +306,7 @@ export default function OwnerPage() {
             </div>
 
             {error ? (
-                <div className="rounded-[16px] border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive">
+                <div className="rounded-[16px] border border-destructive-border bg-destructive-soft p-4 text-xs text-destructive">
                     {tManager("ownerLoadError")}
                 </div>
             ) : null}
@@ -410,7 +410,7 @@ export default function OwnerPage() {
                             <li key={item.title}>
                                 <Link
                                     href={item.href}
-                                    className="block rounded-xl border border-border p-3 transition-colors hover:border-primary/40"
+                                    className="block rounded-xl border border-border p-3 transition-colors hover:border-primary-border"
                                 >
                                     <div className="flex items-start justify-between gap-2">
                                         <p className="text-[13px] font-medium">

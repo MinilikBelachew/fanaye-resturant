@@ -2,12 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import {
-    Plus,
-    RefreshCw,
-    Settings2,
-    TriangleAlert,
-} from "lucide-react";
+import { Plus, RefreshCw, Settings2, TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
     CartesianGrid,
@@ -272,7 +267,7 @@ export default function FinanceSummaryBoard({
             <div className="relative overflow-hidden rounded-3xl border border-hairline bg-card">
                 <div
                     aria-hidden
-                    className="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-brand/10 blur-3xl"
+                    className="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-brand-soft blur-3xl"
                 />
                 <div className="relative flex flex-col gap-4 p-5 sm:flex-row sm:items-end sm:justify-between sm:p-6">
                     <PageHeader
@@ -357,7 +352,7 @@ export default function FinanceSummaryBoard({
             ) : null}
 
             {isError ? (
-                <div className="flex flex-col items-center gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-8 text-center text-[13px] text-destructive">
+                <div className="flex flex-col items-center gap-3 rounded-2xl border border-destructive-border bg-destructive-soft px-4 py-8 text-center text-[13px] text-destructive">
                     {t("loadError")}
                     <Button
                         variant="outline"

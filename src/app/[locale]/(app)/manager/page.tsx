@@ -260,7 +260,7 @@ export default function ManagerPage() {
     const toneClass = {
         ok: "border-border text-muted-foreground bg-muted/40",
         warn: "border-amber-500/25 text-amber-800 bg-amber-500/10",
-        bad: "border-destructive/25 text-destructive bg-destructive/5",
+        bad: "border-destructive-border text-destructive bg-destructive-soft",
     };
 
     return (
@@ -356,7 +356,7 @@ export default function ManagerPage() {
             </div>
 
             {error && (
-                <div className="rounded-[16px] border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive">
+                <div className="rounded-[16px] border border-destructive-border bg-destructive-soft p-4 text-xs text-destructive">
                     {tManager("loadError")}
                 </div>
             )}
@@ -508,7 +508,7 @@ export default function ManagerPage() {
                                     .filter(item => item.tone !== "ok")
                                     .map(item => (
                                         <li key={item.title}>
-                                            <div className="rounded-xl border border-border p-3 transition-colors hover:border-primary/40">
+                                            <div className="rounded-xl border border-border p-3 transition-colors hover:border-primary-border">
                                                 <div className="flex items-start justify-between gap-2">
                                                     <div className="flex items-center gap-1.5">
                                                         <p className="text-[13px] font-medium text-foreground">
@@ -696,10 +696,10 @@ export default function ManagerPage() {
                                                                                 null,
                                                                             )
                                                                         }
-                                                                        className="group/dish flex w-full items-center justify-between gap-2 rounded-lg border border-destructive/25 bg-destructive/5 px-2.5 py-1.5 text-left text-[11px] transition-all hover:bg-destructive/10 hover:border-destructive/40 cursor-pointer"
+                                                                        className="group/dish flex w-full items-center justify-between gap-2 rounded-lg border border-destructive-border bg-destructive-soft px-2.5 py-1.5 text-left text-[11px] transition-all hover:bg-destructive-soft-hover hover:border-destructive-border cursor-pointer"
                                                                     >
                                                                         <div className="flex min-w-0 items-center gap-1.5">
-                                                                            <span className="shrink-0 rounded bg-destructive/15 px-1.5 py-0.5 font-bold text-destructive text-[10px]">
+                                                                            <span className="shrink-0 rounded bg-destructive-soft px-1.5 py-0.5 font-bold text-destructive text-[10px]">
                                                                                 {
                                                                                     dish.tableDisplayName
                                                                                 }
@@ -722,7 +722,7 @@ export default function ManagerPage() {
                                                                             </span>
                                                                         </div>
                                                                         <div className="flex shrink-0 items-center gap-1">
-                                                                            <span className="rounded-full bg-destructive/15 px-1.5 py-0.5 font-semibold text-destructive text-[10px]">
+                                                                            <span className="rounded-full bg-destructive-soft px-1.5 py-0.5 font-semibold text-destructive text-[10px]">
                                                                                 +
                                                                                 {
                                                                                     dish.overdueMinutes
@@ -1048,10 +1048,10 @@ export default function ManagerPage() {
                                                                                 null,
                                                                             )
                                                                         }
-                                                                        className="group/req flex w-full items-center justify-between gap-2 rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1.5 text-left text-[11px] transition-all hover:bg-primary/10 hover:border-primary/35 cursor-pointer"
+                                                                        className="group/req flex w-full items-center justify-between gap-2 rounded-lg border border-primary-border bg-primary-soft px-2.5 py-1.5 text-left text-[11px] transition-all hover:bg-primary-soft-hover hover:border-primary-border cursor-pointer"
                                                                     >
                                                                         <div className="flex min-w-0 items-center gap-1.5">
-                                                                            <span className="shrink-0 rounded bg-primary/15 px-1.5 py-0.5 font-bold text-primary text-[10px] uppercase">
+                                                                            <span className="shrink-0 rounded bg-primary-soft px-1.5 py-0.5 font-bold text-primary text-[10px] uppercase">
                                                                                 {req.kind ===
                                                                                 "BILL_REQUEST"
                                                                                     ? tManager(
@@ -1416,7 +1416,7 @@ export default function ManagerPage() {
                                                                                 null,
                                                                             )
                                                                         }
-                                                                        className="group/staff flex w-full items-center justify-between gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-2.5 py-1.5 text-left text-[11px] transition-all hover:bg-destructive/10 hover:border-destructive/35 cursor-pointer"
+                                                                        className="group/staff flex w-full items-center justify-between gap-2 rounded-lg border border-destructive-border bg-destructive-soft px-2.5 py-1.5 text-left text-[11px] transition-all hover:bg-destructive-soft-hover hover:border-destructive-border cursor-pointer"
                                                                     >
                                                                         <div className="flex min-w-0 items-center gap-1.5">
                                                                             <span className="font-semibold text-foreground truncate">
@@ -1431,7 +1431,7 @@ export default function ManagerPage() {
                                                                             </span>
                                                                         </div>
                                                                         <div className="flex shrink-0 items-center gap-1">
-                                                                            <span className="rounded-full bg-destructive/15 px-1.5 py-0.5 font-semibold text-destructive text-[10px]">
+                                                                            <span className="rounded-full bg-destructive-soft px-1.5 py-0.5 font-semibold text-destructive text-[10px]">
                                                                                 +
                                                                                 {
                                                                                     staff.minutesLate
@@ -1692,7 +1692,7 @@ export default function ManagerPage() {
                                                                                 null,
                                                                             )
                                                                         }
-                                                                        className="group/b flex w-full items-center justify-between gap-2 rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1.5 text-left text-[11px] transition-all hover:bg-primary/10 hover:border-primary/35 cursor-pointer"
+                                                                        className="group/b flex w-full items-center justify-between gap-2 rounded-lg border border-primary-border bg-primary-soft px-2.5 py-1.5 text-left text-[11px] transition-all hover:bg-primary-soft-hover hover:border-primary-border cursor-pointer"
                                                                     >
                                                                         <div className="flex min-w-0 items-center gap-1.5">
                                                                             <span className="font-semibold text-foreground truncate">
@@ -1710,7 +1710,7 @@ export default function ManagerPage() {
                                                                             </span>
                                                                         </div>
                                                                         <div className="flex shrink-0 items-center gap-1">
-                                                                            <span className="rounded-full bg-primary/15 px-1.5 py-0.5 font-semibold text-primary text-[10px]">
+                                                                            <span className="rounded-full bg-primary-soft px-1.5 py-0.5 font-semibold text-primary text-[10px]">
                                                                                 Due{" "}
                                                                                 {
                                                                                     b.unpaidAmountFormatted
@@ -1811,7 +1811,7 @@ export default function ManagerPage() {
                                 className={cn(
                                     "text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded shrink-0",
                                     hoverTooltip.badgeTone === "bad"
-                                        ? "bg-destructive/15 text-destructive"
+                                        ? "bg-destructive-soft text-destructive"
                                         : hoverTooltip.badgeTone === "warn"
                                           ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
                                           : "bg-muted text-muted-foreground",
@@ -1867,11 +1867,11 @@ export default function ManagerPage() {
                                         className={cn(
                                             "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold",
                                             inspectItem.badgeTone === "bad"
-                                                ? "bg-destructive/15 text-destructive"
+                                                ? "bg-destructive-soft text-destructive"
                                                 : inspectItem.badgeTone ===
                                                     "warn"
                                                   ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
-                                                  : "bg-primary/15 text-primary",
+                                                  : "bg-primary-soft text-primary",
                                         )}
                                     >
                                         <AlertTriangle className="size-3.5" />
@@ -1900,7 +1900,7 @@ export default function ManagerPage() {
                                     className={cn(
                                         "rounded-xl border p-4",
                                         inspectItem.badgeTone === "bad"
-                                            ? "border-destructive/20 bg-destructive/5"
+                                            ? "border-destructive-border bg-destructive-soft"
                                             : "border-amber-500/20 bg-amber-500/5",
                                     )}
                                 >

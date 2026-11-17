@@ -142,7 +142,7 @@ export default function AddEntrySheet({
             <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl border bg-background shadow-2xl animate-in fade-in-50 zoom-in-95">
                 <div className="flex items-center justify-between border-b px-6 py-4">
                     <div className="flex items-center gap-3">
-                        <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+                        <div className="flex size-10 items-center justify-center rounded-xl bg-primary-soft">
                             <ReceiptText className="size-5 text-primary" />
                         </div>
                         <div>
@@ -181,7 +181,7 @@ export default function AddEntrySheet({
                                 className={cn(
                                     "rounded-xl border-2 px-4 py-3 text-sm font-medium transition-all disabled:opacity-60",
                                     direction === "EXPENSE"
-                                        ? "border-destructive bg-destructive/5 text-destructive"
+                                        ? "border-destructive bg-destructive-soft text-destructive"
                                         : "border-border text-foreground hover:bg-muted/30",
                                 )}
                             >

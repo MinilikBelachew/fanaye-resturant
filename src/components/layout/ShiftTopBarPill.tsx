@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useAppSelector } from "@/context/hooks";
 import { useWaiterCashSummaryQuery } from "@/context/services/cashApi";
+import { useReconciliationPreviewQuery } from "@/context/services/reconciliationApi";
 import { useWaiterTablesQuery } from "@/context/services/floorApi";
 import {
     useClockInMutation,
@@ -74,6 +75,10 @@ export default function ShiftTopBarPill() {
         skip: !isWaiter || !clockedIn,
         pollingInterval: pollMs || 20_000,
     });
+    const { data: recon } = useReconciliationPreviewQuery(undefined, {
+        skip: !isCashier || !clockedIn || !openHandover,
+    });
+    const expectedCash = Number(recon?.data?.expectedCash ?? 0);
     const myTables = floor?.data ?? [];
     const activeTables = myTables.filter(t => Boolean(t.tableSessionId));
     const openTablesCount = activeTables.length;
@@ -364,7 +369,7 @@ export default function ShiftTopBarPill() {
                                             type="button"
                                             onClick={handleClockOut}
                                             disabled={clockingOut}
-                                            className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs font-semibold text-destructive hover:bg-destructive/15 transition-colors cursor-pointer disabled:opacity-50"
+                                            className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-destructive-border bg-destructive-soft px-3 py-2 text-xs font-semibold text-destructive hover:bg-destructive-soft-hover transition-colors cursor-pointer disabled:opacity-50"
                                         >
                                             <LogOut className="size-3.5" />
                                             {clockingOut
@@ -403,6 +408,7 @@ export default function ShiftTopBarPill() {
                 isOpen={openHandover}
                 onClose={() => setOpenHandover(false)}
                 currentVersion={session?.version ?? 1}
+                expectedCash={expectedCash}
             />
             <WaiterHandoverModal
                 isOpen={openWaiterHandover}

@@ -1,80 +1,47 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
-import { useTranslations } from "next-intl";
-import { Render, type Data } from "@puckeditor/core";
-import "@puckeditor/core/puck.css";
 import {
     ArrowLeft,
     Building2,
-    Check,
-    Clock,
     ExternalLink,
-    Eye,
-    Globe,
     Layers,
-    Mail,
-    MapPin,
+    Maximize2,
+    Minimize2,
     Monitor,
     Palette,
-    Phone,
     Rocket,
+    RotateCcw,
     Save,
     Smartphone,
-    Sparkles,
     Tablet,
-    Type,
-    X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { toast } from "@/lib/toast";
-import type {
-    PublicMenuItem,
-    SiteTheme,
-    TenantProfile,
-} from "@/context/services/siteApi";
+import type { PublicMenuItem, TenantProfile } from "@/context/services/siteApi";
+import { ImageUploadField } from "@/domains/site/puck/ImageUploadField";
+import SiteTemplateRenderer from "@/domains/site/templates/SiteTemplateRenderer";
 import {
-    DEFAULT_SECTION_VISIBILITY,
-    buildTemplateDraft,
     getTemplate,
+    type MenuLayoutMode,
+    type PerTemplateConfig,
     type SectionVisibility,
+    type TemplateCustomCopy,
     type WebsiteTemplateId,
 } from "@/domains/site/templates/restaurantTemplates";
-import {
-    SiteRenderContext,
-    bindSiteRender,
-    sitePuckConfig,
-} from "@/domains/site/puck/sitePuckConfig";
-import { SiteFontLoader } from "@/domains/site/puck/siteTypography";
 
 export interface CustomizationData {
-    profile: {
-        tagline?: string;
-        story?: string;
-        phone?: string;
-        email?: string;
-        address?: string;
-        city?: string;
-        hours?: string;
-        instagram?: string;
-        facebook?: string;
-        tiktok?: string;
-        telegram?: string;
-    };
-    theme: Partial<SiteTheme>;
-    sections: SectionVisibility;
-    heroImageUrl?: string;
+    config: PerTemplateConfig;
+    profile: TenantProfile;
 }
 
 interface TemplateCustomizerProps {
     templateId: WebsiteTemplateId;
-    templateName: string;
+    slug?: string | null;
     tenantName: string;
     branchName?: string | null;
     branchData?: {
@@ -82,418 +49,192 @@ interface TemplateCustomizerProps {
         email?: string | null;
         address?: string | null;
         city?: string | null;
+        managerName?: string | null;
     } | null;
+    initialConfig: PerTemplateConfig;
     initialProfile?: TenantProfile | null;
-    initialTheme?: Partial<SiteTheme> | null;
-    initialSections?: SectionVisibility | null;
     menuItems?: PublicMenuItem[];
     publicUrl?: string | null;
     isPublished?: boolean;
     busy?: boolean;
     publishing?: boolean;
-    onSave: (data: CustomizationData) => Promise<void> | void;
-    onPublish: (data: CustomizationData) => Promise<void> | void;
+    onSave: (data: CustomizationData) => Promise<void>;
+    onPublish: (data: CustomizationData) => Promise<void>;
     onBack: () => void;
 }
 
-type TabKey = "info" | "sections" | "theme";
-type DevicePreview = "desktop" | "tablet" | "mobile";
-
-const COLOR_SCHEMES = [
-    {
-        id: "foodly-yellow",
-        name: "Foodly Gold",
-        primary: "#FDB913",
-        text: "#1F2937",
-        bg: "#F9FAFB",
-        preview: "linear-gradient(135deg, #FDB913 0%, #fbbf24 100%)",
-    },
-    {
-        id: "warm-orange",
-        name: "Warm Bistro",
-        primary: "#ff6a00",
-        text: "#171717",
-        bg: "#fdfcf9",
-        preview: "linear-gradient(135deg, #ff6a00 0%, #ea580c 100%)",
-    },
-    {
-        id: "ember-gold",
-        name: "Ember Dark",
-        primary: "#f59e0b",
-        text: "#f8fafc",
-        bg: "#020617",
-        preview:
-            "linear-gradient(135deg, #020617 0%, #1e293b 50%, #f59e0b 100%)",
-    },
-    {
-        id: "forest-emerald",
-        name: "Botanical Green",
-        primary: "#059669",
-        text: "#022c22",
-        bg: "#f4fbf7",
-        preview: "linear-gradient(135deg, #059669 0%, #10b981 100%)",
-    },
-    {
-        id: "habesha-roastery",
-        name: "Habesha Roastery",
-        primary: "#92400e",
-        text: "#1c1917",
-        bg: "#faf7f2",
-        preview: "linear-gradient(135deg, #92400e 0%, #78350f 100%)",
-    },
-    {
-        id: "royal-blue",
-        name: "Royal Navy",
-        primary: "#1e40af",
-        text: "#0f172a",
-        bg: "#f8fafc",
-        preview: "linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)",
-    },
-    {
-        id: "burgundy",
-        name: "Burgundy Wine",
-        primary: "#9f1239",
-        text: "#1c1917",
-        bg: "#fff1f2",
-        preview: "linear-gradient(135deg, #9f1239 0%, #e11d48 100%)",
-    },
-    {
-        id: "city-charcoal",
-        name: "City Monochrome",
-        primary: "#18181b",
-        text: "#09090b",
-        bg: "#ffffff",
-        preview: "linear-gradient(135deg, #18181b 0%, #3f3f46 100%)",
-    },
-];
-
-const FONT_PRESETS = [
-    {
-        id: "modern",
-        name: "Inter Modern",
-        display: "Inter, system-ui, sans-serif",
-        body: "Inter, system-ui, sans-serif",
-    },
-    {
-        id: "editorial",
-        name: "Fraunces Serif & Clean Sans",
-        display: "Fraunces, Georgia, serif",
-        body: "DM Sans, sans-serif",
-    },
-    {
-        id: "playfair",
-        name: "Playfair Luxury",
-        display: "Playfair Display, serif",
-        body: "Plus Jakarta Sans, sans-serif",
-    },
-    {
-        id: "outfit",
-        name: "Outfit Friendly",
-        display: "Outfit, system-ui, sans-serif",
-        body: "DM Sans, sans-serif",
-    },
+const SECTION_LABELS: Array<{ key: keyof SectionVisibility; label: string }> = [
+    { key: "hero", label: "Hero Banner" },
+    { key: "marquee", label: "Marquee Ticker Strip" },
+    { key: "spotlight", label: "Featured / Counter Highlight" },
+    { key: "menu", label: "Live Restaurant Menu" },
+    { key: "story", label: "Story / About Section" },
+    { key: "whyChoose", label: "Why Choose / Craft Cards" },
+    { key: "stats", label: "Stats & Numbers Banner" },
+    { key: "timeline", label: "Day Timeline & Transition" },
+    { key: "gallery", label: "Photo Gallery / The Room" },
+    { key: "reviews", label: "Approved Guest Ratings" },
+    { key: "hours", label: "Opening Hours Block" },
+    { key: "contact", label: "Contact & Footer" },
 ];
 
 export default function TemplateCustomizer({
     templateId,
-    templateName,
+    slug,
     tenantName,
     branchName,
     branchData,
+    initialConfig,
     initialProfile,
-    initialTheme,
-    initialSections,
     menuItems = [],
     publicUrl,
-    isPublished = false,
-    busy = false,
-    publishing = false,
+    isPublished,
+    busy,
+    publishing,
     onSave,
     onPublish,
     onBack,
 }: TemplateCustomizerProps) {
-    const t = useTranslations("websiteStudio");
+    const templateMeta = getTemplate(templateId);
 
-    // Profile data with auto-fill fallback from branch
-    const [profile, setProfile] = useState({
-        tagline:
-            initialProfile?.tagline ||
-            (branchName
-                ? `Welcome to ${tenantName} · ${branchName}`
-                : `Welcome to ${tenantName}`),
-        story:
-            initialProfile?.story ||
-            `At ${tenantName}${
-                branchName ? ` (${branchName})` : ""
-            }, we prepare delicious meals daily with fresh, high-quality ingredients. Order from your table or explore our full menu.`,
-        phone: initialProfile?.phone || branchData?.phone || "+251 911 000 000",
-        email:
-            initialProfile?.email ||
-            branchData?.email ||
-            "contact@restaurant.com",
-        address:
-            initialProfile?.address ||
-            branchData?.address ||
-            "Bole Road, Central District",
-        city: initialProfile?.city || branchData?.city || "Addis Ababa",
-        hours:
-            initialProfile?.hours ||
-            "Mon – Sun: 8:00 AM – 10:00 PM\nKitchen closes at 9:30 PM",
-        instagram: initialProfile?.instagram || "",
-        facebook: initialProfile?.facebook || "",
-        tiktok: initialProfile?.tiktok || "",
-        telegram: initialProfile?.telegram || "",
-    });
-
-    // Theme state
-    const templateMeta = useMemo(() => getTemplate(templateId), [templateId]);
-
-    const [theme, setTheme] = useState<Partial<SiteTheme>>({
-        primaryColor:
-            initialTheme?.primaryColor ||
-            templateMeta.theme.primaryColor ||
-            "#FDB913",
-        accentColor:
-            initialTheme?.accentColor ||
-            templateMeta.theme.accentColor ||
-            "#1F2937",
-        backgroundColor:
-            initialTheme?.backgroundColor ||
-            templateMeta.theme.backgroundColor ||
-            "#F9FAFB",
-        textColor:
-            initialTheme?.textColor ||
-            templateMeta.theme.textColor ||
-            "#1F2937",
-        logoUrl: initialTheme?.logoUrl || "",
-        fontDisplay:
-            initialTheme?.fontDisplay ||
-            templateMeta.theme.fontDisplay ||
-            "Inter, system-ui, sans-serif",
-        fontBody:
-            initialTheme?.fontBody ||
-            templateMeta.theme.fontBody ||
-            "Inter, system-ui, sans-serif",
-        borderRadius:
-            initialTheme?.borderRadius ||
-            templateMeta.theme.borderRadius ||
-            "xl",
-    });
-
-    const [heroImageUrl, setHeroImageUrl] = useState<string>(
-        templateMeta.previewImage || "",
+    const [activeTab, setActiveTab] = useState<"template" | "business">(
+        "template",
     );
+    const [viewport, setViewport] = useState<"desktop" | "tablet" | "mobile">(
+        "desktop",
+    );
+    const [isFullPreview, setIsFullPreview] = useState(false);
 
-    // Section visibility toggles ("Can be in the website or not")
-    const [sections, setSections] = useState<SectionVisibility>({
-        ...DEFAULT_SECTION_VISIBILITY,
-        ...initialSections,
+    const [config, setConfig] = useState<PerTemplateConfig>({
+        ...initialConfig,
+        managerName: initialConfig.managerName || branchData?.managerName || "",
+    });
+    const [profile, setProfile] = useState<TenantProfile>({
+        tagline: initialProfile?.tagline ?? "",
+        story: initialProfile?.story ?? "",
+        phone: initialProfile?.phone ?? branchData?.phone ?? "",
+        email: initialProfile?.email ?? branchData?.email ?? "",
+        address: initialProfile?.address ?? branchData?.address ?? "",
+        city: initialProfile?.city ?? branchData?.city ?? "",
+        hours: initialProfile?.hours ?? "Mon – Sun · 8:00 AM – 10:00 PM",
+        instagram: initialProfile?.instagram ?? "",
+        facebook: initialProfile?.facebook ?? "",
+        tiktok: initialProfile?.tiktok ?? "",
+        telegram: initialProfile?.telegram ?? "",
     });
 
-    const [activeTab, setActiveTab] = useState<TabKey>("info");
-    const [devicePreview, setDevicePreview] =
-        useState<DevicePreview>("desktop");
+    const displayName = tenantName;
 
-    // Auto-fill from branch action
-    function handleAutoFillFromBranch() {
-        setProfile(prev => ({
+    const handleResetTemplate = () => {
+        setConfig(templateMeta.defaultConfig);
+    };
+
+    const customCopy: TemplateCustomCopy = config.customCopy ?? {};
+    const updateCustomCopy = (patch: Partial<TemplateCustomCopy>) => {
+        setConfig(prev => ({
             ...prev,
-            phone: branchData?.phone || prev.phone,
-            email: branchData?.email || prev.email,
-            address: branchData?.address || prev.address,
-            city: branchData?.city || prev.city,
-            tagline: branchName
-                ? `Welcome to ${tenantName} · ${branchName}`
-                : `Welcome to ${tenantName}`,
-        }));
-        toast.success(
-            `Filled branch details${branchName ? ` for ${branchName}` : ""}!`,
-        );
-    }
-
-    // Live draft data for the preview
-    const liveDraftData = useMemo<Data>(() => {
-        const effectiveName = branchName
-            ? `${tenantName} · ${branchName}`
-            : tenantName;
-        return buildTemplateDraft(templateId, effectiveName, profile, {
-            sections,
-            heroImageUrl: heroImageUrl.trim() || undefined,
-            customTagline: profile.tagline,
-            menuData: menuItems,
-        });
-    }, [
-        templateId,
-        tenantName,
-        branchName,
-        profile,
-        sections,
-        heroImageUrl,
-        menuItems,
-    ]);
-
-    // Live render context for puck
-    const renderContext = useMemo(() => {
-        const ctx = {
-            theme: {
-                primaryColor: theme.primaryColor || "#FDB913",
-                accentColor: theme.accentColor || "#1F2937",
-                backgroundColor: theme.backgroundColor || "#F9FAFB",
-                textColor: theme.textColor || "#1F2937",
-                logoUrl: theme.logoUrl,
-                fontDisplay:
-                    theme.fontDisplay || "Inter, system-ui, sans-serif",
-                fontBody: theme.fontBody || "Inter, system-ui, sans-serif",
-                borderRadius: theme.borderRadius || "xl",
+            customCopy: {
+                ...(prev.customCopy ?? {}),
+                ...patch,
             },
-            tenantName: branchName
-                ? `${tenantName} · ${branchName}`
-                : tenantName,
-            phone: profile.phone || null,
-            email: profile.email || null,
-            city: profile.city || null,
-            address: profile.address || null,
-            hours: profile.hours || null,
-            tagline: profile.tagline || null,
-            story: profile.story || null,
-            instagram: profile.instagram || null,
-            facebook: profile.facebook || null,
-            tiktok: profile.tiktok || null,
-            telegram: profile.telegram || null,
-            menuItems,
-            viewport: devicePreview,
-        };
-        bindSiteRender(ctx);
-        return ctx;
-    }, [theme, tenantName, branchName, profile, menuItems, devicePreview]);
-
-    // Save and Publish handlers
-    function handleSaveDraft() {
-        void onSave({
-            profile,
-            theme,
-            sections,
-            heroImageUrl: heroImageUrl.trim() || undefined,
-        });
-    }
-
-    function handlePublishLive() {
-        void onPublish({
-            profile,
-            theme,
-            sections,
-            heroImageUrl: heroImageUrl.trim() || undefined,
-        });
-    }
+        }));
+    };
 
     return (
-        <div className="flex h-screen flex-col bg-surface-ivory dark:bg-background overflow-hidden">
-            {/* Top Command Bar */}
-            <header className="flex h-14 shrink-0 items-center justify-between border-b border-hairline bg-card px-4 z-20">
+        <div className="flex h-[calc(100svh-4.5rem)] flex-col bg-background overflow-hidden">
+            {/* Top Toolbar */}
+            <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card px-4 py-2.5 shrink-0">
                 <div className="flex items-center gap-3">
                     <Button
+                        type="button"
                         variant="ghost"
                         size="sm"
                         onClick={onBack}
-                        disabled={busy || publishing}
-                        className="gap-1.5 text-xs text-slate-gray hover:text-foreground"
+                        className="gap-1.5 rounded-xl"
                     >
                         <ArrowLeft className="size-4" />
-                        <span>Change Template</span>
+                        <span>5 Websites</span>
                     </Button>
-                    <div className="h-4 w-px bg-hairline" />
-                    <div className="flex items-center gap-2">
-                        <span
-                            className="size-2.5 rounded-full"
-                            style={{
-                                background: theme.primaryColor || "#FDB913",
-                            }}
-                        />
-                        <span className="text-xs font-semibold text-foreground">
-                            {templateName}
-                        </span>
-                        {branchName ? (
-                            <Badge
-                                variant="outline"
-                                className="text-[11px] font-normal gap-1"
-                            >
-                                <Building2 className="size-3 text-brand" />
-                                {branchName}
-                            </Badge>
-                        ) : null}
+                    <div className="h-5 w-px bg-border" />
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-sm font-bold text-foreground">
+                                {templateMeta.name}
+                            </h1>
+                            {isPublished ? (
+                                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                                    Live
+                                </span>
+                            ) : (
+                                <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                                    Draft
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                            Customizing {templateMeta.name} separately
+                        </p>
                     </div>
                 </div>
 
-                {/* Device Viewport Selector */}
-                <div className="hidden sm:flex items-center gap-1 rounded-xl border border-hairline bg-surface-ivory/50 dark:bg-card/50 p-1">
-                    <button
-                        type="button"
-                        onClick={() => setDevicePreview("desktop")}
-                        className={cn(
-                            "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all",
-                            devicePreview === "desktop"
-                                ? "bg-card text-foreground shadow-xs"
-                                : "text-slate-gray hover:text-foreground",
-                        )}
-                        title="Desktop view"
-                    >
-                        <Monitor className="size-3.5" />
-                        <span className="hidden md:inline">Desktop</span>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setDevicePreview("tablet")}
-                        className={cn(
-                            "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all",
-                            devicePreview === "tablet"
-                                ? "bg-card text-foreground shadow-xs"
-                                : "text-slate-gray hover:text-foreground",
-                        )}
-                        title="Tablet view"
-                    >
-                        <Tablet className="size-3.5" />
-                        <span className="hidden md:inline">Tablet</span>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setDevicePreview("mobile")}
-                        className={cn(
-                            "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all",
-                            devicePreview === "mobile"
-                                ? "bg-card text-foreground shadow-xs"
-                                : "text-slate-gray hover:text-foreground",
-                        )}
-                        title="Mobile view"
-                    >
-                        <Smartphone className="size-3.5" />
-                        <span className="hidden md:inline">Mobile</span>
-                    </button>
-                </div>
-
-                {/* Action Buttons */}
                 <div className="flex items-center gap-2">
+                    {/* Responsive switcher */}
+                    <div className="hidden md:flex items-center rounded-xl border border-border bg-background p-0.5 mr-2">
+                        {(
+                            [
+                                { id: "desktop", icon: Monitor },
+                                { id: "tablet", icon: Tablet },
+                                { id: "mobile", icon: Smartphone },
+                            ] as const
+                        ).map(({ id, icon: Icon }) => (
+                            <button
+                                key={id}
+                                type="button"
+                                onClick={() => setViewport(id)}
+                                className={cn(
+                                    "rounded-lg p-1.5 transition",
+                                    viewport === id
+                                        ? "bg-secondary text-foreground"
+                                        : "text-muted-foreground hover:text-foreground",
+                                )}
+                                title={id}
+                            >
+                                <Icon className="size-4" />
+                            </button>
+                        ))}
+                    </div>
+
                     <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={handleAutoFillFromBranch}
-                        disabled={busy || publishing}
-                        className="hidden lg:flex gap-1.5 rounded-xl text-xs font-medium border-hairline"
+                        onClick={() => setIsFullPreview(v => !v)}
+                        className="rounded-xl gap-1.5 text-xs"
                     >
-                        <Sparkles className="size-3.5 text-brand" />
-                        <span>Auto-fill from Branch</span>
+                        {isFullPreview ? (
+                            <>
+                                <Minimize2 className="size-3.5" />
+                                <span>Show Editor</span>
+                            </>
+                        ) : (
+                            <>
+                                <Maximize2 className="size-3.5" />
+                                <span className="hidden sm:inline">
+                                    Full Preview
+                                </span>
+                            </>
+                        )}
                     </Button>
 
-                    {publicUrl ? (
+                    {publicUrl && isPublished ? (
                         <a
                             href={publicUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1 rounded-xl border border-hairline bg-card px-2.5 py-1.5 text-xs font-medium text-slate-gray hover:text-foreground hover:bg-surface-ivory"
-                            title="Open live website"
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-xs font-semibold hover:bg-secondary"
                         >
+                            <span>View Live</span>
                             <ExternalLink className="size-3.5" />
-                            <span className="hidden xl:inline">Live Site</span>
                         </a>
                     ) : null}
 
@@ -501,685 +242,1027 @@ export default function TemplateCustomizer({
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={handleSaveDraft}
                         disabled={busy || publishing}
-                        className="gap-1.5 rounded-xl text-xs font-medium border-hairline"
+                        onClick={() => void onSave({ config, profile })}
+                        className="rounded-xl gap-1.5 text-xs"
                     >
                         {busy ? (
-                            <RestorchSpinner className="size-3.5 " />
+                            <RestorchSpinner className="size-3.5" />
                         ) : (
                             <Save className="size-3.5" />
                         )}
-                        <span>{t("saveDraft")}</span>
+                        <span>Save Draft</span>
                     </Button>
 
                     <Button
                         type="button"
                         size="sm"
-                        onClick={handlePublishLive}
                         disabled={busy || publishing}
-                        className="gap-1.5 rounded-xl bg-brand hover:bg-brand/90 text-white text-xs font-semibold shadow-xs"
+                        onClick={() => void onPublish({ config, profile })}
+                        className="rounded-xl gap-1.5 text-xs bg-orange-600 hover:bg-orange-700 text-white"
                     >
                         {publishing ? (
-                            <RestorchSpinner className="size-3.5 " />
+                            <RestorchSpinner className="size-3.5" />
                         ) : (
                             <Rocket className="size-3.5" />
                         )}
-                        <span>
-                            {isPublished ? "Update Live" : t("publish")}
-                        </span>
+                        <span>Publish</span>
                     </Button>
                 </div>
             </header>
 
-            {/* Split Screen: Customizer Sidebar + Live Canvas Preview */}
-            <div className="flex flex-1 overflow-hidden">
-                {/* Left Controls Sidebar (Width 400px) */}
-                <aside className="w-full sm:w-[420px] shrink-0 border-r border-hairline bg-card flex flex-col z-10 shadow-xs">
-                    {/* Navigation Tabs */}
-                    <div className="flex border-b border-hairline px-3 bg-surface-ivory/30 dark:bg-card/40">
-                        <button
-                            type="button"
-                            onClick={() => setActiveTab("info")}
-                            className={cn(
-                                "flex items-center gap-1.5 border-b-2 px-3 py-3 text-xs font-semibold transition-colors",
-                                activeTab === "info"
-                                    ? "border-brand text-brand"
-                                    : "border-transparent text-slate-gray hover:text-foreground",
-                            )}
-                        >
-                            <Globe className="size-3.5" />
-                            <span>Info & Contact</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setActiveTab("sections")}
-                            className={cn(
-                                "flex items-center gap-1.5 border-b-2 px-3 py-3 text-xs font-semibold transition-colors",
-                                activeTab === "sections"
-                                    ? "border-brand text-brand"
-                                    : "border-transparent text-slate-gray hover:text-foreground",
-                            )}
-                        >
-                            <Layers className="size-3.5" />
-                            <span>Sections</span>
-                            <Badge
-                                variant="secondary"
-                                className="ml-1 text-[10px] px-1.5 py-0"
+            {/* Studio Body */}
+            <div className="flex flex-1 min-h-0 flex-col lg:flex-row">
+                {/* Left Sidebar Controls */}
+                {!isFullPreview ? (
+                    <aside className="w-full lg:w-[320px] shrink-0 border-b lg:border-b-0 lg:border-r border-border bg-card flex flex-col min-h-0">
+                        {/* Tabs */}
+                        <div className="grid grid-cols-2 border-b border-border p-1.5 gap-1 bg-muted/30">
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab("template")}
+                                className={cn(
+                                    "flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition",
+                                    activeTab === "template"
+                                        ? "bg-background text-foreground shadow-xs"
+                                        : "text-muted-foreground hover:text-foreground",
+                                )}
                             >
-                                {Object.values(sections).filter(Boolean).length}
-                            </Badge>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setActiveTab("theme")}
-                            className={cn(
-                                "flex items-center gap-1.5 border-b-2 px-3 py-3 text-xs font-semibold transition-colors",
-                                activeTab === "theme"
-                                    ? "border-brand text-brand"
-                                    : "border-transparent text-slate-gray hover:text-foreground",
-                            )}
-                        >
-                            <Palette className="size-3.5" />
-                            <span>Style & Colors</span>
-                        </button>
-                    </div>
+                                <Palette className="size-3.5" />
+                                <span>This Website</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab("business")}
+                                className={cn(
+                                    "flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition",
+                                    activeTab === "business"
+                                        ? "bg-background text-foreground shadow-xs"
+                                        : "text-muted-foreground hover:text-foreground",
+                                )}
+                            >
+                                <Building2 className="size-3.5" />
+                                <span>Restaurant Info</span>
+                            </button>
+                        </div>
 
-                    {/* Tab Contents (Scrollable) */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                        {/* TAB 1: BASIC INFO & CONTACT */}
-                        {activeTab === "info" && (
-                            <div className="space-y-4">
-                                <div className="rounded-xl border border-hairline bg-surface-ivory/50 dark:bg-card/40 p-3 text-xs text-slate-gray flex items-start justify-between gap-2">
+                        <div className="flex-1 overflow-y-auto p-4 space-y-5">
+                            {activeTab === "template" ? (
+                                <>
+                                    {/* Accent Color */}
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <Label className="text-xs font-semibold">
+                                                Accent Color
+                                            </Label>
+                                            <button
+                                                type="button"
+                                                onClick={handleResetTemplate}
+                                                className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+                                            >
+                                                <RotateCcw className="size-3" />
+                                                <span>Reset defaults</span>
+                                            </button>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {templateMeta.accentPresets.map(
+                                                hex => (
+                                                    <button
+                                                        key={hex}
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setConfig(prev => ({
+                                                                ...prev,
+                                                                accentColor:
+                                                                    hex,
+                                                            }))
+                                                        }
+                                                        className={cn(
+                                                            "size-7 rounded-full border-2 transition",
+                                                            config.accentColor ===
+                                                                hex
+                                                                ? "border-foreground scale-110"
+                                                                : "border-transparent",
+                                                        )}
+                                                        style={{
+                                                            backgroundColor:
+                                                                hex,
+                                                        }}
+                                                    />
+                                                ),
+                                            )}
+                                            <input
+                                                type="color"
+                                                value={config.accentColor}
+                                                onChange={e =>
+                                                    setConfig(prev => ({
+                                                        ...prev,
+                                                        accentColor:
+                                                            e.target.value,
+                                                    }))
+                                                }
+                                                className="h-7 w-9 cursor-pointer rounded border border-border bg-transparent"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Hero Texts & Image */}
+                                    <div className="space-y-3 pt-2 border-t border-border">
+                                        <div>
+                                            <Label className="text-xs">
+                                                Badge Text
+                                            </Label>
+                                            <Input
+                                                value={config.badgeText}
+                                                onChange={e =>
+                                                    setConfig(prev => ({
+                                                        ...prev,
+                                                        badgeText:
+                                                            e.target.value,
+                                                    }))
+                                                }
+                                                className="mt-1 h-8 text-xs"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs">
+                                                Hero Headline
+                                            </Label>
+                                            <Input
+                                                value={config.heroHeadline}
+                                                onChange={e =>
+                                                    setConfig(prev => ({
+                                                        ...prev,
+                                                        heroHeadline:
+                                                            e.target.value,
+                                                    }))
+                                                }
+                                                className="mt-1 h-8 text-xs"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs">
+                                                Hero Subheadline
+                                            </Label>
+                                            <Textarea
+                                                rows={2}
+                                                value={config.heroSubheadline}
+                                                onChange={e =>
+                                                    setConfig(prev => ({
+                                                        ...prev,
+                                                        heroSubheadline:
+                                                            e.target.value,
+                                                    }))
+                                                }
+                                                className="mt-1 text-xs"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs">
+                                                Button Label
+                                            </Label>
+                                            <Input
+                                                value={config.ctaLabel}
+                                                onChange={e =>
+                                                    setConfig(prev => ({
+                                                        ...prev,
+                                                        ctaLabel:
+                                                            e.target.value,
+                                                    }))
+                                                }
+                                                className="mt-1 h-8 text-xs"
+                                            />
+                                        </div>
+                                        <div>
+                                            <ImageUploadField
+                                                label="Hero Photo (Placeholder — upload or paste URL)"
+                                                value={config.heroImageUrl}
+                                                onChange={url =>
+                                                    setConfig(prev => ({
+                                                        ...prev,
+                                                        heroImageUrl:
+                                                            url ||
+                                                            templateMeta
+                                                                .defaultConfig
+                                                                .heroImageUrl,
+                                                    }))
+                                                }
+                                            />
+                                            <Input
+                                                value={config.heroImageUrl}
+                                                onChange={e =>
+                                                    setConfig(prev => ({
+                                                        ...prev,
+                                                        heroImageUrl:
+                                                            e.target.value,
+                                                    }))
+                                                }
+                                                placeholder="Or paste image URL"
+                                                className="mt-2 h-8 text-xs font-mono"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs">
+                                                Branch Manager Name
+                                            </Label>
+                                            <Input
+                                                value={config.managerName ?? ""}
+                                                onChange={e =>
+                                                    setConfig(prev => ({
+                                                        ...prev,
+                                                        managerName:
+                                                            e.target.value,
+                                                    }))
+                                                }
+                                                placeholder={
+                                                    branchData?.managerName ||
+                                                    "Branch Manager"
+                                                }
+                                                className="mt-1 h-8 text-xs"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Spotlight */}
+                                    <div className="space-y-3 pt-2 border-t border-border">
+                                        <div>
+                                            <Label className="text-xs">
+                                                Highlight Title
+                                            </Label>
+                                            <Input
+                                                value={config.spotlightTitle}
+                                                onChange={e =>
+                                                    setConfig(prev => ({
+                                                        ...prev,
+                                                        spotlightTitle:
+                                                            e.target.value,
+                                                    }))
+                                                }
+                                                className="mt-1 h-8 text-xs"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs">
+                                                Highlight Note
+                                            </Label>
+                                            <Textarea
+                                                rows={2}
+                                                value={config.spotlightNote}
+                                                onChange={e =>
+                                                    setConfig(prev => ({
+                                                        ...prev,
+                                                        spotlightNote:
+                                                            e.target.value,
+                                                    }))
+                                                }
+                                                className="mt-1 text-xs"
+                                            />
+                                        </div>
+                                        <div className="space-y-3 pt-2 border-t border-border">
+                                            <Label className="text-xs font-semibold">
+                                                Atmosphere Gallery Photos
+                                            </Label>
+                                            {[0, 1, 2].map(idx => (
+                                                <div
+                                                    key={idx}
+                                                    className="rounded-xl border border-border p-2.5 space-y-2"
+                                                >
+                                                    <ImageUploadField
+                                                        label={`Gallery Photo ${idx + 1}`}
+                                                        value={
+                                                            config
+                                                                .galleryImages[
+                                                                idx
+                                                            ] ?? ""
+                                                        }
+                                                        onChange={url =>
+                                                            setConfig(prev => {
+                                                                const next = [
+                                                                    ...prev.galleryImages,
+                                                                ];
+                                                                next[idx] = url;
+                                                                return {
+                                                                    ...prev,
+                                                                    galleryImages:
+                                                                        next,
+                                                                };
+                                                            })
+                                                        }
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Menu Layout Style */}
+                                    <div className="space-y-2 pt-2 border-t border-border">
+                                        <Label className="text-xs font-semibold">
+                                            Menu Display Style
+                                        </Label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {(
+                                                [
+                                                    {
+                                                        id: "cards",
+                                                        label: "Photo Cards",
+                                                    },
+                                                    {
+                                                        id: "editorial",
+                                                        label: "2-Column List",
+                                                    },
+                                                    {
+                                                        id: "grouped",
+                                                        label: "By Category",
+                                                    },
+                                                    {
+                                                        id: "showcase",
+                                                        label: "Showcase",
+                                                    },
+                                                ] as Array<{
+                                                    id: MenuLayoutMode;
+                                                    label: string;
+                                                }>
+                                            ).map(opt => {
+                                                const active =
+                                                    (config.menuLayout ??
+                                                        "cards") === opt.id;
+                                                return (
+                                                    <button
+                                                        key={opt.id}
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setConfig(prev => ({
+                                                                ...prev,
+                                                                menuLayout:
+                                                                    opt.id,
+                                                            }))
+                                                        }
+                                                        className={cn(
+                                                            "rounded-xl border px-3 py-2 text-xs font-semibold text-left transition",
+                                                            active
+                                                                ? "border-orange-500 bg-orange-500/10 text-orange-700 dark:text-orange-300"
+                                                                : "border-border bg-background text-muted-foreground hover:text-foreground",
+                                                        )}
+                                                    >
+                                                        {opt.label}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Section Toggles */}
+                                    <div className="space-y-2 pt-2 border-t border-border">
+                                        <div className="flex items-center gap-1.5 text-xs font-semibold">
+                                            <Layers className="size-3.5" />
+                                            <span>Visible Sections</span>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            {SECTION_LABELS.map(
+                                                ({ key, label }) => (
+                                                    <label
+                                                        key={key}
+                                                        className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-xs cursor-pointer hover:bg-muted/40"
+                                                    >
+                                                        <span>{label}</span>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={
+                                                                config.sections[
+                                                                    key
+                                                                ] !== false
+                                                            }
+                                                            onChange={e =>
+                                                                setConfig(
+                                                                    prev => ({
+                                                                        ...prev,
+                                                                        sections:
+                                                                            {
+                                                                                ...prev.sections,
+                                                                                [key]: e
+                                                                                    .target
+                                                                                    .checked,
+                                                                            },
+                                                                    }),
+                                                                )
+                                                            }
+                                                            className="size-4 accent-orange-600"
+                                                        />
+                                                    </label>
+                                                ),
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* All Section Texts & Copy */}
+                                    <div className="space-y-3 pt-3 border-t border-border">
+                                        <Label className="text-xs font-semibold">
+                                            All Section Texts &amp; Labels
+                                        </Label>
+                                        <p className="text-[11px] text-muted-foreground">
+                                            Leave any field blank to use the
+                                            template default.
+                                        </p>
+
+                                        <div className="grid grid-cols-1 gap-2.5">
+                                            {(
+                                                [
+                                                    [
+                                                        "aboutEyebrow",
+                                                        "About Eyebrow",
+                                                        "e.g. About / (01) THE ROASTERY",
+                                                    ],
+                                                    [
+                                                        "aboutTitle",
+                                                        "About Heading",
+                                                        "e.g. Every Celebration Remarkable",
+                                                    ],
+                                                    [
+                                                        "whyChooseEyebrow",
+                                                        "Why Choose / Craft Eyebrow",
+                                                        "e.g. Why Choose Us?",
+                                                    ],
+                                                    [
+                                                        "whyChooseTitle",
+                                                        "Why Choose / Craft Heading",
+                                                        "e.g. More Than Dining...",
+                                                    ],
+                                                    [
+                                                        "menuEyebrow",
+                                                        "Menu Eyebrow",
+                                                        "e.g. Explore Menu Option",
+                                                    ],
+                                                    [
+                                                        "menuTitle",
+                                                        "Menu Heading",
+                                                        "e.g. Signature Kitchen Menus",
+                                                    ],
+                                                    [
+                                                        "timelineEyebrow",
+                                                        "Timeline Eyebrow",
+                                                        "e.g. (03) A DAY AT...",
+                                                    ],
+                                                    [
+                                                        "timelineTitle",
+                                                        "Timeline Heading",
+                                                        "e.g. From the oven to the last espresso.",
+                                                    ],
+                                                    [
+                                                        "transitionTop",
+                                                        "Transition Line 1",
+                                                        "e.g. Roast first.",
+                                                    ],
+                                                    [
+                                                        "transitionBottom",
+                                                        "Transition Line 2",
+                                                        "e.g. Sweet later.",
+                                                    ],
+                                                    [
+                                                        "craftEyebrow",
+                                                        "Craft Deck Eyebrow",
+                                                        "e.g. (04) FROM THE OVEN & BAR",
+                                                    ],
+                                                    [
+                                                        "craftTitle",
+                                                        "Craft Deck Heading",
+                                                        "e.g. Four ways we craft.",
+                                                    ],
+                                                    [
+                                                        "counterTitle",
+                                                        "Counter Feature Heading",
+                                                        "e.g. The espresso bar.",
+                                                    ],
+                                                    [
+                                                        "counterSubtitle",
+                                                        "Counter Feature Subtitle",
+                                                        "e.g. Ten counter seats facing the bar...",
+                                                    ],
+                                                    [
+                                                        "galleryEyebrow",
+                                                        "Gallery Eyebrow",
+                                                        "e.g. (05) THE ROOM",
+                                                    ],
+                                                    [
+                                                        "galleryTitle",
+                                                        "Gallery Heading",
+                                                        "e.g. One oven. Warm mornings.",
+                                                    ],
+                                                    [
+                                                        "reviewsEyebrow",
+                                                        "Reviews Eyebrow",
+                                                        "e.g. Testimonial / GUEST NOTES",
+                                                    ],
+                                                    [
+                                                        "reviewsTitle",
+                                                        "Reviews Heading",
+                                                        "e.g. What Our Guests Are Saying",
+                                                    ],
+                                                    [
+                                                        "hoursEyebrow",
+                                                        "Hours Eyebrow",
+                                                        "e.g. Service Hours / (06) TODAY",
+                                                    ],
+                                                    [
+                                                        "hoursTitle",
+                                                        "Hours Heading",
+                                                        "e.g. Pull up a chair by the bar.",
+                                                    ],
+                                                ] as Array<
+                                                    [
+                                                        keyof TemplateCustomCopy,
+                                                        string,
+                                                        string,
+                                                    ]
+                                                >
+                                            ).map(
+                                                ([
+                                                    field,
+                                                    label,
+                                                    placeholder,
+                                                ]) => (
+                                                    <div key={field}>
+                                                        <Label className="text-[11px] text-muted-foreground">
+                                                            {label}
+                                                        </Label>
+                                                        <Input
+                                                            value={
+                                                                (customCopy[
+                                                                    field
+                                                                ] as string) ??
+                                                                ""
+                                                            }
+                                                            onChange={e =>
+                                                                updateCustomCopy(
+                                                                    {
+                                                                        [field]:
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                    },
+                                                                )
+                                                            }
+                                                            placeholder={
+                                                                placeholder
+                                                            }
+                                                            className="mt-1 h-8 text-xs"
+                                                        />
+                                                    </div>
+                                                ),
+                                            )}
+
+                                            <div>
+                                                <Label className="text-[11px] text-muted-foreground">
+                                                    Marquee Phrases (one per
+                                                    line)
+                                                </Label>
+                                                <Textarea
+                                                    rows={3}
+                                                    value={(
+                                                        customCopy.marqueeItems ??
+                                                        []
+                                                    ).join("\n")}
+                                                    onChange={e => {
+                                                        const lines =
+                                                            e.target.value
+                                                                .split("\n")
+                                                                .map(l =>
+                                                                    l.trim(),
+                                                                )
+                                                                .filter(
+                                                                    Boolean,
+                                                                );
+                                                        updateCustomCopy({
+                                                            marqueeItems: lines,
+                                                        });
+                                                    }}
+                                                    placeholder={
+                                                        "Single-origin pour-overs\nArtisan croissants & sourdough"
+                                                    }
+                                                    className="mt-1 text-xs"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2 pt-1">
+                                                <Label className="text-[11px] text-muted-foreground">
+                                                    Stats (Number &amp; Label)
+                                                </Label>
+                                                {[0, 1, 2, 3].map(idx => {
+                                                    const cur = customCopy
+                                                        .stats?.[idx] ?? {
+                                                        num: "",
+                                                        label: "",
+                                                    };
+                                                    return (
+                                                        <div
+                                                            key={idx}
+                                                            className="grid grid-cols-5 gap-1.5"
+                                                        >
+                                                            <Input
+                                                                value={cur.num}
+                                                                onChange={e => {
+                                                                    const base =
+                                                                        customCopy.stats ?? [
+                                                                            {
+                                                                                num: "",
+                                                                                label: "",
+                                                                            },
+                                                                            {
+                                                                                num: "",
+                                                                                label: "",
+                                                                            },
+                                                                            {
+                                                                                num: "",
+                                                                                label: "",
+                                                                            },
+                                                                            {
+                                                                                num: "",
+                                                                                label: "",
+                                                                            },
+                                                                        ];
+                                                                    const next =
+                                                                        [
+                                                                            ...base,
+                                                                        ];
+                                                                    next[idx] =
+                                                                        {
+                                                                            ...cur,
+                                                                            num: e
+                                                                                .target
+                                                                                .value,
+                                                                        };
+                                                                    updateCustomCopy(
+                                                                        {
+                                                                            stats: next,
+                                                                        },
+                                                                    );
+                                                                }}
+                                                                placeholder={`#${idx + 1}`}
+                                                                className="col-span-2 h-8 text-xs"
+                                                            />
+                                                            <Input
+                                                                value={
+                                                                    cur.label
+                                                                }
+                                                                onChange={e => {
+                                                                    const base =
+                                                                        customCopy.stats ?? [
+                                                                            {
+                                                                                num: "",
+                                                                                label: "",
+                                                                            },
+                                                                            {
+                                                                                num: "",
+                                                                                label: "",
+                                                                            },
+                                                                            {
+                                                                                num: "",
+                                                                                label: "",
+                                                                            },
+                                                                            {
+                                                                                num: "",
+                                                                                label: "",
+                                                                            },
+                                                                        ];
+                                                                    const next =
+                                                                        [
+                                                                            ...base,
+                                                                        ];
+                                                                    next[idx] =
+                                                                        {
+                                                                            ...cur,
+                                                                            label: e
+                                                                                .target
+                                                                                .value,
+                                                                        };
+                                                                    updateCustomCopy(
+                                                                        {
+                                                                            stats: next,
+                                                                        },
+                                                                    );
+                                                                }}
+                                                                placeholder="Stat label"
+                                                                className="col-span-3 h-8 text-xs"
+                                                            />
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+
+                                            <div className="space-y-2 pt-1">
+                                                <Label className="text-[11px] text-muted-foreground">
+                                                    Why Choose / Craft Cards
+                                                    (Title &amp; Description)
+                                                </Label>
+                                                {[0, 1, 2, 3].map(idx => {
+                                                    const cur = customCopy
+                                                        .highlights?.[idx] ?? {
+                                                        title: "",
+                                                        desc: "",
+                                                        tag: "",
+                                                    };
+                                                    return (
+                                                        <div
+                                                            key={idx}
+                                                            className="rounded-lg border border-border p-2 space-y-1.5"
+                                                        >
+                                                            <Input
+                                                                value={
+                                                                    cur.title
+                                                                }
+                                                                onChange={e => {
+                                                                    const base =
+                                                                        customCopy.highlights ?? [
+                                                                            {
+                                                                                title: "",
+                                                                                desc: "",
+                                                                                tag: "",
+                                                                            },
+                                                                            {
+                                                                                title: "",
+                                                                                desc: "",
+                                                                                tag: "",
+                                                                            },
+                                                                            {
+                                                                                title: "",
+                                                                                desc: "",
+                                                                                tag: "",
+                                                                            },
+                                                                            {
+                                                                                title: "",
+                                                                                desc: "",
+                                                                                tag: "",
+                                                                            },
+                                                                        ];
+                                                                    const next =
+                                                                        [
+                                                                            ...base,
+                                                                        ];
+                                                                    next[idx] =
+                                                                        {
+                                                                            ...cur,
+                                                                            title: e
+                                                                                .target
+                                                                                .value,
+                                                                        };
+                                                                    updateCustomCopy(
+                                                                        {
+                                                                            highlights:
+                                                                                next,
+                                                                        },
+                                                                    );
+                                                                }}
+                                                                placeholder={`Card ${idx + 1} title`}
+                                                                className="h-7 text-xs"
+                                                            />
+                                                            <Input
+                                                                value={cur.desc}
+                                                                onChange={e => {
+                                                                    const base =
+                                                                        customCopy.highlights ?? [
+                                                                            {
+                                                                                title: "",
+                                                                                desc: "",
+                                                                                tag: "",
+                                                                            },
+                                                                            {
+                                                                                title: "",
+                                                                                desc: "",
+                                                                                tag: "",
+                                                                            },
+                                                                            {
+                                                                                title: "",
+                                                                                desc: "",
+                                                                                tag: "",
+                                                                            },
+                                                                            {
+                                                                                title: "",
+                                                                                desc: "",
+                                                                                tag: "",
+                                                                            },
+                                                                        ];
+                                                                    const next =
+                                                                        [
+                                                                            ...base,
+                                                                        ];
+                                                                    next[idx] =
+                                                                        {
+                                                                            ...cur,
+                                                                            desc: e
+                                                                                .target
+                                                                                .value,
+                                                                        };
+                                                                    updateCustomCopy(
+                                                                        {
+                                                                            highlights:
+                                                                                next,
+                                                                        },
+                                                                    );
+                                                                }}
+                                                                placeholder={`Card ${idx + 1} description`}
+                                                                className="h-7 text-xs"
+                                                            />
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                /* Shared Business / Restaurant Info */
+                                <div className="space-y-3">
+                                    <p className="text-[11px] text-muted-foreground">
+                                        Shared across all 5 website designs so
+                                        you only enter your contact info once.
+                                    </p>
                                     <div>
-                                        <p className="font-semibold text-foreground">
-                                            {tenantName}
-                                            {branchName
-                                                ? ` · ${branchName}`
-                                                : ""}
-                                        </p>
-                                        <p className="text-[11px] mt-0.5">
-                                            Auto-synced with your restaurant and
-                                            branch profile.
-                                        </p>
-                                    </div>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleAutoFillFromBranch}
-                                        className="h-7 text-[11px] gap-1 px-2 shrink-0 rounded-lg"
-                                    >
-                                        <Sparkles className="size-3 text-brand" />
-                                        Auto-fill
-                                    </Button>
-                                </div>
-
-                                <div className="space-y-1.5">
-                                    <Label
-                                        htmlFor="tagline"
-                                        className="text-xs font-semibold"
-                                    >
-                                        Tagline / Header Headline
-                                    </Label>
-                                    <Input
-                                        id="tagline"
-                                        value={profile.tagline}
-                                        onChange={e =>
-                                            setProfile(prev => ({
-                                                ...prev,
-                                                tagline: e.target.value,
-                                            }))
-                                        }
-                                        placeholder="e.g. Delicious Food, Served Fresh"
-                                        className="rounded-xl text-xs"
-                                    />
-                                </div>
-
-                                <div className="space-y-1.5">
-                                    <Label
-                                        htmlFor="story"
-                                        className="text-xs font-semibold"
-                                    >
-                                        About Story / Restaurant Description
-                                    </Label>
-                                    <Textarea
-                                        id="story"
-                                        rows={3}
-                                        value={profile.story}
-                                        onChange={e =>
-                                            setProfile(prev => ({
-                                                ...prev,
-                                                story: e.target.value,
-                                            }))
-                                        }
-                                        placeholder="Tell guests about your kitchen, chef specialties, or heritage..."
-                                        className="rounded-xl text-xs"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-1.5">
-                                        <Label
-                                            htmlFor="phone"
-                                            className="text-xs font-semibold flex items-center gap-1"
-                                        >
-                                            <Phone className="size-3 text-slate-gray" />
-                                            Phone Number
+                                        <Label className="text-xs">
+                                            Short Tagline
                                         </Label>
                                         <Input
-                                            id="phone"
-                                            value={profile.phone}
+                                            value={profile.tagline ?? ""}
                                             onChange={e =>
-                                                setProfile(prev => ({
-                                                    ...prev,
-                                                    phone: e.target.value,
+                                                setProfile(p => ({
+                                                    ...p,
+                                                    tagline: e.target.value,
                                                 }))
                                             }
-                                            placeholder="+251 911 000 000"
-                                            className="rounded-xl text-xs"
+                                            placeholder="Fresh Ethiopian & continental dining"
+                                            className="mt-1 h-8 text-xs"
                                         />
                                     </div>
-                                    <div className="space-y-1.5">
-                                        <Label
-                                            htmlFor="email"
-                                            className="text-xs font-semibold flex items-center gap-1"
-                                        >
-                                            <Mail className="size-3 text-slate-gray" />
-                                            Email Address
+                                    <div>
+                                        <Label className="text-xs">
+                                            Restaurant Story
                                         </Label>
-                                        <Input
-                                            id="email"
-                                            value={profile.email}
+                                        <Textarea
+                                            rows={3}
+                                            value={profile.story ?? ""}
                                             onChange={e =>
-                                                setProfile(prev => ({
-                                                    ...prev,
-                                                    email: e.target.value,
+                                                setProfile(p => ({
+                                                    ...p,
+                                                    story: e.target.value,
                                                 }))
                                             }
-                                            placeholder="contact@restaurant.com"
-                                            className="rounded-xl text-xs"
+                                            className="mt-1 text-xs"
                                         />
                                     </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-1.5">
-                                        <Label
-                                            htmlFor="city"
-                                            className="text-xs font-semibold flex items-center gap-1"
-                                        >
-                                            <MapPin className="size-3 text-slate-gray" />
-                                            City / Region
-                                        </Label>
-                                        <Input
-                                            id="city"
-                                            value={profile.city}
-                                            onChange={e =>
-                                                setProfile(prev => ({
-                                                    ...prev,
-                                                    city: e.target.value,
-                                                }))
-                                            }
-                                            placeholder="Addis Ababa"
-                                            className="rounded-xl text-xs"
-                                        />
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <Label className="text-xs">
+                                                Phone
+                                            </Label>
+                                            <Input
+                                                value={profile.phone ?? ""}
+                                                onChange={e =>
+                                                    setProfile(p => ({
+                                                        ...p,
+                                                        phone: e.target.value,
+                                                    }))
+                                                }
+                                                className="mt-1 h-8 text-xs"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs">
+                                                Email
+                                            </Label>
+                                            <Input
+                                                value={profile.email ?? ""}
+                                                onChange={e =>
+                                                    setProfile(p => ({
+                                                        ...p,
+                                                        email: e.target.value,
+                                                    }))
+                                                }
+                                                className="mt-1 h-8 text-xs"
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="space-y-1.5">
-                                        <Label
-                                            htmlFor="address"
-                                            className="text-xs font-semibold flex items-center gap-1"
-                                        >
-                                            <MapPin className="size-3 text-slate-gray" />
-                                            Branch Street Address
+                                    <div>
+                                        <Label className="text-xs">
+                                            Address
                                         </Label>
                                         <Input
-                                            id="address"
-                                            value={profile.address}
+                                            value={profile.address ?? ""}
                                             onChange={e =>
-                                                setProfile(prev => ({
-                                                    ...prev,
+                                                setProfile(p => ({
+                                                    ...p,
                                                     address: e.target.value,
                                                 }))
                                             }
-                                            placeholder="Bole, Cameroon St."
-                                            className="rounded-xl text-xs"
+                                            className="mt-1 h-8 text-xs"
                                         />
                                     </div>
-                                </div>
-
-                                <div className="space-y-1.5">
-                                    <Label
-                                        htmlFor="hours"
-                                        className="text-xs font-semibold flex items-center gap-1"
-                                    >
-                                        <Clock className="size-3 text-slate-gray" />
-                                        Operating Hours
-                                    </Label>
-                                    <Textarea
-                                        id="hours"
-                                        rows={2}
-                                        value={profile.hours}
-                                        onChange={e =>
-                                            setProfile(prev => ({
-                                                ...prev,
-                                                hours: e.target.value,
-                                            }))
-                                        }
-                                        placeholder="Mon – Sun: 8:00 AM – 10:00 PM"
-                                        className="rounded-xl text-xs"
-                                    />
-                                    <p className="text-[11px] text-slate-gray">
-                                        Format like: &ldquo;Mon – Fri|8:00 –
-                                        22:00&rdquo; or standard text.
-                                    </p>
-                                </div>
-
-                                <div className="space-y-2 pt-2 border-t border-hairline">
-                                    <Label className="text-xs font-semibold text-foreground">
-                                        Social Media Links
-                                    </Label>
                                     <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <Label className="text-xs">
+                                                City
+                                            </Label>
+                                            <Input
+                                                value={profile.city ?? ""}
+                                                onChange={e =>
+                                                    setProfile(p => ({
+                                                        ...p,
+                                                        city: e.target.value,
+                                                    }))
+                                                }
+                                                className="mt-1 h-8 text-xs"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs">
+                                                Hours
+                                            </Label>
+                                            <Input
+                                                value={profile.hours ?? ""}
+                                                onChange={e =>
+                                                    setProfile(p => ({
+                                                        ...p,
+                                                        hours: e.target.value,
+                                                    }))
+                                                }
+                                                className="mt-1 h-8 text-xs"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="pt-2 border-t border-border space-y-2">
+                                        <Label className="text-xs font-semibold">
+                                            Social Links
+                                        </Label>
                                         <Input
-                                            value={profile.instagram}
+                                            placeholder="Instagram URL"
+                                            value={profile.instagram ?? ""}
                                             onChange={e =>
-                                                setProfile(prev => ({
-                                                    ...prev,
+                                                setProfile(p => ({
+                                                    ...p,
                                                     instagram: e.target.value,
                                                 }))
                                             }
-                                            placeholder="Instagram URL"
-                                            className="rounded-xl text-xs"
+                                            className="h-8 text-xs"
                                         />
                                         <Input
-                                            value={profile.telegram}
+                                            placeholder="Telegram URL"
+                                            value={profile.telegram ?? ""}
                                             onChange={e =>
-                                                setProfile(prev => ({
-                                                    ...prev,
+                                                setProfile(p => ({
+                                                    ...p,
                                                     telegram: e.target.value,
                                                 }))
                                             }
-                                            placeholder="Telegram channel/user"
-                                            className="rounded-xl text-xs"
+                                            className="h-8 text-xs"
                                         />
                                         <Input
-                                            value={profile.facebook}
+                                            placeholder="TikTok URL"
+                                            value={profile.tiktok ?? ""}
                                             onChange={e =>
-                                                setProfile(prev => ({
-                                                    ...prev,
-                                                    facebook: e.target.value,
-                                                }))
-                                            }
-                                            placeholder="Facebook page URL"
-                                            className="rounded-xl text-xs"
-                                        />
-                                        <Input
-                                            value={profile.tiktok}
-                                            onChange={e =>
-                                                setProfile(prev => ({
-                                                    ...prev,
+                                                setProfile(p => ({
+                                                    ...p,
                                                     tiktok: e.target.value,
                                                 }))
                                             }
-                                            placeholder="TikTok profile URL"
-                                            className="rounded-xl text-xs"
+                                            className="h-8 text-xs"
                                         />
                                     </div>
                                 </div>
-                            </div>
+                            )}
+                        </div>
+                    </aside>
+                ) : null}
+
+                {/* Live Interactive Preview */}
+                <main className="flex-1 overflow-y-auto bg-muted/40 p-2 sm:p-5 flex justify-center">
+                    <div
+                        className={cn(
+                            "@container w-full overflow-hidden bg-background border border-border transition-all h-fit",
+                            viewport === "mobile"
+                                ? "max-w-[390px] rounded-[28px]"
+                                : viewport === "tablet"
+                                  ? "max-w-[768px] rounded-2xl"
+                                  : "max-w-full rounded-2xl",
                         )}
-
-                        {/* TAB 2: SECTIONS TOGGLES ("Can be in website or not") */}
-                        {activeTab === "sections" && (
-                            <div className="space-y-4">
-                                <div>
-                                    <h3 className="text-xs font-semibold text-foreground">
-                                        Page Section Controls
-                                    </h3>
-                                    <p className="text-[11px] text-slate-gray mt-0.5">
-                                        Toggle sections on or off to choose what
-                                        appears on your website.
-                                    </p>
-                                </div>
-
-                                <div className="space-y-2">
-                                    {[
-                                        {
-                                            key: "showHero",
-                                            title: "Hero Banner",
-                                            desc: "Welcome headline, primary CTA and background image",
-                                        },
-                                        {
-                                            key: "showMenu",
-                                            title: "Menu Catalog",
-                                            desc: "Live food & drinks dishes, categories and search bar",
-                                        },
-                                        {
-                                            key: "showFeatures",
-                                            title: "Features & Amenities",
-                                            desc: "Highlights like Fresh Daily, Fast Service, Wi-Fi, etc.",
-                                        },
-                                        {
-                                            key: "showAbout",
-                                            title: "About / Restaurant Story",
-                                            desc: "Your culinary background, chef story and hospitality stats",
-                                        },
-                                        {
-                                            key: "showGallery",
-                                            title: "Photo Gallery & Carousel",
-                                            desc: "Showcase signature dishes and restaurant atmosphere",
-                                        },
-                                        {
-                                            key: "showTestimonials",
-                                            title: "Customer Testimonials",
-                                            desc: "Guest reviews and social proof quotes",
-                                        },
-                                        {
-                                            key: "showHours",
-                                            title: "Operating Hours",
-                                            desc: "Opening times and service schedule table",
-                                        },
-                                        {
-                                            key: "showCtaBanner",
-                                            title: "Special Offer / Promo Banner",
-                                            desc: "Call-to-action banner for table reservations or ordering",
-                                        },
-                                        {
-                                            key: "showContact",
-                                            title: "Contact & Location Card",
-                                            desc: "Address, phone number and map directions",
-                                        },
-                                        {
-                                            key: "showFooter",
-                                            title: "Footer & Social Icons",
-                                            desc: "Copyright note and social media links",
-                                        },
-                                    ].map(item => {
-                                        const key =
-                                            item.key as keyof SectionVisibility;
-                                        const isChecked =
-                                            sections[key] !== false;
-                                        return (
-                                            <div
-                                                key={item.key}
-                                                className="flex items-center justify-between rounded-xl border border-hairline bg-card p-3 hover:border-slate-gray/30 transition-colors"
-                                            >
-                                                <div className="space-y-0.5 pr-2">
-                                                    <p className="text-xs font-semibold text-foreground">
-                                                        {item.title}
-                                                    </p>
-                                                    <p className="text-[11px] text-slate-gray leading-tight">
-                                                        {item.desc}
-                                                    </p>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    role="switch"
-                                                    aria-checked={isChecked}
-                                                    onClick={() =>
-                                                        setSections(prev => ({
-                                                            ...prev,
-                                                            [key]: !isChecked,
-                                                        }))
-                                                    }
-                                                    className={cn(
-                                                        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none",
-                                                        isChecked
-                                                            ? "bg-brand"
-                                                            : "bg-slate-300 dark:bg-slate-700",
-                                                    )}
-                                                >
-                                                    <span
-                                                        className={cn(
-                                                            "pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-xs transition duration-200 ease-in-out mt-0.5",
-                                                            isChecked
-                                                                ? "translate-x-4 ml-0.5"
-                                                                : "translate-x-0.5",
-                                                        )}
-                                                    />
-                                                </button>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                    >
+                        <div className="flex items-center justify-between border-b border-border bg-muted/60 px-3.5 py-2 text-[11px] text-muted-foreground">
+                            <div className="flex items-center gap-1.5">
+                                <span className="size-2.5 rounded-full bg-rose-400/80" />
+                                <span className="size-2.5 rounded-full bg-amber-400/80" />
+                                <span className="size-2.5 rounded-full bg-emerald-400/80" />
                             </div>
-                        )}
-
-                        {/* TAB 3: THEME, COLORS & BRANDING */}
-                        {activeTab === "theme" && (
-                            <div className="space-y-5">
-                                <div>
-                                    <h3 className="text-xs font-semibold text-foreground">
-                                        Color Palette Presets
-                                    </h3>
-                                    <p className="text-[11px] text-slate-gray mt-0.5">
-                                        Curated restaurant palettes with high
-                                        contrast.
-                                    </p>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-2">
-                                    {COLOR_SCHEMES.map(scheme => {
-                                        const isSelected =
-                                            theme.primaryColor ===
-                                            scheme.primary;
-                                        return (
-                                            <button
-                                                key={scheme.id}
-                                                type="button"
-                                                onClick={() =>
-                                                    setTheme(prev => ({
-                                                        ...prev,
-                                                        primaryColor:
-                                                            scheme.primary,
-                                                        textColor: scheme.text,
-                                                        backgroundColor:
-                                                            scheme.bg,
-                                                    }))
-                                                }
-                                                className={cn(
-                                                    "group relative flex flex-col overflow-hidden rounded-xl border text-left transition-all p-2 gap-1.5 cursor-pointer",
-                                                    isSelected
-                                                        ? "border-brand ring-1 ring-brand/30 bg-surface-ivory/50 dark:bg-card/80"
-                                                        : "border-hairline hover:border-slate-gray/40 bg-card",
-                                                )}
-                                            >
-                                                <div
-                                                    className="h-6 w-full rounded-lg shadow-inner"
-                                                    style={{
-                                                        background:
-                                                            scheme.preview,
-                                                    }}
-                                                />
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-xs font-medium text-foreground">
-                                                        {scheme.name}
-                                                    </span>
-                                                    {isSelected ? (
-                                                        <Check className="size-3.5 text-brand" />
-                                                    ) : null}
-                                                </div>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-
-                                <div className="space-y-1.5 pt-2 border-t border-hairline">
-                                    <Label className="text-xs font-semibold">
-                                        Custom Primary Brand Color
-                                    </Label>
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="color"
-                                            value={
-                                                theme.primaryColor || "#FDB913"
-                                            }
-                                            onChange={e =>
-                                                setTheme(prev => ({
-                                                    ...prev,
-                                                    primaryColor:
-                                                        e.target.value,
-                                                }))
-                                            }
-                                            className="size-8 cursor-pointer rounded-lg border border-hairline p-0.5"
-                                        />
-                                        <Input
-                                            value={
-                                                theme.primaryColor || "#FDB913"
-                                            }
-                                            onChange={e =>
-                                                setTheme(prev => ({
-                                                    ...prev,
-                                                    primaryColor:
-                                                        e.target.value,
-                                                }))
-                                            }
-                                            className="rounded-xl text-xs font-mono uppercase"
-                                            placeholder="#FDB913"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-1.5 pt-2 border-t border-hairline">
-                                    <Label className="text-xs font-semibold flex items-center gap-1">
-                                        <Type className="size-3 text-slate-gray" />
-                                        Typography Pairing
-                                    </Label>
-                                    <div className="space-y-1.5">
-                                        {FONT_PRESETS.map(preset => {
-                                            const isSelected =
-                                                theme.fontDisplay ===
-                                                preset.display;
-                                            return (
-                                                <button
-                                                    key={preset.id}
-                                                    type="button"
-                                                    onClick={() =>
-                                                        setTheme(prev => ({
-                                                            ...prev,
-                                                            fontDisplay:
-                                                                preset.display,
-                                                            fontBody:
-                                                                preset.body,
-                                                        }))
-                                                    }
-                                                    className={cn(
-                                                        "w-full flex items-center justify-between rounded-xl border p-2.5 text-left text-xs transition-colors cursor-pointer",
-                                                        isSelected
-                                                            ? "border-brand bg-brand/5 text-brand font-semibold"
-                                                            : "border-hairline hover:border-slate-gray/40 text-foreground",
-                                                    )}
-                                                >
-                                                    <span
-                                                        style={{
-                                                            fontFamily:
-                                                                preset.display,
-                                                        }}
-                                                    >
-                                                        {preset.name}
-                                                    </span>
-                                                    {isSelected ? (
-                                                        <Check className="size-3.5 text-brand" />
-                                                    ) : null}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-
-                                <div className="space-y-1.5 pt-2 border-t border-hairline">
-                                    <Label className="text-xs font-semibold">
-                                        Hero Banner Background Image URL
-                                    </Label>
-                                    <Input
-                                        value={heroImageUrl}
-                                        onChange={e =>
-                                            setHeroImageUrl(e.target.value)
-                                        }
-                                        placeholder="https://images.unsplash.com/photo-..."
-                                        className="rounded-xl text-xs"
-                                    />
-                                    <p className="text-[11px] text-slate-gray">
-                                        Paste a high-resolution food or
-                                        restaurant interior image URL.
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </aside>
-
-                {/* Right Area: Live Responsive Interactive Preview */}
-                <main className="flex-1 bg-slate-100 dark:bg-zinc-900/50 flex flex-col overflow-hidden">
-                    {/* Viewport Info Bar */}
-                    <div className="flex h-9 shrink-0 items-center justify-between border-b border-hairline bg-card/60 px-4 text-[11px] text-slate-gray">
-                        <div className="flex items-center gap-2">
-                            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <span>Live Interactive Preview</span>
-                            <span>·</span>
-                            <span className="capitalize">
-                                {devicePreview} View
+                            <span className="font-mono truncate max-w-[220px] sm:max-w-sm">
+                                /r/{slug || "preview"}
+                            </span>
+                            <span className="text-[10px] uppercase tracking-wider">
+                                {viewport}
                             </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <span>{menuItems.length} menu dishes synced</span>
-                        </div>
-                    </div>
-
-                    {/* Preview Screen Canvas Container */}
-                    <div className="flex-1 overflow-y-auto p-4 flex justify-center items-start">
-                        <div
-                            data-viewport={devicePreview}
-                            className={cn(
-                                "transition-all duration-300 bg-white shadow-2xl overflow-hidden @container",
-                                devicePreview === "desktop" &&
-                                    "w-full max-w-6xl rounded-2xl border border-hairline",
-                                devicePreview === "tablet" &&
-                                    "w-[768px] max-w-full rounded-2xl border-4 border-slate-700 shadow-xl my-3",
-                                devicePreview === "mobile" &&
-                                    "w-[390px] max-w-full rounded-[44px] border-[10px] border-slate-900 shadow-2xl my-3",
-                            )}
-                            style={{
-                                minHeight:
-                                    devicePreview === "desktop"
-                                        ? "100%"
-                                        : "844px",
-                            }}
-                        >
-                            {/* Device Notch simulation for mobile */}
-                            {devicePreview === "mobile" ? (
-                                <div className="h-6 w-full bg-slate-900 flex justify-center items-center">
-                                    <div className="h-3.5 w-24 rounded-full bg-black/60" />
-                                </div>
-                            ) : null}
-
-                            {/* Rendered Live Site */}
-                            <SiteFontLoader />
-                            <SiteRenderContext.Provider value={renderContext}>
-                                <div
-                                    style={
-                                        {
-                                            "--site-font-display":
-                                                theme.fontDisplay ||
-                                                "Inter, system-ui, sans-serif",
-                                            "--site-font-body":
-                                                theme.fontBody ||
-                                                "Inter, system-ui, sans-serif",
-                                            color: theme.textColor,
-                                            background:
-                                                theme.backgroundColor ||
-                                                "#ffffff",
-                                            minHeight: "100%",
-                                        } as React.CSSProperties
-                                    }
-                                >
-                                    <Render
-                                        config={sitePuckConfig}
-                                        data={liveDraftData}
-                                    />
-                                </div>
-                            </SiteRenderContext.Provider>
-                        </div>
+                        <SiteTemplateRenderer
+                            templateId={templateId}
+                            slug={slug}
+                            tenantName={displayName}
+                            config={config}
+                            profile={profile}
+                            menuItems={menuItems}
+                        />
                     </div>
                 </main>
             </div>

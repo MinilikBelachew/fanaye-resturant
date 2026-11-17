@@ -6,8 +6,12 @@ import { authApi } from "@/context/services/authApi";
 import {
     clearSession,
     hydrateStaff,
+    IMPERSONATION_STORAGE_KEY,
+    type ImpersonationState,
     markHydrated,
+    restoreImpersonation,
     STAFF_LIST_STORAGE_KEY,
+    stopImpersonation,
 } from "@/context/slices/identitySlice";
 import { hydrateOps, OPS_KEY } from "@/context/slices/opsSlice";
 import { hydrateMenu, MENU_STORAGE_KEY } from "@/context/slices/menuSlice";
@@ -63,13 +67,53 @@ export default function SessionHydrator({
         // Refresh renews HttpOnly fanaye_session via Set-Cookie from the API.
         dispatch(authApi.endpoints.refresh.initiate())
             .unwrap()
-            .then(() =>
-                dispatch(
+            .then(async () => {
+                let storedImp: ImpersonationState | null = null;
+                try {
+                    const raw = sessionStorage.getItem(
+                        IMPERSONATION_STORAGE_KEY,
+                    );
+                    if (raw) {
+                        const parsed = JSON.parse(raw) as ImpersonationState;
+                        if (
+                            parsed?.token &&
+                            parsed?.tokenExpires > Date.now() + 5_000
+                        ) {
+                            storedImp = parsed;
+                        } else {
+                            sessionStorage.removeItem(
+                                IMPERSONATION_STORAGE_KEY,
+                            );
+                        }
+                    }
+                } catch {
+                    // Ignore parse or storage error
+                }
+
+                if (storedImp) {
+                    dispatch(restoreImpersonation(storedImp));
+                    try {
+                        await dispatch(
+                            authApi.endpoints.me.initiate(undefined, {
+                                forceRefetch: true,
+                            }),
+                        ).unwrap();
+                        return;
+                    } catch {
+                        // Impersonation token no longer valid — fall back to Super Admin session
+                        dispatch(stopImpersonation());
+                        await dispatch(
+                            authApi.endpoints.refresh.initiate(),
+                        ).unwrap();
+                    }
+                }
+
+                await dispatch(
                     authApi.endpoints.me.initiate(undefined, {
                         forceRefetch: true,
                     }),
-                ).unwrap(),
-            )
+                ).unwrap();
+            })
             .catch(() => {
                 dispatch(clearSession());
             })

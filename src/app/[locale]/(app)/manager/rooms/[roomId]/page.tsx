@@ -220,7 +220,7 @@ function CheckInSheet({
                 {/* Header */}
                 <div className="flex items-start justify-between border-b border-hairline px-6 py-4">
                     <div className="flex items-center gap-3">
-                        <div className="flex size-9 items-center justify-center rounded-xl bg-brand/10">
+                        <div className="flex size-9 items-center justify-center rounded-xl bg-brand-soft">
                             <LogIn className="size-4 text-brand" />
                         </div>
                         <div>
@@ -512,7 +512,7 @@ function StayCard({
             {/* Guest header */}
             <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                    <div className="flex size-11 items-center justify-center rounded-xl bg-brand/8 text-brand">
+                    <div className="flex size-11 items-center justify-center rounded-xl bg-brand-soft text-brand">
                         <User className="size-5" />
                     </div>
                     <div>
@@ -676,7 +676,7 @@ export default function RoomDetailPage({
                     <ArrowLeft className="size-4" />
                     Rooms
                 </Link>
-                <div className="mt-4 rounded-2xl border border-destructive/20 bg-destructive/5 p-5 text-[13px] text-destructive">
+                <div className="mt-4 rounded-2xl border border-destructive-border bg-destructive-soft p-5 text-[13px] text-destructive">
                     Room not found.
                 </div>
             </DashboardFrame>
@@ -713,7 +713,7 @@ export default function RoomDetailPage({
                             className={cn(
                                 "flex size-14 shrink-0 items-center justify-center rounded-2xl",
                                 isOccupied
-                                    ? "bg-brand/8 text-brand"
+                                    ? "bg-brand-soft text-brand"
                                     : "bg-secondary text-slate-gray",
                             )}
                         >
@@ -728,7 +728,7 @@ export default function RoomDetailPage({
                                     className={cn(
                                         "rounded-full px-2.5 py-0.5 text-[11px] font-medium",
                                         isOccupied
-                                            ? "bg-brand/8 text-brand"
+                                            ? "bg-brand-soft text-brand"
                                             : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400",
                                     )}
                                 >

@@ -1,210 +1,270 @@
 "use client";
 
-import Image from "next/image";
-import { useTranslations } from "next-intl";
 import {
-    Split,
-    ShieldCheck,
-    Coins,
-    LayoutGrid,
     WifiOff,
-    FileSpreadsheet,
+    ShieldCheck,
+    Languages,
+    TrendingUp,
+    Building2,
+    TabletSmartphone,
+    Printer,
+    Tv,
+    QrCode,
+    CheckCircle2,
     Sparkles,
 } from "lucide-react";
 import { ScrollReveal, StaggerContainer, StaggerItem } from "./LandingMotion";
 
 export default function LandingBentoFeatures() {
-    const t = useTranslations("bento");
-
     return (
         <section
             id="features"
-            className="relative py-12 md:py-16 bg-secondary/30"
+            className="relative py-20 md:py-28 border-t border-border/50 bg-background text-foreground"
         >
             <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <ScrollReveal className="text-center max-w-2xl mx-auto">
-                    <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-3 py-0.5 text-[11px] font-medium text-muted-foreground">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/25 bg-orange-500/10 px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-[0.16em] text-orange-600 dark:text-orange-400">
                         <Sparkles className="size-3" />
-                        <span>{t("badge")}</span>
+                        <span>Local Advantage</span>
                     </div>
-                    <h2 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-                        {t("titlePrefix")}
-                        <span className="text-foreground">
-                            {t("titleHighlight")}
+                    <h2 className="mt-4 text-3xl sm:text-5xl font-bold tracking-tight">
+                        Built for Real-World{" "}
+                        <span className="text-orange-600 dark:text-orange-500">
+                            Ethiopian Hospitality
                         </span>
                     </h2>
-                    <p className="mt-2 text-xs sm:text-sm text-muted-foreground">
-                        {t("description")}
+                    <p className="mt-3 text-sm sm:text-base text-muted-foreground leading-relaxed">
+                        Generic foreign POS tools break when Wi-Fi drops, miss
+                        local mobile transfers, and lock you into expensive
+                        terminals. Restorch is built for how you actually
+                        operate.
                     </p>
                 </ScrollReveal>
 
                 {/* Bento Grid */}
-                <StaggerContainer className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4">
-                    {/* BENTO 1: Multi-Station Routing (Col 7 / 12) */}
-                    <StaggerItem className="lg:col-span-7 flex flex-col justify-between rounded-2xl border border-border/80 bg-card/80 p-5 backdrop-blur-xl">
+                <StaggerContainer className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4">
+                    {/* BENTO 1 (7 cols): Offline-Resilient Service */}
+                    <StaggerItem className="lg:col-span-7 group flex flex-col justify-between rounded-3xl border border-border/80 bg-card/80 dark:bg-white/[0.025] p-6 sm:p-7 transition-all duration-300 hover:border-orange-500/40">
                         <div>
-                            <div className="flex items-center justify-between">
-                                <div className="flex size-10 items-center justify-center rounded-xl bg-secondary text-foreground border border-border">
-                                    <Split className="size-5" />
+                            <div className="flex items-center justify-between gap-3">
+                                <div className="flex size-11 items-center justify-center rounded-2xl border border-orange-500/25 bg-orange-500/10 text-orange-600 dark:text-orange-400">
+                                    <WifiOff className="size-5" />
                                 </div>
-                                <span className="rounded-full border border-border bg-secondary px-2.5 py-0.5 text-[10px] font-medium text-foreground font-mono">
-                                    {t("routingBadge")}
+                                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/10 px-3 py-1 text-[10px] font-mono font-semibold text-amber-600 dark:text-amber-400">
+                                    <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                    OFFLINE QUEUE READY
                                 </span>
                             </div>
 
-                            <h3 className="mt-4 text-lg sm:text-xl font-bold text-foreground">
-                                {t("routingTitle")}
+                            <h3 className="mt-5 text-xl sm:text-2xl font-bold tracking-tight">
+                                Keep serving even when Wi-Fi drops
                             </h3>
-                            <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                                {t("routingDesc")}
+                            <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-xl">
+                                Orders, table updates, and kitchen routing keep
+                                running locally during connection cuts — and
+                                sync automatically the second internet returns.
                             </p>
                         </div>
 
-                        {/* Station Visual Badges */}
-                        <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-border/50">
-                            <div className="rounded-lg border border-border/60 bg-background/60 p-2 text-center">
-                                <span className="text-[9px] font-medium uppercase text-muted-foreground">
-                                    Station 01
+                        {/* Mini Offline Sync Visual */}
+                        <div className="mt-6 rounded-2xl border border-border/70 bg-background/80 dark:bg-[#0D111A] p-3.5">
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono">
+                                <span className="text-muted-foreground">
+                                    Local Cache:{" "}
+                                    <strong className="text-foreground">
+                                        14 tickets queued
+                                    </strong>
                                 </span>
-                                <p className="text-xs font-bold text-foreground mt-0.5">
-                                    {t("station1")}
-                                </p>
+                                <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+                                    <CheckCircle2 className="size-3.5" />
+                                    Zero lost orders
+                                </span>
                             </div>
-                            <div className="rounded-lg border border-border/60 bg-background/60 p-2 text-center">
-                                <span className="text-[9px] font-medium uppercase text-muted-foreground">
-                                    Station 02
-                                </span>
-                                <p className="text-xs font-bold text-foreground mt-0.5">
-                                    {t("station2")}
-                                </p>
-                            </div>
-                            <div className="rounded-lg border border-border/60 bg-background/60 p-2 text-center">
-                                <span className="text-[9px] font-medium uppercase text-muted-foreground">
-                                    Station 03
-                                </span>
-                                <p className="text-xs font-bold text-foreground mt-0.5">
-                                    {t("station3")}
-                                </p>
-                            </div>
-                            <div className="rounded-lg border border-border/60 bg-background/60 p-2 text-center">
-                                <span className="text-[9px] font-medium uppercase text-muted-foreground">
-                                    Station 04
-                                </span>
-                                <p className="text-xs font-bold text-foreground mt-0.5">
-                                    {t("station4")}
-                                </p>
+                            <div className="mt-2.5 h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                                <div className="h-full w-4/5 rounded-full bg-gradient-to-r from-orange-500 to-emerald-500" />
                             </div>
                         </div>
                     </StaggerItem>
 
-                    {/* BENTO 2: TinaVerify AI Anti-Fraud with Image (Col 5 / 12) */}
-                    <StaggerItem
-                        id="tinaverify"
-                        className="lg:col-span-5 flex flex-col justify-between rounded-2xl border border-border bg-gradient-to-br from-secondary/80 via-card to-card p-5 backdrop-blur-xl"
-                    >
+                    {/* BENTO 2 (5 cols): Telebirr, CBE & Cash Reconciliation */}
+                    <StaggerItem className="lg:col-span-5 group flex flex-col justify-between rounded-3xl border border-border/80 bg-card/80 dark:bg-white/[0.025] p-6 sm:p-7 transition-all duration-300 hover:border-orange-500/40">
                         <div>
-                            <div className="flex items-center justify-between">
-                                <div className="flex size-10 items-center justify-center rounded-xl bg-foreground text-background">
+                            <div className="flex items-center justify-between gap-3">
+                                <div className="flex size-11 items-center justify-center rounded-2xl border border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                                     <ShieldCheck className="size-5" />
                                 </div>
-                                <span className="rounded-full bg-secondary px-2.5 py-0.5 text-[10px] font-bold text-foreground">
-                                    {t("tinaVerifyBadge")}
+                                <span className="rounded-full border border-border bg-secondary/70 px-3 py-1 text-[10px] font-mono font-semibold text-muted-foreground">
+                                    ZERO LEAKAGE
                                 </span>
                             </div>
 
-                            <h3 className="mt-4 text-lg sm:text-xl font-bold text-foreground">
-                                {t("tinaVerifyTitle")}
+                            <h3 className="mt-5 text-xl font-bold tracking-tight">
+                                Telebirr, CBE &amp; Cash verified
                             </h3>
-                            <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                                {t("tinaVerifyDesc")}
+                            <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                                Log mobile transfer references alongside cash
+                                drops and blind shift counts — stopping fake
+                                screenshot losses at the desk.
                             </p>
                         </div>
 
-                        <div className="mt-4 relative aspect-[16/7] w-full rounded-xl overflow-hidden border border-border">
-                            <Image
-                                src="/images/landing/tinaverify_audit.jpg"
-                                alt="TinaVerify Bank Verification"
-                                fill
-                                className="object-cover"
-                            />
-                        </div>
-                    </StaggerItem>
-
-                    {/* BENTO 3: Cashier Custody & Drops (Col 4 / 12) */}
-                    <StaggerItem className="lg:col-span-4 rounded-2xl border border-border/80 bg-card/80 p-5 backdrop-blur-xl">
-                        <div className="flex size-10 items-center justify-center rounded-xl bg-secondary text-foreground border border-border">
-                            <Coins className="size-5" />
-                        </div>
-                        <h3 className="mt-4 text-base font-bold text-foreground">
-                            {t("cashDropTitle")}
-                        </h3>
-                        <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
-                            {t("cashDropDesc")}
-                        </p>
-                    </StaggerItem>
-
-                    {/* BENTO 4: Live Floor Matrix (Col 4 / 12) */}
-                    <StaggerItem className="lg:col-span-4 rounded-2xl border border-border/80 bg-card/80 p-5 backdrop-blur-xl">
-                        <div className="flex size-10 items-center justify-center rounded-xl bg-secondary text-foreground border border-border">
-                            <LayoutGrid className="size-5" />
-                        </div>
-                        <h3 className="mt-4 text-base font-bold text-foreground">
-                            {t("floorMatrixTitle")}
-                        </h3>
-                        <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
-                            {t("floorMatrixDesc")}
-                        </p>
-                    </StaggerItem>
-
-                    {/* BENTO 5: Offline-First PWA (Col 4 / 12) */}
-                    <StaggerItem className="lg:col-span-4 rounded-2xl border border-border/80 bg-card/80 p-5 backdrop-blur-xl">
-                        <div className="flex size-10 items-center justify-center rounded-xl bg-secondary text-muted-foreground border border-border">
-                            <WifiOff className="size-5" />
-                        </div>
-                        <h3 className="mt-4 text-base font-bold text-foreground">
-                            {t("offlineTitle")}
-                        </h3>
-                        <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
-                            {t("offlineDesc")}
-                        </p>
-                    </StaggerItem>
-
-                    {/* BENTO 6: One-Click Operational Close (Col 12 / 12) */}
-                    <StaggerItem className="lg:col-span-12 rounded-2xl border border-border/80 bg-card/80 p-5 sm:p-6 backdrop-blur-xl">
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                            <div className="space-y-1.5 max-w-2xl">
-                                <div className="flex items-center gap-2">
-                                    <FileSpreadsheet className="size-4 text-foreground" />
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-foreground">
-                                        {t("closeBadge")}
+                        <div className="mt-6 space-y-2">
+                            {[
+                                {
+                                    channel: "Telebirr",
+                                    ref: "TXN-89421",
+                                    amount: "2,450 ETB",
+                                },
+                                {
+                                    channel: "CBE Transfer",
+                                    ref: "FT-26109",
+                                    amount: "4,800 ETB",
+                                },
+                            ].map(tx => (
+                                <div
+                                    key={tx.ref}
+                                    className="flex items-center justify-between rounded-xl border border-border/60 bg-background/80 dark:bg-[#0D111A] px-3 py-2 text-xs"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0" />
+                                        <span className="font-semibold">
+                                            {tx.channel}
+                                        </span>
+                                        <span className="font-mono text-[10px] text-muted-foreground">
+                                            {tx.ref}
+                                        </span>
+                                    </div>
+                                    <span className="font-mono font-bold">
+                                        {tx.amount}
                                     </span>
                                 </div>
-                                <h3 className="text-lg sm:text-xl font-bold text-foreground">
-                                    {t("closeTitle")}
+                            ))}
+                        </div>
+                    </StaggerItem>
+
+                    {/* BENTO 3 (4 cols): Amharic & English Everywhere */}
+                    <StaggerItem className="lg:col-span-4 flex flex-col justify-between rounded-3xl border border-border/80 bg-card/80 dark:bg-white/[0.025] p-6 transition-all duration-300 hover:border-orange-500/40">
+                        <div>
+                            <div className="flex size-10 items-center justify-center rounded-2xl border border-border bg-secondary/70 text-foreground">
+                                <Languages className="size-5" />
+                            </div>
+                            <h3 className="mt-4 text-lg font-bold tracking-tight">
+                                Amharic &amp; English everywhere
+                            </h3>
+                            <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                                Switch seamlessly between English and አማርኛ
+                                across guest QR menus, waiter POS, and kitchen
+                                tickets.
+                            </p>
+                        </div>
+
+                        <div className="mt-5 flex items-center justify-between rounded-xl border border-border/70 bg-background/80 dark:bg-[#0D111A] px-3.5 py-2.5 text-xs">
+                            <span className="font-semibold">
+                                Special Kitfo · ልዩ ክትፎ
+                            </span>
+                            <span className="rounded-md bg-orange-500/15 px-2 py-0.5 text-[10px] font-mono font-semibold text-orange-600 dark:text-orange-400">
+                                EN / አማ
+                            </span>
+                        </div>
+                    </StaggerItem>
+
+                    {/* BENTO 4 (4 cols): Live Gebeya Margin Alerts */}
+                    <StaggerItem className="lg:col-span-4 flex flex-col justify-between rounded-3xl border border-border/80 bg-card/80 dark:bg-white/[0.025] p-6 transition-all duration-300 hover:border-orange-500/40">
+                        <div>
+                            <div className="flex size-10 items-center justify-center rounded-2xl border border-border bg-secondary/70 text-foreground">
+                                <TrendingUp className="size-5" />
+                            </div>
+                            <h3 className="mt-4 text-lg font-bold tracking-tight">
+                                Live Gebeya margin alerts
+                            </h3>
+                            <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                                Track daily local market ingredient prices and
+                                see immediately when rising costs squeeze a
+                                dish&apos;s profit margin.
+                            </p>
+                        </div>
+
+                        <div className="mt-5 flex items-center justify-between rounded-xl border border-border/70 bg-background/80 dark:bg-[#0D111A] px-3.5 py-2.5 text-xs">
+                            <span className="text-muted-foreground">
+                                Red Onion · Merkato
+                            </span>
+                            <span className="font-mono font-semibold text-rose-600 dark:text-rose-400">
+                                +12.4% alert
+                            </span>
+                        </div>
+                    </StaggerItem>
+
+                    {/* BENTO 5 (4 cols): Multi-Branch & Hotel Room Folios */}
+                    <StaggerItem className="lg:col-span-4 flex flex-col justify-between rounded-3xl border border-border/80 bg-card/80 dark:bg-white/[0.025] p-6 transition-all duration-300 hover:border-orange-500/40">
+                        <div>
+                            <div className="flex size-10 items-center justify-center rounded-2xl border border-border bg-secondary/70 text-foreground">
+                                <Building2 className="size-5" />
+                            </div>
+                            <h3 className="mt-4 text-lg font-bold tracking-tight">
+                                Multi-branch &amp; hotel folios
+                            </h3>
+                            <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                                Run multiple outlets from one owner login and
+                                post restaurant orders straight to hotel room
+                                bills.
+                            </p>
+                        </div>
+
+                        <div className="mt-5 flex items-center gap-2 text-[11px] font-mono">
+                            <span className="rounded-lg border border-border/70 bg-background/80 dark:bg-[#0D111A] px-2.5 py-1.5 font-semibold">
+                                Bole Main
+                            </span>
+                            <span className="rounded-lg border border-border/70 bg-background/80 dark:bg-[#0D111A] px-2.5 py-1.5 font-semibold">
+                                Room 304 Folio
+                            </span>
+                        </div>
+                    </StaggerItem>
+
+                    {/* BENTO 6 (12 cols): Zero Hardware Lock-In */}
+                    <StaggerItem className="lg:col-span-12 rounded-3xl border border-border/80 bg-card/80 dark:bg-white/[0.025] p-6 sm:p-7">
+                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                            <div className="max-w-xl">
+                                <span className="text-[10px] font-mono font-semibold uppercase tracking-[0.16em] text-orange-600 dark:text-orange-400">
+                                    Hardware Freedom
+                                </span>
+                                <h3 className="mt-1.5 text-xl font-bold tracking-tight">
+                                    Runs on the devices you already own
                                 </h3>
-                                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                                    {t("closeDesc")}
+                                <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                                    No proprietary POS boxes or locked-in
+                                    tablets. Open Restorch on any Android
+                                    tablet, waiter phone, kitchen smart TV, or
+                                    standard 80mm thermal printer.
                                 </p>
                             </div>
 
-                            <div className="flex items-center gap-3 text-xs">
-                                <div className="rounded-xl border border-border/80 bg-background/80 px-3 py-2 text-center">
-                                    <span className="text-[10px] text-muted-foreground">
-                                        {t("closeTimeLabel")}
-                                    </span>
-                                    <p className="text-sm font-bold font-mono text-foreground mt-0.5">
-                                        {t("closeTimeValue")}
-                                    </p>
-                                </div>
-                                <div className="rounded-xl border border-border/80 bg-background/80 px-3 py-2 text-center">
-                                    <span className="text-[10px] text-muted-foreground">
-                                        {t("discrepancyLabel")}
-                                    </span>
-                                    <p className="text-sm font-bold font-mono text-foreground mt-0.5">
-                                        {t("discrepancyValue")}
-                                    </p>
-                                </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 shrink-0">
+                                {[
+                                    {
+                                        icon: TabletSmartphone,
+                                        label: "Phones & Tablets",
+                                    },
+                                    { icon: Tv, label: "Kitchen TV / KDS" },
+                                    {
+                                        icon: Printer,
+                                        label: "80mm Thermal",
+                                    },
+                                    { icon: QrCode, label: "Table QR Tents" },
+                                ].map(hw => {
+                                    const HwIcon = hw.icon;
+                                    return (
+                                        <div
+                                            key={hw.label}
+                                            className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-border/70 bg-background/80 dark:bg-[#0D111A] px-4 py-3 text-center"
+                                        >
+                                            <HwIcon className="size-4 text-orange-500" />
+                                            <span className="text-[11px] font-semibold">
+                                                {hw.label}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </StaggerItem>

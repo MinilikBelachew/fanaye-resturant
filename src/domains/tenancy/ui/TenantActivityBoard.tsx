@@ -1,0 +1,1001 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import {
+    Activity,
+    ArrowUpRight,
+    Banknote,
+    Building2,
+    Calendar,
+    CheckCircle2,
+    Clock,
+    CreditCard,
+    Crown,
+    Eye,
+    Filter,
+    Layers,
+    Package,
+    Receipt,
+    RefreshCw,
+    ScrollText,
+    Search,
+    Store,
+    TrendingUp,
+    Users,
+    UtensilsCrossed,
+    Wallet,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import DataTable, {
+    type DataTableColumn,
+} from "@/components/custom/organisms/DataTable";
+import {
+    type TenantActivityDailyRow,
+    type TenantActivityMovementItem,
+    type TenantActivityTableItem,
+    useGetSuperAdminTenantActivityQuery,
+    useGetSuperAdminTenantsQuery,
+} from "@/context/services/superAdminApi";
+import { useImpersonation } from "@/domains/identity/application/useImpersonation";
+import { formatEtb } from "@/lib/money";
+import { cn } from "@/lib/utils";
+
+function toYmd(d: Date): string {
+    return d.toISOString().slice(0, 10);
+}
+
+function daysAgoYmd(days: number): string {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() - days);
+    return toYmd(d);
+}
+
+const MOVEMENT_CATEGORIES = [
+    { id: "ALL", label: "All Movements" },
+    { id: "SALES", label: "Sales & Payments" },
+    { id: "TABLES", label: "Tables & Orders" },
+    { id: "CASH", label: "Cash & Expenses" },
+    { id: "INVENTORY", label: "Inventory & Stock" },
+    { id: "SHIFTS", label: "Staff Shifts" },
+    { id: "AUDIT", label: "Audit Events" },
+] as const;
+
+function categoryBadgeClass(cat: TenantActivityMovementItem["category"]) {
+    switch (cat) {
+        case "SALES":
+            return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
+        case "TABLES":
+            return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20";
+        case "CASH":
+            return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
+        case "INVENTORY":
+            return "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20";
+        case "SHIFTS":
+            return "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20";
+        case "AUDIT":
+        default:
+            return "bg-secondary text-muted-foreground border-border";
+    }
+}
+
+export default function TenantActivityBoard({
+    fixedTenantId,
+}: {
+    fixedTenantId?: string;
+}) {
+    const todayStr = useMemo(() => toYmd(new Date()), []);
+    const [selectedTenantId, setSelectedTenantId] = useState<string>(
+        fixedTenantId || "",
+    );
+    const [selectedBranchId, setSelectedBranchId] = useState<string>("");
+    const [datePreset, setDatePreset] = useState<
+        "today" | "yesterday" | "7d" | "30d" | "custom"
+    >("7d");
+    const [startDate, setStartDate] = useState<string>(() => daysAgoYmd(6));
+    const [endDate, setEndDate] = useState<string>(() => toYmd(new Date()));
+    const [activeSection, setActiveSection] = useState<
+        "daily" | "tables" | "movements"
+    >("daily");
+    const [tableFilter, setTableFilter] = useState<
+        "all" | "occupied" | "available"
+    >("all");
+    const [movementCategory, setMovementCategory] = useState<string>("ALL");
+    const [movementSearch, setMovementSearch] = useState<string>("");
+
+    const effectiveTenantId = fixedTenantId || selectedTenantId || undefined;
+
+    const { data: tenantsRes } = useGetSuperAdminTenantsQuery(undefined, {
+        skip: Boolean(fixedTenantId),
+    });
+    const tenants = tenantsRes?.data ?? [];
+
+    const {
+        data: activity,
+        isLoading,
+        isFetching,
+        refetch,
+    } = useGetSuperAdminTenantActivityQuery(
+        {
+            tenantId: effectiveTenantId,
+            branchId: selectedBranchId || undefined,
+            startDate,
+            endDate,
+            movementType: movementCategory,
+        },
+        {
+            pollingInterval: 15_000,
+            refetchOnFocus: true,
+        },
+    );
+
+    const { impersonate, isStarting: isImpersonating } = useImpersonation();
+
+    function applyPreset(preset: "today" | "yesterday" | "7d" | "30d") {
+        setDatePreset(preset);
+        if (preset === "today") {
+            setStartDate(todayStr);
+            setEndDate(todayStr);
+        } else if (preset === "yesterday") {
+            const y = daysAgoYmd(1);
+            setStartDate(y);
+            setEndDate(y);
+        } else if (preset === "7d") {
+            setStartDate(daysAgoYmd(6));
+            setEndDate(todayStr);
+        } else if (preset === "30d") {
+            setStartDate(daysAgoYmd(29));
+            setEndDate(todayStr);
+        }
+    }
+
+    const summary = activity?.summary;
+    const branches = activity?.branches ?? [];
+    const dailyRows = activity?.dailyBreakdown ?? [];
+    const allTables = activity?.activeTables ?? [];
+    const movements = activity?.movements ?? [];
+
+    const filteredTables = useMemo(() => {
+        if (tableFilter === "occupied") {
+            return allTables.filter(t => t.isOccupied);
+        }
+        if (tableFilter === "available") {
+            return allTables.filter(t => !t.isOccupied);
+        }
+        return allTables;
+    }, [allTables, tableFilter]);
+
+    const filteredMovements = useMemo(() => {
+        const q = movementSearch.trim().toLowerCase();
+        if (!q) return movements;
+        return movements.filter(
+            m =>
+                m.title.toLowerCase().includes(q) ||
+                m.subtitle.toLowerCase().includes(q) ||
+                m.actorName.toLowerCase().includes(q) ||
+                m.branchName.toLowerCase().includes(q) ||
+                m.tenantName.toLowerCase().includes(q),
+        );
+    }, [movements, movementSearch]);
+
+    const dailyColumns: DataTableColumn<TenantActivityDailyRow>[] = useMemo(
+        () => [
+            {
+                id: "date",
+                header: "Business Date",
+                sortValue: row => row.date,
+                cell: row => (
+                    <span className="font-mono text-[12.5px] font-semibold text-foreground">
+                        {row.date}
+                    </span>
+                ),
+            },
+            ...(!effectiveTenantId
+                ? [
+                      {
+                          id: "tenant",
+                          header: "Restaurant",
+                          sortValue: (row: TenantActivityDailyRow) =>
+                              row.tenantName,
+                          cell: (row: TenantActivityDailyRow) => (
+                              <span className="text-[13px] font-medium text-foreground">
+                                  {row.tenantName}
+                              </span>
+                          ),
+                      },
+                  ]
+                : []),
+            {
+                id: "branch",
+                header: "Branch",
+                sortValue: row => row.branchName,
+                cell: row => (
+                    <span className="text-[13px] font-medium text-foreground">
+                        {row.branchName}
+                    </span>
+                ),
+            },
+            {
+                id: "gmv",
+                header: "Total Sales (GMV)",
+                sortValue: row => row.totalGmv,
+                cell: row => (
+                    <span className="font-semibold text-[13px] tabular-nums text-foreground">
+                        {formatEtb(row.totalGmv)}
+                    </span>
+                ),
+            },
+            {
+                id: "cashDigital",
+                header: "Cash vs Digital",
+                sortValue: row => row.cashSales,
+                cell: row => (
+                    <div className="text-[12px] tabular-nums">
+                        <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                            Cash: {formatEtb(row.cashSales)}
+                        </span>
+                        <span className="mx-1.5 text-slate-gray">·</span>
+                        <span className="font-medium text-blue-600 dark:text-blue-400">
+                            Digital: {formatEtb(row.digitalSales)}
+                        </span>
+                    </div>
+                ),
+            },
+            {
+                id: "billsOrders",
+                header: "Bills & Orders",
+                sortValue: row => row.billsCount,
+                cell: row => (
+                    <div className="text-[12px] text-foreground">
+                        <span className="font-medium">
+                            {row.paidBillsCount}/{row.billsCount} bills
+                        </span>
+                        <span className="mx-1 text-slate-gray">·</span>
+                        <span className="text-slate-gray">
+                            {row.ordersCount} orders
+                        </span>
+                    </div>
+                ),
+            },
+            {
+                id: "tablesShifts",
+                header: "Tables & Shifts",
+                sortValue: row => row.tableSessionsCount,
+                cell: row => (
+                    <div className="text-[12px] text-slate-gray">
+                        <span>{row.tableSessionsCount} table visits</span>
+                        <span className="mx-1">·</span>
+                        <span>{row.shiftsCount} shifts</span>
+                    </div>
+                ),
+            },
+            {
+                id: "dropsExpenses",
+                header: "Drops / Expenses",
+                sortValue: row => row.cashDropsTotal,
+                cell: row => (
+                    <div className="text-[12px] tabular-nums text-slate-gray">
+                        <span>Drops: {formatEtb(row.cashDropsTotal)}</span>
+                        {row.expensesTotal > 0 ? (
+                            <>
+                                <span className="mx-1">·</span>
+                                <span className="text-rose-600 dark:text-rose-400">
+                                    Exp: {formatEtb(row.expensesTotal)}
+                                </span>
+                            </>
+                        ) : null}
+                    </div>
+                ),
+            },
+            {
+                id: "dailyClose",
+                header: "Daily Close",
+                sortValue: row => row.dailyCloseStatus,
+                cell: row => (
+                    <div className="flex items-center gap-1.5">
+                        <Badge
+                            variant={
+                                row.dailyCloseStatus === "LOCKED" ||
+                                row.dailyCloseStatus === "APPROVED"
+                                    ? "success"
+                                    : "secondary"
+                            }
+                            className="text-[11px]"
+                        >
+                            {row.dailyCloseStatus}
+                        </Badge>
+                        {row.cashVariance !== 0 ? (
+                            <span
+                                className={cn(
+                                    "text-[11px] font-mono",
+                                    row.cashVariance < 0
+                                        ? "text-destructive"
+                                        : "text-amber-600",
+                                )}
+                            >
+                                ({row.cashVariance > 0 ? "+" : ""}
+                                {formatEtb(row.cashVariance)})
+                            </span>
+                        ) : null}
+                    </div>
+                ),
+            },
+        ],
+        [effectiveTenantId],
+    );
+
+    const cashPct =
+        summary && summary.cashVolume + summary.digitalVolume > 0
+            ? Math.round(
+                  (summary.cashVolume /
+                      (summary.cashVolume + summary.digitalVolume)) *
+                      100,
+              )
+            : 0;
+    const digitalPct =
+        summary && summary.cashVolume + summary.digitalVolume > 0
+            ? 100 - cashPct
+            : 0;
+
+    return (
+        <div className="space-y-5">
+            {/* Filter Bar */}
+            <div className="rounded-2xl border border-hairline bg-card p-4">
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                    <div className="flex flex-wrap items-end gap-3">
+                        {/* Tenant Filter (unless fixed inside TenantDetailView) */}
+                        {!fixedTenantId ? (
+                            <div className="min-w-[200px]">
+                                <label className="mb-1 block text-[11px] font-medium text-slate-gray">
+                                    Restaurant (Tenant)
+                                </label>
+                                <select
+                                    value={selectedTenantId}
+                                    onChange={e => {
+                                        setSelectedTenantId(e.target.value);
+                                        setSelectedBranchId("");
+                                    }}
+                                    className="h-9 w-full rounded-xl border border-hairline bg-background px-3 text-[12.5px] font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                >
+                                    <option value="">
+                                        All Restaurants ({tenants.length})
+                                    </option>
+                                    {tenants.map(t => (
+                                        <option key={t.id} value={t.id}>
+                                            {t.name} ({t.city})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        ) : null}
+
+                        {/* Branch Filter */}
+                        <div className="min-w-[190px]">
+                            <label className="mb-1 block text-[11px] font-medium text-slate-gray">
+                                Branch
+                            </label>
+                            <select
+                                value={selectedBranchId}
+                                onChange={e =>
+                                    setSelectedBranchId(e.target.value)
+                                }
+                                className="h-9 w-full rounded-xl border border-hairline bg-background px-3 text-[12.5px] font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            >
+                                <option value="">
+                                    All Branches ({branches.length})
+                                </option>
+                                {branches.map(b => (
+                                    <option key={b.id} value={b.id}>
+                                        {b.name} (
+                                        {effectiveTenantId
+                                            ? b.displayCode
+                                            : b.tenantName}
+                                        )
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Quick Date Presets */}
+                        <div>
+                            <label className="mb-1 block text-[11px] font-medium text-slate-gray">
+                                Period
+                            </label>
+                            <div className="inline-flex h-9 items-center rounded-xl border border-hairline bg-background p-0.5">
+                                {(
+                                    [
+                                        { id: "today", label: "Today" },
+                                        { id: "yesterday", label: "Yesterday" },
+                                        { id: "7d", label: "7 Days" },
+                                        { id: "30d", label: "30 Days" },
+                                    ] as const
+                                ).map(p => (
+                                    <button
+                                        key={p.id}
+                                        type="button"
+                                        onClick={() => applyPreset(p.id)}
+                                        className={cn(
+                                            "h-8 rounded-lg px-2.5 text-[12px] font-medium transition-colors",
+                                            datePreset === p.id
+                                                ? "bg-foreground text-background"
+                                                : "text-slate-gray hover:text-foreground",
+                                        )}
+                                    >
+                                        {p.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Custom Date Range */}
+                        <div className="flex items-end gap-2">
+                            <div>
+                                <label className="mb-1 block text-[11px] font-medium text-slate-gray">
+                                    From
+                                </label>
+                                <Input
+                                    type="date"
+                                    value={startDate}
+                                    max={endDate}
+                                    onChange={e => {
+                                        setStartDate(e.target.value);
+                                        setDatePreset("custom");
+                                    }}
+                                    className="h-9 w-[140px] rounded-xl text-[12px]"
+                                />
+                            </div>
+                            <div>
+                                <label className="mb-1 block text-[11px] font-medium text-slate-gray">
+                                    To
+                                </label>
+                                <Input
+                                    type="date"
+                                    value={endDate}
+                                    min={startDate}
+                                    onChange={e => {
+                                        setEndDate(e.target.value);
+                                        setDatePreset("custom");
+                                    }}
+                                    className="h-9 w-[140px] rounded-xl text-[12px]"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right actions: Impersonate + Refresh */}
+                    <div className="flex flex-wrap items-center gap-2">
+                        {effectiveTenantId ? (
+                            <>
+                                <button
+                                    type="button"
+                                    disabled={isImpersonating}
+                                    onClick={() =>
+                                        void impersonate({
+                                            tenantId: effectiveTenantId,
+                                            targetRole: "OWNER_ADMIN",
+                                            branchId:
+                                                selectedBranchId || undefined,
+                                        })
+                                    }
+                                    className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-hairline bg-background px-3 text-[12px] font-medium text-foreground hover:bg-secondary disabled:opacity-50"
+                                >
+                                    <Crown className="size-3.5 text-amber-500" />
+                                    <span>View as Owner</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={isImpersonating}
+                                    onClick={() =>
+                                        void impersonate({
+                                            tenantId: effectiveTenantId,
+                                            targetRole: "MANAGER",
+                                            branchId:
+                                                selectedBranchId || undefined,
+                                        })
+                                    }
+                                    className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-hairline bg-background px-3 text-[12px] font-medium text-foreground hover:bg-secondary disabled:opacity-50"
+                                >
+                                    <Eye className="size-3.5 text-primary" />
+                                    <span>View as Manager</span>
+                                </button>
+                            </>
+                        ) : null}
+
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => refetch()}
+                            disabled={isFetching}
+                            className="h-9 gap-1.5 rounded-xl px-3 text-[12px]"
+                        >
+                            <RefreshCw
+                                className={cn(
+                                    "size-3.5",
+                                    isFetching && "animate-spin",
+                                )}
+                            />
+                            <span>Refresh</span>
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
+            {/* KPI Cards */}
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-2xl border border-hairline bg-card p-4">
+                    <div className="flex items-center justify-between text-slate-gray">
+                        <span className="text-[12px] font-medium">
+                            Period Sales (GMV)
+                        </span>
+                        <TrendingUp className="size-4 text-emerald-500" />
+                    </div>
+                    <p className="mt-2 text-[22px] font-bold tracking-tight tabular-nums text-foreground">
+                        {formatEtb(summary?.totalGmv ?? 0)}
+                    </p>
+                    <p className="mt-1 text-[12px] text-slate-gray">
+                        Avg per active day:{" "}
+                        <strong className="font-semibold text-foreground">
+                            {formatEtb(summary?.avgDailyGmv ?? 0)}
+                        </strong>
+                    </p>
+                </div>
+
+                <div className="rounded-2xl border border-hairline bg-card p-4">
+                    <div className="flex items-center justify-between text-slate-gray">
+                        <span className="text-[12px] font-medium">
+                            Cash vs Digital Settlement
+                        </span>
+                        <Wallet className="size-4 text-blue-500" />
+                    </div>
+                    <div className="mt-2 flex items-baseline justify-between gap-2 tabular-nums">
+                        <div>
+                            <p className="text-[11px] text-slate-gray">Cash</p>
+                            <p className="text-[16px] font-bold text-emerald-600 dark:text-emerald-400">
+                                {formatEtb(summary?.cashVolume ?? 0)}{" "}
+                                <span className="text-[11px] font-normal">
+                                    ({cashPct}%)
+                                </span>
+                            </p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-[11px] text-slate-gray">
+                                Digital / Transfer
+                            </p>
+                            <p className="text-[16px] font-bold text-blue-600 dark:text-blue-400">
+                                {formatEtb(summary?.digitalVolume ?? 0)}{" "}
+                                <span className="text-[11px] font-normal">
+                                    ({digitalPct}%)
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    <div className="mt-2.5 flex h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                        <div
+                            className="bg-emerald-500 transition-all"
+                            style={{ width: `${cashPct}%` }}
+                        />
+                        <div
+                            className="bg-blue-500 transition-all"
+                            style={{ width: `${digitalPct}%` }}
+                        />
+                    </div>
+                </div>
+
+                <div className="rounded-2xl border border-hairline bg-card p-4">
+                    <div className="flex items-center justify-between text-slate-gray">
+                        <span className="text-[12px] font-medium">
+                            Orders, Bills & Table Visits
+                        </span>
+                        <Receipt className="size-4 text-amber-500" />
+                    </div>
+                    <p className="mt-2 text-[22px] font-bold tracking-tight tabular-nums text-foreground">
+                        {summary?.totalBills ?? 0}{" "}
+                        <span className="text-[13px] font-normal text-slate-gray">
+                            bills ({summary?.paidBills ?? 0} paid ·{" "}
+                            {summary?.unpaidBills ?? 0} open)
+                        </span>
+                    </p>
+                    <p className="mt-1 text-[12px] text-slate-gray">
+                        <strong className="text-foreground">
+                            {summary?.totalOrders ?? 0}
+                        </strong>{" "}
+                        orders across{" "}
+                        <strong className="text-foreground">
+                            {summary?.totalTableSessions ?? 0}
+                        </strong>{" "}
+                        table sessions
+                    </p>
+                </div>
+
+                <div className="rounded-2xl border border-hairline bg-card p-4">
+                    <div className="flex items-center justify-between text-slate-gray">
+                        <span className="text-[12px] font-medium">
+                            Live Active Tables & Staff
+                        </span>
+                        <UtensilsCrossed className="size-4 text-primary" />
+                    </div>
+                    <p className="mt-2 text-[22px] font-bold tracking-tight tabular-nums text-foreground">
+                        {summary?.activeTablesCount ?? 0}{" "}
+                        <span className="text-[14px] font-normal text-slate-gray">
+                            / {summary?.totalTablesCount ?? 0} tables active now
+                        </span>
+                    </p>
+                    <p className="mt-1 text-[12px] text-slate-gray">
+                        <strong className="text-foreground">
+                            {summary?.activeStaffShiftsCount ?? 0}
+                        </strong>{" "}
+                        staff on duty · Drops:{" "}
+                        <strong className="text-foreground">
+                            {formatEtb(summary?.cashDropsVolume ?? 0)}
+                        </strong>
+                    </p>
+                </div>
+            </div>
+
+            {/* Branch Quick Pills when multiple branches exist */}
+            {branches.length > 1 ? (
+                <div className="flex flex-wrap items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => setSelectedBranchId("")}
+                        className={cn(
+                            "rounded-xl border px-3 py-1.5 text-[12px] font-medium transition-colors",
+                            !selectedBranchId
+                                ? "border-foreground bg-foreground text-background"
+                                : "border-hairline bg-card text-foreground hover:bg-secondary",
+                        )}
+                    >
+                        All Branches ({branches.length})
+                    </button>
+                    {branches.map(b => (
+                        <button
+                            key={b.id}
+                            type="button"
+                            onClick={() =>
+                                setSelectedBranchId(
+                                    selectedBranchId === b.id ? "" : b.id,
+                                )
+                            }
+                            className={cn(
+                                "flex items-center gap-2 rounded-xl border px-3 py-1.5 text-[12px] font-medium transition-colors",
+                                selectedBranchId === b.id
+                                    ? "border-foreground bg-foreground text-background"
+                                    : "border-hairline bg-card text-foreground hover:bg-secondary",
+                            )}
+                        >
+                            <span>{b.name}</span>
+                            <span
+                                className={cn(
+                                    "rounded-full px-1.5 py-0.2 text-[10px]",
+                                    selectedBranchId === b.id
+                                        ? "bg-background/20 text-background"
+                                        : "bg-secondary text-slate-gray",
+                                )}
+                            >
+                                {b.activeTables}/{b.totalTables} tables ·{" "}
+                                {formatEtb(b.periodGmv)}
+                            </span>
+                        </button>
+                    ))}
+                </div>
+            ) : null}
+
+            {/* Sub-navigation Tabs */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline pb-2">
+                <div className="flex flex-wrap items-center gap-1.5">
+                    <button
+                        type="button"
+                        onClick={() => setActiveSection("daily")}
+                        className={cn(
+                            "inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[12.5px] font-semibold transition-colors",
+                            activeSection === "daily"
+                                ? "bg-foreground text-background"
+                                : "text-slate-gray hover:bg-secondary hover:text-foreground",
+                        )}
+                    >
+                        <Calendar className="size-3.5" />
+                        <span>Daily Breakdown ({dailyRows.length})</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setActiveSection("tables")}
+                        className={cn(
+                            "inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[12.5px] font-semibold transition-colors",
+                            activeSection === "tables"
+                                ? "bg-foreground text-background"
+                                : "text-slate-gray hover:bg-secondary hover:text-foreground",
+                        )}
+                    >
+                        <UtensilsCrossed className="size-3.5" />
+                        <span>
+                            Live Floor & Tables (
+                            {summary?.activeTablesCount ?? 0}/
+                            {summary?.totalTablesCount ?? 0} Active)
+                        </span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setActiveSection("movements")}
+                        className={cn(
+                            "inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[12.5px] font-semibold transition-colors",
+                            activeSection === "movements"
+                                ? "bg-foreground text-background"
+                                : "text-slate-gray hover:bg-secondary hover:text-foreground",
+                        )}
+                    >
+                        <Activity className="size-3.5" />
+                        <span>All Movements ({movements.length})</span>
+                    </button>
+                </div>
+            </div>
+
+            {/* Tab 1: Daily Breakdown */}
+            {activeSection === "daily" ? (
+                <DataTable
+                    columns={dailyColumns}
+                    data={dailyRows}
+                    rowKey={row => `${row.date}-${row.branchId}`}
+                    searchPlaceholder="Search by date, restaurant, or branch…"
+                    searchText={row =>
+                        `${row.date} ${row.tenantName} ${row.branchName} ${row.dailyCloseStatus}`
+                    }
+                    empty={
+                        isLoading
+                            ? "Loading daily activity…"
+                            : "No activity recorded for the selected period."
+                    }
+                />
+            ) : null}
+
+            {/* Tab 2: Live Floor & Active Tables */}
+            {activeSection === "tables" ? (
+                <div className="space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="inline-flex items-center rounded-xl border border-hairline bg-card p-1">
+                            {(
+                                [
+                                    {
+                                        id: "all",
+                                        label: `All Tables (${allTables.length})`,
+                                    },
+                                    {
+                                        id: "occupied",
+                                        label: `Occupied / Active (${allTables.filter(t => t.isOccupied).length})`,
+                                    },
+                                    {
+                                        id: "available",
+                                        label: `Available (${allTables.filter(t => !t.isOccupied).length})`,
+                                    },
+                                ] as const
+                            ).map(f => (
+                                <button
+                                    key={f.id}
+                                    type="button"
+                                    onClick={() => setTableFilter(f.id)}
+                                    className={cn(
+                                        "rounded-lg px-3 py-1 text-[12px] font-medium transition-colors",
+                                        tableFilter === f.id
+                                            ? "bg-foreground text-background"
+                                            : "text-slate-gray hover:text-foreground",
+                                    )}
+                                >
+                                    {f.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {filteredTables.length === 0 ? (
+                        <div className="rounded-2xl border border-hairline bg-card p-8 text-center text-[13px] text-slate-gray">
+                            No tables match the current filter.
+                        </div>
+                    ) : (
+                        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            {filteredTables.map(
+                                (t: TenantActivityTableItem) => (
+                                    <div
+                                        key={t.tableId}
+                                        className={cn(
+                                            "rounded-2xl border p-3.5 transition-colors",
+                                            t.status === "BILL_REQUESTED"
+                                                ? "border-amber-500/40 bg-amber-500/5"
+                                                : t.isOccupied
+                                                  ? "border-emerald-500/40 bg-emerald-500/5"
+                                                  : "border-hairline bg-card",
+                                        )}
+                                    >
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-[14px] font-bold text-foreground">
+                                                        {t.tableName}
+                                                    </span>
+                                                    {t.isVip ? (
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="border-amber-500/40 text-[10px] text-amber-600"
+                                                        >
+                                                            VIP
+                                                        </Badge>
+                                                    ) : null}
+                                                </div>
+                                                <p className="text-[11px] text-slate-gray">
+                                                    {t.branchName}
+                                                    {!effectiveTenantId
+                                                        ? ` · ${t.tenantName}`
+                                                        : ""}
+                                                </p>
+                                            </div>
+                                            <Badge
+                                                variant={
+                                                    t.isOccupied
+                                                        ? "success"
+                                                        : "secondary"
+                                                }
+                                                className="text-[10.5px]"
+                                            >
+                                                {t.status}
+                                            </Badge>
+                                        </div>
+
+                                        <div className="mt-3 space-y-1 border-t border-hairline pt-2.5 text-[12px]">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-slate-gray">
+                                                    Waiter
+                                                </span>
+                                                <span className="font-medium text-foreground">
+                                                    {t.waiterName ||
+                                                        "Unassigned"}
+                                                </span>
+                                            </div>
+                                            {t.isOccupied ? (
+                                                <>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-slate-gray">
+                                                            Orders / Guests
+                                                        </span>
+                                                        <span className="font-medium text-foreground">
+                                                            {t.ordersCount}{" "}
+                                                            order(s)
+                                                            {t.guestCount
+                                                                ? ` · ${t.guestCount} guests`
+                                                                : ""}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-slate-gray">
+                                                            Running Bill
+                                                        </span>
+                                                        <span className="font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                                                            {formatEtb(
+                                                                t.runningBillTotal,
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="flex items-center justify-between text-slate-gray">
+                                                    <span>Session</span>
+                                                    <span>
+                                                        Idle / Available
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ),
+                            )}
+                        </div>
+                    )}
+                </div>
+            ) : null}
+
+            {/* Tab 3: All Movements Timeline */}
+            {activeSection === "movements" ? (
+                <div className="space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            {MOVEMENT_CATEGORIES.map(cat => (
+                                <button
+                                    key={cat.id}
+                                    type="button"
+                                    onClick={() => setMovementCategory(cat.id)}
+                                    className={cn(
+                                        "rounded-xl border px-3 py-1.5 text-[12px] font-medium transition-colors",
+                                        movementCategory === cat.id
+                                            ? "border-foreground bg-foreground text-background"
+                                            : "border-hairline bg-card text-slate-gray hover:text-foreground",
+                                    )}
+                                >
+                                    {cat.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="relative min-w-[240px]">
+                            <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-gray" />
+                            <Input
+                                value={movementSearch}
+                                onChange={e =>
+                                    setMovementSearch(e.target.value)
+                                }
+                                placeholder="Filter movements, staff, bill #…"
+                                className="h-9 rounded-xl pl-8 text-[12px]"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="overflow-hidden rounded-2xl border border-hairline bg-card">
+                        {filteredMovements.length === 0 ? (
+                            <div className="p-8 text-center text-[13px] text-slate-gray">
+                                No movements found for the selected filters.
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-hairline">
+                                {filteredMovements.map(m => (
+                                    <div
+                                        key={m.id}
+                                        className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 hover:bg-secondary/40"
+                                    >
+                                        <div className="flex min-w-0 items-start gap-3">
+                                            <span
+                                                className={cn(
+                                                    "mt-0.5 inline-flex shrink-0 rounded-lg border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                                                    categoryBadgeClass(
+                                                        m.category,
+                                                    ),
+                                                )}
+                                            >
+                                                {m.category}
+                                            </span>
+                                            <div className="min-w-0">
+                                                <p className="truncate text-[13px] font-semibold text-foreground">
+                                                    {m.title}
+                                                </p>
+                                                <p className="mt-0.5 text-[12px] text-slate-gray">
+                                                    {m.subtitle}
+                                                    {" · "}
+                                                    <span className="font-medium text-foreground">
+                                                        {m.branchName}
+                                                    </span>
+                                                    {!effectiveTenantId
+                                                        ? ` (${m.tenantName})`
+                                                        : ""}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex shrink-0 items-center gap-4 text-right">
+                                            {m.amount != null ? (
+                                                <span className="font-mono text-[13px] font-bold tabular-nums text-foreground">
+                                                    {formatEtb(m.amount)}
+                                                </span>
+                                            ) : null}
+                                            <div className="text-[11px] text-slate-gray">
+                                                <p className="font-medium text-foreground">
+                                                    {m.actorName}
+                                                </p>
+                                                <p>
+                                                    {new Date(
+                                                        m.timestamp,
+                                                    ).toLocaleString("en-GB", {
+                                                        day: "2-digit",
+                                                        month: "short",
+                                                        hour: "2-digit",
+                                                        minute: "2-digit",
+                                                    })}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            ) : null}
+        </div>
+    );
+}

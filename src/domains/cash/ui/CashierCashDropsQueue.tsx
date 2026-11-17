@@ -75,7 +75,7 @@ function DropCard({
                         className={
                             drop.status === "DISPUTED"
                                 ? "border-amber-500/30 bg-amber-500/10 text-amber-600"
-                                : "border-primary/30 bg-primary/10 text-primary"
+                                : "border-primary-border bg-primary-soft text-primary"
                         }
                     >
                         {drop.status}
@@ -354,7 +354,7 @@ export default function CashierCashDropsQueue() {
                 </div>
 
                 {pendingError || historyError ? (
-                    <p className="rounded-[12px] border border-destructive/20 bg-destructive/10 px-3 py-2 text-[12px] text-destructive">
+                    <p className="rounded-[12px] border border-destructive-border bg-destructive-soft px-3 py-2 text-[12px] text-destructive">
                         {t("cashDropsLoadError")}
                     </p>
                 ) : null}
@@ -463,7 +463,7 @@ export default function CashierCashDropsQueue() {
                                                             : drop.status ===
                                                                 "DISPUTED"
                                                               ? "border-amber-500/30 bg-amber-500/10 text-amber-600"
-                                                              : "border-primary/30 bg-primary/10 text-primary"
+                                                              : "border-primary-border bg-primary-soft text-primary"
                                                     }
                                                 >
                                                     {drop.status ===
@@ -486,7 +486,7 @@ export default function CashierCashDropsQueue() {
                                                             drop,
                                                         )
                                                     }
-                                                    className="h-8 gap-1 rounded-full px-2.5 text-xs text-primary hover:bg-primary/10"
+                                                    className="h-8 gap-1 rounded-full px-2.5 text-xs text-primary hover:bg-primary-soft-hover"
                                                 >
                                                     <ReceiptText className="size-3.5" />
                                                     <span>{t("receipt")}</span>

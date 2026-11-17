@@ -301,7 +301,7 @@ export default function ManagerMenuPage() {
                         <Button
                             size="sm"
                             variant="outline"
-                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            className="text-destructive hover:bg-destructive-soft-hover hover:text-destructive"
                             onClick={() => setDeletingItem(row)}
                         >
                             <Trash2 className="size-3.5" />

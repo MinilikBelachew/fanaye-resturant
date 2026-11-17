@@ -124,7 +124,7 @@ export default function FbReportView({
     if (isLoading) {
         return (
             <div className="flex h-80 flex-col items-center justify-center gap-3 rounded-2xl border border-hairline bg-card/60 p-8 text-center backdrop-blur-sm">
-                <div className="relative flex size-11 items-center justify-center rounded-2xl bg-brand/10 text-brand">
+                <div className="relative flex size-11 items-center justify-center rounded-2xl bg-brand-soft text-brand">
                     <Utensils className="size-5 animate-pulse" />
                 </div>
                 <div className="space-y-1">
@@ -141,7 +141,7 @@ export default function FbReportView({
 
     if (isError || !data) {
         return (
-            <div className="flex h-80 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-destructive/30 bg-destructive/5 p-8 text-center">
+            <div className="flex h-80 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-destructive-border bg-destructive-soft p-8 text-center">
                 <AlertCircle className="size-7 text-destructive" />
                 <div className="space-y-1">
                     <p className="text-sm font-medium text-foreground">
@@ -325,7 +325,7 @@ export default function FbReportView({
                         setSelectedDish(row);
                         setDishDetailPage(1);
                     }}
-                    className="h-7 text-[11.5px] gap-1 font-medium hover:border-brand/40 shadow-2xs"
+                    className="h-7 text-[11.5px] gap-1 font-medium hover:border-brand-border shadow-2xs"
                 >
                     <span>Inspect</span>
                     <ExternalLink className="size-3 opacity-60" />
@@ -571,7 +571,7 @@ export default function FbReportView({
                                     ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25"
                                     : isPartial
                                       ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25"
-                                      : "bg-destructive/10 text-destructive border border-destructive/25",
+                                      : "bg-destructive-soft text-destructive border border-destructive-border",
                             )}
                         >
                             {isPaid
@@ -631,7 +631,7 @@ export default function FbReportView({
                                     />
                                 </div>
                             ) : (
-                                <div className="flex size-9 items-center justify-center rounded-full bg-brand/10 text-brand">
+                                <div className="flex size-9 items-center justify-center rounded-full bg-brand-soft text-brand">
                                     <Utensils className="size-4" />
                                 </div>
                             )}
@@ -957,7 +957,7 @@ export default function FbReportView({
                                 <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                                     Total F&B Revenue
                                 </span>
-                                <div className="rounded-lg bg-brand/10 p-1.5 text-brand">
+                                <div className="rounded-lg bg-brand-soft p-1.5 text-brand">
                                     <CircleDollarSign className="size-3.5" />
                                 </div>
                             </div>
@@ -1011,7 +1011,7 @@ export default function FbReportView({
                                         "rounded-lg p-1.5",
                                         isFoodCostHealthy
                                             ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                                            : "bg-destructive/10 text-destructive",
+                                            : "bg-destructive-soft text-destructive",
                                     )}
                                 >
                                     <ChefHat className="size-3.5" />
@@ -1054,7 +1054,7 @@ export default function FbReportView({
                                         "rounded-lg p-1.5",
                                         isBevCostHealthy
                                             ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                                            : "bg-destructive/10 text-destructive",
+                                            : "bg-destructive-soft text-destructive",
                                     )}
                                 >
                                     <Wine className="size-3.5" />
@@ -1448,7 +1448,7 @@ export default function FbReportView({
             {subTab === "order-audit" && (
                 <div className="space-y-4">
                     {selectedDateFilter && (
-                        <div className="flex items-center gap-2 rounded-lg border border-brand/30 bg-brand/5 px-3 py-2 text-xs">
+                        <div className="flex items-center gap-2 rounded-lg border border-brand-border bg-brand-soft px-3 py-2 text-xs">
                             <span className="font-medium text-foreground">
                                 Filtered by Date:
                             </span>

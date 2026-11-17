@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import {
     Activity,
     AlertTriangle,
+    ArrowRightLeft,
     Banknote,
     BarChart3,
     BedDouble,
@@ -25,6 +26,7 @@ import {
     Inbox,
     LayoutDashboard,
     LayoutGrid,
+    Megaphone,
     MessageSquareQuote,
     Package,
     Phone,
@@ -33,7 +35,9 @@ import {
     ScrollText,
     Shield,
     Store,
+    TrendingUp,
     Truck,
+    UserPlus,
     UserRound,
     Users,
     UtensilsCrossed,
@@ -120,6 +124,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                             label: "Live Ops",
                             icon: Radio,
                         },
+                        {
+                            href: "/super-admin/activity",
+                            label: "Tenant Activity",
+                            icon: Activity,
+                        },
                     ],
                 },
                 {
@@ -134,6 +143,26 @@ function navSectionsForRole(role: Role): NavSection[] {
                             href: "/super-admin/plans",
                             label: "Plans",
                             icon: CreditCard,
+                        },
+                        {
+                            href: "/super-admin/marketing",
+                            label: "Marketing",
+                            icon: Megaphone,
+                        },
+                        {
+                            href: "/super-admin/talent",
+                            label: "Talent",
+                            icon: UserPlus,
+                        },
+                        {
+                            href: "/super-admin/market-prices",
+                            label: "Market Prices",
+                            icon: TrendingUp,
+                        },
+                        {
+                            href: "/super-admin/testimonials",
+                            label: "Testimonials",
+                            icon: MessageSquareQuote,
                         },
                         {
                             href: "/super-admin/staff",
@@ -159,6 +188,24 @@ function navSectionsForRole(role: Role): NavSection[] {
                             href: "/super-admin/audit",
                             label: "Platform Audit",
                             icon: ScrollText,
+                        },
+                    ],
+                },
+            ];
+        case "market_reporter":
+            return [
+                {
+                    title: "Market",
+                    items: [
+                        {
+                            href: "/super-admin/market-prices",
+                            label: "Market Prices",
+                            icon: TrendingUp,
+                        },
+                        {
+                            href: "/super-admin/testimonials",
+                            label: "Testimonials",
+                            icon: MessageSquareQuote,
                         },
                     ],
                 },
@@ -193,6 +240,23 @@ function navSectionsForRole(role: Role): NavSection[] {
                             label: "Website",
                             icon: Globe,
                         },
+                        /*
+                        {
+                            href: "/owner/marketing",
+                            label: "Marketing",
+                            icon: Megaphone,
+                        },
+                        {
+                            href: "/owner/talent",
+                            label: "Talent",
+                            icon: UserPlus,
+                        },
+                        {
+                            href: "/owner/market-prices",
+                            label: "Market Prices",
+                            icon: TrendingUp,
+                        },
+                        */
                         {
                             href: "/owner/feedback",
                             label: "Feedback",
@@ -304,6 +368,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                                     href: "/owner/staff/active-shifts",
                                     label: "Active Shifts",
                                     icon: Activity,
+                                },
+                                {
+                                    href: "/owner/staff/handovers",
+                                    label: "Shift Handovers",
+                                    icon: ArrowRightLeft,
                                 },
                                 {
                                     href: "/owner/staff/schedule",
@@ -456,6 +525,23 @@ function navSectionsForRole(role: Role): NavSection[] {
                                 },
                             ],
                         },
+                        /*
+                        {
+                            href: "/manager/marketing",
+                            label: "Marketing",
+                            icon: Megaphone,
+                        },
+                        {
+                            href: "/manager/talent",
+                            label: "Talent",
+                            icon: UserPlus,
+                        },
+                        {
+                            href: "/manager/market-prices",
+                            label: "Market Prices",
+                            icon: TrendingUp,
+                        },
+                        */
                         {
                             href: "/manager/stations",
                             label: "Stations",
@@ -532,6 +618,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                                     href: "/manager/staff/active-shifts",
                                     label: "Active Shifts",
                                     icon: Activity,
+                                },
+                                {
+                                    href: "/manager/staff/handovers",
+                                    label: "Shift Handovers",
+                                    icon: ArrowRightLeft,
                                 },
                                 {
                                     href: "/manager/staff/schedule",
@@ -855,6 +946,11 @@ function navSectionsForRole(role: Role): NavSection[] {
                                     icon: ChefHat,
                                 },
                             ],
+                        },
+                        {
+                            href: "/store/market-prices",
+                            label: "Market Prices",
+                            icon: TrendingUp,
                         },
                         {
                             href: "/store/notifications",

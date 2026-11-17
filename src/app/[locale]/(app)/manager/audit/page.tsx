@@ -87,15 +87,15 @@ function ManagerAuditContent() {
     const pageParam = searchParams.get("page");
     const limitParam = searchParams.get("limit");
 
-    const selectedCategory: CategoryFilter =
-        CATEGORY_TABS.some(c => c.id === categoryParam)
-            ? (categoryParam as CategoryFilter)
-            : "all";
+    const selectedCategory: CategoryFilter = CATEGORY_TABS.some(
+        c => c.id === categoryParam,
+    )
+        ? (categoryParam as CategoryFilter)
+        : "all";
 
-    const dateFilter: DateFilter =
-        DATE_PRESETS.some(d => d.id === dateParam)
-            ? (dateParam as DateFilter)
-            : "7days";
+    const dateFilter: DateFilter = DATE_PRESETS.some(d => d.id === dateParam)
+        ? (dateParam as DateFilter)
+        : "7days";
 
     const page = Number(pageParam) > 0 ? Number(pageParam) : 1;
     const limit = PAGE_SIZE_OPTIONS.includes(Number(limitParam) as any)
@@ -539,7 +539,7 @@ function ManagerAuditContent() {
             </div>
 
             {isError ? (
-                <div className="rounded-[16px] border border-destructive/30 bg-destructive/10 p-4 text-[13px] text-destructive">
+                <div className="rounded-[16px] border border-destructive-border bg-destructive-soft p-4 text-[13px] text-destructive">
                     {t("loadError")}
                 </div>
             ) : null}

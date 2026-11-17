@@ -13,6 +13,10 @@ import {
     useSetSuperAdminRolePermissionsMutation,
     type RestaurantRole,
 } from "@/context/services/superAdminApi";
+import {
+    useGetPlatformRolePermissionsQuery,
+    useUpdatePlatformRolePermissionsMutation,
+} from "@/context/services/marketPricesApi";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
@@ -58,6 +62,31 @@ export default function RolesPermissionsBoard() {
 
     const [setRolePermissions, { isLoading: saving }] =
         useSetSuperAdminRolePermissionsMutation();
+
+    const { data: reporterPerms } =
+        useGetPlatformRolePermissionsQuery("MARKET_REPORTER");
+    const [updatePlatformRolePerms, { isLoading: savingReporterPerms }] =
+        useUpdatePlatformRolePermissionsMutation();
+
+    const handleToggleReporterPerm = async (
+        permissionCode: string,
+        enabled: boolean,
+    ) => {
+        if (!reporterPerms) return;
+        const next = reporterPerms.permissions.map(p => ({
+            permissionCode: p.permissionCode,
+            enabled: p.permissionCode === permissionCode ? enabled : p.enabled,
+        }));
+        try {
+            await updatePlatformRolePerms({
+                roleCode: "MARKET_REPORTER",
+                permissions: next,
+            }).unwrap();
+            toast.success("Market Reporter permissions updated.");
+        } catch {
+            toast.error("Failed to update Market Reporter permissions.");
+        }
+    };
 
     useEffect(() => {
         if (!rolePerms) return;
@@ -307,6 +336,54 @@ export default function RolesPermissionsBoard() {
                         ))}
                     </div>
                 )}
+            </section>
+
+            {/* Platform Role: MARKET_REPORTER */}
+            <section className="lg:col-span-12 rounded-2xl border border-border bg-card p-5">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+                    <div>
+                        <h3 className="text-sm font-semibold text-foreground">
+                            Platform Role: Market Price Reporter
+                            (MARKET_REPORTER)
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                            Control what Market Reporter accounts can do. By
+                            default, they can only update daily prices.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+                    {(reporterPerms?.permissions ?? []).map(perm => (
+                        <label
+                            key={perm.permissionCode}
+                            className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-background p-3.5 transition hover:border-primary-border"
+                        >
+                            <Checkbox
+                                checked={perm.enabled}
+                                disabled={savingReporterPerms}
+                                onCheckedChange={val =>
+                                    handleToggleReporterPerm(
+                                        perm.permissionCode,
+                                        val === true,
+                                    )
+                                }
+                                className="mt-0.5"
+                            />
+                            <div className="min-w-0">
+                                <div className="text-xs font-semibold text-foreground">
+                                    {perm.label}
+                                </div>
+                                <div className="mt-0.5 font-mono text-[11px] text-primary">
+                                    {perm.permissionCode}
+                                </div>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    {perm.description}
+                                </p>
+                            </div>
+                        </label>
+                    ))}
+                </div>
             </section>
         </div>
     );

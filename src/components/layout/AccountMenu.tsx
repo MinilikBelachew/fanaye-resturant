@@ -19,7 +19,10 @@ import { toast } from "sonner";
 import { useTheme, type ThemeMode } from "@/components/theme/ThemeProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { performSignOut } from "@/domains/identity/application/signOut";
+import {
+    getPostSignOutPath,
+    performSignOut,
+} from "@/domains/identity/application/signOut";
 import { ROLE_LABELS } from "@/domains/identity/domain/role";
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { useAppDispatch, useAppSelector } from "@/context/hooks";
@@ -94,8 +97,9 @@ export default function AccountMenu({
         setSigningOut(true);
         setOpen(false);
         try {
+            const role = staff?.role;
             await performSignOut(dispatch);
-            router.push("/sign-in");
+            router.push(getPostSignOutPath(role));
         } finally {
             setSigningOut(false);
         }
@@ -259,7 +263,7 @@ export default function AccountMenu({
                             role="menuitem"
                             disabled={signingOut}
                             onClick={() => void logOut()}
-                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-60"
+                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-destructive-soft-hover hover:text-destructive disabled:opacity-60"
                         >
                             <LogOut className="size-4 shrink-0" />
                             {signingOut
@@ -282,7 +286,7 @@ export default function AccountMenu({
                     <div className="relative z-10 w-full max-w-sm rounded-[20px] border border-hairline bg-white dark:bg-card p-6 shadow-2xl animate-in zoom-in-95">
                         <div className="flex items-center justify-between pb-3 border-b border-hairline">
                             <div className="flex items-center gap-2">
-                                <div className="size-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                                <div className="size-8 rounded-full bg-primary-soft text-primary flex items-center justify-center">
                                     <Lock className="size-4" />
                                 </div>
                                 <div>

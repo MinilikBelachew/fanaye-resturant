@@ -1356,7 +1356,7 @@ export default function AddMenuItemSheet({
                                     </>
                                 ) : (
                                     <label className="flex size-full cursor-pointer flex-col items-center justify-center gap-2 px-4 text-center transition-colors hover:bg-secondary/60">
-                                        <span className="flex size-12 items-center justify-center rounded-full border border-dashed border-brand/40 bg-brand/10 text-brand">
+                                        <span className="flex size-12 items-center justify-center rounded-full border border-dashed border-brand-border bg-brand-soft text-brand">
                                             {uploading ? (
                                                 <Upload className="size-5 animate-pulse" />
                                             ) : (
@@ -1443,7 +1443,7 @@ export default function AddMenuItemSheet({
                                                 className={cn(
                                                     "flex w-full items-start gap-3 rounded-[12px] border px-3 py-2.5 text-left transition-colors",
                                                     selected
-                                                        ? "border-brand bg-brand/10"
+                                                        ? "border-brand bg-brand-soft"
                                                         : "border-hairline bg-card hover:bg-secondary/40",
                                                 )}
                                             >
@@ -1571,7 +1571,7 @@ export default function AddMenuItemSheet({
                                                             className={cn(
                                                                 "flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-secondary",
                                                                 checked &&
-                                                                    "bg-brand/5",
+                                                                    "bg-brand-soft",
                                                             )}
                                                         >
                                                             <span

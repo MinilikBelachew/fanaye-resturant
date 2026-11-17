@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
+import FloorKioskSettingsCard from "@/domains/floor/ui/FloorKioskSettingsCard";
 import {
     useGetTenantSiteQuery,
     useUpdateTenantSiteMutation,
@@ -339,7 +340,7 @@ export default function OwnerSettingsPage() {
                                 </div>
                                 <Badge
                                     variant="outline"
-                                    className="text-[10px] uppercase font-bold text-brand border-brand/30 bg-brand/5"
+                                    className="text-[10px] uppercase font-bold text-brand border-brand-border bg-brand-soft"
                                 >
                                     Tenant Default
                                 </Badge>
@@ -357,7 +358,7 @@ export default function OwnerSettingsPage() {
                                     className={cn(
                                         "flex flex-col items-start rounded-xl border p-3.5 text-left transition-all cursor-pointer",
                                         calendarMode === "ETHIOPIAN"
-                                            ? "border-primary bg-primary/5 ring-1 ring-primary shadow-xs"
+                                            ? "border-primary bg-primary-soft ring-1 ring-primary shadow-xs"
                                             : "border-hairline bg-surface-ivory/40 hover:bg-secondary/60 text-muted-foreground",
                                     )}
                                 >
@@ -393,7 +394,7 @@ export default function OwnerSettingsPage() {
                                     className={cn(
                                         "flex flex-col items-start rounded-xl border p-3.5 text-left transition-all cursor-pointer",
                                         calendarMode === "GREGORIAN"
-                                            ? "border-primary bg-primary/5 ring-1 ring-primary shadow-xs"
+                                            ? "border-primary bg-primary-soft ring-1 ring-primary shadow-xs"
                                             : "border-hairline bg-surface-ivory/40 hover:bg-secondary/60 text-muted-foreground",
                                     )}
                                 >
@@ -444,6 +445,8 @@ export default function OwnerSettingsPage() {
                             </div>
                         </section>
 
+                        <FloorKioskSettingsCard />
+
                         {/* Inventory Transfer & Fleet Approval Settings Card */}
                         <section className="space-y-4 rounded-[16px] border border-hairline bg-card p-4 shadow-subtle sm:p-5">
                             <div className="flex items-center justify-between">
@@ -463,7 +466,7 @@ export default function OwnerSettingsPage() {
                                 </div>
                                 <Badge
                                     variant="outline"
-                                    className="text-[10px] uppercase font-bold text-primary border-primary/30 bg-primary/5"
+                                    className="text-[10px] uppercase font-bold text-primary border-primary-border bg-primary-soft"
                                 >
                                     Transit Rules
                                 </Badge>

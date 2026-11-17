@@ -27,7 +27,7 @@ export function ArchitecturalTableVector({
         <div
             className={cn(
                 "relative flex h-44 w-full items-center justify-center overflow-hidden rounded-xl border border-hairline/80 select-none",
-                "bg-[#131417] shadow-inner group-hover:border-primary/40 transition-colors",
+                "bg-[#131417] shadow-inner group-hover:border-primary-border transition-colors",
                 className,
             )}
         >

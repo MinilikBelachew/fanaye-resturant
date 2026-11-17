@@ -342,7 +342,7 @@ export default function OutsideOrdersBoard({
                                 key={order.id}
                                 onClick={() => setSelectedOrderId(order.id)}
                                 className={cn(
-                                    "group rounded-xl border bg-card p-5 cursor-pointer transition-all hover:shadow-md hover:border-primary/40",
+                                    "group rounded-xl border bg-card p-5 cursor-pointer transition-all hover:shadow-md hover:border-primary-border",
                                     isClosed && "opacity-60",
                                 )}
                             >

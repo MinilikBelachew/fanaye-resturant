@@ -6,5 +6,5 @@ export default async function UsageRedirectPage({
     params: Promise<{ locale: string }>;
 }) {
     const { locale } = await params;
-    redirect({ href: "/super-admin/live-ops", locale });
+    redirect({ href: "/super-admin/activity", locale });
 }

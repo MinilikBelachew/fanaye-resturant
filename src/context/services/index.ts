@@ -72,9 +72,10 @@ const baseQueryWithReauth: BaseQueryFn<
                     token: string;
                     tokenExpires: number;
                 };
-                const { setAccessToken } = await import(
+                const { setAccessToken, stopImpersonation } = await import(
                     "@/context/slices/identitySlice"
                 );
+                api.dispatch(stopImpersonation());
                 api.dispatch(
                     setAccessToken({
                         token: data.token,
@@ -132,6 +133,9 @@ export const api = createApi({
         "Biometrics",
         "Backup",
         "Sync",
+        "Marketing",
+        "Talent",
+        "MarketPrices",
     ],
     endpoints: () => ({}),
 });

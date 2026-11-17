@@ -15,7 +15,7 @@ export default function DriverShell({ children }: { children: ReactNode }) {
             {/* Minimal Mobile-First Header */}
             <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-hairline bg-white/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:bg-card/90">
                 <div className="flex items-center gap-2.5">
-                    <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <div className="flex size-9 items-center justify-center rounded-xl bg-primary-soft text-primary">
                         <Truck className="size-5" />
                     </div>
                     <div>
@@ -23,7 +23,7 @@ export default function DriverShell({ children }: { children: ReactNode }) {
                             <span className="text-[14px] font-bold tracking-tight text-foreground">
                                 Driver Portal
                             </span>
-                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                            <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-semibold text-primary">
                                 Transit
                             </span>
                         </div>

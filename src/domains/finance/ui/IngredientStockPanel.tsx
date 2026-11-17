@@ -67,90 +67,101 @@ export default function IngredientStockPanel({
         return queryParams.toString();
     };
 
-    const columns: DataTableColumn<FinanceIngredientMovementRow>[] = useMemo(() => {
-        const cols: DataTableColumn<FinanceIngredientMovementRow>[] = [
-            {
-                id: "name",
-                header: t("invItemsIngredient"),
-                sortValue: row => row.name.toLowerCase(),
-                cell: row => (
-                    <div className="py-0.5">
-                        <span className="block text-[13px] font-medium leading-tight text-foreground">
-                            {row.name}
-                        </span>
-                        <span className="text-[11px] text-slate-gray">{row.unit}</span>
-                    </div>
-                ),
-            },
-            {
-                id: "openingQty",
-                header: t("invItemsOpening"),
-                headerClassName: "text-right",
-                className: "text-right tabular-nums text-slate-gray text-[12.5px]",
-                sortValue: row => row.openingQty,
-                cell: row => formatStockQty(row.openingQty),
-            },
-            {
-                id: "receivedQty",
-                header: t("invItemsReceived"),
-                headerClassName: "text-right",
-                className: "text-right tabular-nums text-emerald-600 font-medium text-[12.5px]",
-                sortValue: row => row.receivedQty,
-                cell: row =>
-                    row.receivedQty ? `+${formatStockQty(row.receivedQty)}` : "—",
-            },
-            {
-                id: "consumedQty",
-                header: t("invItemsConsumed"),
-                headerClassName: "text-right",
-                className: "text-right tabular-nums text-foreground text-[12.5px]",
-                sortValue: row => row.consumedQty,
-                cell: row =>
-                    row.consumedQty ? formatStockQty(row.consumedQty) : "—",
-            },
-            {
-                id: "wasteQty",
-                header: t("invItemsWaste"),
-                headerClassName: "text-right",
-                className: "text-right tabular-nums text-slate-gray text-[12.5px]",
-                sortValue: row => row.wasteQty,
-                cell: row => (row.wasteQty ? formatStockQty(row.wasteQty) : "—"),
-            },
-            {
-                id: "closingQty",
-                header: t("invItemsClosing"),
-                headerClassName: "text-right",
-                className: "text-right tabular-nums font-semibold text-foreground text-[12.5px]",
-                sortValue: row => row.closingQty,
-                cell: row => formatStockQty(row.closingQty),
-            },
-        ];
-
-        if (detailBasePath) {
-            cols.push({
-                id: "actions",
-                header: "Audit",
-                headerClassName: "text-right",
-                className: "text-right",
-                cell: row => {
-                    const qs = buildQueryString();
-                    const detailHref = `${detailBasePath}/${row.ingredientId}${qs ? `?${qs}` : ""}`;
-                    return (
-                        <Link
-                            href={detailHref}
-                            onClick={e => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-medium text-brand hover:bg-brand/10 hover:text-brand transition-colors"
-                        >
-                            <span>Details</span>
-                            <ChevronRight className="size-3.5" />
-                        </Link>
-                    );
+    const columns: DataTableColumn<FinanceIngredientMovementRow>[] =
+        useMemo(() => {
+            const cols: DataTableColumn<FinanceIngredientMovementRow>[] = [
+                {
+                    id: "name",
+                    header: t("invItemsIngredient"),
+                    sortValue: row => row.name.toLowerCase(),
+                    cell: row => (
+                        <div className="py-0.5">
+                            <span className="block text-[13px] font-medium leading-tight text-foreground">
+                                {row.name}
+                            </span>
+                            <span className="text-[11px] text-slate-gray">
+                                {row.unit}
+                            </span>
+                        </div>
+                    ),
                 },
-            });
-        }
+                {
+                    id: "openingQty",
+                    header: t("invItemsOpening"),
+                    headerClassName: "text-right",
+                    className:
+                        "text-right tabular-nums text-slate-gray text-[12.5px]",
+                    sortValue: row => row.openingQty,
+                    cell: row => formatStockQty(row.openingQty),
+                },
+                {
+                    id: "receivedQty",
+                    header: t("invItemsReceived"),
+                    headerClassName: "text-right",
+                    className:
+                        "text-right tabular-nums text-emerald-600 font-medium text-[12.5px]",
+                    sortValue: row => row.receivedQty,
+                    cell: row =>
+                        row.receivedQty
+                            ? `+${formatStockQty(row.receivedQty)}`
+                            : "—",
+                },
+                {
+                    id: "consumedQty",
+                    header: t("invItemsConsumed"),
+                    headerClassName: "text-right",
+                    className:
+                        "text-right tabular-nums text-foreground text-[12.5px]",
+                    sortValue: row => row.consumedQty,
+                    cell: row =>
+                        row.consumedQty ? formatStockQty(row.consumedQty) : "—",
+                },
+                {
+                    id: "wasteQty",
+                    header: t("invItemsWaste"),
+                    headerClassName: "text-right",
+                    className:
+                        "text-right tabular-nums text-slate-gray text-[12.5px]",
+                    sortValue: row => row.wasteQty,
+                    cell: row =>
+                        row.wasteQty ? formatStockQty(row.wasteQty) : "—",
+                },
+                {
+                    id: "closingQty",
+                    header: t("invItemsClosing"),
+                    headerClassName: "text-right",
+                    className:
+                        "text-right tabular-nums font-semibold text-foreground text-[12.5px]",
+                    sortValue: row => row.closingQty,
+                    cell: row => formatStockQty(row.closingQty),
+                },
+            ];
 
-        return cols;
-    }, [detailBasePath, period, from, to, date, branchId, t]);
+            if (detailBasePath) {
+                cols.push({
+                    id: "actions",
+                    header: "Audit",
+                    headerClassName: "text-right",
+                    className: "text-right",
+                    cell: row => {
+                        const qs = buildQueryString();
+                        const detailHref = `${detailBasePath}/${row.ingredientId}${qs ? `?${qs}` : ""}`;
+                        return (
+                            <Link
+                                href={detailHref}
+                                onClick={e => e.stopPropagation()}
+                                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-medium text-brand hover:bg-brand-soft-hover hover:text-brand transition-colors"
+                            >
+                                <span>Details</span>
+                                <ChevronRight className="size-3.5" />
+                            </Link>
+                        );
+                    },
+                });
+            }
+
+            return cols;
+        }, [detailBasePath, period, from, to, date, branchId, t]);
 
     const pagination: DataTablePagination = useMemo(
         () => ({

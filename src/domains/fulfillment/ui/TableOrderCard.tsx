@@ -159,7 +159,7 @@ export default function TableOrderCard({
                 allAreReady
                     ? "border-emerald-500/40"
                     : group.isDelayed
-                      ? "border-destructive/30"
+                      ? "border-destructive-border"
                       : "border-hairline",
             )}
         >
@@ -171,7 +171,7 @@ export default function TableOrderCard({
                             {group.tableDisplayName}
                         </h2>
                         {group.hasFresh ? (
-                            <span className="inline-flex items-center gap-1 rounded bg-brand/10 text-brand border border-brand/25 px-1.5 py-0.2 text-[10px] font-bold uppercase tracking-wider">
+                            <span className="inline-flex items-center gap-1 rounded bg-brand-soft text-brand border border-brand-border px-1.5 py-0.2 text-[10px] font-bold uppercase tracking-wider">
                                 <Sparkles className="size-2.5" />
                                 New
                             </span>

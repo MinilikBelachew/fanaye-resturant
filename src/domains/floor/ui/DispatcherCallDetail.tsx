@@ -280,7 +280,7 @@ export default function DispatcherCallDetail({
                 </div>
             ) : null}
             {error ? (
-                <div className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-[13px] text-destructive">
+                <div className="rounded-2xl border border-destructive-border bg-destructive-soft px-4 py-3 text-[13px] text-destructive">
                     {error}
                 </div>
             ) : null}

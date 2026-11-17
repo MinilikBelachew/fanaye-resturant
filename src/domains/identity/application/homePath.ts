@@ -4,6 +4,8 @@ export function homePathForRole(role: Role): string {
     switch (role) {
         case "super_admin":
             return "/super-admin";
+        case "market_reporter":
+            return "/super-admin/market-prices";
         case "owner":
             return "/owner";
         case "manager":
@@ -40,7 +42,8 @@ export function roleAllowsPath(role: Role, pathname: string): boolean {
         rest.startsWith("/sign-in") ||
         rest.startsWith("/sign-up") ||
         rest.startsWith("/forgot-password") ||
-        rest.startsWith("/r/")
+        rest.startsWith("/r/") ||
+        rest.startsWith("/market-prices")
     ) {
         return true;
     }
@@ -58,6 +61,9 @@ export function roleAllowsPath(role: Role, pathname: string): boolean {
     }
     if (role === "super_admin") {
         return rest.startsWith("/super-admin");
+    }
+    if (role === "market_reporter") {
+        return rest.startsWith("/super-admin/market-prices");
     }
     const home = homePathForRole(role);
     return rest === home || rest.startsWith(`${home}/`);

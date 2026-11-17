@@ -352,7 +352,7 @@ export default function WaiterShiftPage() {
                                     <p className="text-[17px] font-normal text-foreground">
                                         {staff?.name}
                                     </p>
-                                    <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-normal text-primary">
+                                    <span className="rounded-full bg-primary-soft px-2.5 py-0.5 text-[11px] font-normal text-primary">
                                         {t("server")}
                                     </span>
                                 </div>
@@ -477,7 +477,7 @@ export default function WaiterShiftPage() {
                     </div>
 
                     {actionError ? (
-                        <div className="flex flex-col gap-1 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-[13px] text-destructive">
+                        <div className="flex flex-col gap-1 rounded-xl border border-destructive-border bg-destructive-soft p-3 text-[13px] text-destructive">
                             <p className="font-normal">{actionError}</p>
                             {tablesOpen && (
                                 <button
@@ -739,7 +739,7 @@ export default function WaiterShiftPage() {
                                                 className={cn(
                                                     "align-top border-r border-hairline px-1.5 py-2 last:border-r-0",
                                                     cell.isToday &&
-                                                        "bg-brand/5",
+                                                        "bg-brand-soft",
                                                 )}
                                             >
                                                 {cell.row ? (

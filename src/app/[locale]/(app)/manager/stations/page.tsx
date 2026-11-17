@@ -71,7 +71,7 @@ function DeleteModal({
                 </button>
 
                 {/* icon */}
-                <div className="flex size-11 items-center justify-center rounded-xl bg-destructive/10">
+                <div className="flex size-11 items-center justify-center rounded-xl bg-destructive-soft">
                     <AlertTriangle className="size-5 text-destructive" />
                 </div>
 
@@ -272,7 +272,7 @@ export default function ManagerStationsPage() {
                     <RestorchLoader size="md" label={t("loading")} />
                 </div>
             ) : isError ? (
-                <div className="flex flex-col items-center justify-center rounded-2xl border border-destructive/20 bg-destructive/5 py-12 text-center">
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-destructive-border bg-destructive-soft py-12 text-center">
                     <p className="text-[13px] text-destructive">
                         {t("loadError")}
                     </p>
@@ -451,7 +451,7 @@ export default function ManagerStationsPage() {
                                             onClick={() =>
                                                 setPendingDelete(station)
                                             }
-                                            className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[12px] font-medium text-destructive hover:bg-destructive/8 transition-colors"
+                                            className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[12px] font-medium text-destructive hover:bg-destructive-soft-hover transition-colors"
                                         >
                                             <Trash2 className="size-3.5" />
                                             {tCommon("delete")}

@@ -611,7 +611,7 @@ export default function PlatformAuditPage() {
             </div>
 
             {isError ? (
-                <div className="rounded-[16px] border border-destructive/30 bg-destructive/10 p-4 text-[13px] text-destructive">
+                <div className="rounded-[16px] border border-destructive-border bg-destructive-soft p-4 text-[13px] text-destructive">
                     {t("audit.errorLoadEvents")}
                 </div>
             ) : null}

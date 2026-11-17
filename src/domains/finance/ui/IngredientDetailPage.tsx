@@ -333,7 +333,7 @@ export default function IngredientDetailPage({
                         </div>
 
                         {/* Consumed */}
-                        <div className="rounded-xl border border-brand/20 bg-brand/5 p-3.5 shadow-xs">
+                        <div className="rounded-xl border border-brand-border bg-brand-soft p-3.5 shadow-xs">
                             <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-brand">
                                 − Consumed (Sales)
                             </p>

@@ -240,7 +240,7 @@ export function ManagerTablesTableView({
                                                         type="button"
                                                         size="sm"
                                                         variant="ghost"
-                                                        className="gap-1 font-semibold text-primary hover:text-primary hover:bg-primary/10"
+                                                        className="gap-1 font-semibold text-primary hover:text-primary hover:bg-primary-soft-hover"
                                                         onClick={e => {
                                                             e.stopPropagation();
                                                             onSelectTable(

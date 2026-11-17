@@ -142,7 +142,7 @@ export default function CashCustodyBoard({
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-hairline/60 pb-5">
                 <div>
                     <div className="flex items-center gap-2.5">
-                        <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <div className="flex size-10 items-center justify-center rounded-xl bg-primary-soft text-primary">
                             <Wallet className="size-5" />
                         </div>
                         <div>
@@ -1285,7 +1285,7 @@ function DisputeResolutionModal({
                             className={cn(
                                 "flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition-all",
                                 resolution === "ACCEPT_COUNTED"
-                                    ? "border-primary bg-primary/5 text-foreground font-medium"
+                                    ? "border-primary bg-primary-soft text-foreground font-medium"
                                     : "border-hairline hover:bg-muted/30 text-muted-foreground",
                             )}
                         >
@@ -1315,7 +1315,7 @@ function DisputeResolutionModal({
                             className={cn(
                                 "flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition-all",
                                 resolution === "ACCEPT_DECLARED"
-                                    ? "border-primary bg-primary/5 text-foreground font-medium"
+                                    ? "border-primary bg-primary-soft text-foreground font-medium"
                                     : "border-hairline hover:bg-muted/30 text-muted-foreground",
                             )}
                         >
@@ -1347,7 +1347,7 @@ function DisputeResolutionModal({
                             className={cn(
                                 "flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition-all",
                                 resolution === "OTHER_APPROVED_AMOUNT"
-                                    ? "border-primary bg-primary/5 text-foreground font-medium"
+                                    ? "border-primary bg-primary-soft text-foreground font-medium"
                                     : "border-hairline hover:bg-muted/30 text-muted-foreground",
                             )}
                         >

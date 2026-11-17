@@ -152,7 +152,7 @@ export default function TerminalConnectSection() {
                 <CardHeader className="pb-3">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-soft text-primary">
                                 <Wifi className="h-5 w-5" />
                             </div>
                             <div>
@@ -302,7 +302,7 @@ export default function TerminalConnectSection() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex items-start gap-3.5">
-                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-xs">
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary font-semibold text-xs">
                                 1
                             </div>
                             <div>
@@ -319,7 +319,7 @@ export default function TerminalConnectSection() {
                         </div>
 
                         <div className="flex items-start gap-3.5">
-                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-xs">
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary font-semibold text-xs">
                                 2
                             </div>
                             <div>
@@ -338,7 +338,7 @@ export default function TerminalConnectSection() {
                         </div>
 
                         <div className="flex items-start gap-3.5">
-                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-xs">
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary font-semibold text-xs">
                                 3
                             </div>
                             <div>

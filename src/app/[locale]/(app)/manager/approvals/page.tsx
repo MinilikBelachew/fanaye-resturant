@@ -412,7 +412,7 @@ export default function ManagerApprovalsPage() {
                         className={cn(
                             "rounded-full border px-3 py-1 text-[12px] transition-colors",
                             typeFilter === entry.id
-                                ? "border-brand bg-brand/10 text-brand"
+                                ? "border-brand bg-brand-soft text-brand"
                                 : "border-hairline text-slate-gray hover:text-foreground",
                         )}
                     >

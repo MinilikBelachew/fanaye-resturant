@@ -38,7 +38,12 @@ export default function WaiterTablesBoard({
     const clockedIn = Boolean(
         useAppSelector(state => state.identity.session?.shiftSessionId),
     );
-    const { data, isLoading, isError } = useWaiterTablesQuery("all");
+    const socketConnected = useAppSelector(
+        state => state.notifications.connected,
+    );
+    const { data, isLoading, isError } = useWaiterTablesQuery("all", {
+        pollingInterval: socketConnected ? 0 : 4000,
+    });
     const [startSession] = useStartTableSessionMutation();
     const [busyId, setBusyId] = useState<string | null>(null);
     const [error, setError] = useState("");
@@ -236,7 +241,7 @@ export default function WaiterTablesBoard({
             ) : null}
 
             {error ? (
-                <div className="rounded-[14px] border border-destructive/30 bg-destructive/10 p-3 text-[13px] font-medium text-destructive">
+                <div className="rounded-[14px] border border-destructive-border bg-destructive-soft p-3 text-[13px] font-medium text-destructive">
                     {error}
                 </div>
             ) : null}
@@ -244,7 +249,7 @@ export default function WaiterTablesBoard({
             {isLoading ? (
                 <FloorGridSkeleton />
             ) : isError ? (
-                <div className="rounded-[16px] border border-destructive/30 bg-destructive/10 p-6 text-center text-destructive">
+                <div className="rounded-[16px] border border-destructive-border bg-destructive-soft p-6 text-center text-destructive">
                     <p className="font-semibold">
                         {tWaiter("couldNotLoadTables")}
                     </p>

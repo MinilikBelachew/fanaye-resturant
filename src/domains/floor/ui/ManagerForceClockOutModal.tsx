@@ -264,7 +264,7 @@ export const ManagerForceClockOutModal: React.FC<
                     <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2.5">
-                                <span className="flex size-8 items-center justify-center rounded-full bg-brand/10 text-xs font-bold text-brand">
+                                <span className="flex size-8 items-center justify-center rounded-full bg-brand-soft text-xs font-bold text-brand">
                                     {session.staffName.charAt(0).toUpperCase()}
                                 </span>
                                 <div>

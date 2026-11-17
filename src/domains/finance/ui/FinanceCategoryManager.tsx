@@ -137,7 +137,7 @@ export default function FinanceCategoryManager({
             <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border bg-background shadow-2xl animate-in fade-in-50 zoom-in-95">
                 <div className="flex items-center justify-between border-b px-6 py-4">
                     <div className="flex items-center gap-3">
-                        <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+                        <div className="flex size-10 items-center justify-center rounded-xl bg-primary-soft">
                             <Tag className="size-5 text-primary" />
                         </div>
                         <div>

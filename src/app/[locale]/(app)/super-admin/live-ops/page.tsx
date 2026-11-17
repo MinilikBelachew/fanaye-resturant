@@ -42,7 +42,7 @@ export default function LiveOpsPage() {
             </div>
 
             {error && (
-                <div className="rounded-[16px] border border-destructive/20 bg-destructive/10 p-4 text-[13px] text-destructive">
+                <div className="rounded-[16px] border border-destructive-border bg-destructive-soft p-4 text-[13px] text-destructive">
                     {t("liveOps.errorLoadTelemetry")}
                 </div>
             )}

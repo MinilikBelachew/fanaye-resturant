@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import {
     CheckCheck,
+    Globe,
     Inbox,
     MailOpen,
     MessageSquareQuote,
@@ -19,6 +20,7 @@ import {
     FeedbackSource,
     FeedbackStatus,
     useGetAdminFeedbackQuery,
+    useSetFeedbackWebsiteApprovalMutation,
     useUpdateFeedbackStatusMutation,
 } from "@/context/services/feedbackApi";
 
@@ -100,6 +102,8 @@ export default function FeedbackBoard() {
         useGetAdminFeedbackQuery(query);
     const [updateStatus, { isLoading: isUpdating }] =
         useUpdateFeedbackStatusMutation();
+    const [setWebsiteApproval, { isLoading: isApprovingSite }] =
+        useSetFeedbackWebsiteApprovalMutation();
 
     const summary = data?.summary;
     const items = data?.data ?? [];
@@ -113,6 +117,14 @@ export default function FeedbackBoard() {
             await updateStatus({ id, status }).unwrap();
         } catch {
             // surfaced by RTK cache; no-op here
+        }
+    }
+
+    async function toggleWebsiteApproval(id: string, approved: boolean) {
+        try {
+            await setWebsiteApproval({ id, approved }).unwrap();
+        } catch {
+            // non-owner or network error
         }
     }
 
@@ -303,7 +315,32 @@ export default function FeedbackBoard() {
                                             ) : null}
                                         </div>
 
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <Button
+                                                variant={
+                                                    item.isApprovedForSite
+                                                        ? "default"
+                                                        : "outline"
+                                                }
+                                                size="sm"
+                                                disabled={isApprovingSite}
+                                                onClick={() =>
+                                                    void toggleWebsiteApproval(
+                                                        item.id,
+                                                        !item.isApprovedForSite,
+                                                    )
+                                                }
+                                                className={cn(
+                                                    "gap-1.5 text-xs",
+                                                    item.isApprovedForSite &&
+                                                        "bg-emerald-600 hover:bg-emerald-700 text-white",
+                                                )}
+                                            >
+                                                <Globe className="size-3.5" />
+                                                {item.isApprovedForSite
+                                                    ? "On Website"
+                                                    : "Approve for Site"}
+                                            </Button>
                                             {item.status === "NEW" ? (
                                                 <Button
                                                     variant="outline"
@@ -401,6 +438,20 @@ export default function FeedbackBoard() {
                             {[5, 4, 3, 2, 1].map(star => {
                                 const count =
                                     summary?.distribution[String(star)] ?? 0;
+                                async function toggleWebsiteApproval(
+                                    id: string,
+                                    approved: boolean,
+                                ) {
+                                    try {
+                                        await setWebsiteApproval({
+                                            id,
+                                            approved,
+                                        }).unwrap();
+                                    } catch {
+                                        // non-owner or network error
+                                    }
+                                }
+
                                 return (
                                     <div
                                         key={star}

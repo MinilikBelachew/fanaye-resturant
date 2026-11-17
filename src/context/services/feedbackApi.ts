@@ -26,6 +26,19 @@ export interface PublicFeedbackSummary {
     distribution: Record<string, number>;
 }
 
+export interface PublicApprovedReview {
+    id: string;
+    rating: number;
+    comment?: string | null;
+    customerName?: string | null;
+    source: FeedbackSource;
+    createdAt: string;
+}
+
+export interface PublicApprovedFeedbackResponse extends PublicFeedbackSummary {
+    reviews: PublicApprovedReview[];
+}
+
 export interface FeedbackItem {
     id: string;
     rating: number;
@@ -34,6 +47,7 @@ export interface FeedbackItem {
     customerPhone?: string | null;
     source: FeedbackSource;
     status: FeedbackStatus;
+    isApprovedForSite?: boolean;
     branchId?: string | null;
     branchName?: string | null;
     tableName?: string | null;
@@ -87,6 +101,16 @@ export const feedbackApi = api.injectEndpoints({
         >({
             query: ({ slug }) => ({
                 url: `/public/r/${slug}/feedback/summary`,
+                method: "GET",
+            }),
+            providesTags: ["Feedback"],
+        }),
+        getPublicApprovedFeedback: builder.query<
+            PublicApprovedFeedbackResponse,
+            { slug: string }
+        >({
+            query: ({ slug }) => ({
+                url: `/public/r/${slug}/feedback/approved`,
                 method: "GET",
             }),
             providesTags: ["Feedback"],
@@ -148,14 +172,27 @@ export const feedbackApi = api.injectEndpoints({
             }),
             invalidatesTags: ["Feedback"],
         }),
+        setFeedbackWebsiteApproval: builder.mutation<
+            FeedbackItem,
+            { id: string; approved: boolean }
+        >({
+            query: ({ id, approved }) => ({
+                url: `/admin/feedback/${id}/website-approval`,
+                method: "PATCH",
+                body: { approved },
+            }),
+            invalidatesTags: ["Feedback"],
+        }),
     }),
 });
 
 export const {
     useGetPublicFeedbackSummaryQuery,
+    useGetPublicApprovedFeedbackQuery,
     useSubmitTableFeedbackMutation,
     useSubmitWebsiteFeedbackMutation,
     useGetAdminFeedbackQuery,
     useGetAdminFeedbackSummaryQuery,
     useUpdateFeedbackStatusMutation,
+    useSetFeedbackWebsiteApprovalMutation,
 } = feedbackApi;

@@ -280,7 +280,7 @@ export default function ShiftDefinitionsManager({
                             return (
                                 <div
                                     key={preset.id}
-                                    className="relative flex flex-col justify-between overflow-hidden rounded-[20px] border border-hairline bg-card p-4.5 transition-all duration-200 hover:border-brand/40 hover:shadow-subtle"
+                                    className="relative flex flex-col justify-between overflow-hidden rounded-[20px] border border-hairline bg-card p-4.5 transition-all duration-200 hover:border-brand-border hover:shadow-subtle"
                                 >
                                     <div>
                                         <div className="flex items-start justify-between gap-2">

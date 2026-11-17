@@ -317,7 +317,7 @@ export default function DualCalendarDatePicker({
         const isToday = ymd === todayYmd;
         return cn(
             "relative flex h-7 w-full items-center justify-center rounded-md text-[11px] font-medium transition-colors",
-            mid && "bg-primary/10 text-foreground rounded-none",
+            mid && "bg-primary-soft text-foreground rounded-none",
             selected &&
                 "bg-primary text-primary-foreground hover:bg-primary/90",
             !selected && !mid && "text-foreground hover:bg-secondary/80",
@@ -592,7 +592,7 @@ function PresetChip({
             className={cn(
                 "rounded-md border px-1.5 py-0.5 text-[10px] font-medium transition-colors",
                 active
-                    ? "border-primary/40 bg-primary/10 text-primary"
+                    ? "border-primary-border bg-primary-soft text-primary"
                     : "border-hairline bg-card text-muted-foreground hover:text-foreground",
             )}
         >

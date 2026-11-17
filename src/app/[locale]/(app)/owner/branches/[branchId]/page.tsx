@@ -168,7 +168,7 @@ export default function BranchDetailPage({
     if (!branch) {
         return (
             <DashboardFrame>
-                <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-[13px] text-destructive">
+                <div className="rounded-2xl border border-destructive-border bg-destructive-soft p-6 text-[13px] text-destructive">
                     Branch not found.
                 </div>
             </DashboardFrame>
@@ -197,7 +197,7 @@ export default function BranchDetailPage({
                                 "flex size-14 shrink-0 items-center justify-center rounded-2xl",
                                 isBakery
                                     ? "bg-amber-50 text-amber-600 dark:bg-amber-950/40"
-                                    : "bg-brand/8 text-brand",
+                                    : "bg-brand-soft text-brand",
                             )}
                         >
                             {isBakery ? (

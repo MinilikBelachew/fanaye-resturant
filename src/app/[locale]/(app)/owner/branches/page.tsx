@@ -84,7 +84,7 @@ export default function BranchesPage() {
                             className={cn(
                                 "group flex flex-col gap-4 rounded-2xl border bg-card p-5 text-left transition-colors hover:border-foreground/20",
                                 isActive
-                                    ? "border-brand/40"
+                                    ? "border-brand-border"
                                     : "border-hairline",
                             )}
                         >
@@ -96,7 +96,7 @@ export default function BranchesPage() {
                                             "flex size-10 shrink-0 items-center justify-center rounded-xl",
                                             isBakery
                                                 ? "bg-amber-50 text-amber-600 dark:bg-amber-950/40"
-                                                : "bg-brand/8 text-brand",
+                                                : "bg-brand-soft text-brand",
                                         )}
                                     >
                                         {isBakery ? (

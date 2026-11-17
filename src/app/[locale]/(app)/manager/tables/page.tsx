@@ -6,6 +6,7 @@ import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
 import ManagerTablesBoard from "@/domains/floor/ui/ManagerTablesBoard";
 import ManagerFloorConfig from "@/domains/floor/ui/ManagerFloorConfig";
+import FloorKioskSettingsCard from "@/domains/floor/ui/FloorKioskSettingsCard";
 import { cn } from "@/lib/utils";
 
 export default function ManagerTablesPage() {
@@ -19,6 +20,10 @@ export default function ManagerTablesPage() {
                 title="Tables"
                 description="Create places and tables, assign waiters, and monitor the live floor."
             />
+
+            <div className="mb-5">
+                <FloorKioskSettingsCard />
+            </div>
 
             <div className="mb-5 flex w-fit items-center gap-1 rounded-full border border-hairline bg-card p-1">
                 <button

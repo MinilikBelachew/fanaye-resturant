@@ -385,7 +385,7 @@ export function PendingSupplyPanel() {
                         return (
                             <div
                                 key={req.id}
-                                className="rounded-2xl border border-hairline bg-surface-card p-4 transition-all shadow-subtle hover:border-brand/30"
+                                className="rounded-2xl border border-hairline bg-surface-card p-4 transition-all shadow-subtle hover:border-brand-border"
                             >
                                 <div className="flex flex-wrap items-start justify-between gap-3">
                                     <div className="space-y-1">

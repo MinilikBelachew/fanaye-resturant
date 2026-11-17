@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
     Building2,
+    Crown,
+    Eye,
     LayoutGrid,
     Plus,
     RefreshCw,
@@ -13,6 +15,7 @@ import DataTable, {
     type DataTableColumn,
 } from "@/components/custom/organisms/DataTable";
 import { Badge } from "@/components/ui/badge";
+import { useImpersonation } from "@/domains/identity/application/useImpersonation";
 import { Link } from "@/i18n/navigation";
 import {
     type TenantDetail,
@@ -40,6 +43,7 @@ export default function TenantsBoard() {
         pollingInterval: 20_000,
         refetchOnFocus: true,
     });
+    const { impersonate, isStarting: isImpersonating } = useImpersonation();
 
     const tenants = response?.data || [];
 
@@ -134,8 +138,50 @@ export default function TenantsBoard() {
                     </Badge>
                 ),
             },
+            {
+                id: "impersonate",
+                header: "Support Access",
+                headerClassName: "text-right",
+                className: "text-right",
+                cell: row => (
+                    <div className="flex items-center justify-end gap-1.5">
+                        <button
+                            type="button"
+                            disabled={isImpersonating || !row.active}
+                            onClick={() =>
+                                void impersonate({
+                                    tenantId: row.id,
+                                    targetRole: "OWNER_ADMIN",
+                                    returnTo: "/super-admin/tenants",
+                                })
+                            }
+                            className="inline-flex h-7 items-center gap-1 rounded-lg border border-hairline bg-card px-2 text-[11px] font-medium text-foreground hover:bg-secondary disabled:opacity-40"
+                            title="View as Owner"
+                        >
+                            <Crown className="size-3 text-amber-500" />
+                            <span>Owner</span>
+                        </button>
+                        <button
+                            type="button"
+                            disabled={isImpersonating || !row.active}
+                            onClick={() =>
+                                void impersonate({
+                                    tenantId: row.id,
+                                    targetRole: "MANAGER",
+                                    returnTo: "/super-admin/tenants",
+                                })
+                            }
+                            className="inline-flex h-7 items-center gap-1 rounded-lg border border-hairline bg-card px-2 text-[11px] font-medium text-foreground hover:bg-secondary disabled:opacity-40"
+                            title="View as Branch Manager"
+                        >
+                            <Eye className="size-3 text-primary" />
+                            <span>Manager</span>
+                        </button>
+                    </div>
+                ),
+            },
         ],
-        [t],
+        [t, impersonate, isImpersonating],
     );
 
     return (
@@ -241,12 +287,12 @@ export default function TenantsBoard() {
                             key={tenant.id}
                             href={`/super-admin/tenants/${tenant.id}`}
                             className={cn(
-                                "rounded-[16px] border border-hairline bg-card p-4 transition-colors hover:border-brand/40 group",
+                                "rounded-[16px] border border-hairline bg-card p-4 transition-colors hover:border-brand-border group",
                                 !tenant.active && "opacity-80",
                             )}
                         >
                             <div className="flex items-start justify-between gap-3">
-                                <div className="flex size-12 items-center justify-center rounded-[14px] border border-hairline bg-surface-ivory text-brand group-hover:bg-brand/5 transition-colors">
+                                <div className="flex size-12 items-center justify-center rounded-[14px] border border-hairline bg-surface-ivory text-brand group-hover:bg-brand-soft-hover transition-colors">
                                     <Building2 className="size-6" />
                                 </div>
                                 <Badge

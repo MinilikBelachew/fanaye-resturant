@@ -5,6 +5,7 @@ import {
 
 export const ROLES = [
     "super_admin",
+    "market_reporter",
     "owner",
     "manager",
     "store_manager",
@@ -51,6 +52,7 @@ export function roleUsesShiftClock(role: string | null | undefined): boolean {
 
 export const ROLE_LABELS: Record<string, string> = {
     super_admin: "Platform Super Admin",
+    market_reporter: "Market Price Reporter",
     owner: "Owner / Tenant Admin",
     manager: "Manager",
     store_manager: "Store manager",

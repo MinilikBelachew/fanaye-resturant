@@ -110,7 +110,7 @@ export default function BranchSwitcher({
                                             }
                                             className={cn(
                                                 "flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[12px] hover:bg-secondary/60",
-                                                active && "bg-brand/5",
+                                                active && "bg-brand-soft",
                                             )}
                                         >
                                             <span className="min-w-0">

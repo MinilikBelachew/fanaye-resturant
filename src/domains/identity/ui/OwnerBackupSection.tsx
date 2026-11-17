@@ -626,7 +626,7 @@ export default function OwnerBackupSection({
 
                     {/* Inspecting state */}
                     {isInspecting && (
-                        <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-4 flex items-center justify-center gap-2 text-xs text-primary font-medium animate-pulse">
+                        <div className="rounded-xl border border-dashed border-primary-border bg-primary-soft p-4 flex items-center justify-center gap-2 text-xs text-primary font-medium animate-pulse">
                             <RestorchSpinner className="size-4 " />
                             <span>
                                 Inspecting and verifying archive structure...
@@ -678,7 +678,7 @@ export default function OwnerBackupSection({
                                         {previewData.totalStatements} SQL
                                         Statements
                                     </Badge>
-                                    <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px]">
+                                    <Badge className="bg-primary-soft text-primary border-primary-border text-[10px]">
                                         {previewData.totalRecords} Total Records
                                     </Badge>
                                 </div>

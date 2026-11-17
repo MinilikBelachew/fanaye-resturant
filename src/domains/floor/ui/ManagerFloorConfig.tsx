@@ -280,7 +280,7 @@ export default function ManagerFloorConfig() {
     }
     if (isError) {
         return (
-            <p className="rounded-[16px] border border-destructive/30 bg-destructive/10 p-4 text-[13px] text-destructive">
+            <p className="rounded-[16px] border border-destructive-border bg-destructive-soft p-4 text-[13px] text-destructive">
                 {t("loadLayoutError")}
             </p>
         );
@@ -598,7 +598,7 @@ export default function ManagerFloorConfig() {
                         >
                             <div className="flex flex-col gap-3 border-b border-hairline px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="flex items-start gap-3">
-                                    <div className="mt-0.5 flex size-9 items-center justify-center rounded-xl bg-brand/10 text-brand">
+                                    <div className="mt-0.5 flex size-9 items-center justify-center rounded-xl bg-brand-soft text-brand">
                                         <MapPin className="size-4" />
                                     </div>
                                     <div>

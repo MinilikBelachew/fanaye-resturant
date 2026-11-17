@@ -75,7 +75,7 @@ export function ManagerDiningTableCard({
         <article
             className={cn(
                 "group relative flex flex-col justify-between overflow-hidden rounded-[18px] border border-hairline transition-all duration-200",
-                "bg-card shadow-xs hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md",
+                "bg-card shadow-xs hover:-translate-y-0.5 hover:border-primary-border hover:shadow-md",
                 table.effectiveVip && "ring-1 ring-amber-500/30",
             )}
         >
@@ -160,7 +160,7 @@ export function ManagerDiningTableCard({
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="flex-1 font-medium transition-colors hover:border-primary/40 hover:bg-primary/5"
+                    className="flex-1 font-medium transition-colors hover:border-primary-border hover:bg-primary-soft-hover"
                     asChild
                 >
                     <Link href={`/manager/tables/${table.id}`}>

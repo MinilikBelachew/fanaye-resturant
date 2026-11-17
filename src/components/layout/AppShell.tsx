@@ -12,6 +12,8 @@ import ResponsiveDeskShell from "@/components/layout/ResponsiveDeskShell";
 import WaiterShell from "@/components/layout/WaiterShell";
 import { SidebarUiProvider } from "@/components/layout/SidebarUi";
 import { RestorchLoader } from "@/components/common/RestorchLoader";
+import SingleTabGuard from "@/components/pwa/SingleTabGuard";
+import ImpersonationBanner from "@/domains/identity/ui/ImpersonationBanner";
 import { selectCurrentStaff } from "@/domains/ordering/application/selectors";
 import { usePathname, useRouter } from "@/i18n/navigation";
 
@@ -84,5 +86,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </ResponsiveDeskShell>
         );
 
-    return <SidebarUiProvider>{content}</SidebarUiProvider>;
+    return (
+        <SidebarUiProvider>
+            <SingleTabGuard>
+                <ImpersonationBanner />
+                {content}
+            </SingleTabGuard>
+        </SidebarUiProvider>
+    );
 }

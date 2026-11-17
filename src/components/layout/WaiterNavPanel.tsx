@@ -4,7 +4,10 @@ import { LogOut } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useAppDispatch, useAppSelector } from "@/context/hooks";
 import { useWaiterTablesQuery } from "@/context/services/floorApi";
-import { performSignOut } from "@/domains/identity/application/signOut";
+import {
+    getPostSignOutPath,
+    performSignOut,
+} from "@/domains/identity/application/signOut";
 import SidebarNav from "@/components/layout/SidebarNav";
 import { navForRole } from "@/domains/identity/application/nav";
 import RoleSwitcher from "@/domains/identity/ui/RoleSwitcher";
@@ -42,7 +45,7 @@ export default function WaiterNavPanel({
 
     async function logOut() {
         await performSignOut(dispatch);
-        router.push("/sign-in");
+        router.push(getPostSignOutPath("waiter"));
     }
 
     if (collapsed) {
@@ -63,7 +66,7 @@ export default function WaiterNavPanel({
                         type="button"
                         title={tTopBar("logOut")}
                         aria-label={tTopBar("logOut")}
-                        className="flex size-10 items-center justify-center rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border hover:border-destructive/20 transition-colors"
+                        className="flex size-10 items-center justify-center rounded-xl text-muted-foreground hover:bg-destructive-soft-hover hover:text-destructive hover:border hover:border-destructive-border transition-colors"
                         onClick={logOut}
                     >
                         <LogOut className="size-4" />
@@ -89,7 +92,7 @@ export default function WaiterNavPanel({
             <div className="shrink-0 border-t border-border/60 p-3">
                 <button
                     type="button"
-                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border hover:border-destructive/20 border border-transparent transition-all duration-150"
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-muted-foreground hover:bg-destructive-soft-hover hover:text-destructive hover:border hover:border-destructive-border border border-transparent transition-all duration-150"
                     onClick={logOut}
                 >
                     <LogOut className="size-4 shrink-0" />

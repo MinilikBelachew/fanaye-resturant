@@ -257,7 +257,7 @@ export default function WaiterOrderItemActions({
                             {t("newDish")}
                         </label>
                         <select
-                            className="h-10 w-full rounded-[10px] border border-hairline bg-card px-3 text-[13px] outline-none focus:border-brand/40"
+                            className="h-10 w-full rounded-[10px] border border-hairline bg-card px-3 text-[13px] outline-none focus:border-brand-border"
                             value={menuItemId}
                             onChange={event =>
                                 setMenuItemId(event.target.value)

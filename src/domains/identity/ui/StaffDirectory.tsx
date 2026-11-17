@@ -692,7 +692,7 @@ export default function StaffDirectory({
                                                         className={cn(
                                                             "inline-flex rounded-full px-2.5 py-1 text-[12px] font-medium border",
                                                             isWaiter
-                                                                ? "bg-primary/10 border-primary/20 text-primary"
+                                                                ? "bg-primary-soft border-primary-border text-primary"
                                                                 : "bg-secondary text-foreground border-border/80",
                                                         )}
                                                     >
@@ -808,7 +808,7 @@ export default function StaffDirectory({
                                                                             member,
                                                                         )
                                                                     }
-                                                                    className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors"
+                                                                    className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors"
                                                                 >
                                                                     <Plus className="size-3" />
                                                                     {t(
@@ -832,7 +832,7 @@ export default function StaffDirectory({
                                                                             member,
                                                                         )
                                                                     }
-                                                                    className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors"
+                                                                    className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors"
                                                                 >
                                                                     <Plus className="size-3" />
                                                                     {t(
@@ -1138,7 +1138,7 @@ export default function StaffDirectory({
                     <div className="relative z-10 w-full max-w-sm rounded-[20px] border border-hairline bg-white dark:bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95">
                         <div className="flex items-center justify-between border-b border-hairline pb-3 mb-4">
                             <div className="flex items-center gap-2">
-                                <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                                <div className="size-8 rounded-lg bg-primary-soft text-primary flex items-center justify-center">
                                     <KeyRound className="size-4" />
                                 </div>
                                 <div>

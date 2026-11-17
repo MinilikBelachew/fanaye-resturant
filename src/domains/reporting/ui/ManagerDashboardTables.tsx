@@ -325,7 +325,7 @@ export function RecentAuditTable({
                                             row.badgeVariant === "secondary" &&
                                                 "bg-secondary text-slate-gray",
                                             row.badgeVariant === "default" &&
-                                                "bg-brand/10 text-brand",
+                                                "bg-brand-soft text-brand",
                                         )}
                                     >
                                         {row.badgeLabel || row.category}

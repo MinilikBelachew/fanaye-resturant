@@ -150,7 +150,7 @@ export default function LiveTableDetail({
         return (
             <div className="space-y-4">
                 <BackLink href={backHref} label={tLive("backToLive")} />
-                <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-5 text-[13px] text-destructive">
+                <div className="rounded-2xl border border-destructive-border bg-destructive-soft p-5 text-[13px] text-destructive">
                     {tLive("loadError")}
                 </div>
             </div>
@@ -188,7 +188,7 @@ export default function LiveTableDetail({
             <div className="rounded-2xl border border-hairline bg-card p-5 sm:p-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-center gap-4">
-                        <div className="flex size-14 items-center justify-center rounded-2xl bg-brand/8 text-brand">
+                        <div className="flex size-14 items-center justify-center rounded-2xl bg-brand-soft text-brand">
                             <span className="text-[26px] font-bold leading-none">
                                 {tableNumber(table)}
                             </span>
