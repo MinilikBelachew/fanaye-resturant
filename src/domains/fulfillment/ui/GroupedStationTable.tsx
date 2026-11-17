@@ -122,7 +122,7 @@ function TableGroupRow({
                                 </span>
                             )}
                             {group.isDelayed && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 text-destructive border border-destructive/30 px-2 py-0.5 text-[10px] font-bold">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-destructive-soft text-destructive border border-destructive-border px-2 py-0.5 text-[10px] font-bold">
                                     <AlertCircle className="size-2.5" />
                                     Delayed
                                 </span>

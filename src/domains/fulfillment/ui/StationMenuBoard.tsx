@@ -126,7 +126,7 @@ export default function StationMenuBoard({ role }: { role: StationRole }) {
                         <span className="rounded-full bg-amber-500/10 px-3 py-1 font-medium text-amber-700">
                             Limited {counts.limited}
                         </span>
-                        <span className="rounded-full bg-destructive/10 px-3 py-1 font-medium text-destructive">
+                        <span className="rounded-full bg-destructive-soft px-3 py-1 font-medium text-destructive">
                             Sold out {counts.soldOut}
                         </span>
                     </div>
@@ -149,7 +149,7 @@ export default function StationMenuBoard({ role }: { role: StationRole }) {
                                         className={cn(
                                             "rounded-2xl border border-hairline bg-card p-4 shadow-xs",
                                             item.soldOut &&
-                                                "border-destructive/30 bg-destructive/5",
+                                                "border-destructive-border bg-destructive-soft",
                                             limited &&
                                                 "border-amber-400/40 bg-amber-50/40",
                                         )}
@@ -172,7 +172,7 @@ export default function StationMenuBoard({ role }: { role: StationRole }) {
                                                 className={cn(
                                                     "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
                                                     item.soldOut
-                                                        ? "bg-destructive/15 text-destructive"
+                                                        ? "bg-destructive-soft text-destructive"
                                                         : limited
                                                           ? "bg-amber-500/15 text-amber-800"
                                                           : "bg-emerald-500/15 text-emerald-700",

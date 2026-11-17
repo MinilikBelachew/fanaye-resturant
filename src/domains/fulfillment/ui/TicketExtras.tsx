@@ -40,7 +40,7 @@ export default function TicketExtras({
                                     "rounded-full px-2.5 py-1 text-[12px] font-medium",
                                     overlay
                                         ? "bg-white/15 text-white backdrop-blur-sm"
-                                        : "bg-destructive/10 text-destructive",
+                                        : "bg-destructive-soft text-destructive",
                                 )}
                             >
                                 {entry.name}

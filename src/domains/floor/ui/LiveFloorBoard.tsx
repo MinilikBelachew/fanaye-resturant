@@ -101,7 +101,7 @@ export default function LiveFloorBoard() {
                         label="Free"
                     />
                     <LegendDot
-                        className="bg-foreground/15 border border-foreground/10"
+                        className="bg-zinc-200 border border-zinc-300 dark:bg-zinc-700 dark:border-zinc-600"
                         label="Open"
                     />
                     <LegendDot
@@ -249,7 +249,7 @@ function TableCard({
                             ? "bg-emerald-500"
                             : tone === "cooking"
                               ? "bg-amber-500"
-                              : "bg-foreground/20",
+                              : "bg-zinc-300 dark:bg-zinc-600",
                     )}
                 />
             </div>
@@ -346,7 +346,7 @@ function FloorMapView({
                                                 : tone === "cooking"
                                                   ? "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
                                                   : occupied
-                                                    ? "border-foreground/20 bg-foreground/5 text-foreground"
+                                                    ? "border-zinc-300 bg-zinc-100 text-foreground dark:border-zinc-700 dark:bg-zinc-800"
                                                     : "border-hairline bg-secondary/50 text-slate-gray",
                                             occupied &&
                                                 "hover:border-foreground/30",

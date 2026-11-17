@@ -63,9 +63,9 @@ export default function FloorTableCard({
             type="button"
             onClick={onClick}
             className={cn(
-                "group relative flex w-full flex-col justify-between overflow-hidden rounded-[20px] border p-4.5 text-left transition-all duration-200 hover:scale-[1.015] hover:shadow-md",
+                "group relative flex w-full flex-col justify-between overflow-hidden rounded-[20px] border-2 p-4.5 text-left transition-all duration-200 hover:scale-[1.015] hover:shadow-md",
                 isMine
-                    ? "border-brand/40 bg-brand/[0.025] ring-1 ring-brand/15 hover:border-brand shadow-xs"
+                    ? "border-brand-border bg-card ring-1 ring-brand/15 hover:border-brand shadow-xs"
                     : isFree
                       ? "border-hairline bg-card hover:border-emerald-500/40 hover:shadow-subtle"
                       : "border-hairline bg-card/70 opacity-80 hover:opacity-100 hover:border-border",
@@ -93,7 +93,7 @@ export default function FloorTableCard({
                             className={cn(
                                 "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium tracking-tight",
                                 isMine
-                                    ? "border-brand/30 bg-brand/10 text-brand"
+                                    ? "border-brand-border bg-brand-soft text-brand"
                                     : isFree
                                       ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                                       : "border-hairline bg-secondary text-slate-gray",
@@ -151,7 +151,7 @@ export default function FloorTableCard({
                     {/* Server Info */}
                     {waiter ? (
                         <div className="flex items-center gap-1.5 text-[12.5px] font-medium text-foreground">
-                            <div className="flex size-5 items-center justify-center rounded-full bg-brand/10 text-brand">
+                            <div className="flex size-5 items-center justify-center rounded-full bg-brand-soft text-brand">
                                 <User className="size-3" />
                             </div>
                             <span className="truncate">

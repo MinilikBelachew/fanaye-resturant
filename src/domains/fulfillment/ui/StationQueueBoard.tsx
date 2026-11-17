@@ -164,7 +164,7 @@ function TicketCard({
                 fresh
                     ? "border-brand shadow-[0_0_0_1px_color-mix(in_oklab,var(--brand)_40%,transparent)]"
                     : ticket.delayed
-                      ? "border-destructive/40"
+                      ? "border-destructive-border"
                       : "border-hairline",
             )}
         >
@@ -179,7 +179,7 @@ function TicketCard({
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/10" />
             {fresh ? (
-                <div className="pointer-events-none absolute inset-0 bg-brand/12" />
+                <div className="pointer-events-none absolute inset-0 bg-[rgba(232,93,4,0.12)]" />
             ) : null}
 
             <div className="relative flex min-h-[200px] flex-col justify-between gap-2 p-3">
@@ -287,7 +287,7 @@ function StatusPill({
                       : ticket.delayed || ticket.state === "CANNOT_PREPARE"
                         ? overlay
                             ? "bg-red-500/90 text-white"
-                            : "bg-destructive/10 text-destructive"
+                            : "bg-destructive-soft text-destructive"
                         : overlay
                           ? "bg-white/20 text-white"
                           : "bg-secondary text-slate-gray",
@@ -735,7 +735,7 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
             icon: AlertTriangle,
             badgeClass:
                 counts.exceptions > 0
-                    ? "bg-destructive/15 text-destructive"
+                    ? "bg-destructive-soft text-destructive"
                     : undefined,
         },
     ];
@@ -851,7 +851,7 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                             className={cn(
                                 "flex items-center justify-between rounded-[14px] border p-2.5 sm:p-3 text-left transition-all cursor-pointer",
                                 isActive
-                                    ? "border-brand/70 bg-brand/5 text-foreground ring-1 ring-brand/30"
+                                    ? "border-brand/70 bg-brand-soft text-foreground ring-1 ring-brand/30"
                                     : "border-hairline bg-card hover:bg-secondary/40 text-foreground",
                             )}
                         >
@@ -873,7 +873,7 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                                     "rounded-full px-2 py-0.5 text-[11px] font-normal",
                                     tab.badgeClass ??
                                         (isActive
-                                            ? "bg-brand/15 text-brand"
+                                            ? "bg-brand-soft text-brand"
                                             : "bg-secondary text-slate-gray"),
                                 )}
                             >

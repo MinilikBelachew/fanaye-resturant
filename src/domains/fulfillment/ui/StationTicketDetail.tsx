@@ -104,7 +104,7 @@ export default function StationTicketDetail({
                             ? "bg-accent text-accent-foreground"
                             : ticket.delayed ||
                                 ticket.state === "CANNOT_PREPARE"
-                              ? "bg-destructive/10 text-destructive"
+                              ? "bg-destructive-soft text-destructive"
                               : "bg-secondary text-slate-gray",
                     )}
                 >

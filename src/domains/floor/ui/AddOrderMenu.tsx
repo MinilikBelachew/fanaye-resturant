@@ -491,7 +491,7 @@ export default function AddOrderMenu({
                                 "hidden items-center rounded-full px-2 py-0.5 text-[10.5px] font-bold uppercase sm:inline-flex shrink-0",
                                 isDispatcher
                                     ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                                    : "bg-primary/10 text-primary",
+                                    : "bg-primary-soft text-primary",
                             )}
                         >
                             {isDispatcher ? "Call pickup" : "Take Order"}
@@ -511,7 +511,7 @@ export default function AddOrderMenu({
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                         placeholder="Search dishes…"
-                        className="h-8 sm:h-9 w-full rounded-full border-transparent bg-secondary/70 pr-7 sm:pr-8 pl-8 sm:pl-9 text-[12px] sm:text-[13px] placeholder:text-slate-gray/70 focus:border-primary/40 focus:bg-card"
+                        className="h-8 sm:h-9 w-full rounded-full border-transparent bg-secondary/70 pr-7 sm:pr-8 pl-8 sm:pl-9 text-[12px] sm:text-[13px] placeholder:text-slate-gray/70 focus:border-primary-border focus:bg-card"
                     />
                     {searchQuery ? (
                         <button
@@ -717,7 +717,7 @@ export default function AddOrderMenu({
                             </p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4">
+                        <div className="grid grid-cols-1 gap-3 min-[500px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
                             {filteredItems.map(item => {
                                 const count = counts.get(item.id) ?? 0;
                                 const hasCustom =
@@ -732,8 +732,8 @@ export default function AddOrderMenu({
                                             !item.available
                                                 ? "border-hairline opacity-60 grayscale select-none"
                                                 : inTicket
-                                                  ? "border-brand/60 shadow-md ring-2 ring-brand/20 bg-brand/[0.015]"
-                                                  : "border-hairline hover:border-brand/40 hover:shadow-subtle",
+                                                  ? "border-brand/60 shadow-md ring-2 ring-brand/20 bg-card"
+                                                  : "border-hairline hover:border-brand-border hover:shadow-subtle",
                                         )}
                                     >
                                         {/* DISH IMAGE HEADER (16:10 Aspect Ratio) */}
@@ -857,7 +857,7 @@ export default function AddOrderMenu({
                                                     {/* Stepper if in basket, otherwise Add button */}
                                                     {inTicket &&
                                                     item.available ? (
-                                                        <div className="flex items-center gap-1 rounded-full border border-brand/30 bg-card p-0.5 shadow-xs">
+                                                        <div className="flex items-center gap-1 rounded-full border border-brand-border bg-card p-0.5 shadow-xs">
                                                             <button
                                                                 type="button"
                                                                 className="flex size-6 sm:size-6.5 items-center justify-center rounded-full text-foreground transition-colors hover:bg-secondary"
@@ -898,7 +898,7 @@ export default function AddOrderMenu({
                                                                 "flex h-8 items-center gap-1 rounded-full px-3 text-[13px] font-semibold transition-all",
                                                                 isDispatcher
                                                                     ? "bg-emerald-500/15 text-emerald-700 hover:bg-emerald-600 hover:text-white dark:text-emerald-300"
-                                                                    : "bg-brand/10 text-brand hover:bg-brand hover:text-white",
+                                                                    : "bg-brand-soft text-brand hover:bg-brand hover:text-white",
                                                             )}
                                                         >
                                                             <Plus className="size-3.5" />
@@ -1174,7 +1174,7 @@ function OrderTicketContent({
                                 "rounded-full px-2 py-0.5 text-[11px] font-medium shrink-0",
                                 isDispatcher
                                     ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                                    : "bg-brand/10 text-brand",
+                                    : "bg-brand-soft text-brand",
                             )}
                         >
                             {pieceCount} {pieceCount === 1 ? "item" : "items"}
@@ -1273,7 +1273,7 @@ function OrderTicketContent({
                         return (
                             <div
                                 key={line.id}
-                                className="relative flex flex-col justify-between gap-2.5 rounded-[16px] border border-hairline bg-card p-3.5 shadow-2xs transition-colors hover:border-brand/30"
+                                className="relative flex flex-col justify-between gap-2.5 rounded-[16px] border border-hairline bg-card p-3.5 shadow-2xs transition-colors hover:border-brand-border"
                             >
                                 <div className="flex items-start justify-between gap-2">
                                     <div className="min-w-0 flex-1">
@@ -1701,7 +1701,7 @@ function OrderTicketContent({
                                             onClick={() =>
                                                 onRemoveLine(line.id)
                                             }
-                                            className="rounded-md p-1 text-slate-gray transition-colors hover:bg-destructive/10 hover:text-destructive"
+                                            className="rounded-md p-1 text-slate-gray transition-colors hover:bg-destructive-soft-hover hover:text-destructive"
                                             aria-label="Remove item"
                                         >
                                             <Trash2 className="size-3.5" />
@@ -1728,7 +1728,7 @@ function OrderTicketContent({
                 </div>
 
                 {error ? (
-                    <p className="rounded-lg bg-destructive/10 px-3 py-1.5 text-[12.5px] font-medium text-destructive">
+                    <p className="rounded-lg bg-destructive-soft px-3 py-1.5 text-[12.5px] font-medium text-destructive">
                         {error}
                     </p>
                 ) : null}

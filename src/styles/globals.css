@@ -19,6 +19,9 @@
     --color-popover: var(--popover);
     --color-popover-foreground: var(--popover-foreground);
     --color-primary: var(--primary);
+    --color-primary-soft: var(--brand-soft);
+    --color-primary-soft-hover: var(--brand-soft-hover);
+    --color-primary-border: var(--brand-border);
     --color-primary-foreground: var(--primary-foreground);
     --color-secondary: var(--secondary);
     --color-secondary-foreground: var(--secondary-foreground);
@@ -27,6 +30,9 @@
     --color-accent: var(--accent);
     --color-accent-foreground: var(--accent-foreground);
     --color-destructive: var(--destructive);
+    --color-destructive-soft: var(--destructive-soft);
+    --color-destructive-soft-hover: var(--destructive-soft-hover);
+    --color-destructive-border: var(--destructive-border);
     --color-border: var(--border);
     --color-input: var(--input);
     --color-ring: var(--ring);
@@ -46,6 +52,9 @@
     --color-steel-gray: var(--steel);
     --color-hairline: var(--border);
     --color-brand: var(--primary);
+    --color-brand-soft: var(--brand-soft);
+    --color-brand-soft-hover: var(--brand-soft-hover);
+    --color-brand-border: var(--brand-border);
     --color-brand-deep: var(--primary-deep);
     --color-wash: var(--accent);
     --color-chart-1: var(--chart-1);
@@ -73,6 +82,9 @@
     --popover-foreground: #121722;
     --primary: #e85d04;
     --primary-deep: #c2410c;
+    --brand-soft: #fff0e6;
+    --brand-soft-hover: #ffe4d1;
+    --brand-border: #fed7aa;
     --primary-foreground: #ffffff;
     --secondary: #f4f4f5;
     --secondary-foreground: #121722;
@@ -82,6 +94,9 @@
     --accent: #fff0e6;
     --accent-foreground: #c2410c;
     --destructive: #dc2626;
+    --destructive-soft: #fef2f2;
+    --destructive-soft-hover: #fee2e2;
+    --destructive-border: #fecaca;
     --border: #ececee;
     --input: #ececee;
     --ring: #e85d04;
@@ -115,6 +130,9 @@
     --popover-foreground: #f4f4f5;
     --primary: #e85d04;
     --primary-deep: #ff8a3d;
+    --brand-soft: #3a2416;
+    --brand-soft-hover: #4d301d;
+    --brand-border: #7c2d12;
     --primary-foreground: #ffffff;
     --secondary: #27272a;
     --secondary-foreground: #f4f4f5;
@@ -124,6 +142,9 @@
     --accent: #3a2416;
     --accent-foreground: #ffb080;
     --destructive: #f87171;
+    --destructive-soft: #3b1215;
+    --destructive-soft-hover: #4c161a;
+    --destructive-border: #7f1d1d;
     --border: #2e2e33;
     --input: #2e2e33;
     --ring: #e85d04;
@@ -157,7 +178,7 @@
     body {
         @apply bg-background text-foreground font-sans antialiased;
         min-height: 100%;
-        overflow-x: hidden;
+        overflow-x: clip;
         -ms-overflow-style: none;
         scrollbar-width: none;
     }
@@ -238,6 +259,26 @@
 
     .no-scrollbar::-webkit-scrollbar {
         display: none;
+    }
+
+    .landing-theme {
+        --font-roobert:
+            var(--font-landing-sans), "Noto Sans Ethiopic", "Nyala",
+            "Abyssinica SIL", "Segoe UI", system-ui, sans-serif;
+        --font-sans: var(--font-roobert);
+        --font-mono:
+            var(--font-landing-mono), ui-monospace, SFMono-Regular, Menlo,
+            monospace;
+        font-family: var(--font-roobert);
+    }
+
+    .landing-theme .font-mono {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .landing-theme .font-serif {
+        font-family: var(--font-landing-serif), Georgia, serif;
     }
 
     @keyframes shimmer {

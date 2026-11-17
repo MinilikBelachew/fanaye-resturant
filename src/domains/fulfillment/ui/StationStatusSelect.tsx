@@ -42,7 +42,7 @@ const SETTABLE = [
 
 function tone(ticket: StationTicket) {
     if (ticket.state === "CANNOT_PREPARE" || ticket.delayed) {
-        return "bg-destructive/10 text-destructive hover:bg-destructive/15";
+        return "bg-destructive-soft text-destructive hover:bg-destructive-soft-hover";
     }
     if (ticket.state === "READY") {
         return "bg-accent text-accent-foreground hover:bg-accent/80";

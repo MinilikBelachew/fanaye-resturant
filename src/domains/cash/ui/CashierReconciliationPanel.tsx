@@ -47,7 +47,7 @@ function DateFilterBar({
                     className={cn(
                         "h-8 rounded-xl border px-3 text-[12px] font-medium transition-colors",
                         preset === p
-                            ? "border-brand bg-brand/8 text-brand"
+                            ? "border-brand bg-brand-soft text-brand"
                             : "border-hairline bg-card text-slate-gray hover:text-foreground",
                     )}
                 >
@@ -282,7 +282,7 @@ export default function CashierReconciliationPanel() {
             {/* Section 1: Bills generated */}
             <Section
                 icon={CreditCard}
-                iconBg="bg-brand/8 text-brand"
+                iconBg="bg-brand-soft text-brand"
                 title="Bills generated this shift"
                 description={`${billsCount} receipt${billsCount === 1 ? "" : "s"} — cash + digital breakdown`}
             >
@@ -460,7 +460,7 @@ export default function CashierReconciliationPanel() {
             ) : showForm ? (
                 <Section
                     icon={Banknote}
-                    iconBg="bg-foreground/8 text-foreground"
+                    iconBg="bg-secondary text-foreground"
                     title={
                         needsResubmit ? "Recount required" : "Count & submit"
                     }
