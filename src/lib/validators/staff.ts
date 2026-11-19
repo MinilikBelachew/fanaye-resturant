@@ -58,6 +58,7 @@ export const staffFormSchema = z
         licencePlate: z.string().trim().optional(),
         vehicleDesc: z.string().trim().optional(),
         active: z.boolean(),
+        isEditMode: z.boolean().optional(),
         /** Per weekday: shift definition id, or "" for off */
         dayShiftByDay: z.record(z.string(), z.string()),
         /** Tables assigned per shift window id */
@@ -124,7 +125,9 @@ export const staffFormSchema = z
         const assignedDays = WEEKDAYS.filter(
             day => (data.dayShiftByDay[day] || "").trim().length > 0,
         );
+        // Only require shift windows on new staff creation, never block edits/PIN changes
         if (
+            !data.isEditMode &&
             (data.role === "waiter" || data.role === "cashier") &&
             assignedDays.length === 0
         ) {
@@ -174,6 +177,7 @@ export const staffFormDefaults: StaffFormValues = {
     licencePlate: "",
     vehicleDesc: "",
     active: true,
+    isEditMode: false,
     dayShiftByDay: { ...emptyDayShiftByDay },
     assignedTablesByShift: {},
     coverageShiftId: "",

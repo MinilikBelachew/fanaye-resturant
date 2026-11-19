@@ -24,6 +24,7 @@ import {
     ShieldCheck,
     Sparkles,
     Store,
+    TabletSmartphone,
     X,
     Zap,
 } from "lucide-react";
@@ -99,12 +100,34 @@ export default function SignInPage() {
     const [showFirstTimeModal, setShowFirstTimeModal] =
         useState<boolean>(false);
 
+    const [pairedKioskBranch, setPairedKioskBranch] = useState<string | null>(
+        null,
+    );
+    const [kioskPairPrompt, setKioskPairPrompt] = useState<{
+        kioskToken: string;
+        tenantId: string;
+        branchName: string;
+    } | null>(null);
+
     // Option 1: Paired Shared Waiter Tablet boots straight to /floor-kiosk with zero PIN
     useEffect(() => {
         if (typeof window === "undefined") return;
         const isPaired =
             localStorage.getItem("restorch_floor_kiosk_paired") === "1";
         const kioskToken = localStorage.getItem("restorch_floor_kiosk_token");
+        const branch =
+            localStorage.getItem("restorch_floor_kiosk_branch_name") ||
+            "Shared Floor";
+
+        // If user explicitly navigated to sign-in from the kiosk, do not force-redirect!
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("kiosk_exit") === "1" || params.get("manager") === "1") {
+            if (isPaired && kioskToken) {
+                setPairedKioskBranch(branch);
+            }
+            return;
+        }
+
         if (isPaired && kioskToken) {
             router.replace("/floor-kiosk");
         }
@@ -281,6 +304,12 @@ export default function SignInPage() {
                         tenantIdentifier: storedTenant,
                         pin: code,
                     });
+
+                    const isAlreadyPaired =
+                        typeof window !== "undefined" &&
+                        localStorage.getItem("restorch_floor_kiosk_paired") ===
+                            "1";
+
                     if (typeof window !== "undefined") {
                         localStorage.setItem(
                             "restorch_floor_kiosk_token",
@@ -295,7 +324,14 @@ export default function SignInPage() {
                             kiosk.branchName,
                         );
                     }
-                    router.push("/floor-kiosk");
+
+                    if (isAlreadyPaired) {
+                        router.push("/floor-kiosk");
+                        return;
+                    }
+
+                    // 1-Tap Pop-up: Ask if user wants to pair tablet or just view
+                    setKioskPairPrompt(kiosk);
                     return;
                 } catch {
                     // Fall through to normal invalid PIN error
@@ -516,6 +552,51 @@ export default function SignInPage() {
         }
     };
 
+    const handleConfirmPairKiosk = () => {
+        if (!kioskPairPrompt) return;
+        if (typeof window !== "undefined") {
+            localStorage.setItem(
+                "restorch_floor_kiosk_token",
+                kioskPairPrompt.kioskToken,
+            );
+            localStorage.setItem(
+                "restorch_floor_kiosk_tenant_id",
+                kioskPairPrompt.tenantId,
+            );
+            localStorage.setItem(
+                "restorch_floor_kiosk_branch_name",
+                kioskPairPrompt.branchName,
+            );
+            localStorage.setItem("restorch_floor_kiosk_paired", "1");
+        }
+        toast.success(
+            `Paired as Shared Waiter Board for ${kioskPairPrompt.branchName}!`,
+        );
+        setKioskPairPrompt(null);
+        router.push("/floor-kiosk");
+    };
+
+    const handleViewOnlyKiosk = () => {
+        if (!kioskPairPrompt) return;
+        if (typeof window !== "undefined") {
+            localStorage.setItem(
+                "restorch_floor_kiosk_token",
+                kioskPairPrompt.kioskToken,
+            );
+            localStorage.setItem(
+                "restorch_floor_kiosk_tenant_id",
+                kioskPairPrompt.tenantId,
+            );
+            localStorage.setItem(
+                "restorch_floor_kiosk_branch_name",
+                kioskPairPrompt.branchName,
+            );
+            localStorage.removeItem("restorch_floor_kiosk_paired");
+        }
+        setKioskPairPrompt(null);
+        router.push("/floor-kiosk");
+    };
+
     const maxPinDots = Math.max(4, pin.length);
 
     return (
@@ -689,6 +770,50 @@ export default function SignInPage() {
                         ) : (
                             /* PAIRED STAFF PIN PAD INTERFACE */
                             <div className="space-y-3.5">
+                                {/* Paired Floor Kiosk Exit Alert */}
+                                {pairedKioskBranch && (
+                                    <div className="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <span className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                                            <span className="truncate text-emerald-800 dark:text-emerald-300 font-medium">
+                                                Floor Board:{" "}
+                                                <strong>
+                                                    {pairedKioskBranch}
+                                                </strong>
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    router.push("/floor-kiosk")
+                                                }
+                                                className="rounded-lg bg-emerald-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-emerald-700 cursor-pointer"
+                                            >
+                                                Return ↗
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    localStorage.removeItem(
+                                                        "restorch_floor_kiosk_paired",
+                                                    );
+                                                    localStorage.removeItem(
+                                                        "restorch_floor_kiosk_token",
+                                                    );
+                                                    setPairedKioskBranch(null);
+                                                    toast.success(
+                                                        "Tablet unpaired successfully.",
+                                                    );
+                                                }}
+                                                className="rounded-lg border border-border bg-background px-2 py-1 text-[11px] font-medium text-foreground hover:bg-muted cursor-pointer"
+                                            >
+                                                Unpair
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Paired Restaurant Pill Header */}
                                 <div className="flex items-center justify-between pb-2 border-b border-hairline">
                                     <div className="flex items-center gap-1.5 min-w-0">
@@ -1117,6 +1242,53 @@ export default function SignInPage() {
                             </Button>
                         </div>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* 1-Tap Pop-up: Keep this tablet paired as the Waiter Board? */}
+            <Dialog
+                open={Boolean(kioskPairPrompt)}
+                onOpenChange={open => {
+                    if (!open) setKioskPairPrompt(null);
+                }}
+            >
+                <DialogContent className="sm:max-w-[420px] p-6 rounded-3xl">
+                    <DialogHeader className="pb-2">
+                        <div className="flex size-12 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 mb-2">
+                            <TabletSmartphone className="size-6" />
+                        </div>
+                        <DialogTitle className="text-lg font-bold text-foreground">
+                            Keep this tablet paired as the Waiter Board?
+                        </DialogTitle>
+                        <DialogDescription className="text-xs text-muted-foreground">
+                            Paired tablets open straight into the live floor map
+                            for{" "}
+                            <strong className="text-foreground">
+                                {kioskPairPrompt?.branchName}
+                            </strong>{" "}
+                            with zero PIN, and waiters only enter their personal
+                            PIN when tapping a table.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="mt-4 flex flex-col gap-2.5">
+                        <button
+                            type="button"
+                            onClick={handleConfirmPairKiosk}
+                            className="w-full flex items-center justify-center gap-2 rounded-xl bg-orange-600 px-4 py-3 text-xs sm:text-sm font-semibold text-white hover:bg-orange-700 active:scale-95 transition-all shadow-sm shadow-orange-600/20 cursor-pointer"
+                        >
+                            <Check className="size-4" />
+                            <span>Yes, Pair This Device</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleViewOnlyKiosk}
+                            className="w-full flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs sm:text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground active:scale-95 transition-all cursor-pointer"
+                        >
+                            <span>Just View for Now</span>
+                        </button>
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>

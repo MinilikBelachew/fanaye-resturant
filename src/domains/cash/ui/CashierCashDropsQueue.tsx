@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatEtb } from "@/lib/money";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "@/lib/toast";
 import {
     CheckCircle2,
     AlertTriangle,
@@ -21,6 +22,27 @@ import {
     ReceiptText,
 } from "lucide-react";
 import CashDropReceiptModal from "./CashDropReceiptModal";
+
+function isShiftRequiredError(err: unknown): boolean {
+    const e = err as {
+        status?: number;
+        data?: {
+            code?: string;
+            errors?: { shift?: string };
+            error?: string;
+            message?: string;
+        };
+        code?: string;
+    };
+    return (
+        e?.data?.code === "SHIFT_REQUIRED" ||
+        e?.data?.errors?.shift === "SHIFT_REQUIRED" ||
+        e?.data?.error === "SHIFT_REQUIRED" ||
+        e?.code === "SHIFT_REQUIRED" ||
+        (typeof e?.data?.message === "string" &&
+            e.data.message.includes("SHIFT_REQUIRED"))
+    );
+}
 
 function DropCard({
     drop,
@@ -45,8 +67,14 @@ function DropCard({
                 countedAmount: Number(counted).toFixed(2),
                 expectedVersion: drop.version,
             }).unwrap();
-        } catch {
-            setError(t("receiveDropError"));
+            toast.success(t("dropReceivedSuccess"));
+        } catch (err: unknown) {
+            const isShift = isShiftRequiredError(err);
+            const errorMsg = isShift
+                ? t("clockInToReceiveDrop")
+                : t("receiveDropError");
+            setError(errorMsg);
+            toast.error(errorMsg);
         }
     }
 
@@ -58,8 +86,14 @@ function DropCard({
                 disputeId: drop.disputeId,
                 resolution,
             }).unwrap();
-        } catch {
-            setError(t("resolveDisputeError"));
+            toast.success(t("disputeResolvedSuccess"));
+        } catch (err: unknown) {
+            const isShift = isShiftRequiredError(err);
+            const errorMsg = isShift
+                ? t("clockInToReceiveDrop")
+                : t("resolveDisputeError");
+            setError(errorMsg);
+            toast.error(errorMsg);
         }
     }
 

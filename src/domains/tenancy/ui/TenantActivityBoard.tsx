@@ -1,27 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     Activity,
-    ArrowUpRight,
-    Banknote,
-    Building2,
     Calendar,
-    CheckCircle2,
-    Clock,
-    CreditCard,
+    ChevronLeft,
+    ChevronRight,
     Crown,
     Eye,
-    Filter,
-    Layers,
-    Package,
     Receipt,
     RefreshCw,
-    ScrollText,
     Search,
-    Store,
     TrendingUp,
-    Users,
     UtensilsCrossed,
     Wallet,
 } from "lucide-react";
@@ -103,6 +93,30 @@ export default function TenantActivityBoard({
     >("all");
     const [movementCategory, setMovementCategory] = useState<string>("ALL");
     const [movementSearch, setMovementSearch] = useState<string>("");
+    const [debouncedSearch, setDebouncedSearch] = useState<string>("");
+
+    const [dailyPage, setDailyPage] = useState<number>(1);
+    const [dailyPageSize] = useState<number>(10);
+
+    const [tablesPage, setTablesPage] = useState<number>(1);
+    const tablesPerPage = 16;
+
+    const [movementPage, setMovementPage] = useState<number>(1);
+    const [movementPageSize, setMovementPageSize] = useState<number>(25);
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearch(movementSearch);
+            setMovementPage(1);
+        }, 300);
+        return () => clearTimeout(handler);
+    }, [movementSearch]);
+
+    useEffect(() => {
+        setDailyPage(1);
+        setTablesPage(1);
+        setMovementPage(1);
+    }, [selectedTenantId, selectedBranchId, startDate, endDate]);
 
     const effectiveTenantId = fixedTenantId || selectedTenantId || undefined;
 
@@ -123,6 +137,9 @@ export default function TenantActivityBoard({
             startDate,
             endDate,
             movementType: movementCategory,
+            movementPage,
+            movementLimit: movementPageSize,
+            movementSearch: debouncedSearch.trim() || undefined,
         },
         {
             pollingInterval: 15_000,
@@ -153,8 +170,14 @@ export default function TenantActivityBoard({
     const summary = activity?.summary;
     const branches = activity?.branches ?? [];
     const dailyRows = activity?.dailyBreakdown ?? [];
-    const allTables = activity?.activeTables ?? [];
-    const movements = activity?.movements ?? [];
+    const allTables = useMemo(
+        () => activity?.activeTables ?? [],
+        [activity?.activeTables],
+    );
+    const movements = useMemo(
+        () => activity?.movements ?? [],
+        [activity?.movements],
+    );
 
     const filteredTables = useMemo(() => {
         if (tableFilter === "occupied") {
@@ -166,18 +189,20 @@ export default function TenantActivityBoard({
         return allTables;
     }, [allTables, tableFilter]);
 
-    const filteredMovements = useMemo(() => {
-        const q = movementSearch.trim().toLowerCase();
-        if (!q) return movements;
-        return movements.filter(
-            m =>
-                m.title.toLowerCase().includes(q) ||
-                m.subtitle.toLowerCase().includes(q) ||
-                m.actorName.toLowerCase().includes(q) ||
-                m.branchName.toLowerCase().includes(q) ||
-                m.tenantName.toLowerCase().includes(q),
-        );
-    }, [movements, movementSearch]);
+    const totalTablePages = Math.max(
+        1,
+        Math.ceil(filteredTables.length / tablesPerPage),
+    );
+    const paginatedTables = useMemo(() => {
+        const start = (tablesPage - 1) * tablesPerPage;
+        return filteredTables.slice(start, start + tablesPerPage);
+    }, [filteredTables, tablesPage, tablesPerPage]);
+
+    const totalMovements =
+        activity?.movementPagination?.total ?? movements.length;
+    const totalMovementPages =
+        activity?.movementPagination?.totalPages ??
+        Math.max(1, Math.ceil(totalMovements / movementPageSize));
 
     const dailyColumns: DataTableColumn<TenantActivityDailyRow>[] = useMemo(
         () => [
@@ -746,6 +771,16 @@ export default function TenantActivityBoard({
                             ? "Loading daily activity…"
                             : "No activity recorded for the selected period."
                     }
+                    pagination={{
+                        page: dailyPage,
+                        limit: dailyPageSize,
+                        total: dailyRows.length,
+                        totalPages: Math.max(
+                            1,
+                            Math.ceil(dailyRows.length / dailyPageSize),
+                        ),
+                        onPageChange: setDailyPage,
+                    }}
                 />
             ) : null}
 
@@ -773,9 +808,12 @@ export default function TenantActivityBoard({
                                 <button
                                     key={f.id}
                                     type="button"
-                                    onClick={() => setTableFilter(f.id)}
+                                    onClick={() => {
+                                        setTableFilter(f.id);
+                                        setTablesPage(1);
+                                    }}
                                     className={cn(
-                                        "rounded-lg px-3 py-1 text-[12px] font-medium transition-colors",
+                                        "rounded-lg px-3 py-1 text-[12px] font-medium transition-colors cursor-pointer",
                                         tableFilter === f.id
                                             ? "bg-foreground text-background"
                                             : "text-slate-gray hover:text-foreground",
@@ -792,102 +830,171 @@ export default function TenantActivityBoard({
                             No tables match the current filter.
                         </div>
                     ) : (
-                        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                            {filteredTables.map(
-                                (t: TenantActivityTableItem) => (
-                                    <div
-                                        key={t.tableId}
-                                        className={cn(
-                                            "rounded-2xl border p-3.5 transition-colors",
-                                            t.status === "BILL_REQUESTED"
-                                                ? "border-amber-500/40 bg-amber-500/5"
-                                                : t.isOccupied
-                                                  ? "border-emerald-500/40 bg-emerald-500/5"
-                                                  : "border-hairline bg-card",
-                                        )}
-                                    >
-                                        <div className="flex items-start justify-between gap-2">
-                                            <div>
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="text-[14px] font-bold text-foreground">
-                                                        {t.tableName}
-                                                    </span>
-                                                    {t.isVip ? (
-                                                        <Badge
-                                                            variant="outline"
-                                                            className="border-amber-500/40 text-[10px] text-amber-600"
-                                                        >
-                                                            VIP
-                                                        </Badge>
-                                                    ) : null}
-                                                </div>
-                                                <p className="text-[11px] text-slate-gray">
-                                                    {t.branchName}
-                                                    {!effectiveTenantId
-                                                        ? ` · ${t.tenantName}`
-                                                        : ""}
-                                                </p>
-                                            </div>
-                                            <Badge
-                                                variant={
-                                                    t.isOccupied
-                                                        ? "success"
-                                                        : "secondary"
-                                                }
-                                                className="text-[10.5px]"
-                                            >
-                                                {t.status}
-                                            </Badge>
-                                        </div>
-
-                                        <div className="mt-3 space-y-1 border-t border-hairline pt-2.5 text-[12px]">
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-slate-gray">
-                                                    Waiter
-                                                </span>
-                                                <span className="font-medium text-foreground">
-                                                    {t.waiterName ||
-                                                        "Unassigned"}
-                                                </span>
-                                            </div>
-                                            {t.isOccupied ? (
-                                                <>
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-slate-gray">
-                                                            Orders / Guests
-                                                        </span>
-                                                        <span className="font-medium text-foreground">
-                                                            {t.ordersCount}{" "}
-                                                            order(s)
-                                                            {t.guestCount
-                                                                ? ` · ${t.guestCount} guests`
-                                                                : ""}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-slate-gray">
-                                                            Running Bill
-                                                        </span>
-                                                        <span className="font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
-                                                            {formatEtb(
-                                                                t.runningBillTotal,
-                                                            )}
-                                                        </span>
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <div className="flex items-center justify-between text-slate-gray">
-                                                    <span>Session</span>
-                                                    <span>
-                                                        Idle / Available
-                                                    </span>
-                                                </div>
+                        <>
+                            <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                {paginatedTables.map(
+                                    (t: TenantActivityTableItem) => (
+                                        <div
+                                            key={t.tableId}
+                                            className={cn(
+                                                "rounded-2xl border p-3.5 transition-colors",
+                                                t.status === "BILL_REQUESTED"
+                                                    ? "border-amber-500/40 bg-amber-500/5"
+                                                    : t.isOccupied
+                                                      ? "border-emerald-500/40 bg-emerald-500/5"
+                                                      : "border-hairline bg-card",
                                             )}
+                                        >
+                                            <div className="flex items-start justify-between gap-2">
+                                                <div>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="text-[14px] font-bold text-foreground">
+                                                            {t.tableName}
+                                                        </span>
+                                                        {t.isVip ? (
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="border-amber-500/40 text-[10px] text-amber-600"
+                                                            >
+                                                                VIP
+                                                            </Badge>
+                                                        ) : null}
+                                                    </div>
+                                                    <p className="text-[11px] text-slate-gray">
+                                                        {t.branchName}
+                                                        {!effectiveTenantId
+                                                            ? ` · ${t.tenantName}`
+                                                            : ""}
+                                                    </p>
+                                                </div>
+                                                <Badge
+                                                    variant={
+                                                        t.isOccupied
+                                                            ? "success"
+                                                            : "secondary"
+                                                    }
+                                                    className="text-[10.5px]"
+                                                >
+                                                    {t.status}
+                                                </Badge>
+                                            </div>
+
+                                            <div className="mt-3 space-y-1 border-t border-hairline pt-2.5 text-[12px]">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-slate-gray">
+                                                        Waiter
+                                                    </span>
+                                                    <span className="font-medium text-foreground">
+                                                        {t.waiterName ||
+                                                            "Unassigned"}
+                                                    </span>
+                                                </div>
+                                                {t.isOccupied ? (
+                                                    <>
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-slate-gray">
+                                                                Orders / Guests
+                                                            </span>
+                                                            <span className="font-medium text-foreground">
+                                                                {t.ordersCount}{" "}
+                                                                order(s)
+                                                                {t.guestCount
+                                                                    ? ` · ${t.guestCount} guests`
+                                                                    : ""}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-slate-gray">
+                                                                Running Bill
+                                                            </span>
+                                                            <span className="font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                                                                {formatEtb(
+                                                                    t.runningBillTotal,
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div className="flex items-center justify-between text-slate-gray">
+                                                        <span>Session</span>
+                                                        <span>
+                                                            Idle / Available
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
+                                    ),
+                                )}
+                            </div>
+
+                            {totalTablePages > 1 ? (
+                                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-hairline bg-card px-4 py-3">
+                                    <span className="text-[12px] text-slate-gray">
+                                        Showing{" "}
+                                        <span className="font-semibold text-foreground">
+                                            {(tablesPage - 1) * tablesPerPage +
+                                                1}
+                                            –
+                                            {Math.min(
+                                                tablesPage * tablesPerPage,
+                                                filteredTables.length,
+                                            )}
+                                        </span>{" "}
+                                        of{" "}
+                                        <span className="font-semibold text-foreground">
+                                            {filteredTables.length}
+                                        </span>{" "}
+                                        tables
+                                    </span>
+                                    <div className="flex items-center gap-1.5">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-8 px-2.5 text-[12px]"
+                                            disabled={tablesPage <= 1}
+                                            onClick={() =>
+                                                setTablesPage(p =>
+                                                    Math.max(1, p - 1),
+                                                )
+                                            }
+                                        >
+                                            <ChevronLeft className="size-3.5 mr-1" />
+                                            Previous
+                                        </Button>
+                                        <span className="px-2 font-mono text-[12px] text-muted-foreground">
+                                            Page{" "}
+                                            <span className="font-semibold text-foreground">
+                                                {tablesPage}
+                                            </span>{" "}
+                                            of{" "}
+                                            <span className="font-semibold text-foreground">
+                                                {totalTablePages}
+                                            </span>
+                                        </span>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-8 px-2.5 text-[12px]"
+                                            disabled={
+                                                tablesPage >= totalTablePages
+                                            }
+                                            onClick={() =>
+                                                setTablesPage(p =>
+                                                    Math.min(
+                                                        totalTablePages,
+                                                        p + 1,
+                                                    ),
+                                                )
+                                            }
+                                        >
+                                            Next
+                                            <ChevronRight className="size-3.5 ml-1" />
+                                        </Button>
                                     </div>
-                                ),
-                            )}
-                        </div>
+                                </div>
+                            ) : null}
+                        </>
                     )}
                 </div>
             ) : null}
@@ -901,9 +1008,12 @@ export default function TenantActivityBoard({
                                 <button
                                     key={cat.id}
                                     type="button"
-                                    onClick={() => setMovementCategory(cat.id)}
+                                    onClick={() => {
+                                        setMovementCategory(cat.id);
+                                        setMovementPage(1);
+                                    }}
                                     className={cn(
-                                        "rounded-xl border px-3 py-1.5 text-[12px] font-medium transition-colors",
+                                        "rounded-xl border px-3 py-1.5 text-[12px] font-medium transition-colors cursor-pointer",
                                         movementCategory === cat.id
                                             ? "border-foreground bg-foreground text-background"
                                             : "border-hairline bg-card text-slate-gray hover:text-foreground",
@@ -918,9 +1028,10 @@ export default function TenantActivityBoard({
                             <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-gray" />
                             <Input
                                 value={movementSearch}
-                                onChange={e =>
-                                    setMovementSearch(e.target.value)
-                                }
+                                onChange={e => {
+                                    setMovementSearch(e.target.value);
+                                    setMovementPage(1);
+                                }}
                                 placeholder="Filter movements, staff, bill #…"
                                 className="h-9 rounded-xl pl-8 text-[12px]"
                             />
@@ -928,70 +1039,180 @@ export default function TenantActivityBoard({
                     </div>
 
                     <div className="overflow-hidden rounded-2xl border border-hairline bg-card">
-                        {filteredMovements.length === 0 ? (
+                        {movements.length === 0 ? (
                             <div className="p-8 text-center text-[13px] text-slate-gray">
-                                No movements found for the selected filters.
+                                {isLoading || isFetching
+                                    ? "Loading movements…"
+                                    : "No movements found for the selected filters."}
                             </div>
                         ) : (
-                            <div className="divide-y divide-hairline">
-                                {filteredMovements.map(m => (
-                                    <div
-                                        key={m.id}
-                                        className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 hover:bg-secondary/40"
-                                    >
-                                        <div className="flex min-w-0 items-start gap-3">
-                                            <span
-                                                className={cn(
-                                                    "mt-0.5 inline-flex shrink-0 rounded-lg border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
-                                                    categoryBadgeClass(
-                                                        m.category,
-                                                    ),
-                                                )}
-                                            >
-                                                {m.category}
-                                            </span>
-                                            <div className="min-w-0">
-                                                <p className="truncate text-[13px] font-semibold text-foreground">
-                                                    {m.title}
-                                                </p>
-                                                <p className="mt-0.5 text-[12px] text-slate-gray">
-                                                    {m.subtitle}
-                                                    {" · "}
-                                                    <span className="font-medium text-foreground">
-                                                        {m.branchName}
+                            <>
+                                <div
+                                    className={cn(
+                                        "divide-y divide-hairline",
+                                        isFetching &&
+                                            "opacity-60 pointer-events-none transition-opacity",
+                                    )}
+                                >
+                                    {movements.map(m => (
+                                        <div
+                                            key={m.id}
+                                            className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 hover:bg-secondary/40"
+                                        >
+                                            <div className="flex min-w-0 items-start gap-3">
+                                                <span
+                                                    className={cn(
+                                                        "mt-0.5 inline-flex shrink-0 rounded-lg border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                                                        categoryBadgeClass(
+                                                            m.category,
+                                                        ),
+                                                    )}
+                                                >
+                                                    {m.category}
+                                                </span>
+                                                <div className="min-w-0">
+                                                    <p className="truncate text-[13px] font-semibold text-foreground">
+                                                        {m.title}
+                                                    </p>
+                                                    <p className="mt-0.5 text-[12px] text-slate-gray">
+                                                        {m.subtitle}
+                                                        {" · "}
+                                                        <span className="font-medium text-foreground">
+                                                            {m.branchName}
+                                                        </span>
+                                                        {!effectiveTenantId
+                                                            ? ` (${m.tenantName})`
+                                                            : ""}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex shrink-0 items-center gap-4 text-right">
+                                                {m.amount != null ? (
+                                                    <span className="font-mono text-[13px] font-bold tabular-nums text-foreground">
+                                                        {formatEtb(m.amount)}
                                                     </span>
-                                                    {!effectiveTenantId
-                                                        ? ` (${m.tenantName})`
-                                                        : ""}
-                                                </p>
+                                                ) : null}
+                                                <div className="text-[11px] text-slate-gray">
+                                                    <p className="font-medium text-foreground">
+                                                        {m.actorName}
+                                                    </p>
+                                                    <p>
+                                                        {new Date(
+                                                            m.timestamp,
+                                                        ).toLocaleString(
+                                                            "en-GB",
+                                                            {
+                                                                day: "2-digit",
+                                                                month: "short",
+                                                                hour: "2-digit",
+                                                                minute: "2-digit",
+                                                            },
+                                                        )}
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
+                                    ))}
+                                </div>
 
-                                        <div className="flex shrink-0 items-center gap-4 text-right">
-                                            {m.amount != null ? (
-                                                <span className="font-mono text-[13px] font-bold tabular-nums text-foreground">
-                                                    {formatEtb(m.amount)}
-                                                </span>
-                                            ) : null}
-                                            <div className="text-[11px] text-slate-gray">
-                                                <p className="font-medium text-foreground">
-                                                    {m.actorName}
-                                                </p>
-                                                <p>
-                                                    {new Date(
-                                                        m.timestamp,
-                                                    ).toLocaleString("en-GB", {
-                                                        day: "2-digit",
-                                                        month: "short",
-                                                        hour: "2-digit",
-                                                        minute: "2-digit",
-                                                    })}
-                                                </p>
-                                            </div>
+                                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-hairline px-4 py-3 bg-card/60">
+                                    <div className="flex items-center gap-3 text-[12px] text-slate-gray">
+                                        <span>
+                                            Showing{" "}
+                                            <span className="font-semibold text-foreground">
+                                                {(movementPage - 1) *
+                                                    movementPageSize +
+                                                    1}
+                                                –
+                                                {Math.min(
+                                                    movementPage *
+                                                        movementPageSize,
+                                                    totalMovements,
+                                                )}
+                                            </span>{" "}
+                                            of{" "}
+                                            <span className="font-semibold text-foreground">
+                                                {totalMovements}
+                                            </span>{" "}
+                                            movements
+                                        </span>
+                                        <div className="flex items-center gap-1.5 pl-2 border-l border-hairline">
+                                            <span className="text-[11px]">
+                                                Per page:
+                                            </span>
+                                            {[15, 25, 50, 100].map(sz => (
+                                                <button
+                                                    key={sz}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setMovementPageSize(sz);
+                                                        setMovementPage(1);
+                                                    }}
+                                                    className={cn(
+                                                        "rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors cursor-pointer",
+                                                        movementPageSize === sz
+                                                            ? "bg-foreground text-background font-semibold"
+                                                            : "text-slate-gray hover:text-foreground hover:bg-secondary",
+                                                    )}
+                                                >
+                                                    {sz}
+                                                </button>
+                                            ))}
                                         </div>
                                     </div>
-                                ))}
-                            </div>
+
+                                    <div className="flex items-center gap-1.5">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-8 px-2.5 text-[12px]"
+                                            disabled={
+                                                movementPage <= 1 || isFetching
+                                            }
+                                            onClick={() =>
+                                                setMovementPage(p =>
+                                                    Math.max(1, p - 1),
+                                                )
+                                            }
+                                        >
+                                            <ChevronLeft className="size-3.5 mr-1" />
+                                            Previous
+                                        </Button>
+                                        <span className="px-2 font-mono text-[12px] text-muted-foreground">
+                                            Page{" "}
+                                            <span className="font-semibold text-foreground">
+                                                {movementPage}
+                                            </span>{" "}
+                                            of{" "}
+                                            <span className="font-semibold text-foreground">
+                                                {totalMovementPages}
+                                            </span>
+                                        </span>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-8 px-2.5 text-[12px]"
+                                            disabled={
+                                                movementPage >=
+                                                    totalMovementPages ||
+                                                isFetching
+                                            }
+                                            onClick={() =>
+                                                setMovementPage(p =>
+                                                    Math.min(
+                                                        totalMovementPages,
+                                                        p + 1,
+                                                    ),
+                                                )
+                                            }
+                                        >
+                                            Next
+                                            <ChevronRight className="size-3.5 ml-1" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </>
                         )}
                     </div>
                 </div>

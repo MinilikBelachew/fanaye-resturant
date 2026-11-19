@@ -15,6 +15,7 @@ import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import {
+    AlertTriangle,
     Ban,
     Calendar,
     CalendarOff,
@@ -552,6 +553,7 @@ export default function AddEditStaffSheet() {
                 coverageShiftId: firstShift,
                 licencePlate: (editingStaff as any).licencePlate || "",
                 vehicleDesc: (editingStaff as any).vehicleDesc || "",
+                isEditMode: true,
             });
             setPhotoPreviewUrl(
                 member?.photoPath
@@ -559,7 +561,10 @@ export default function AddEditStaffSheet() {
                     : null,
             );
         } else {
-            form.reset(staffFormDefaults);
+            form.reset({
+                ...staffFormDefaults,
+                isEditMode: false,
+            });
             setTablesByShiftDay({});
             setCoverageDayCode("Mon");
             setPhotoPreviewUrl(null);
@@ -1158,10 +1163,21 @@ export default function AddEditStaffSheet() {
                                             (el as HTMLElement).focus();
                                         }
                                     }
+                                    const errObj = errors as Record<
+                                        string,
+                                        { message?: string } | undefined
+                                    >;
+                                    const rawMsg = errObj[firstKey]?.message;
+                                    const specificMsg =
+                                        typeof rawMsg === "string" &&
+                                        rawMsg.trim()
+                                            ? rawMsg
+                                            : null;
                                     toast.error(
-                                        isAmharic
-                                            ? "እባክዎ የተሳሳቱ መረጃዎችን አስተካክለው እንደገና ይሞክሩ።"
-                                            : "Please correct the highlighted fields before saving.",
+                                        specificMsg ||
+                                            (isAmharic
+                                                ? "እባክዎ የተሳሳቱ መረጃዎችን አስተካክለው እንደገና ይሞክሩ።"
+                                                : "Please correct the highlighted fields before saving."),
                                     );
                                 }
                             },
@@ -1739,7 +1755,29 @@ export default function AddEditStaffSheet() {
                         ) : null}
 
                         {role ? (
-                            <div className="space-y-4 rounded-2xl border border-hairline/80 bg-surface-ivory/40 p-4 dark:bg-card/40">
+                            <div
+                                id="staff-dayShiftByDay"
+                                data-field="dayShiftByDay"
+                                className={cn(
+                                    "space-y-4 rounded-2xl border p-4 transition-colors",
+                                    form.formState.errors.dayShiftByDay
+                                        ? "border-red-500/60 bg-red-500/5 dark:bg-red-950/10 shadow-xs"
+                                        : "border-hairline/80 bg-surface-ivory/40 dark:bg-card/40",
+                                )}
+                            >
+                                {form.formState.errors.dayShiftByDay ? (
+                                    <div className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-[12px] font-medium text-red-600 dark:text-red-400">
+                                        <AlertTriangle className="size-4 shrink-0" />
+                                        <span>
+                                            {String(
+                                                form.formState.errors
+                                                    .dayShiftByDay.message ||
+                                                    "Please assign at least one day and shift window.",
+                                            )}
+                                        </span>
+                                    </div>
+                                ) : null}
+
                                 {/* Header */}
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2.5">

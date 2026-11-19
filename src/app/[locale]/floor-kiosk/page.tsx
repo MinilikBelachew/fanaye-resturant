@@ -15,6 +15,7 @@ import { useRouter } from "@/i18n/navigation";
 import { RestorchLogo } from "@/components/common/RestorchLogo";
 import { ThemeToggleButton } from "@/components/theme/ThemeSwitcher";
 import { LocaleSwitcher } from "@/components/theme/LocaleSwitcher";
+import { toast } from "@/lib/toast";
 import {
     formatCalendarDateTime,
     useCalendarMode,
@@ -27,7 +28,9 @@ import {
     Crown,
     Delete,
     Lock,
+    LogIn,
     RefreshCw,
+    Unlink,
     User,
     X,
 } from "lucide-react";
@@ -104,6 +107,7 @@ export default function FloorKioskPage() {
     const [waiterPin, setWaiterPin] = useState("");
     const [waiterPinError, setWaiterPinError] = useState("");
     const [isVerifyingWaiter, setIsVerifyingWaiter] = useState(false);
+    const [showExitModal, setShowExitModal] = useState(false);
 
     // Hydrate saved kiosk session
     useEffect(() => {
@@ -256,11 +260,22 @@ export default function FloorKioskPage() {
         }
     };
 
-    const handleLockTablet = () => {
+    const handleGoToSignIn = () => {
+        setShowExitModal(false);
+        router.push("/sign-in?kiosk_exit=1");
+    };
+
+    const handleUnpairTablet = () => {
+        localStorage.removeItem(KIOSK_PAIRED_KEY);
         localStorage.removeItem(KIOSK_TOKEN_KEY);
+        localStorage.removeItem(KIOSK_TENANT_KEY);
+        localStorage.removeItem(KIOSK_BRANCH_NAME_KEY);
         setKioskToken(null);
-        setBoard(null);
-        setSelectedTable(null);
+        setIsPaired(false);
+        setShowExitModal(false);
+        toast.success(
+            isAm ? "ታብሌቱ በተሳካ ሁኔታ ተለያይቷል" : "Tablet unpaired successfully.",
+        );
         router.replace("/sign-in");
     };
 
@@ -357,20 +372,22 @@ export default function FloorKioskPage() {
                                 {isAm ? "አድስ" : "Refresh"}
                             </span>
                         </button>
-                        {isPaired ? (
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                                {isAm ? "የተጣመረ ታብሌት" : "Paired Waiter Tablet"}
+                        {isPaired && (
+                            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                {isAm ? "የተጣመረ ታብሌት" : "Paired Waiter Board"}
                             </span>
-                        ) : (
-                            <button
-                                type="button"
-                                onClick={handleLockTablet}
-                                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/60 px-3 py-1.5 text-xs font-semibold hover:bg-secondary"
-                            >
-                                <Lock className="size-3.5" />
-                                <span>{isAm ? "ቆልፍ" : "Lock"}</span>
-                            </button>
                         )}
+                        <button
+                            type="button"
+                            onClick={() => setShowExitModal(true)}
+                            title={
+                                isAm ? "ውጣ ወይም አለያይ" : "Exit or Unpair Tablet"
+                            }
+                            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/80 hover:bg-secondary px-3 py-1.5 text-xs font-semibold text-foreground active:scale-95 transition-all cursor-pointer"
+                        >
+                            <Lock className="size-3.5 text-muted-foreground" />
+                            <span>{isAm ? "ውጣ / ቆልፍ" : "Exit / Lock"}</span>
+                        </button>
                     </div>
                 </div>
             </header>
@@ -685,6 +702,108 @@ export default function FloorKioskPage() {
                                 className="flex h-12 items-center justify-center rounded-xl border border-border bg-secondary/20 text-muted-foreground hover:bg-secondary"
                             >
                                 <Delete className="size-4" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
+
+            {/* Quick Exit / Unpair Modal (No Password Required) */}
+            {showExitModal ? (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-150">
+                    <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl animate-in zoom-in-95 duration-150">
+                        <div className="flex items-start justify-between gap-3 border-b border-border/60 pb-3">
+                            <div className="flex items-center gap-2.5">
+                                <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                                    <Lock className="size-4.5" />
+                                </div>
+                                <div>
+                                    <h2 className="text-base font-bold text-foreground">
+                                        {isAm
+                                            ? "የታብሌት መቆጣጠሪያ"
+                                            : "Floor Tablet Controls"}
+                                    </h2>
+                                    <p className="text-xs text-muted-foreground">
+                                        {isAm
+                                            ? "ያለ ፓስዎርድ በቀላሉ መውጣት ወይም ማለያየት ይችላሉ"
+                                            : "Quick exit or unpair (no password required)"}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowExitModal(false)}
+                                className="rounded-full p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                            >
+                                <X className="size-4" />
+                            </button>
+                        </div>
+
+                        <div className="mt-4 space-y-3">
+                            {/* Option 1: Go to Sign-In without unpairing */}
+                            <button
+                                type="button"
+                                onClick={handleGoToSignIn}
+                                className="w-full text-left flex items-start gap-3 p-3.5 rounded-2xl border border-border bg-background hover:border-primary hover:bg-primary/5 transition-all group cursor-pointer"
+                            >
+                                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                                    <LogIn className="size-4.5" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between">
+                                        <span className="font-semibold text-xs sm:text-sm text-foreground">
+                                            {isAm
+                                                ? "ወደ መግቢያ ገጽ ሂድ"
+                                                : "Go to Sign-In"}
+                                        </span>
+                                        <span className="text-[12px] font-semibold text-primary group-hover:translate-x-0.5 transition-transform">
+                                            →
+                                        </span>
+                                    </div>
+                                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                        {isAm
+                                            ? "ታብሌቱ እንደተጣመረ ይቆያል፤ አስተዳዳሪ ወይም ሰራተኛ መግባት ይችላል"
+                                            : "Keeps tablet paired. Sign in as Manager, Admin, or Staff."}
+                                    </p>
+                                </div>
+                            </button>
+
+                            {/* Option 2: Unpair Tablet Completely */}
+                            <button
+                                type="button"
+                                onClick={handleUnpairTablet}
+                                className="w-full text-left flex items-start gap-3 p-3.5 rounded-2xl border border-rose-500/30 bg-rose-500/5 hover:border-rose-500 hover:bg-rose-500/10 transition-all group cursor-pointer"
+                            >
+                                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-rose-600 text-white">
+                                    <Unlink className="size-4.5" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between">
+                                        <span className="font-semibold text-xs sm:text-sm text-rose-700 dark:text-rose-300">
+                                            {isAm
+                                                ? "ይህንን ታብሌት አለያይ"
+                                                : "Unpair This Tablet"}
+                                        </span>
+                                        <span className="text-[12px] font-semibold text-rose-600 group-hover:translate-x-0.5 transition-transform">
+                                            ✕
+                                        </span>
+                                    </div>
+                                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                        {isAm
+                                            ? "ይህንን መሳሪያ ከኪዮስክ ሁነታ ሙሉ በሙሉ ያስወጣል"
+                                            : "Completely removes this device from shared floor kiosk mode."}
+                                    </p>
+                                </div>
+                            </button>
+                        </div>
+
+                        <div className="mt-4 pt-3 border-t border-border/50 flex justify-end">
+                            <button
+                                type="button"
+                                onClick={() => setShowExitModal(false)}
+                                className="px-4 py-2 rounded-xl border border-border text-xs font-semibold text-foreground hover:bg-muted cursor-pointer"
+                            >
+                                {isAm ? "ተመለስ" : "Cancel"}
                             </button>
                         </div>
                     </div>

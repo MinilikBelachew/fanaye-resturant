@@ -105,6 +105,12 @@ export interface TenantActivityResponse {
     dailyBreakdown: TenantActivityDailyRow[];
     activeTables: TenantActivityTableItem[];
     movements: TenantActivityMovementItem[];
+    movementPagination?: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+    };
 }
 
 export interface TenantActivityQuery {
@@ -113,6 +119,9 @@ export interface TenantActivityQuery {
     startDate?: string;
     endDate?: string;
     movementType?: string;
+    movementPage?: number;
+    movementLimit?: number;
+    movementSearch?: string;
 }
 
 export interface SuperAdminKpis {

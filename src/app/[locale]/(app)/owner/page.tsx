@@ -201,8 +201,8 @@ export default function OwnerPage() {
             </div>
 
             <div className="flex flex-col gap-2">
-                <div className="flex flex-wrap items-center gap-2">
-                    <div className="flex rounded-full border border-hairline bg-card p-1">
+                <div className="no-scrollbar scrollbar-none flex items-center gap-2 overflow-x-auto pb-1 sm:flex-wrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    <div className="flex shrink-0 rounded-full border border-hairline bg-card p-1">
                         <button
                             type="button"
                             onClick={() => setScope("all")}
@@ -236,7 +236,7 @@ export default function OwnerPage() {
                     </div>
                 </div>
 
-                <div className="flex flex-wrap gap-1.5">
+                <div className="no-scrollbar scrollbar-none flex items-center gap-1.5 overflow-x-auto pb-1 sm:flex-wrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                     {PERIODS.map(id => {
                         const active = period === id;
                         return (
@@ -314,7 +314,7 @@ export default function OwnerPage() {
             {isLoading ? (
                 <KpiStatsSkeleton />
             ) : (
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     <KpiCard
                         accent
                         label={

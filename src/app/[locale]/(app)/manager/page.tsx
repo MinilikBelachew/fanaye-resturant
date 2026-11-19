@@ -299,7 +299,7 @@ export default function ManagerPage() {
             </div>
 
             <div className="relative z-[55] flex flex-col gap-2">
-                <div className="flex flex-wrap gap-1.5">
+                <div className="no-scrollbar scrollbar-none flex items-center gap-1.5 overflow-x-auto pb-1 sm:flex-wrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                     {PERIODS.map(id => {
                         const active = period === id;
                         return (
@@ -369,7 +369,7 @@ export default function ManagerPage() {
                         <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-gray">
                             {tManager("sectionMoney")}
                         </p>
-                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 xl:grid-cols-4">
                             <KpiCard
                                 compact
                                 accent
@@ -424,7 +424,7 @@ export default function ManagerPage() {
                         <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-gray">
                             {tManager("sectionOps")}
                         </p>
-                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 xl:grid-cols-4">
                             <KpiCard
                                 compact
                                 label={tManager("avgPrep")}
