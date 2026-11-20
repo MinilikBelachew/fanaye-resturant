@@ -70,8 +70,9 @@ export function matchesStationFilter(
     ticket: StationTicket,
     filter: QueueFilter,
 ): boolean {
-    if (filter === "all") return true;
     const stale = isStaleStationTicket(ticket);
+    // All = live work only; stale leftovers surface under Exceptions.
+    if (filter === "all") return !stale;
     if (filter === "new") {
         return (
             (ticket.state === "QUEUED" || ticket.state === "ACKNOWLEDGED") &&

@@ -73,6 +73,7 @@ export function isStaleStationTicket(ticket: StationTicket) {
 
 export function stationQueueCounts(tickets: StationTicket[]) {
     return {
+        all: tickets.filter(ticket => !isStaleStationTicket(ticket)).length,
         new: tickets.filter(
             ticket =>
                 (ticket.state === "QUEUED" ||

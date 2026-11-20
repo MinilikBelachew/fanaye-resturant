@@ -27,7 +27,10 @@ import StationTicketActions from "@/domains/fulfillment/ui/StationTicketActions"
 import TableOrderCard, {
     TableGroupData,
 } from "@/domains/fulfillment/ui/TableOrderCard";
-import GroupedStationTable from "@/domains/fulfillment/ui/GroupedStationTable";
+import GroupedStationTable, {
+    GROUP_PAGE_SIZE,
+    ShowMoreGroups,
+} from "@/domains/fulfillment/ui/GroupedStationTable";
 import { parseServingGroup } from "@/domains/fulfillment/application/servingGroup";
 import type { StationRole } from "@/domains/identity/domain/role";
 import {
@@ -323,6 +326,10 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
     const [showMaterialsAuditModal, setShowMaterialsAuditModal] = useState(
         () => searchParams.get("view_materials") === "true",
     );
+    const [visibleCards, setVisibleCards] = useState(GROUP_PAGE_SIZE);
+    useEffect(() => {
+        setVisibleCards(GROUP_PAGE_SIZE);
+    }, [status, query]);
     const { data: activeMaterialsRes } = useListActiveMaterialIssuesQuery(
         undefined,
         {
@@ -622,8 +629,15 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                 group.separateItems.push(t);
             }
         }
+        // Newest order first (matches Cards view); fully-ready tables sink.
+        const allReady = (g: TableGroupData) =>
+            g.allTickets.every(t => t.state === "READY") ? 1 : 0;
+        const newestElapsed = (g: TableGroupData) =>
+            Math.min(...g.allTickets.map(t => t.elapsedSeconds));
         return Array.from(map.values()).sort(
-            (a, b) => b.maxElapsedSeconds - a.maxElapsedSeconds,
+            (a, b) =>
+                allReady(a) - allReady(b) ||
+                newestElapsed(a) - newestElapsed(b),
         );
     }, [rows]);
 
@@ -693,7 +707,7 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
             label: tStations.has("allTickets")
                 ? tStations("allTickets")
                 : "All tickets",
-            count: tickets.length,
+            count: counts.all,
             icon: LayoutGrid,
         },
         {
@@ -896,15 +910,24 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                     {emptyLabel}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                    {tableGroups.map(group => (
-                        <TableOrderCard
-                            key={group.key}
-                            group={group}
-                            role={role}
-                            workflowMode={workflowMode}
-                        />
-                    ))}
+                <div className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                        {tableGroups.slice(0, visibleCards).map(group => (
+                            <TableOrderCard
+                                key={group.key}
+                                group={group}
+                                role={role}
+                                workflowMode={workflowMode}
+                            />
+                        ))}
+                    </div>
+                    <ShowMoreGroups
+                        shown={visibleCards}
+                        total={tableGroups.length}
+                        onShowMore={() =>
+                            setVisibleCards(n => n + GROUP_PAGE_SIZE)
+                        }
+                    />
                 </div>
             )}
         </div>

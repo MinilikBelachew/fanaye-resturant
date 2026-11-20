@@ -26,6 +26,32 @@ import type { TableGroupData } from "@/domains/fulfillment/ui/TableOrderCard";
 import IssueMaterialsModal from "@/domains/outside-orders/ui/IssueMaterialsModal";
 import { cn } from "@/lib/utils";
 
+/** Table groups rendered per "Show more" step. */
+export const GROUP_PAGE_SIZE = 30;
+
+export function ShowMoreGroups({
+    shown,
+    total,
+    onShowMore,
+}: {
+    shown: number;
+    total: number;
+    onShowMore: () => void;
+}) {
+    if (shown >= total) return null;
+    return (
+        <div className="flex justify-center pt-1">
+            <button
+                type="button"
+                onClick={onShowMore}
+                className="rounded-xl border border-hairline bg-card px-4 py-2 text-[12.5px] font-medium text-foreground hover:bg-muted"
+            >
+                Show more ({total - shown} remaining)
+            </button>
+        </div>
+    );
+}
+
 function MaterialsButton({ ticket }: { ticket: StationTicket }) {
     const [showModal, setShowModal] = useState(false);
 
@@ -346,6 +372,7 @@ export default function GroupedStationTable({
     emptyLabel: string;
 }) {
     const [search, setSearch] = useState("");
+    const [visibleCount, setVisibleCount] = useState(GROUP_PAGE_SIZE);
     const [collapsedKeys, setCollapsedKeys] = useState<Record<string, boolean>>(
         {},
     );
@@ -390,7 +417,10 @@ export default function GroupedStationTable({
                     <Input
                         type="text"
                         value={search}
-                        onChange={e => setSearch(e.target.value)}
+                        onChange={e => {
+                            setSearch(e.target.value);
+                            setVisibleCount(GROUP_PAGE_SIZE);
+                        }}
                         placeholder="Search table, server, or dish..."
                         className="pl-9 h-9 text-[12.5px] rounded-xl bg-card border-hairline"
                     />
@@ -411,7 +441,7 @@ export default function GroupedStationTable({
                 </div>
             ) : (
                 <div className="space-y-2.5">
-                    {filteredGroups.map(group => (
+                    {filteredGroups.slice(0, visibleCount).map(group => (
                         <TableGroupRow
                             key={group.key}
                             group={group}
@@ -421,6 +451,13 @@ export default function GroupedStationTable({
                             onToggle={() => toggleGroup(group.key)}
                         />
                     ))}
+                    <ShowMoreGroups
+                        shown={visibleCount}
+                        total={filteredGroups.length}
+                        onShowMore={() =>
+                            setVisibleCount(n => n + GROUP_PAGE_SIZE)
+                        }
+                    />
                 </div>
             )}
         </div>
