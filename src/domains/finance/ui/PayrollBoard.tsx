@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
+import { useLocale } from "next-intl";
 import { MoreHorizontal, Plus } from "lucide-react";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import DataTable, {
@@ -68,6 +69,7 @@ function statusClass(status: string) {
 }
 
 export default function PayrollBoard() {
+    const isAm = useLocale() === "am";
     const { data, isLoading, isError } = useListPayrollRunsQuery();
     const runs = data?.data ?? [];
     const [monthKey, setMonthKey] = useState(monthKeyNow);
@@ -101,9 +103,15 @@ export default function PayrollBoard() {
                 label: bounds.label,
             }).unwrap();
             setSelectedRunId(res.data.id);
-            toast.success("Pay run created", bounds.label);
+            toast.success(
+                isAm ? "የደመወዝ ክፍያ ተፈጥሯል" : "Pay run created",
+                bounds.label,
+            );
         } catch (err) {
-            toast.fromUnknown(err, "Could not create pay run");
+            toast.fromUnknown(
+                err,
+                isAm ? "የደመወዝ ክፍያ መፍጠር አልተቻለም" : "Could not create pay run",
+            );
         }
     }
 
@@ -112,9 +120,13 @@ export default function PayrollBoard() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <PageHeader
                     compact
-                    eyebrow="Finance"
-                    title="Payroll"
-                    description="Monthly runs from HR rates. Pay each person or the whole run."
+                    eyebrow={isAm ? "ፋይናንስ" : "Finance"}
+                    title={isAm ? "የደመወዝ ክፍያ" : "Payroll"}
+                    description={
+                        isAm
+                            ? "ወርሃዊ የደመወዝ ክፍያ ዝግጅት እና ማጽደቂያ።"
+                            : "Monthly runs from HR rates. Pay each person or the whole run."
+                    }
                 />
                 <div className="flex flex-wrap items-center gap-2">
                     <Input
@@ -138,16 +150,20 @@ export default function PayrollBoard() {
                         ) : (
                             <Plus className="size-4" />
                         )}
-                        New run
+                        {isAm ? "አዲስ ክፍያ" : "New run"}
                     </Button>
                 </div>
             </div>
 
             {isLoading ? (
-                <p className="text-[13px] text-muted-foreground">Loading…</p>
+                <p className="text-[13px] text-muted-foreground">
+                    {isAm ? "በመጫን ላይ..." : "Loading…"}
+                </p>
             ) : isError ? (
                 <p className="text-[13px] text-destructive">
-                    Could not load pay runs.
+                    {isAm
+                        ? "የደመወዝ ክፍያዎችን መጫን አልተቻለም።"
+                        : "Could not load pay runs."}
                 </p>
             ) : (
                 <div className="space-y-4">
@@ -162,7 +178,9 @@ export default function PayrollBoard() {
                         <PayrollRunDetail runId={activeRunId} />
                     ) : (
                         <div className="rounded-2xl border border-dashed border-hairline bg-card px-6 py-16 text-center text-[13px] text-muted-foreground">
-                            No pay run for this month.
+                            {isAm
+                                ? "ለዚህ ወር የተዘጋጀ ክፍያ የለም።"
+                                : "No pay run for this month."}
                         </div>
                     )}
                 </div>
@@ -182,10 +200,13 @@ function RunPicker({
     onSelect: (id: string) => void;
     emptyMonth: string;
 }) {
+    const isAm = useLocale() === "am";
     if (runs.length === 0) {
         return (
             <div className="rounded-xl border border-dashed border-hairline px-4 py-5 text-center text-[12px] text-muted-foreground">
-                No runs in {emptyMonth}.
+                {isAm
+                    ? `በ${emptyMonth} ውስጥ ምንም ክፍያ የለም።`
+                    : `No runs in ${emptyMonth}.`}
             </div>
         );
     }
@@ -230,6 +251,7 @@ function RunPicker({
 }
 
 function PayrollRunDetail({ runId }: { runId: string }) {
+    const isAm = useLocale() === "am";
     const { data, isLoading } = useGetPayrollRunQuery(runId);
     const [approve, approving] = useApprovePayrollRunMutation();
     const [markPaid, paying] = useMarkPayrollPaidMutation();
@@ -257,10 +279,13 @@ function PayrollRunDetail({ runId }: { runId: string }) {
                 lineIds: [line.id],
                 payMethod,
             }).unwrap();
-            toast.success("Marked paid", line.staffName);
+            toast.success(isAm ? "ክፍያው ተመዝግቧል" : "Marked paid", line.staffName);
             setMenuLineId(null);
         } catch (err) {
-            toast.fromUnknown(err, "Mark paid failed");
+            toast.fromUnknown(
+                err,
+                isAm ? "ክፍያውን መመዝገብ አልተቻለም" : "Mark paid failed",
+            );
         }
     }
 
@@ -268,7 +293,7 @@ function PayrollRunDetail({ runId }: { runId: string }) {
         () => [
             {
                 id: "person",
-                header: "Person",
+                header: isAm ? "ሰራተኛ" : "Person",
                 hideable: false,
                 sortValue: row => row.staffName,
                 cell: row => (
@@ -284,7 +309,7 @@ function PayrollRunDetail({ runId }: { runId: string }) {
             },
             {
                 id: "type",
-                header: "Type",
+                header: isAm ? "ዓይነት" : "Type",
                 sortValue: row => row.payType || "",
                 cell: row => (
                     <span className="text-muted-foreground">
@@ -297,7 +322,7 @@ function PayrollRunDetail({ runId }: { runId: string }) {
             },
             {
                 id: "base",
-                header: "Base",
+                header: isAm ? "መሰረታዊ" : "Base",
                 headerClassName: "text-right",
                 className: "text-right tabular-nums",
                 sortValue: row => row.baseGross,
@@ -305,7 +330,7 @@ function PayrollRunDetail({ runId }: { runId: string }) {
             },
             {
                 id: "ot",
-                header: "OT",
+                header: isAm ? "የትርፍ ሰዓት" : "OT",
                 headerClassName: "text-right",
                 className: "text-right tabular-nums",
                 sortValue: row => row.otAmount,
@@ -325,7 +350,7 @@ function PayrollRunDetail({ runId }: { runId: string }) {
             },
             {
                 id: "tip",
-                header: "Tip",
+                header: isAm ? "ጉርሻ" : "Tip",
                 headerClassName: "text-right",
                 className: "text-right tabular-nums",
                 sortValue: row => row.tipAmount ?? 0,
@@ -334,7 +359,7 @@ function PayrollRunDetail({ runId }: { runId: string }) {
             },
             {
                 id: "deduct",
-                header: "Deduct",
+                header: isAm ? "ተቀናሽ" : "Deduct",
                 headerClassName: "text-right",
                 className: "text-right tabular-nums text-muted-foreground",
                 sortValue: row => row.deductions,
@@ -343,7 +368,7 @@ function PayrollRunDetail({ runId }: { runId: string }) {
             },
             {
                 id: "net",
-                header: "Net",
+                header: isAm ? "የተጣራ" : "Net",
                 headerClassName: "text-right",
                 className: "text-right font-medium tabular-nums",
                 sortValue: row => row.net,
@@ -351,15 +376,17 @@ function PayrollRunDetail({ runId }: { runId: string }) {
             },
             {
                 id: "paid",
-                header: "Paid",
+                header: isAm ? "ሁኔታ" : "Paid",
                 sortValue: row => (row.paidAt ? 1 : 0),
                 cell: row =>
                     row.paidAt ? (
                         <span className="text-emerald-700 dark:text-emerald-300">
-                            {row.payMethod || "Paid"}
+                            {row.payMethod || (isAm ? "የተከፈለ" : "Paid")}
                         </span>
                     ) : (
-                        <span className="text-muted-foreground">Unpaid</span>
+                        <span className="text-muted-foreground">
+                            {isAm ? "ያልተከፈለ" : "Unpaid"}
+                        </span>
                     ),
             },
             {
@@ -409,7 +436,7 @@ function PayrollRunDetail({ runId }: { runId: string }) {
     if (isLoading || !run) {
         return (
             <div className="rounded-2xl border border-hairline bg-card p-8 text-[13px] text-muted-foreground">
-                Loading run…
+                {isAm ? "ክፍያውን በመጫን ላይ..." : "Loading run…"}
             </div>
         );
     }
@@ -433,14 +460,17 @@ function PayrollRunDetail({ runId }: { runId: string }) {
                         </span>
                     </div>
                     <p className="mt-1 text-[12px] text-muted-foreground">
-                        {run.lineCount} people · Net {formatEtb(run.totalNet)}
+                        {run.lineCount} {isAm ? "ሰራተኞች" : "people"} ·{" "}
+                        {isAm ? "የተጣራ" : "Net"} {formatEtb(run.totalNet)}
                         {(run.totalTips ?? 0) > 0
-                            ? ` · Tips ${formatEtb(run.totalTips)}`
+                            ? ` · ${isAm ? "ጉርሻ" : "Tips"} ${formatEtb(run.totalTips)}`
                             : ""}
                         {run.totalOt > 0
-                            ? ` · OT ${formatEtb(run.totalOt)}`
+                            ? ` · ${isAm ? "የትርፍ ሰዓት" : "OT"} ${formatEtb(run.totalOt)}`
                             : ""}
-                        {unpaidCount > 0 ? ` · ${unpaidCount} unpaid` : ""}
+                        {unpaidCount > 0
+                            ? ` · ${unpaidCount} ${isAm ? "ያልተከፈለ" : "unpaid"}`
+                            : ""}
                     </p>
                 </div>
 
@@ -474,13 +504,22 @@ function PayrollRunDetail({ runId }: { runId: string }) {
                             onClick={async () => {
                                 try {
                                     await approve(runId).unwrap();
-                                    toast.success("Run approved");
+                                    toast.success(
+                                        isAm ? "ክፍያው ጸድቋል" : "Run approved",
+                                    );
                                 } catch (err) {
-                                    toast.fromUnknown(err, "Approve failed");
+                                    toast.fromUnknown(
+                                        err,
+                                        isAm ? "ማጽደቅ አልተቻለም" : "Approve failed",
+                                    );
                                 }
                             }}
                         >
-                            {approving.isLoading ? "…" : "Approve"}
+                            {approving.isLoading
+                                ? "…"
+                                : isAm
+                                  ? "አጽድቅ"
+                                  : "Approve"}
                         </Button>
                     ) : null}
 
@@ -495,15 +534,27 @@ function PayrollRunDetail({ runId }: { runId: string }) {
                                         runId,
                                         payMethod,
                                     }).unwrap();
-                                    toast.success("All marked paid", payMethod);
+                                    toast.success(
+                                        isAm ? "ሁሉም ተከፍለዋል" : "All marked paid",
+                                        payMethod,
+                                    );
                                 } catch (err) {
-                                    toast.fromUnknown(err, "Mark paid failed");
+                                    toast.fromUnknown(
+                                        err,
+                                        isAm
+                                            ? "ክፍያ መመዝገብ አልተቻለም"
+                                            : "Mark paid failed",
+                                    );
                                 }
                             }}
                         >
                             {paying.isLoading
-                                ? "Paying…"
-                                : `Pay all (${payMethod})`}
+                                ? isAm
+                                    ? "በመክፈል ላይ..."
+                                    : "Paying…"
+                                : isAm
+                                  ? `ሁሉንም ክፈል (${payMethod})`
+                                  : `Pay all (${payMethod})`}
                         </Button>
                     ) : null}
                 </div>
@@ -513,7 +564,7 @@ function PayrollRunDetail({ runId }: { runId: string }) {
                 columns={columns}
                 data={run.lines}
                 rowKey={row => row.id}
-                searchPlaceholder="Search people…"
+                searchPlaceholder={isAm ? "ሰራተኞችን ፈልግ..." : "Search people…"}
                 searchText={row =>
                     `${row.staffName} ${row.roleCode || ""} ${row.payType || ""}`
                 }
@@ -656,6 +707,7 @@ function AddTipSheet({
     line: PayrollLine;
     onClose: () => void;
 }) {
+    const isAm = useLocale() === "am";
     const [updateLine, updating] = useUpdatePayrollLineMutation();
     const [tipAmount, setTipAmount] = useState(
         line.tipAmount ? String(line.tipAmount) : "",
@@ -664,7 +716,9 @@ function AddTipSheet({
     async function save() {
         const value = tipAmount === "" ? 0 : Number(tipAmount);
         if (Number.isNaN(value) || value < 0) {
-            toast.error("Enter a valid tip amount");
+            toast.error(
+                isAm ? "ትክክለኛ የጉርሻ መጠን ያስገቡ" : "Enter a valid tip amount",
+            );
             return;
         }
         try {
@@ -674,12 +728,21 @@ function AddTipSheet({
                 body: { tipAmount: value },
             }).unwrap();
             toast.success(
-                value > 0 ? "Tip saved" : "Tip cleared",
+                value > 0
+                    ? isAm
+                        ? "ጉርሻ ተመዝግቧል"
+                        : "Tip saved"
+                    : isAm
+                      ? "ጉርሻ ተሰርዟል"
+                      : "Tip cleared",
                 line.staffName,
             );
             onClose();
         } catch (err) {
-            toast.fromUnknown(err, "Could not save tip");
+            toast.fromUnknown(
+                err,
+                isAm ? "ጉርሻ ማስቀመጥ አልተቻለም" : "Could not save tip",
+            );
         }
     }
 
@@ -687,13 +750,16 @@ function AddTipSheet({
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
             <div className="w-full max-w-sm rounded-2xl border border-hairline bg-card p-5 shadow-lg">
                 <h3 className="text-[15px] font-semibold text-foreground">
-                    Add tip
+                    {isAm ? "ጉርሻ ጨምር" : "Add tip"}
                 </h3>
                 <p className="mt-0.5 text-[12px] text-muted-foreground">
-                    {line.staffName} · added to net pay
+                    {line.staffName} ·{" "}
+                    {isAm ? "ከተጣራ ደመወዝ ጋር የሚደመር" : "added to net pay"}
                 </p>
                 <label className="mt-4 block space-y-1 text-[12px]">
-                    <span className="text-muted-foreground">Tip (ETB)</span>
+                    <span className="text-muted-foreground">
+                        {isAm ? "ጉርሻ (ብር)" : "Tip (ETB)"}
+                    </span>
                     <Input
                         type="number"
                         min={0}
@@ -707,14 +773,20 @@ function AddTipSheet({
                 </label>
                 <div className="mt-5 flex justify-end gap-2">
                     <Button type="button" variant="ghost" onClick={onClose}>
-                        Cancel
+                        {isAm ? "ይቅር" : "Cancel"}
                     </Button>
                     <Button
                         type="button"
                         disabled={updating.isLoading}
                         onClick={() => void save()}
                     >
-                        {updating.isLoading ? "Saving…" : "Create tip"}
+                        {updating.isLoading
+                            ? isAm
+                                ? "በማስቀመጥ ላይ..."
+                                : "Saving…"
+                            : isAm
+                              ? "ጉርሻ መዝግብ"
+                              : "Create tip"}
                     </Button>
                 </div>
             </div>
@@ -731,6 +803,7 @@ function LineEditSheet({
     line: PayrollLine;
     onClose: () => void;
 }) {
+    const isAm = useLocale() === "am";
     const [updateLine, updating] = useUpdatePayrollLineMutation();
     const [otHours, setOtHours] = useState(String(line.otHours || ""));
     const [otRate, setOtRate] = useState(
@@ -761,10 +834,16 @@ function LineEditSheet({
                     deductions: deductions === "" ? 0 : Number(deductions),
                 },
             }).unwrap();
-            toast.success("Line updated", line.staffName);
+            toast.success(
+                isAm ? "የክፍያው ዝርዝር ተሻሽሏል" : "Line updated",
+                line.staffName,
+            );
             onClose();
         } catch (err) {
-            toast.fromUnknown(err, "Could not update line");
+            toast.fromUnknown(
+                err,
+                isAm ? "ዝርዝሩን ማሻሻል አልተቻለም" : "Could not update line",
+            );
         }
     }
 
@@ -775,13 +854,14 @@ function LineEditSheet({
                     {line.staffName}
                 </h3>
                 <p className="mt-0.5 text-[12px] text-muted-foreground">
-                    Base {formatEtb(line.baseGross)} · OT and deductions
+                    {isAm ? "መሰረታዊ" : "Base"} {formatEtb(line.baseGross)} ·{" "}
+                    {isAm ? "የትርፍ ሰዓት እና ተቀናሾች" : "OT and deductions"}
                 </p>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     {line.payType === "HOURLY" ? (
                         <label className="space-y-1 text-[12px]">
                             <span className="text-muted-foreground">
-                                Regular hours
+                                {isAm ? "መደበኛ ሰዓታት" : "Regular hours"}
                             </span>
                             <Input
                                 type="number"
@@ -794,7 +874,9 @@ function LineEditSheet({
                         </label>
                     ) : null}
                     <label className="space-y-1 text-[12px]">
-                        <span className="text-muted-foreground">OT hours</span>
+                        <span className="text-muted-foreground">
+                            {isAm ? "የትርፍ ሰዓት (OT)" : "OT hours"}
+                        </span>
                         <Input
                             type="number"
                             min={0}
@@ -806,7 +888,7 @@ function LineEditSheet({
                     </label>
                     <label className="space-y-1 text-[12px]">
                         <span className="text-muted-foreground">
-                            OT rate (ETB/h)
+                            {isAm ? "የትርፍ ሰዓት ተመን (ብር/ሰ)" : "OT rate (ETB/h)"}
                         </span>
                         <Input
                             type="number"
@@ -820,7 +902,7 @@ function LineEditSheet({
                     </label>
                     <label className="space-y-1 text-[12px]">
                         <span className="text-muted-foreground">
-                            OT amount override
+                            {isAm ? "የትርፍ ሰዓት ድምር" : "OT amount override"}
                         </span>
                         <Input
                             type="number"
@@ -829,12 +911,14 @@ function LineEditSheet({
                             value={otAmount}
                             onChange={e => setOtAmount(e.target.value)}
                             className="h-9"
-                            placeholder="Optional fixed ETB"
+                            placeholder={
+                                isAm ? "የተወሰነ ብር (አማራጭ)" : "Optional fixed ETB"
+                            }
                         />
                     </label>
                     <label className="space-y-1 text-[12px] sm:col-span-2">
                         <span className="text-muted-foreground">
-                            Deductions
+                            {isAm ? "ተቀናሽ" : "Deductions"}
                         </span>
                         <Input
                             type="number"
@@ -848,14 +932,20 @@ function LineEditSheet({
                 </div>
                 <div className="mt-5 flex justify-end gap-2">
                     <Button type="button" variant="ghost" onClick={onClose}>
-                        Cancel
+                        {isAm ? "ይቅር" : "Cancel"}
                     </Button>
                     <Button
                         type="button"
                         disabled={updating.isLoading}
                         onClick={() => void save()}
                     >
-                        {updating.isLoading ? "Saving…" : "Save"}
+                        {updating.isLoading
+                            ? isAm
+                                ? "በማስቀመጥ ላይ..."
+                                : "Saving…"
+                            : isAm
+                              ? "መዝግብ"
+                              : "Save"}
                     </Button>
                 </div>
             </div>

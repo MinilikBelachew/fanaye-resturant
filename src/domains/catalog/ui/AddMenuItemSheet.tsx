@@ -418,7 +418,7 @@ export default function AddMenuItemSheet({
                 // Keep local
             }
         }
-        toast.success("Dietary tag updated", formatDietaryTagLabel(trimmed));
+        toast.success(t("dietaryTagUpdated"), formatDietaryTagLabel(trimmed));
         setEditingTag(null);
     }
 
@@ -430,7 +430,7 @@ export default function AddMenuItemSheet({
             danger: true,
             onConfirm: async () => {
                 const nextTags = localDietaryTags.filter(
-                    t => t.toLowerCase() !== tagToDelete.toLowerCase(),
+                    tItem => tItem.toLowerCase() !== tagToDelete.toLowerCase(),
                 );
                 setLocalDietaryTags(nextTags);
                 if (badge?.toLowerCase() === tagToDelete.toLowerCase()) {
@@ -447,7 +447,7 @@ export default function AddMenuItemSheet({
                     }
                 }
                 toast.success(
-                    "Dietary tag removed",
+                    t("dietaryTagRemoved"),
                     formatDietaryTagLabel(tagToDelete),
                 );
                 setConfirmDialog(null);
@@ -484,7 +484,7 @@ export default function AddMenuItemSheet({
             if (category === editingCategory?.name) {
                 setCategory(trimmed);
             }
-            toast.success("Category updated", trimmed);
+            toast.success(t("categoryUpdated"), trimmed);
             setEditingCategory(null);
         } catch (err) {
             toast.fromUnknown(err, "Could not update category.");
@@ -502,7 +502,7 @@ export default function AddMenuItemSheet({
                 try {
                     await deleteCategory({ id }).unwrap();
                     if (category === name) setCategory("");
-                    toast.success("Category removed", name);
+                    toast.success(t("categoryRemoved"), name);
                     setConfirmDialog(null);
                 } catch (err) {
                     toast.fromUnknown(err, "Could not remove category.");
@@ -618,7 +618,7 @@ export default function AddMenuItemSheet({
             onConfirm: () => {
                 void markSoldOut({ id: initialItem.id })
                     .then(() => {
-                        toast.success("Item marked sold out", initialItem.name);
+                        toast.success(t("itemMarkedSoldOut"), initialItem.name);
                         setConfirmDialog(null);
                         onClose();
                     })
@@ -645,7 +645,7 @@ export default function AddMenuItemSheet({
             const message =
                 parsed.error.issues[0]?.message || "Check the form fields.";
             setSubmitError(message);
-            toast.error("Validation failed", message);
+            toast.error(t("validationFailed"), message);
             return;
         }
         setSubmitError("");
@@ -691,10 +691,10 @@ export default function AddMenuItemSheet({
                         expectedVersion: initialItem.version,
                     },
                 }).unwrap();
-                toast.success("Menu item updated", values.name);
+                toast.success(t("menuItemUpdated"), values.name);
             } else {
                 await createItem(body).unwrap();
-                toast.success("Menu item created", values.name);
+                toast.success(t("menuItemCreated"), values.name);
             }
             onClose();
         } catch (err) {
@@ -1524,7 +1524,7 @@ export default function AddMenuItemSheet({
                                             onChange={e =>
                                                 setRecipeSearch(e.target.value)
                                             }
-                                            placeholder="Search ingredients…"
+                                            placeholder={t("searchIngredients")}
                                             className="h-9 w-full bg-transparent pr-2.5 pl-8 text-[12px] outline-none"
                                         />
                                     </div>
@@ -1532,7 +1532,7 @@ export default function AddMenuItemSheet({
                                         {filteredRecipeIngredients.length ===
                                         0 ? (
                                             <p className="px-2 py-3 text-[12px] text-slate-gray">
-                                                No ingredients match.
+                                                {t("noIngredientsMatch")}
                                             </p>
                                         ) : (
                                             filteredRecipeIngredients.map(

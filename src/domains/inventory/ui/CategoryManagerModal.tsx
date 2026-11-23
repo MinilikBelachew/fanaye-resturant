@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
     Check,
     FolderPlus,
@@ -45,6 +45,8 @@ export function CategoryManagerModal({
 }: CategoryManagerModalProps) {
     const locale = useLocale();
     const isAm = locale === "am";
+    const t = useTranslations("inventory.manageCategories");
+    const tCommon = useTranslations("common");
 
     const { data: categoriesRes, isLoading } =
         useListInventoryCategoriesQuery();
@@ -102,7 +104,7 @@ export function CategoryManagerModal({
         e.preventDefault();
         const trimmedName = formData.name.trim();
         if (!trimmedName) {
-            toast.error("Category name is required");
+            toast.error(t("nameRequired"));
             return;
         }
 
@@ -118,7 +120,7 @@ export function CategoryManagerModal({
                         sortOrder: Number(formData.sortOrder) || 0,
                     },
                 }).unwrap();
-                toast.success(`Category "${trimmedName}" updated`);
+                toast.success(t("categoryUpdated", { name: trimmedName }));
             } else {
                 const res = await createCategory({
                     name: trimmedName,
@@ -127,14 +129,14 @@ export function CategoryManagerModal({
                     description: formData.description.trim() || undefined,
                     sortOrder: Number(formData.sortOrder) || 0,
                 }).unwrap();
-                toast.success(`Category "${trimmedName}" created`);
+                toast.success(t("categoryCreated", { name: trimmedName }));
                 if (onSelectCategory && res.data) {
                     onSelectCategory(res.data);
                 }
             }
             resetForm();
         } catch (err) {
-            toast.fromUnknown(err, "Could not save category");
+            toast.fromUnknown(err, t("saveFailed"));
         }
     }
 
@@ -148,12 +150,12 @@ export function CategoryManagerModal({
         setDeleteTarget(null);
         try {
             await deleteCategory(target.id).unwrap();
-            toast.success(`Category "${target.name}" deleted`);
+            toast.success(t("categoryDeleted", { name: target.name }));
             if (editingCategory?.id === target.id) {
                 resetForm();
             }
         } catch (err) {
-            toast.fromUnknown(err, "Could not delete category");
+            toast.fromUnknown(err, t("deleteFailed"));
         }
     }
 
@@ -505,11 +507,16 @@ export function CategoryManagerModal({
             >
                 <DialogContent className="max-w-sm">
                     <DialogHeader>
-                        <DialogTitle>Delete Category?</DialogTitle>
+                        <DialogTitle>{t("deleteTitle")}</DialogTitle>
                         <DialogDescription>
                             {deleteTarget && deleteTarget.itemCount > 0
-                                ? `Category "${deleteTarget.name}" has ${deleteTarget.itemCount} assigned items. Deleting it will unlink these items. This cannot be undone.`
-                                : `Are you sure you want to delete "${deleteTarget?.name}"? This cannot be undone.`}
+                                ? t("deleteDescWithItems", {
+                                      name: deleteTarget.name,
+                                      count: deleteTarget.itemCount,
+                                  })
+                                : t("deleteDescEmpty", {
+                                      name: deleteTarget?.name ?? "",
+                                  })}
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="flex-col gap-2 sm:flex-row">
@@ -517,14 +524,14 @@ export function CategoryManagerModal({
                             variant="outline"
                             onClick={() => setDeleteTarget(null)}
                         >
-                            Cancel
+                            {t("cancel")}
                         </Button>
                         <Button
                             className="bg-destructive text-white hover:bg-destructive/90"
                             disabled={isDeleting}
                             onClick={() => void executeDelete()}
                         >
-                            Delete
+                            {t("deleteConfirm")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

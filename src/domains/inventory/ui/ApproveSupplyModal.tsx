@@ -38,6 +38,7 @@ export function ApproveSupplyModal({
     onClose,
 }: ApproveSupplyModalProps) {
     const t = useTranslations("inventory");
+    const tCommon = useTranslations("common");
     const { data: driversRes, isLoading: driversLoading } =
         useListDriversQuery();
     const { data: siteRes } = useGetTenantSiteQuery();
@@ -403,13 +404,13 @@ export function ApproveSupplyModal({
                         {/* Dispatch Note */}
                         <div>
                             <label className="text-xs font-semibold text-slate-gray uppercase tracking-wider block mb-1">
-                                Dispatch Note (Optional)
+                                {t("dispatchNote")}
                             </label>
                             <input
                                 type="text"
                                 value={decisionNote}
                                 onChange={e => setDecisionNote(e.target.value)}
-                                placeholder="e.g. Dispatched in 2 crates with receipt attached"
+                                placeholder={t("dispatchNotePlaceholder")}
                                 className="w-full rounded-xl border border-hairline bg-surface-card px-3 py-2 text-xs text-foreground placeholder:text-slate-gray/60 focus:border-brand focus:outline-none"
                             />
                         </div>
@@ -423,7 +424,7 @@ export function ApproveSupplyModal({
                             disabled={isApproving}
                             className="h-9 rounded-xl border border-hairline px-4 text-xs font-medium text-slate-gray hover:bg-surface-ivory transition-colors disabled:opacity-60"
                         >
-                            Cancel
+                            {tCommon("cancel")}
                         </button>
                         <button
                             type="button"

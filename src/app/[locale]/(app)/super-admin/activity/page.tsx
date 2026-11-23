@@ -3,15 +3,18 @@
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
 import TenantActivityBoard from "@/domains/tenancy/ui/TenantActivityBoard";
+import { useTranslations } from "next-intl";
 
 export default function SuperAdminActivityPage() {
+    const t = useTranslations("tenantActivity");
+
     return (
         <DashboardFrame>
             <PageHeader
                 compact
-                eyebrow="Platform Telemetry"
-                title="Tenant & Branch Activity"
-                description="Daily revenue breakdown, live active tables, staff shifts, cash custody, inventory, and chronological movement across every restaurant and branch."
+                eyebrow={t("eyebrow")}
+                title={t("title")}
+                description={t("description")}
             />
             <TenantActivityBoard />
         </DashboardFrame>

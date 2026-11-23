@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale } from "next-intl";
 import { useUploadMenuImageMutation } from "@/context/services/menuApi";
 import {
     useCreateSuperAdminTalentProfileMutation,
@@ -34,14 +35,20 @@ import {
 import {
     ALLOWED_TALENT_REQUEST_TRANSITIONS,
     TALENT_AVAILABILITY_LABELS,
+    TALENT_AVAILABILITY_LABELS_AM,
+    TALENT_PROFILE_STATUS_LABELS_AM,
+    TALENT_REQUEST_STATUS_LABELS_AM,
     TALENT_REQUEST_STATUS_META,
     TALENT_ROLE_LABELS,
+    TALENT_ROLE_LABELS_AM,
     TalentPagination,
     TalentProfileStatusBadge,
     TalentRequestStatusBadge,
 } from "./TalentShared";
 
 export default function SuperAdminTalentBoard() {
+    const locale = useLocale();
+    const isAm = locale === "am";
     const [tab, setTab] = useState<"pool" | "requests">("pool");
 
     // Pool state
@@ -143,9 +150,9 @@ export default function SuperAdminTalentBoard() {
         try {
             const res = await uploadPhoto(file).unwrap();
             setPhotoUrl(res.file.path);
-            toast.success("Photo uploaded.");
+            toast.success(isAm ? "ፎቶው ተጭኗል" : "Photo uploaded.");
         } catch {
-            toast.error("Failed to upload photo.");
+            toast.error(isAm ? "ፎቶ መጫን አልተቻለም" : "Failed to upload photo.");
         } finally {
             e.target.value = "";
         }
@@ -175,7 +182,9 @@ export default function SuperAdminTalentBoard() {
                     bio: bio.trim() || undefined,
                     status: profileStatus,
                 }).unwrap();
-                toast.success("Candidate profile updated.");
+                toast.success(
+                    isAm ? "የባለሙያው መረጃ ተሻሽሏል" : "Candidate profile updated.",
+                );
             } else {
                 await createProfile({
                     fullName,
@@ -190,13 +199,17 @@ export default function SuperAdminTalentBoard() {
                     skills,
                     bio: bio.trim() || undefined,
                 }).unwrap();
-                toast.success("Candidate added to Talent Pool.");
+                toast.success(
+                    isAm
+                        ? "ባለሙያው ወደ ገበያው ታክሏል"
+                        : "Candidate added to Talent Pool.",
+                );
             }
             setSheetOpen(false);
         } catch (err: unknown) {
             const msg =
                 (err as { data?: { message?: string } })?.data?.message ??
-                "Failed to save candidate.";
+                (isAm ? "ባለሙያ መመዝገብ አልተቻለም" : "Failed to save candidate.");
             toast.error(msg);
         }
     };
@@ -207,13 +220,18 @@ export default function SuperAdminTalentBoard() {
     ) => {
         try {
             await updateRequest({ id, status }).unwrap();
+            const statusLabel = isAm
+                ? TALENT_REQUEST_STATUS_LABELS_AM[status]
+                : TALENT_REQUEST_STATUS_META[status].label;
             toast.success(
-                `Updated to ${TALENT_REQUEST_STATUS_META[status].label}.`,
+                isAm
+                    ? `ሁኔታው ወደ ${statusLabel} ተቀይሯል`
+                    : `Updated to ${statusLabel}.`,
             );
         } catch (err: unknown) {
             const msg =
                 (err as { data?: { message?: string } })?.data?.message ??
-                "Failed to update status.";
+                (isAm ? "ሁኔታ ማስተካከል አልተቻለም" : "Failed to update status.");
             toast.error(msg);
         }
     };
@@ -236,7 +254,8 @@ export default function SuperAdminTalentBoard() {
                         }`}
                     >
                         <Users className="h-4 w-4" />
-                        Talent Pool ({poolData?.counts?.ALL ?? 0})
+                        {isAm ? "የችሎታ ገበያ" : "Talent Pool"} (
+                        {poolData?.counts?.ALL ?? 0})
                     </button>
                     <button
                         type="button"
@@ -247,7 +266,8 @@ export default function SuperAdminTalentBoard() {
                                 : "border-border bg-card text-foreground hover:bg-muted"
                         }`}
                     >
-                        Hire & Contact Requests ({reqCounts?.ALL ?? 0})
+                        {isAm ? "የቅጥርና ግንኙነት ጥያቄዎች" : "Hire & Contact Requests"}{" "}
+                        ({reqCounts?.ALL ?? 0})
                     </button>
                 </div>
 
@@ -258,7 +278,7 @@ export default function SuperAdminTalentBoard() {
                         className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
                     >
                         <Plus className="h-4 w-4" />
-                        Add Talent
+                        {isAm ? "አዲስ ባለሙያ መዝግብ" : "Add Talent"}
                     </button>
                 ) : null}
             </div>
@@ -275,7 +295,11 @@ export default function SuperAdminTalentBoard() {
                                     setPoolSearch(e.target.value);
                                     setPoolPage(1);
                                 }}
-                                placeholder="Search name, role, location..."
+                                placeholder={
+                                    isAm
+                                        ? "በስም፣ ሙያ፣ አድራሻ ፈልግ..."
+                                        : "Search name, role, location..."
+                                }
                                 className="w-full rounded-lg border border-border bg-background py-2 pr-3 pl-9 text-sm text-foreground outline-none focus:border-primary"
                             />
                         </div>
@@ -302,7 +326,14 @@ export default function SuperAdminTalentBoard() {
                                             : "border-border bg-background text-muted-foreground hover:bg-muted"
                                     }`}
                                 >
-                                    {st === "ALL" ? "All" : st} (
+                                    {st === "ALL"
+                                        ? isAm
+                                            ? "ሁሉም"
+                                            : "All"
+                                        : isAm
+                                          ? TALENT_PROFILE_STATUS_LABELS_AM[st]
+                                          : st}{" "}
+                                    (
                                     {poolData?.counts ? poolData.counts[st] : 0}
                                     )
                                 </button>
@@ -316,19 +347,21 @@ export default function SuperAdminTalentBoard() {
                                 <thead className="border-b border-border bg-muted/40 text-xs uppercase text-muted-foreground">
                                     <tr>
                                         <th className="px-4 py-3 font-medium">
-                                            Candidate
+                                            {isAm ? "ባለሙያ" : "Candidate"}
                                         </th>
                                         <th className="px-4 py-3 font-medium">
-                                            Location & Exp
+                                            {isAm
+                                                ? "አድራሻ እና ልምድ"
+                                                : "Location & Exp"}
                                         </th>
                                         <th className="px-4 py-3 font-medium">
-                                            Contact
+                                            {isAm ? "መገናኛ" : "Contact"}
                                         </th>
                                         <th className="px-4 py-3 font-medium">
-                                            Status
+                                            {isAm ? "ሁኔታ" : "Status"}
                                         </th>
                                         <th className="px-4 py-3 text-right font-medium">
-                                            Edit
+                                            {isAm ? "አስተካክል" : "Edit"}
                                         </th>
                                     </tr>
                                 </thead>
@@ -339,7 +372,9 @@ export default function SuperAdminTalentBoard() {
                                                 colSpan={5}
                                                 className="px-4 py-10 text-center text-muted-foreground"
                                             >
-                                                Loading talent pool...
+                                                {isAm
+                                                    ? "ባለሙያዎችን በመጫን ላይ..."
+                                                    : "Loading talent pool..."}
                                             </td>
                                         </tr>
                                     ) : profiles.length === 0 ? (
@@ -348,9 +383,9 @@ export default function SuperAdminTalentBoard() {
                                                 colSpan={5}
                                                 className="px-4 py-10 text-center text-muted-foreground"
                                             >
-                                                No candidates yet. Click{" "}
-                                                <strong>Add Talent</strong> to
-                                                post one.
+                                                {isAm
+                                                    ? "እስካሁን ምንም የተመዘገበ ባለሙያ የለም።"
+                                                    : "No candidates yet. Click Add Talent to post one."}
                                             </td>
                                         </tr>
                                     ) : (
@@ -390,12 +425,15 @@ export default function SuperAdminTalentBoard() {
                                                             </div>
                                                             <div className="text-xs text-muted-foreground">
                                                                 {p.roleTitle} (
-                                                                {
-                                                                    TALENT_ROLE_LABELS[
-                                                                        p
-                                                                            .roleCategory
-                                                                    ]
-                                                                }
+                                                                {isAm
+                                                                    ? TALENT_ROLE_LABELS_AM[
+                                                                          p
+                                                                              .roleCategory
+                                                                      ]
+                                                                    : TALENT_ROLE_LABELS[
+                                                                          p
+                                                                              .roleCategory
+                                                                      ]}
                                                                 )
                                                             </div>
                                                         </div>
@@ -407,13 +445,15 @@ export default function SuperAdminTalentBoard() {
                                                         {p.location}
                                                     </div>
                                                     <div className="mt-0.5 text-muted-foreground">
-                                                        {p.yearsExperience} yrs
-                                                        •{" "}
-                                                        {
-                                                            TALENT_AVAILABILITY_LABELS[
-                                                                p.availability
-                                                            ]
-                                                        }
+                                                        {p.yearsExperience}{" "}
+                                                        {isAm ? "ዓመት" : "yrs"}•{" "}
+                                                        {isAm
+                                                            ? TALENT_AVAILABILITY_LABELS_AM[
+                                                                  p.availability
+                                                              ]
+                                                            : TALENT_AVAILABILITY_LABELS[
+                                                                  p.availability
+                                                              ]}
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-3 text-xs">
@@ -432,7 +472,7 @@ export default function SuperAdminTalentBoard() {
                                                     />
                                                     {p.hiredByTenantName ? (
                                                         <div className="mt-1 text-[11px] text-muted-foreground">
-                                                            by{" "}
+                                                            {isAm ? "በ" : "by"}{" "}
                                                             {
                                                                 p.hiredByTenantName
                                                             }
@@ -448,7 +488,9 @@ export default function SuperAdminTalentBoard() {
                                                         className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
                                                     >
                                                         <Pencil className="h-3 w-3" />
-                                                        Edit
+                                                        {isAm
+                                                            ? "አስተካክል"
+                                                            : "Edit"}
                                                     </button>
                                                 </td>
                                             </tr>
@@ -479,7 +521,11 @@ export default function SuperAdminTalentBoard() {
                                     setReqSearch(e.target.value);
                                     setReqPage(1);
                                 }}
-                                placeholder="Search restaurant or candidate..."
+                                placeholder={
+                                    isAm
+                                        ? "በሬስቶራንት ወይም ባለሙያ ስም ፈልግ..."
+                                        : "Search restaurant or candidate..."
+                                }
                                 className="w-full rounded-lg border border-border bg-background py-2 pr-3 pl-9 text-sm text-foreground outline-none focus:border-primary"
                             />
                         </div>
@@ -507,9 +553,13 @@ export default function SuperAdminTalentBoard() {
                                     }`}
                                 >
                                     {st === "ALL"
-                                        ? "All"
-                                        : TALENT_REQUEST_STATUS_META[st]
-                                              .label}{" "}
+                                        ? isAm
+                                            ? "ሁሉም"
+                                            : "All"
+                                        : isAm
+                                          ? TALENT_REQUEST_STATUS_LABELS_AM[st]
+                                          : TALENT_REQUEST_STATUS_META[st]
+                                                .label}{" "}
                                     ({reqCounts ? reqCounts[st] : 0})
                                 </button>
                             ))}
@@ -522,16 +572,20 @@ export default function SuperAdminTalentBoard() {
                                 <thead className="border-b border-border bg-muted/40 text-xs uppercase text-muted-foreground">
                                     <tr>
                                         <th className="px-4 py-3 font-medium">
-                                            Restaurant & Candidate
+                                            {isAm
+                                                ? "ሬስቶራንት እና ባለሙያ"
+                                                : "Restaurant & Candidate"}
                                         </th>
                                         <th className="px-4 py-3 font-medium">
-                                            Role & Location
+                                            {isAm
+                                                ? "ሙያ እና አድራሻ"
+                                                : "Role & Location"}
                                         </th>
                                         <th className="px-4 py-3 font-medium">
-                                            Status
+                                            {isAm ? "ሁኔታ" : "Status"}
                                         </th>
                                         <th className="px-4 py-3 text-right font-medium">
-                                            Details
+                                            {isAm ? "ዝርዝር" : "Details"}
                                         </th>
                                     </tr>
                                 </thead>
@@ -542,7 +596,9 @@ export default function SuperAdminTalentBoard() {
                                                 colSpan={4}
                                                 className="px-4 py-10 text-center text-muted-foreground"
                                             >
-                                                Loading requests...
+                                                {isAm
+                                                    ? "ጥያቄዎችን በመጫን ላይ..."
+                                                    : "Loading requests..."}
                                             </td>
                                         </tr>
                                     ) : requests.length === 0 ? (
@@ -551,7 +607,9 @@ export default function SuperAdminTalentBoard() {
                                                 colSpan={4}
                                                 className="px-4 py-10 text-center text-muted-foreground"
                                             >
-                                                No hire or contact requests yet.
+                                                {isAm
+                                                    ? "እስካሁን ምንም የቅጥር ጥያቄ የለም።"
+                                                    : "No hire or contact requests yet."}
                                             </td>
                                         </tr>
                                     ) : (
@@ -570,7 +628,9 @@ export default function SuperAdminTalentBoard() {
                                                             <Building2 className="h-3.5 w-3.5" />
                                                             <span>
                                                                 {r.tenantName ??
-                                                                    "Restaurant"}
+                                                                    (isAm
+                                                                        ? "ሬስቶራንት"
+                                                                        : "Restaurant")}
                                                             </span>
                                                         </div>
                                                         <div className="mt-0.5 font-medium text-foreground">
@@ -613,12 +673,16 @@ export default function SuperAdminTalentBoard() {
                                                                         r.status
                                                                     }
                                                                 >
-                                                                    {
-                                                                        TALENT_REQUEST_STATUS_META[
-                                                                            r
-                                                                                .status
-                                                                        ].label
-                                                                    }
+                                                                    {isAm
+                                                                        ? TALENT_REQUEST_STATUS_LABELS_AM[
+                                                                              r
+                                                                                  .status
+                                                                          ]
+                                                                        : TALENT_REQUEST_STATUS_META[
+                                                                              r
+                                                                                  .status
+                                                                          ]
+                                                                              .label}
                                                                 </option>
                                                                 {nextLegal.map(
                                                                     st => (
@@ -631,12 +695,14 @@ export default function SuperAdminTalentBoard() {
                                                                             }
                                                                         >
                                                                             →{" "}
-                                                                            {
-                                                                                TALENT_REQUEST_STATUS_META[
-                                                                                    st
-                                                                                ]
-                                                                                    .label
-                                                                            }
+                                                                            {isAm
+                                                                                ? TALENT_REQUEST_STATUS_LABELS_AM[
+                                                                                      st
+                                                                                  ]
+                                                                                : TALENT_REQUEST_STATUS_META[
+                                                                                      st
+                                                                                  ]
+                                                                                      .label}
                                                                         </option>
                                                                     ),
                                                                 )}
@@ -654,7 +720,11 @@ export default function SuperAdminTalentBoard() {
                                                             href={`/super-admin/talent/requests/${r.id}`}
                                                             className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
                                                         >
-                                                            <span>View</span>
+                                                            <span>
+                                                                {isAm
+                                                                    ? "ይመልከቱ"
+                                                                    : "View"}
+                                                            </span>
                                                             <ArrowUpRight className="h-3.5 w-3.5" />
                                                         </Link>
                                                     </td>
@@ -687,12 +757,22 @@ export default function SuperAdminTalentBoard() {
                         <div className="flex items-start justify-between border-b border-border px-6 py-4">
                             <div>
                                 <h2 className="text-lg font-semibold text-foreground">
-                                    {editing ? "Edit Candidate" : "Add Talent"}
+                                    {editing
+                                        ? isAm
+                                            ? "የባለሙያ መረጃ ማስተካከያ"
+                                            : "Edit Candidate"
+                                        : isAm
+                                          ? "አዲስ ባለሙያ መዝግብ"
+                                          : "Add Talent"}
                                 </h2>
                                 <p className="text-xs text-muted-foreground">
                                     {editing
-                                        ? "Update candidate profile details and availability."
-                                        : "Add a candidate to the verified talent pool."}
+                                        ? isAm
+                                            ? "የባለሙያውን መረጃ እና የሥራ ዝግጁነት ያድሱ።"
+                                            : "Update candidate profile details and availability."
+                                        : isAm
+                                          ? "አዲስ የተረጋገጠ ባለሙያ ወደ ገበያው ይመዝግቡ።"
+                                          : "Add a candidate to the verified talent pool."}
                                 </p>
                             </div>
                             <button
@@ -712,7 +792,9 @@ export default function SuperAdminTalentBoard() {
                                 {/* Photo Upload Card */}
                                 <div>
                                     <label className="mb-1.5 block text-xs font-medium text-foreground">
-                                        Candidate Photo (Optional)
+                                        {isAm
+                                            ? "የባለሙያ ፎቶ (አማራጭ)"
+                                            : "Candidate Photo (Optional)"}
                                     </label>
                                     {photoUrl ? (
                                         <div className="group relative h-44 w-full overflow-hidden rounded-2xl border border-border bg-muted">
@@ -729,8 +811,12 @@ export default function SuperAdminTalentBoard() {
                                                     <Upload className="h-3.5 w-3.5" />
                                                     <span>
                                                         {isUploadingPhoto
-                                                            ? "Uploading..."
-                                                            : "Change"}
+                                                            ? isAm
+                                                                ? "በመጫን ላይ..."
+                                                                : "Uploading..."
+                                                            : isAm
+                                                              ? "ቀይር"
+                                                              : "Change"}
                                                     </span>
                                                     <input
                                                         type="file"
@@ -752,7 +838,11 @@ export default function SuperAdminTalentBoard() {
                                                     className="inline-flex items-center gap-1 rounded-xl bg-rose-600/90 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition hover:bg-rose-600"
                                                 >
                                                     <Trash2 className="h-3.5 w-3.5" />
-                                                    <span>Remove</span>
+                                                    <span>
+                                                        {isAm
+                                                            ? "አስወግድ"
+                                                            : "Remove"}
+                                                    </span>
                                                 </button>
                                             </div>
                                         </div>
@@ -764,11 +854,15 @@ export default function SuperAdminTalentBoard() {
                                             <div>
                                                 <p className="text-xs font-semibold text-foreground">
                                                     {isUploadingPhoto
-                                                        ? "Uploading photo..."
-                                                        : "Click to upload candidate photo"}
+                                                        ? isAm
+                                                            ? "ፎቶ በመጫን ላይ..."
+                                                            : "Uploading photo..."
+                                                        : isAm
+                                                          ? "ፎቶ ለመጫን እዚህ ይጫኑ"
+                                                          : "Click to upload candidate photo"}
                                                 </p>
                                                 <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                                    PNG, JPG or WebP portrait
+                                                    PNG, JPG or WebP
                                                 </p>
                                             </div>
                                             <input
@@ -784,7 +878,7 @@ export default function SuperAdminTalentBoard() {
 
                                 <div>
                                     <label className="mb-1 block text-xs font-medium text-foreground">
-                                        Full Name
+                                        {isAm ? "ሙሉ ስም" : "Full Name"}
                                     </label>
                                     <input
                                         type="text"
@@ -793,14 +887,18 @@ export default function SuperAdminTalentBoard() {
                                         onChange={e =>
                                             setFullName(e.target.value)
                                         }
-                                        placeholder="e.g. Abebe Kebede"
+                                        placeholder={
+                                            isAm
+                                                ? "ለምሳሌ አበበ ከበደ"
+                                                : "e.g. Abebe Kebede"
+                                        }
                                         className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
                                     />
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
                                         <label className="mb-1 block text-xs font-medium text-foreground">
-                                            Phone
+                                            {isAm ? "ስልክ ቁጥር" : "Phone"}
                                         </label>
                                         <input
                                             type="text"
@@ -815,7 +913,9 @@ export default function SuperAdminTalentBoard() {
                                     </div>
                                     <div>
                                         <label className="mb-1 block text-xs font-medium text-foreground">
-                                            Email (Optional)
+                                            {isAm
+                                                ? "ኢሜይል (አማራጭ)"
+                                                : "Email (Optional)"}
                                         </label>
                                         <input
                                             type="email"
@@ -831,7 +931,7 @@ export default function SuperAdminTalentBoard() {
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
                                         <label className="mb-1 block text-xs font-medium text-foreground">
-                                            Category
+                                            {isAm ? "የሥራ ዘርፍ" : "Category"}
                                         </label>
                                         <select
                                             value={roleCategory}
@@ -847,14 +947,20 @@ export default function SuperAdminTalentBoard() {
                                                 TALENT_ROLE_LABELS,
                                             ).map(([k, v]) => (
                                                 <option key={k} value={k}>
-                                                    {v}
+                                                    {isAm
+                                                        ? TALENT_ROLE_LABELS_AM[
+                                                              k as TalentRoleCategory
+                                                          ]
+                                                        : v}
                                                 </option>
                                             ))}
                                         </select>
                                     </div>
                                     <div>
                                         <label className="mb-1 block text-xs font-medium text-foreground">
-                                            Role Title
+                                            {isAm
+                                                ? "የሥራ መደብ መጠሪያ"
+                                                : "Role Title"}
                                         </label>
                                         <input
                                             type="text"
@@ -863,7 +969,11 @@ export default function SuperAdminTalentBoard() {
                                             onChange={e =>
                                                 setRoleTitle(e.target.value)
                                             }
-                                            placeholder="e.g. Grill Chef"
+                                            placeholder={
+                                                isAm
+                                                    ? "ለምሳሌ ዋና ሼፍ"
+                                                    : "e.g. Grill Chef"
+                                            }
                                             className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
                                         />
                                     </div>
@@ -871,7 +981,7 @@ export default function SuperAdminTalentBoard() {
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
                                         <label className="mb-1 block text-xs font-medium text-foreground">
-                                            Location
+                                            {isAm ? "አድራሻ" : "Location"}
                                         </label>
                                         <input
                                             type="text"
@@ -885,7 +995,9 @@ export default function SuperAdminTalentBoard() {
                                     </div>
                                     <div>
                                         <label className="mb-1 block text-xs font-medium text-foreground">
-                                            Years Experience
+                                            {isAm
+                                                ? "የሥራ ልምድ (በዓመት)"
+                                                : "Years Experience"}
                                         </label>
                                         <input
                                             type="number"
@@ -908,7 +1020,9 @@ export default function SuperAdminTalentBoard() {
                                 >
                                     <div>
                                         <label className="mb-1 block text-xs font-medium text-foreground">
-                                            Availability
+                                            {isAm
+                                                ? "የሥራ ዝግጁነት"
+                                                : "Availability"}
                                         </label>
                                         <select
                                             value={availability}
@@ -924,7 +1038,11 @@ export default function SuperAdminTalentBoard() {
                                                 TALENT_AVAILABILITY_LABELS,
                                             ).map(([k, v]) => (
                                                 <option key={k} value={k}>
-                                                    {v}
+                                                    {isAm
+                                                        ? TALENT_AVAILABILITY_LABELS_AM[
+                                                              k as TalentAvailability
+                                                          ]
+                                                        : v}
                                                 </option>
                                             ))}
                                         </select>
@@ -932,7 +1050,7 @@ export default function SuperAdminTalentBoard() {
                                     {editing ? (
                                         <div>
                                             <label className="mb-1 block text-xs font-medium text-foreground">
-                                                Status
+                                                {isAm ? "ሁኔታ" : "Status"}
                                             </label>
                                             <select
                                                 value={profileStatus}
@@ -945,16 +1063,22 @@ export default function SuperAdminTalentBoard() {
                                                 className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
                                             >
                                                 <option value="AVAILABLE">
-                                                    Available
+                                                    {isAm
+                                                        ? "ክፍት / ዝግጁ"
+                                                        : "Available"}
                                                 </option>
                                                 <option value="IN_PROCESS">
-                                                    In Process
+                                                    {isAm
+                                                        ? "በሂደት ላይ"
+                                                        : "In Process"}
                                                 </option>
                                                 <option value="HIRED">
-                                                    Hired
+                                                    {isAm ? "የተቀጠረ" : "Hired"}
                                                 </option>
                                                 <option value="ARCHIVED">
-                                                    Archived
+                                                    {isAm
+                                                        ? "በማህደር"
+                                                        : "Archived"}
                                                 </option>
                                             </select>
                                         </div>
@@ -962,7 +1086,9 @@ export default function SuperAdminTalentBoard() {
                                 </div>
                                 <div>
                                     <label className="mb-1 block text-xs font-medium text-foreground">
-                                        Skills (comma separated)
+                                        {isAm
+                                            ? "ዋና ዋና ችሎታዎች (በነጠላ ሰረዝ ይለዩ)"
+                                            : "Skills (comma separated)"}
                                     </label>
                                     <input
                                         type="text"
@@ -976,13 +1102,19 @@ export default function SuperAdminTalentBoard() {
                                 </div>
                                 <div>
                                     <label className="mb-1 block text-xs font-medium text-foreground">
-                                        Bio (Optional)
+                                        {isAm
+                                            ? "የሙያ ማብራሪያ (አማራጭ)"
+                                            : "Bio (Optional)"}
                                     </label>
                                     <textarea
                                         rows={3}
                                         value={bio}
                                         onChange={e => setBio(e.target.value)}
-                                        placeholder="Short summary of experience, languages, or shift preferences..."
+                                        placeholder={
+                                            isAm
+                                                ? "የልምድ፣ ቋንቋ ወይም የፈረቃ ፍላጎት አጭር መግለጫ..."
+                                                : "Short summary of experience, languages, or shift preferences..."
+                                        }
                                         className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
                                     />
                                 </div>
@@ -994,7 +1126,7 @@ export default function SuperAdminTalentBoard() {
                                     onClick={() => setSheetOpen(false)}
                                     className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
                                 >
-                                    Cancel
+                                    {isAm ? "ይቅር" : "Cancel"}
                                 </button>
                                 <button
                                     type="submit"
@@ -1002,8 +1134,12 @@ export default function SuperAdminTalentBoard() {
                                     className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
                                 >
                                     {isCreating || isSaving
-                                        ? "Saving..."
-                                        : "Save Candidate"}
+                                        ? isAm
+                                            ? "በማስቀመጥ ላይ..."
+                                            : "Saving..."
+                                        : isAm
+                                          ? "ባለሙያ መዝግብ"
+                                          : "Save Candidate"}
                                 </button>
                             </div>
                         </form>

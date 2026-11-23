@@ -22,6 +22,7 @@ import {
     useManagerForceCloseCashierDrawerMutation,
 } from "@/context/services/shiftsApi";
 import { formatEtb } from "@/lib/money";
+import { useTranslations } from "next-intl";
 
 interface CandidateWaiter {
     staffMembershipId: string;
@@ -40,6 +41,7 @@ interface ManagerForceClockOutModalProps {
 export const ManagerForceClockOutModal: React.FC<
     ManagerForceClockOutModalProps
 > = ({ open, onOpenChange, session, candidates, onSuccess }) => {
+    const t = useTranslations("managerForceClockOut");
     const [managerForceClockOut, { isLoading: isWaiterLoading }] =
         useManagerForceClockOutMutation();
     const [managerForceCloseCashier, { isLoading: isCashierLoading }] =
@@ -127,14 +129,14 @@ export const ManagerForceClockOutModal: React.FC<
 
     async function handleConfirm() {
         if (!reason.trim()) {
-            toast.error("Manager reason is required.");
+            toast.error(t("reasonRequired"));
             return;
         }
 
         if (isCashier) {
             // Cashier force close flow
             if (cashierReconMode === "COUNT" && isNaN(parsedCountedCash)) {
-                toast.error("Please enter a valid cash amount counted.");
+                toast.error(t("validAmountRequired"));
                 return;
             }
 
@@ -151,9 +153,11 @@ export const ManagerForceClockOutModal: React.FC<
                 }).unwrap();
 
                 toast.success(
-                    "Cashier Shift & Drawer Closed",
+                    t("cashierSuccessTitle"),
                     res.message ||
-                        `Successfully reconciled and closed drawer for ${session!.staffName}.`,
+                        t("cashierSuccessDefault", {
+                            name: session!.staffName,
+                        }),
                 );
                 onOpenChange(false);
                 onSuccess?.();
@@ -165,17 +169,15 @@ export const ManagerForceClockOutModal: React.FC<
                 const msg =
                     apiErr?.data?.message ||
                     apiErr?.message ||
-                    "Failed to force-close cashier drawer.";
-                toast.error("Cashier Close Error", msg);
+                    t("cashierErrorDefault");
+                toast.error(t("cashierErrorTitle"), msg);
             }
             return;
         }
 
         // Waiter force clock-out flow
         if (hasTables && tableAction === "reassign" && !targetWaiterId) {
-            toast.error(
-                "Please select a waiter to receive open tables, or choose to close them.",
-            );
+            toast.error(t("selectWaiterError"));
             return;
         }
 
@@ -193,9 +195,9 @@ export const ManagerForceClockOutModal: React.FC<
             }).unwrap();
 
             toast.success(
-                "Shift Force-Closed",
+                t("staffSuccessTitle"),
                 res.message ||
-                    `Successfully closed shift for ${session!.staffName}.`,
+                    t("staffSuccessDefault", { name: session!.staffName }),
             );
             onOpenChange(false);
             onSuccess?.();
@@ -207,8 +209,8 @@ export const ManagerForceClockOutModal: React.FC<
             const msg =
                 apiErr?.data?.message ||
                 apiErr?.message ||
-                "Failed to force clock-out staff.";
-            toast.error("Force Clock-Out Error", msg);
+                t("staffErrorDefault");
+            toast.error(t("staffErrorTitle"), msg);
         }
     }
 
@@ -238,13 +240,13 @@ export const ManagerForceClockOutModal: React.FC<
                         <div>
                             <h2 className="text-base font-semibold text-foreground">
                                 {isCashier
-                                    ? "Force Close Cashier Drawer"
-                                    : "Force Clock-Out Staff"}
+                                    ? t("titleCashier")
+                                    : t("titleStaff")}
                             </h2>
                             <p className="text-xs text-muted-foreground">
                                 {isCashier
-                                    ? "Reconcile register drawer, deposit safe funds, and close shift"
-                                    : "Resolve open tables, cash custody, and close shift"}
+                                    ? t("subtitleCashier")
+                                    : t("subtitleStaff")}
                             </p>
                         </div>
                     </div>
@@ -274,19 +276,19 @@ export const ManagerForceClockOutModal: React.FC<
                                     <p className="text-[11px] text-muted-foreground">
                                         {session.roleName ||
                                             session.roleCode ||
-                                            "Staff Member"}
+                                            t("staffMember")}
                                     </p>
                                 </div>
                             </div>
                             {session.isExpired ? (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-400">
                                     <AlertTriangle className="size-3" />
-                                    Expired Shift
+                                    {t("expiredShift")}
                                 </span>
                             ) : (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
                                     <Clock className="size-3" />
-                                    Active
+                                    {t("activeShift")}
                                 </span>
                             )}
                         </div>
@@ -294,7 +296,7 @@ export const ManagerForceClockOutModal: React.FC<
                         <div className="grid grid-cols-2 gap-2 pt-1 border-t border-border/60 text-[11px]">
                             <div>
                                 <span className="text-muted-foreground">
-                                    Clock-in:{" "}
+                                    {t("clockInAt")}{" "}
                                 </span>
                                 <span className="font-medium text-foreground">
                                     {new Date(
@@ -309,7 +311,7 @@ export const ManagerForceClockOutModal: React.FC<
                                 {isCashier ? (
                                     <>
                                         <span className="text-muted-foreground">
-                                            Drawer Expected:{" "}
+                                            {t("drawerExpected")}{" "}
                                         </span>
                                         <span className="font-bold text-emerald-600 dark:text-emerald-400">
                                             {formatEtb(expectedDrawerCash)}
@@ -318,16 +320,9 @@ export const ManagerForceClockOutModal: React.FC<
                                 ) : (
                                     <>
                                         <span className="text-muted-foreground">
-                                            Open Tables:{" "}
-                                        </span>
-                                        <span
-                                            className={`font-semibold ${
-                                                hasTables
-                                                    ? "text-amber-600"
-                                                    : "text-foreground"
-                                            }`}
-                                        >
-                                            {session.openTablesCount} tables
+                                            {t("openTables", {
+                                                count: session.openTablesCount,
+                                            })}
                                         </span>
                                     </>
                                 )}
@@ -341,7 +336,7 @@ export const ManagerForceClockOutModal: React.FC<
                             <div className="flex items-center justify-between text-xs">
                                 <div className="flex items-center gap-2 font-semibold text-emerald-900 dark:text-emerald-300">
                                     <Banknote className="size-4" />
-                                    <span>Register Drawer Custody</span>
+                                    <span>{t("registerCustody")}</span>
                                 </div>
                                 <span className="font-bold text-sm text-foreground">
                                     {formatEtb(expectedDrawerCash)}
@@ -350,7 +345,7 @@ export const ManagerForceClockOutModal: React.FC<
 
                             {session.drawerOpeningFloat ? (
                                 <p className="text-[11px] text-muted-foreground">
-                                    Opening float:{" "}
+                                    {t("openingFloat")}{" "}
                                     <span className="font-medium text-foreground">
                                         {formatEtb(
                                             parseFloat(
@@ -358,7 +353,7 @@ export const ManagerForceClockOutModal: React.FC<
                                             ),
                                         )}
                                     </span>{" "}
-                                    · Status:{" "}
+                                    · {t("status")}{" "}
                                     <span className="font-medium uppercase text-emerald-700 dark:text-emerald-400">
                                         {session.cashierDrawerStatus || "OPEN"}
                                     </span>
@@ -367,7 +362,7 @@ export const ManagerForceClockOutModal: React.FC<
 
                             <div className="space-y-2 pt-1 border-t border-emerald-500/20 text-xs">
                                 <p className="text-[11px] font-medium text-muted-foreground">
-                                    Select Drawer Resolution:
+                                    {t("selectResolution")}
                                 </p>
 
                                 <label className="flex items-start gap-2 cursor-pointer">
@@ -382,13 +377,14 @@ export const ManagerForceClockOutModal: React.FC<
                                     />
                                     <div>
                                         <span className="font-medium text-foreground">
-                                            Quick Close (Count matches expected
-                                            — {formatEtb(expectedDrawerCash)})
+                                            {t("quickClose", {
+                                                amount: formatEtb(
+                                                    expectedDrawerCash,
+                                                ),
+                                            })}
                                         </span>
                                         <p className="text-[11px] text-muted-foreground">
-                                            Assumes full drawer is present with
-                                            0.00 ETB variance. Reconciles and
-                                            frees register immediately.
+                                            {t("quickCloseDesc")}
                                         </p>
                                     </div>
                                 </label>
@@ -405,12 +401,10 @@ export const ManagerForceClockOutModal: React.FC<
                                     />
                                     <div>
                                         <span className="font-medium text-foreground">
-                                            Counted with Variance (Enter
-                                            physical cash count)
+                                            {t("countedWithVariance")}
                                         </span>
                                         <p className="text-[11px] text-muted-foreground">
-                                            Manager physically counted cash and
-                                            there is a shortage or surplus.
+                                            {t("countedWithVarianceDesc")}
                                         </p>
                                     </div>
                                 </label>
@@ -420,7 +414,7 @@ export const ManagerForceClockOutModal: React.FC<
                                 <div className="ml-5 space-y-2 pt-1">
                                     <div>
                                         <label className="text-[11px] font-medium text-foreground">
-                                            Physical Cash Counted (ETB):
+                                            {t("physicalCashLabel")}
                                         </label>
                                         <input
                                             type="number"
@@ -447,23 +441,22 @@ export const ManagerForceClockOutModal: React.FC<
                                                   : "bg-blue-500/15 text-blue-800 dark:text-blue-300"
                                         }`}
                                     >
-                                        <span>Reconciliation Variance:</span>
+                                        <span>
+                                            {t("reconciliationVariance")}
+                                        </span>
                                         <span className="font-bold">
                                             {drawerVariance > 0 ? "+" : ""}
                                             {formatEtb(drawerVariance)}
                                             {drawerVariance < 0
-                                                ? " (Shortage)"
+                                                ? ` ${t("shortage")}`
                                                 : drawerVariance > 0
-                                                  ? " (Overage)"
-                                                  : " (Balanced)"}
+                                                  ? ` ${t("overage")}`
+                                                  : ` ${t("balanced")}`}
                                         </span>
                                     </div>
                                     {drawerVariance < 0 ? (
                                         <p className="text-[10px] text-amber-700 dark:text-amber-400">
-                                            Notice: Shortage will be permanently
-                                            recorded on the cashier's audit
-                                            record for payroll deduction or
-                                            manager investigation.
+                                            {t("shortageNotice")}
                                         </p>
                                     ) : null}
                                 </div>
@@ -481,20 +474,21 @@ export const ManagerForceClockOutModal: React.FC<
                                     />
                                     <Vault className="size-3.5 text-muted-foreground" />
                                     <span className="font-medium text-foreground">
-                                        Deposit counted cash (
-                                        {formatEtb(countedDrawerCash)}) into
-                                        branch safe
+                                        {t("depositSafeLabel", {
+                                            amount: formatEtb(
+                                                countedDrawerCash,
+                                            ),
+                                        })}
                                     </span>
                                 </label>
                                 <p className="ml-5 text-[11px] text-muted-foreground">
-                                    Empties the drawer so the register is ready
-                                    for the next cashier shift.
+                                    {t("depositSafeDesc")}
                                 </p>
                             </div>
 
                             <input
                                 type="text"
-                                placeholder="Optional drawer settlement note (e.g. Left in Register Drawer #1)"
+                                placeholder={t("cashNotesCashierPlaceholder")}
                                 value={cashNotes}
                                 onChange={e => setCashNotes(e.target.value)}
                                 className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-brand"
@@ -508,21 +502,22 @@ export const ManagerForceClockOutModal: React.FC<
                                     <div className="flex items-center gap-2 text-xs font-semibold text-amber-800 dark:text-amber-300">
                                         <Table2 className="size-4" />
                                         <span>
-                                            {session.openTablesCount} Tables
-                                            Currently Active
+                                            {t("activeTablesCount", {
+                                                count: session.openTablesCount,
+                                            })}
                                         </span>
                                     </div>
 
                                     {/* Tables tags preview */}
                                     <div className="flex flex-wrap gap-1.5">
-                                        {session.openTables.map(t => (
+                                        {session.openTables.map(tbl => (
                                             <span
-                                                key={t.sessionTableId}
+                                                key={tbl.sessionTableId}
                                                 className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-0.5 text-[11px] font-medium"
                                             >
-                                                {t.tableName}
-                                                {t.locationName
-                                                    ? ` (${t.locationName})`
+                                                {tbl.tableName}
+                                                {tbl.locationName
+                                                    ? ` (${tbl.locationName})`
                                                     : ""}
                                             </span>
                                         ))}
@@ -542,8 +537,7 @@ export const ManagerForceClockOutModal: React.FC<
                                                 className="accent-brand"
                                             />
                                             <span className="font-medium text-foreground">
-                                                Reassign tables to another
-                                                waiter
+                                                {t("reassignTables")}
                                             </span>
                                         </label>
 
@@ -559,8 +553,9 @@ export const ManagerForceClockOutModal: React.FC<
                                                     className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-brand"
                                                 >
                                                     <option value="">
-                                                        -- Select working waiter
-                                                        --
+                                                        {t(
+                                                            "selectWorkingWaiter",
+                                                        )}
                                                     </option>
                                                     {availableCandidates.map(
                                                         c => (
@@ -596,8 +591,7 @@ export const ManagerForceClockOutModal: React.FC<
                                                 className="accent-brand"
                                             />
                                             <span className="font-medium text-foreground">
-                                                Close tables as manager
-                                                force-closed
+                                                {t("closeTablesDirectly")}
                                             </span>
                                         </label>
                                     </div>
@@ -605,10 +599,7 @@ export const ManagerForceClockOutModal: React.FC<
                             ) : (
                                 <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3.5 py-2.5 text-xs text-emerald-800 dark:text-emerald-300">
                                     <CheckCircle2 className="size-4 shrink-0" />
-                                    <span>
-                                        No open tables assigned. Shift can be
-                                        closed immediately.
-                                    </span>
+                                    <span>{t("noOpenTablesAssigned")}</span>
                                 </div>
                             )}
 
@@ -617,7 +608,9 @@ export const ManagerForceClockOutModal: React.FC<
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
                                             <DollarSign className="size-4 text-emerald-600" />
-                                            <span>Undropped Cash on Hand</span>
+                                            <span>
+                                                {t("undroppedCashTitle")}
+                                            </span>
                                         </div>
                                         <span className="font-bold text-sm text-foreground">
                                             {formatEtb(
@@ -629,8 +622,7 @@ export const ManagerForceClockOutModal: React.FC<
                                     </div>
 
                                     <p className="text-[11px] text-muted-foreground">
-                                        Select how this collected cash will be
-                                        accounted for:
+                                        {t("selectCashAccounting")}
                                     </p>
 
                                     <div className="space-y-2 text-xs">
@@ -652,13 +644,10 @@ export const ManagerForceClockOutModal: React.FC<
                                             />
                                             <div>
                                                 <p className="font-medium text-foreground">
-                                                    Turned In to Branch Safe /
-                                                    Drawer
+                                                    {t("turnedInSafe")}
                                                 </p>
                                                 <p className="text-[11px] text-muted-foreground">
-                                                    Manager physically received
-                                                    the cash. Creates a safe
-                                                    drop receipt.
+                                                    {t("turnedInSafeDesc")}
                                                 </p>
                                             </div>
                                         </label>
@@ -681,13 +670,12 @@ export const ManagerForceClockOutModal: React.FC<
                                             />
                                             <div>
                                                 <p className="font-medium text-foreground">
-                                                    Uncollected / Staff Shortage
+                                                    {t("uncollectedShortage")}
                                                 </p>
                                                 <p className="text-[11px] text-muted-foreground">
-                                                    Staff departed with the
-                                                    cash. Logs a shortage
-                                                    discrepancy on their record
-                                                    for payroll recovery.
+                                                    {t(
+                                                        "uncollectedShortageDesc",
+                                                    )}
                                                 </p>
                                             </div>
                                         </label>
@@ -695,7 +683,9 @@ export const ManagerForceClockOutModal: React.FC<
 
                                     <input
                                         type="text"
-                                        placeholder="Optional cash settlement note (e.g. Left in envelope #3)"
+                                        placeholder={t(
+                                            "cashNotesStaffPlaceholder",
+                                        )}
                                         value={cashNotes}
                                         onChange={e =>
                                             setCashNotes(e.target.value)
@@ -710,14 +700,14 @@ export const ManagerForceClockOutModal: React.FC<
                     {/* Section: Manager Audit Reason */}
                     <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-foreground">
-                            Manager Reason{" "}
+                            {t("managerReasonLabel")}{" "}
                             <span className="text-red-500">*</span>
                         </label>
                         <textarea
                             rows={2}
                             value={reason}
                             onChange={e => setReason(e.target.value)}
-                            placeholder="Reason for force closing shift (for compliance audit trail)..."
+                            placeholder={t("reasonPlaceholder")}
                             className="w-full rounded-xl border border-border bg-background p-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-brand"
                             required
                         />
@@ -733,7 +723,7 @@ export const ManagerForceClockOutModal: React.FC<
                         onClick={() => onOpenChange(false)}
                         disabled={isLoading}
                     >
-                        Cancel
+                        {t("cancel")}
                     </Button>
                     <Button
                         type="button"
@@ -753,9 +743,7 @@ export const ManagerForceClockOutModal: React.FC<
                         ) : (
                             <UserCheck className="mr-1.5 size-3.5" />
                         )}
-                        {isCashier
-                            ? "Reconcile & Close Drawer"
-                            : "Confirm Force Clock-Out"}
+                        {isCashier ? t("confirmCashier") : t("confirmStaff")}
                     </Button>
                 </div>
             </div>

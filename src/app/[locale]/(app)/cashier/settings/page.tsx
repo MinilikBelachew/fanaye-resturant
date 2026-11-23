@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Bluetooth, Check, Printer, Settings, Usb } from "lucide-react";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
@@ -17,6 +18,7 @@ declare global {
 }
 
 export default function CashierSettingsPage() {
+    const t = useTranslations("cashier.printerSettings");
     const [printMode, setPrintMode] = useState<"bluetooth" | "station">(
         "station",
     );
@@ -108,21 +110,19 @@ export default function CashierSettingsPage() {
             window._cashierBleDevice = device;
             setBleDeviceName(device.name || "Bluetooth Printer");
             toast.success(
-                "Printer paired",
-                `Connected to ${device.name || "Bluetooth Printer"}`,
+                t("printerPaired"),
+                t("connectedTo", { name: device.name || "Bluetooth Printer" }),
             );
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : String(err);
-            if (!msg.includes("cancelled")) toast.error("Pairing failed", msg);
+            if (!msg.includes("cancelled"))
+                toast.error(t("pairingFailed"), msg);
         }
     }
 
     async function handlePairSerial() {
         if (!("serial" in navigator)) {
-            toast.error(
-                "Not supported",
-                "Web Serial requires Chrome or Edge on PC.",
-            );
+            toast.error(t("notSupported"), t("serialChromeRequired"));
             return;
         }
         try {
@@ -132,17 +132,14 @@ export default function CashierSettingsPage() {
             const selected = await nav.serial.requestPort();
             window._cashierSerialPort = selected;
             setSerialConnected(true);
-            toast.success(
-                "Printer connected",
-                "USB/Serial printer paired successfully.",
-            );
+            toast.success(t("printerConnected"), t("usbSerialPaired"));
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : String(err);
             if (
                 !msg.includes("cancelled") &&
                 !msg.includes("No port selected")
             ) {
-                toast.error("Pairing failed", msg);
+                toast.error(t("pairingFailed"), msg);
             }
         }
     }
@@ -152,8 +149,8 @@ export default function CashierSettingsPage() {
             <PageHeader
                 compact
                 eyebrow="Cashier"
-                title="Settings"
-                description="Configure your receipt printer and station preferences."
+                title={t("title")}
+                description={t("subtitle")}
             />
 
             <div className="max-w-lg space-y-5">

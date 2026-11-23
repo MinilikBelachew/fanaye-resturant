@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Check, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +36,7 @@ export default function CustomizeItemSheet({
     onDone: () => void;
     onCancel: () => void;
 }) {
+    const t = useTranslations("customizeItem");
     const complete = modifiersComplete(item.modifierGroups, modifiers);
     const price = unitPriceFor(item, modifiers) * quantity;
 
@@ -52,7 +54,7 @@ export default function CustomizeItemSheet({
                     className="text-[14px] font-medium text-slate-gray"
                     onClick={onCancel}
                 >
-                    Back
+                    {t("back")}
                 </button>
             </div>
             <div className="min-h-0 flex-1 space-y-6 overflow-y-auto bg-muted/40 p-5">
@@ -119,11 +121,11 @@ export default function CustomizeItemSheet({
                 ))}
                 <section>
                     <p className="mb-2 text-[12px] font-medium tracking-[0.08em] text-steel-gray uppercase">
-                        Special instruction
+                        {t("specialInstruction")}
                     </p>
                     <Input
                         value={instruction}
-                        placeholder="Well done, cut in 6…"
+                        placeholder={t("specialInstructionPlaceholder")}
                         className="h-11 rounded-[16px] bg-card"
                         onChange={event =>
                             onInstructionChange(event.target.value)
@@ -131,7 +133,7 @@ export default function CustomizeItemSheet({
                     />
                 </section>
                 <section className="flex items-center justify-between">
-                    <p className="text-[14px] font-medium">Quantity</p>
+                    <p className="text-[14px] font-medium">{t("quantity")}</p>
                     <div className="flex items-center gap-2">
                         <button
                             type="button"
@@ -139,7 +141,7 @@ export default function CustomizeItemSheet({
                             onClick={() =>
                                 onQuantityChange(Math.max(1, quantity - 1))
                             }
-                            aria-label="Decrease quantity"
+                            aria-label={t("decreaseQty")}
                         >
                             <Minus className="size-4" />
                         </button>
@@ -150,7 +152,7 @@ export default function CustomizeItemSheet({
                             type="button"
                             className="flex size-9 items-center justify-center rounded-full border border-hairline"
                             onClick={() => onQuantityChange(quantity + 1)}
-                            aria-label="Increase quantity"
+                            aria-label={t("increaseQty")}
                         >
                             <Plus className="size-4" />
                         </button>
@@ -163,14 +165,14 @@ export default function CustomizeItemSheet({
                     className="h-11 flex-1"
                     onClick={onCancel}
                 >
-                    Back
+                    {t("back")}
                 </Button>
                 <Button
                     className="h-11 flex-[1.4]"
                     disabled={!complete}
                     onClick={onDone}
                 >
-                    Save · {formatEtb(price)}
+                    {t("savePrice", { price: formatEtb(price) })}
                 </Button>
             </div>
         </div>

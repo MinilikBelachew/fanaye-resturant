@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useTranslations } from "next-intl";
 import {
     Dialog,
     DialogContent,
@@ -55,6 +56,7 @@ export default function OwnerBackupSection({
     compact = false,
     showHeader = true,
 }: OwnerBackupSectionProps) {
+    const t = useTranslations("settings.ownerBackup");
     const { data: status, isLoading, refetch } = useGetOwnerBackupStatusQuery();
     const [sendToTelegram, { isLoading: isSending }] =
         useSendBackupToMyTelegramMutation();
@@ -257,7 +259,7 @@ export default function OwnerBackupSection({
                     <div className="space-y-1">
                         <h2 className="text-[14px] font-semibold tracking-tight text-foreground flex items-center gap-2">
                             <Database className="size-4 text-emerald-600" />
-                            <span>Automated Backups & Disaster Recovery</span>
+                            <span>{t("title")}</span>
                         </h2>
                         <p className="text-[12px] text-slate-gray">
                             100% tenant-isolated database archives delivered to
@@ -345,7 +347,7 @@ export default function OwnerBackupSection({
                         </div>
 
                         <p className="text-[12px] text-slate-gray leading-relaxed">
-                            Connect our official <b>Restorch Telegram Bot</b> to
+                            Connect our official <b>{t("telegramBot")}</b> to
                             receive your daily database backup directly in your
                             Telegram chat every midnight.
                         </p>
@@ -432,7 +434,7 @@ export default function OwnerBackupSection({
                                     ) : (
                                         <Send className="size-3.5" />
                                     )}
-                                    <span>Send to My Telegram Now</span>
+                                    <span>{t("sendNow")}</span>
                                 </Button>
                                 <Button
                                     type="button"
@@ -440,7 +442,7 @@ export default function OwnerBackupSection({
                                     onClick={() => setIsUnlinkModalOpen(true)}
                                     disabled={isUnlinking}
                                     className="h-9 px-3 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200"
-                                    title="Disconnect Telegram"
+                                    title={t("disconnectBot")}
                                 >
                                     <Trash2 className="size-3.5" />
                                 </Button>
@@ -459,7 +461,7 @@ export default function OwnerBackupSection({
                                     type="button"
                                     className="w-full h-9 gap-1.5 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-700"
                                 >
-                                    <span>Connect Telegram Bot</span>
+                                    <span>{t("connectBot")}</span>
                                     <ArrowUpRight className="size-3.5" />
                                 </Button>
                             </a>
@@ -500,7 +502,9 @@ export default function OwnerBackupSection({
                                 </span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-slate-gray">Format:</span>
+                                <span className="text-slate-gray">
+                                    {t("format")}
+                                </span>
                                 <span className="font-mono text-muted-foreground text-[11px]">
                                     PostgreSQL Gzip (.sql.gz)
                                 </span>
@@ -586,7 +590,7 @@ export default function OwnerBackupSection({
                 <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 text-xs text-amber-900 dark:text-amber-300 flex items-start gap-2.5">
                     <AlertTriangle className="size-4 text-amber-600 shrink-0 mt-0.5" />
                     <p className="text-[11px] leading-relaxed">
-                        <b>Safety Guarantee:</b> Uploading a verified Restorch
+                        <b>{t("safety")}</b> Uploading a verified Restorch
                         archive automatically verifies data integrity and runs
                         strictly inside an isolated PostgreSQL transaction.
                         Records from other tenants will never be touched.
@@ -620,7 +624,7 @@ export default function OwnerBackupSection({
                             ) : (
                                 <Upload className="size-3.5" />
                             )}
-                            <span>Restore Restaurant Data</span>
+                            <span>{t("restoreData")}</span>
                         </Button>
                     </div>
 
@@ -844,7 +848,7 @@ export default function OwnerBackupSection({
                                 <Trash2 className="size-5" />
                             </div>
                             <div>
-                                <DialogTitle>Disconnect Telegram</DialogTitle>
+                                <DialogTitle>{t("disconnectBot")}</DialogTitle>
                                 <DialogDescription className="text-xs">
                                     @
                                     {status?.telegramUsername ||

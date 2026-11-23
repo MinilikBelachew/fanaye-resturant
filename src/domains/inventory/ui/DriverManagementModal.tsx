@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { Check, Pencil, Phone, Plus, Truck, X } from "lucide-react";
 import {
@@ -22,6 +23,8 @@ export function DriverManagementModal({
     onClose,
     onSelectDriver,
 }: DriverManagementModalProps) {
+    const t = useTranslations("inventory.drivers");
+    const tCommon = useTranslations("common");
     const { data: driversRes, isLoading } = useListDriversQuery();
     const drivers = driversRes?.data ?? [];
 
@@ -67,7 +70,7 @@ export function DriverManagementModal({
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         if (!formData.displayName.trim()) {
-            toast.error("Please enter driver name");
+            toast.error(t("nameRequired"));
             return;
         }
 
@@ -82,7 +85,7 @@ export function DriverManagementModal({
                         vehicleDesc: formData.vehicleDesc.trim() || undefined,
                     },
                 }).unwrap();
-                toast.success("Driver updated successfully");
+                toast.success(t("driverUpdated"));
                 resetForm();
             } else {
                 const res = await createDriver({
@@ -91,14 +94,14 @@ export function DriverManagementModal({
                     licencePlate: formData.licencePlate.trim() || undefined,
                     vehicleDesc: formData.vehicleDesc.trim() || undefined,
                 }).unwrap();
-                toast.success("Driver registered successfully");
+                toast.success(t("driverRegistered"));
                 if (onSelectDriver && res.data) {
                     onSelectDriver(res.data);
                 }
                 resetForm();
             }
         } catch (err) {
-            toast.fromUnknown(err, "Failed to save driver");
+            toast.fromUnknown(err, t("saveFailed"));
         }
     }
 
@@ -111,11 +114,11 @@ export function DriverManagementModal({
             }).unwrap();
             toast.success(
                 nextStatus === "ACTIVE"
-                    ? `${driver.displayName} activated`
-                    : `${driver.displayName} deactivated`,
+                    ? t("activated", { name: driver.displayName })
+                    : t("deactivated", { name: driver.displayName }),
             );
         } catch (err) {
-            toast.fromUnknown(err, "Failed to change driver status");
+            toast.fromUnknown(err, t("statusChangeFailed"));
         }
     }
 
@@ -130,10 +133,10 @@ export function DriverManagementModal({
                         </div>
                         <div>
                             <h2 className="text-lg font-semibold tracking-tight text-foreground">
-                                Fleet & Drivers
+                                {t("title")}
                             </h2>
                             <p className="text-xs text-slate-gray">
-                                Register transit drivers and assign to transfers
+                                {t("subtitle")}
                             </p>
                         </div>
                     </div>
@@ -156,7 +159,7 @@ export function DriverManagementModal({
                             className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-hairline py-3 text-xs font-medium text-amber-600 hover:border-amber-400 hover:bg-amber-500/5 transition-all"
                         >
                             <Plus className="size-4" />
-                            Register New Driver
+                            {t("registerDriver")}
                         </button>
                     ) : (
                         <form
@@ -166,22 +169,22 @@ export function DriverManagementModal({
                             <div className="flex items-center justify-between">
                                 <span className="text-xs font-semibold text-foreground">
                                     {editingDriver
-                                        ? "Edit Driver"
-                                        : "Register Driver"}
+                                        ? t("editDriver")
+                                        : t("registerDriver")}
                                 </span>
                                 <button
                                     type="button"
                                     onClick={resetForm}
                                     className="text-xs text-slate-gray hover:text-foreground"
                                 >
-                                    Cancel
+                                    {t("cancel")}
                                 </button>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <label className="mb-1 block text-[11px] font-medium text-slate-gray">
-                                        Driver Full Name *
+                                        {t("nameLabel")}
                                     </label>
                                     <input
                                         type="text"
@@ -193,13 +196,13 @@ export function DriverManagementModal({
                                                 displayName: e.target.value,
                                             }))
                                         }
-                                        placeholder="e.g. Abebe Kebede"
+                                        placeholder={t("namePlaceholder")}
                                         className="h-9 w-full rounded-xl border border-hairline bg-background px-3 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
                                     />
                                 </div>
                                 <div>
                                     <label className="mb-1 block text-[11px] font-medium text-slate-gray">
-                                        Phone Number
+                                        {t("phoneLabel")}
                                     </label>
                                     <input
                                         type="tel"
@@ -210,13 +213,13 @@ export function DriverManagementModal({
                                                 phone: e.target.value,
                                             }))
                                         }
-                                        placeholder="+251 9..."
+                                        placeholder={t("phonePlaceholder")}
                                         className="h-9 w-full rounded-xl border border-hairline bg-background px-3 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
                                     />
                                 </div>
                                 <div>
                                     <label className="mb-1 block text-[11px] font-medium text-slate-gray">
-                                        Licence Plate
+                                        {t("plateLabel")}
                                     </label>
                                     <input
                                         type="text"
@@ -227,13 +230,13 @@ export function DriverManagementModal({
                                                 licencePlate: e.target.value,
                                             }))
                                         }
-                                        placeholder="e.g. 3-12345 AA"
+                                        placeholder={t("platePlaceholder")}
                                         className="h-9 w-full rounded-xl border border-hairline bg-background px-3 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
                                     />
                                 </div>
                                 <div>
                                     <label className="mb-1 block text-[11px] font-medium text-slate-gray">
-                                        Vehicle Description
+                                        {t("vehicleLabel")}
                                     </label>
                                     <input
                                         type="text"
@@ -244,7 +247,7 @@ export function DriverManagementModal({
                                                 vehicleDesc: e.target.value,
                                             }))
                                         }
-                                        placeholder="e.g. White Toyota Hiace"
+                                        placeholder={t("vehiclePlaceholder")}
                                         className="h-9 w-full rounded-xl border border-hairline bg-background px-3 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
                                     />
                                 </div>
@@ -256,7 +259,7 @@ export function DriverManagementModal({
                                     onClick={resetForm}
                                     className="h-8 rounded-xl border border-hairline px-3 text-xs font-medium hover:bg-surface-ivory"
                                 >
-                                    Cancel
+                                    {t("cancel")}
                                 </button>
                                 <button
                                     type="submit"
@@ -268,9 +271,7 @@ export function DriverManagementModal({
                                     ) : (
                                         <Check className="size-3.5" />
                                     )}
-                                    {editingDriver
-                                        ? "Save Changes"
-                                        : "Register Driver"}
+                                    {t("save")}
                                 </button>
                             </div>
                         </form>
@@ -282,17 +283,13 @@ export function DriverManagementModal({
                     {isLoading ? (
                         <div className="flex items-center justify-center py-10 text-xs text-slate-gray">
                             <RestorchSpinner className="mr-2 size-4 " />
-                            Loading drivers...
+                            {tCommon("loading")}
                         </div>
                     ) : drivers.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-center">
                             <Truck className="size-10 text-slate-gray/40 mb-2" />
                             <p className="text-xs font-medium text-slate-gray">
-                                No drivers registered yet
-                            </p>
-                            <p className="mt-1 text-[11px] text-slate-gray/70">
-                                Register your delivery drivers or contracted
-                                fleet for transfer tracking.
+                                {tCommon("noData")}
                             </p>
                         </div>
                     ) : (
@@ -309,87 +306,74 @@ export function DriverManagementModal({
                                                 <Truck className="size-4.5" />
                                             </div>
                                             <div className="min-w-0 flex-1">
-                                                <div className="flex flex-wrap items-center gap-2">
-                                                    <span className="truncate text-[13px] font-semibold text-foreground">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-semibold text-xs text-foreground">
                                                         {driver.displayName}
                                                     </span>
                                                     <span
-                                                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                                        className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
                                                             isActive
                                                                 ? "bg-emerald-500/10 text-emerald-600"
                                                                 : "bg-slate-gray/10 text-slate-gray"
                                                         }`}
                                                     >
-                                                        {driver.status}
+                                                        {isActive
+                                                            ? "Active"
+                                                            : "Inactive"}
                                                     </span>
                                                 </div>
-                                                <p className="mt-0.5 truncate text-[11px] text-slate-gray">
-                                                    {[
-                                                        driver.phone,
-                                                        driver.licencePlate,
-                                                        driver.vehicleDesc,
-                                                    ]
-                                                        .filter(Boolean)
-                                                        .join("  ·  ") ||
-                                                        "No contact or vehicle info"}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-3 flex items-center justify-between gap-2 border-t border-hairline pt-2.5">
-                                            <div className="flex min-w-0 items-center gap-2 text-[11px] text-slate-gray">
-                                                {driver.phone && (
-                                                    <span className="flex items-center gap-1">
-                                                        <Phone className="size-3" />
-                                                        {driver.phone}
-                                                    </span>
-                                                )}
-                                                {driver.licencePlate && (
-                                                    <span className="rounded bg-surface-ivory px-1.5 py-0.5 font-mono text-[10px] font-semibold text-foreground">
-                                                        {driver.licencePlate}
-                                                    </span>
-                                                )}
-                                                {driver.vehicleDesc && (
-                                                    <span className="truncate">
-                                                        {driver.vehicleDesc}
-                                                    </span>
-                                                )}
+                                                <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-slate-gray">
+                                                    {driver.phone && (
+                                                        <span className="flex items-center gap-1">
+                                                            <Phone className="size-3" />
+                                                            {driver.phone}
+                                                        </span>
+                                                    )}
+                                                    {driver.licencePlate && (
+                                                        <span className="font-mono bg-surface-ivory px-1.5 py-0.5 rounded text-[10px]">
+                                                            {
+                                                                driver.licencePlate
+                                                            }
+                                                        </span>
+                                                    )}
+                                                    {driver.vehicleDesc && (
+                                                        <span>
+                                                            {driver.vehicleDesc}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
 
-                                            <div className="flex shrink-0 items-center gap-1">
-                                                {onSelectDriver && isActive && (
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                {onSelectDriver && (
                                                     <button
-                                                        type="button"
-                                                        onClick={() => {
+                                                        onClick={() =>
                                                             onSelectDriver(
                                                                 driver,
-                                                            );
-                                                            onClose();
-                                                        }}
-                                                        className="rounded-lg bg-amber-600 px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm hover:bg-amber-700"
+                                                            )
+                                                        }
+                                                        className="rounded-xl bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-600 hover:bg-amber-500/20 transition-colors"
                                                     >
                                                         Select
                                                     </button>
                                                 )}
                                                 <button
-                                                    type="button"
                                                     onClick={() =>
                                                         startEdit(driver)
                                                     }
-                                                    className="rounded-lg border border-hairline p-1.5 text-slate-gray hover:bg-surface-ivory hover:text-foreground"
-                                                    title="Edit Driver"
+                                                    className="rounded-xl border border-hairline p-1.5 text-slate-gray hover:bg-surface-ivory hover:text-foreground transition-colors"
+                                                    title={t("editDriver")}
                                                 >
                                                     <Pencil className="size-3.5" />
                                                 </button>
                                                 <button
-                                                    type="button"
                                                     onClick={() =>
                                                         toggleStatus(driver)
                                                     }
-                                                    className={`rounded-lg px-2 py-1.5 text-[11px] font-medium ${
+                                                    className={`rounded-xl border border-hairline px-2.5 py-1 text-[11px] font-medium transition-colors ${
                                                         isActive
-                                                            ? "text-rose-600 hover:bg-rose-500/10"
-                                                            : "text-emerald-600 hover:bg-emerald-500/10"
+                                                            ? "text-rose-600 hover:bg-rose-500/10 hover:border-rose-500/30"
+                                                            : "text-emerald-600 hover:bg-emerald-500/10 hover:border-emerald-500/30"
                                                     }`}
                                                 >
                                                     {isActive

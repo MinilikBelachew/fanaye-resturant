@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
     Activity,
     AlertTriangle,
@@ -41,6 +42,8 @@ interface ActiveShiftsBoardProps {
 export default function ActiveShiftsBoard({
     basePath = "/manager/staff",
 }: ActiveShiftsBoardProps) {
+    const t = useTranslations("managerStaff.activeShifts");
+    const tCommon = useTranslations("common");
     const {
         data: sessions,
         isLoading,
@@ -181,8 +184,8 @@ export default function ActiveShiftsBoard({
                     <PageHeader
                         compact
                         eyebrow="HR & Shift Operations"
-                        title="Active Staff Shifts"
-                        description="Real-time shift custody, tables, and cashier register drawers across all working staff."
+                        title={t("title")}
+                        description={t("subtitle")}
                     />
                     <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
                         <Link href={`${basePath}/handovers`}>
@@ -205,7 +208,7 @@ export default function ActiveShiftsBoard({
                             <RefreshCw
                                 className={`size-3.5 ${isFetching ? "animate-spin text-brand" : ""}`}
                             />
-                            Refresh Live
+                            {t("refreshLive")}
                         </Button>
                     </div>
                 </div>
@@ -217,13 +220,12 @@ export default function ActiveShiftsBoard({
                             <AlertTriangle className="size-5 shrink-0 text-amber-600 dark:text-amber-400" />
                             <div>
                                 <p className="text-sm font-bold">
-                                    {expiredList.length} Unclosed Expired Shift
-                                    {expiredList.length > 1 ? "s" : ""} Detected
+                                    {t("expiredBannerTitle", {
+                                        count: expiredList.length,
+                                    })}
                                 </p>
                                 <p className="text-xs text-amber-900/80 dark:text-amber-300/80">
-                                    Scheduled shift duration ended. Reconcile
-                                    cashier register drawers or reassign dining
-                                    tables to clear stations for tomorrow.
+                                    {t("expiredBannerDesc")}
                                 </p>
                             </div>
                         </div>
@@ -238,14 +240,16 @@ export default function ActiveShiftsBoard({
                                     onClick={() => handleOpenForceClockOut(exp)}
                                 >
                                     <LogOut className="mr-1.5 size-3.5 text-amber-600" />
-                                    Resolve {exp.staffName} (
-                                    {exp.hasCashierDrawer ||
-                                    exp.roleCode === "CASHIER"
-                                        ? "Cashier Drawer"
-                                        : exp.openTablesCount > 0
-                                          ? `${exp.openTablesCount} Tables`
-                                          : exp.roleName || "Staff"}
-                                    )
+                                    {t("resolve", {
+                                        name: exp.staffName,
+                                        detail:
+                                            exp.hasCashierDrawer ||
+                                            exp.roleCode === "CASHIER"
+                                                ? "Cashier Drawer"
+                                                : exp.openTablesCount > 0
+                                                  ? `${exp.openTablesCount} Tables`
+                                                  : exp.roleName || "Staff",
+                                    })}
                                 </Button>
                             ))}
                         </div>
@@ -257,7 +261,7 @@ export default function ActiveShiftsBoard({
                     <div className="rounded-[18px] border border-hairline bg-card p-4 shadow-subtle">
                         <div className="flex items-center justify-between text-slate-gray">
                             <p className="text-[11px] font-semibold uppercase tracking-wider">
-                                Total Clocked In
+                                {t("totalClockedIn")}
                             </p>
                             <Users className="size-4 text-brand" />
                         </div>
@@ -265,14 +269,14 @@ export default function ActiveShiftsBoard({
                             {activeList.length}
                         </p>
                         <p className="mt-0.5 text-[11px] text-slate-gray">
-                            Staff actively on duty
+                            {t("staffActivelyOnDuty")}
                         </p>
                     </div>
 
                     <div className="rounded-[18px] border border-hairline bg-card p-4 shadow-subtle">
                         <div className="flex items-center justify-between text-slate-gray">
                             <p className="text-[11px] font-semibold uppercase tracking-wider">
-                                Expired Shifts
+                                {t("expiredShifts")}
                             </p>
                             <ShieldAlert
                                 className={`size-4 ${expiredList.length > 0 ? "text-amber-500" : "text-emerald-500"}`}
@@ -289,15 +293,15 @@ export default function ActiveShiftsBoard({
                         </p>
                         <p className="mt-0.5 text-[11px] text-slate-gray">
                             {expiredList.length > 0
-                                ? "Action needed before close"
-                                : "All shifts within schedule"}
+                                ? t("actionNeeded")
+                                : t("allShiftsOk")}
                         </p>
                     </div>
 
                     <div className="rounded-[18px] border border-hairline bg-card p-4 shadow-subtle">
                         <div className="flex items-center justify-between text-slate-gray">
                             <p className="text-[11px] font-semibold uppercase tracking-wider">
-                                Waiters & Tables
+                                {t("waitersTables")}
                             </p>
                             <Table2 className="size-4 text-emerald-600" />
                         </div>
@@ -305,14 +309,16 @@ export default function ActiveShiftsBoard({
                             {waitersList.length} Waiters
                         </p>
                         <p className="mt-0.5 text-[11px] text-slate-gray">
-                            {totalOpenTables} dining tables active
+                            {t("diningTablesActive", {
+                                count: totalOpenTables,
+                            })}
                         </p>
                     </div>
 
                     <div className="rounded-[18px] border border-hairline bg-card p-4 shadow-subtle">
                         <div className="flex items-center justify-between text-slate-gray">
                             <p className="text-[11px] font-semibold uppercase tracking-wider">
-                                Cashier Drawers
+                                {t("cashierDrawers")}
                             </p>
                             <Banknote className="size-4 text-emerald-600" />
                         </div>
@@ -320,7 +326,9 @@ export default function ActiveShiftsBoard({
                             {formatEtb(totalCashierDrawerCash)}
                         </p>
                         <p className="mt-0.5 text-[11px] text-slate-gray">
-                            {cashiersList.length} open register drawers
+                            {t("openRegisterDrawers", {
+                                count: cashiersList.length,
+                            })}
                         </p>
                     </div>
                 </div>
@@ -337,7 +345,7 @@ export default function ActiveShiftsBoard({
                                     : "text-slate-gray hover:text-foreground"
                             }`}
                         >
-                            All Staff ({activeList.length})
+                            {t("tabAll")} ({activeList.length})
                         </button>
 
                         <button
@@ -349,7 +357,7 @@ export default function ActiveShiftsBoard({
                                     : "text-slate-gray hover:text-foreground"
                             }`}
                         >
-                            Expired ({expiredList.length})
+                            {t("tabExpired")} ({expiredList.length})
                         </button>
 
                         <button
@@ -361,7 +369,7 @@ export default function ActiveShiftsBoard({
                                     : "text-slate-gray hover:text-foreground"
                             }`}
                         >
-                            Waiters ({waitersList.length})
+                            {t("tabWaiters")} ({waitersList.length})
                         </button>
 
                         <button
@@ -373,7 +381,7 @@ export default function ActiveShiftsBoard({
                                     : "text-slate-gray hover:text-foreground"
                             }`}
                         >
-                            Cashiers ({cashiersList.length})
+                            {t("tabCashiers")} ({cashiersList.length})
                         </button>
 
                         <button
@@ -385,14 +393,14 @@ export default function ActiveShiftsBoard({
                                     : "text-slate-gray hover:text-foreground"
                             }`}
                         >
-                            Kitchen & Others ({kitchenList.length})
+                            {t("tabKitchen")} ({kitchenList.length})
                         </button>
                     </div>
 
                     <div className="relative w-full sm:w-64">
                         <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-slate-gray" />
                         <Input
-                            placeholder="Search by name or role..."
+                            placeholder={t("searchPlaceholder")}
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                             className="h-9 pl-9 text-xs rounded-xl"
@@ -406,15 +414,23 @@ export default function ActiveShiftsBoard({
                         <table className="w-full min-w-[880px] text-left text-[13px]">
                             <thead className="border-b border-hairline bg-secondary/40 text-[11px] font-semibold tracking-wider text-slate-gray uppercase">
                                 <tr>
-                                    <th className="px-5 py-3">Staff Member</th>
-                                    <th className="px-5 py-3">Role</th>
-                                    <th className="px-5 py-3">Clock-In Time</th>
-                                    <th className="px-5 py-3">Shift Status</th>
                                     <th className="px-5 py-3">
-                                        Live Custody & Responsibility
+                                        {t("colStaff")}
+                                    </th>
+                                    <th className="px-5 py-3">
+                                        {t("colRole")}
+                                    </th>
+                                    <th className="px-5 py-3">
+                                        {t("colClockIn")}
+                                    </th>
+                                    <th className="px-5 py-3">
+                                        {t("colStatus")}
+                                    </th>
+                                    <th className="px-5 py-3">
+                                        {t("colCustody")}
                                     </th>
                                     <th className="px-5 py-3 text-right">
-                                        Actions
+                                        {t("colActions")}
                                     </th>
                                 </tr>
                             </thead>
@@ -425,7 +441,7 @@ export default function ActiveShiftsBoard({
                                             colSpan={6}
                                             className="px-5 py-10 text-center text-slate-gray"
                                         >
-                                            Loading active shifts...
+                                            {t("loading")}
                                         </td>
                                     </tr>
                                 ) : filteredList.length === 0 ? (
@@ -434,8 +450,7 @@ export default function ActiveShiftsBoard({
                                             colSpan={6}
                                             className="px-5 py-10 text-center text-slate-gray"
                                         >
-                                            No working staff found in this
-                                            filter.
+                                            {t("empty")}
                                         </td>
                                     </tr>
                                 ) : (

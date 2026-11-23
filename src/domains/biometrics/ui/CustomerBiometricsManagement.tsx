@@ -48,6 +48,7 @@ import {
     CustomerBiometricProfile,
     CustomerVipTier,
 } from "@/context/services/biometricsApi";
+import { useLocale } from "next-intl";
 import { useListBranchesQuery } from "@/context/services/branchesApi";
 import { useAppSelector } from "@/context/hooks";
 import { Button } from "@/components/ui/button";
@@ -154,6 +155,8 @@ interface CustomerBiometricsManagementProps {
 export default function CustomerBiometricsManagement({
     isOwnerView = false,
 }: CustomerBiometricsManagementProps) {
+    const locale = useLocale();
+    const isAm = locale === "am";
     const session = useAppSelector(state => state.identity.session);
     const currentBranchId = session?.branchId;
     const currentTenantId = session?.tenantId;
@@ -554,7 +557,11 @@ export default function CustomerBiometricsManagement({
     const handleSaveCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!createPhoto) {
-            alert("Please take a portrait snapshot or select an image file.");
+            alert(
+                isAm
+                    ? "እባክዎ የቁም ፎቶ ያንሱ ወይም የምስል ፋይል ይምረጡ።"
+                    : "Please take a portrait snapshot or select an image file.",
+            );
             return;
         }
 
@@ -972,7 +979,11 @@ export default function CustomerBiometricsManagement({
                                         onValueChange={handleDeviceChange}
                                     >
                                         <SelectTrigger className="h-8 text-xs bg-slate-900 border-slate-700 text-slate-200 w-36">
-                                            <SelectValue placeholder="Camera" />
+                                            <SelectValue
+                                                placeholder={
+                                                    isAm ? "ካሜራ" : "Camera"
+                                                }
+                                            />
                                         </SelectTrigger>
                                         <SelectContent className="bg-slate-900 border-slate-800 text-slate-200">
                                             {videoDevices.map((d, idx) => (
@@ -1038,7 +1049,11 @@ export default function CustomerBiometricsManagement({
                                         }
                                         className="rounded border-slate-700 text-emerald-500 focus:ring-emerald-500 size-3.5"
                                     />
-                                    <span>Auto-Scan (2.5s)</span>
+                                    <span>
+                                        {isAm
+                                            ? "ራስ-ሰር ስካን (2.5ሰ)"
+                                            : "Auto-Scan (2.5s)"}
+                                    </span>
                                 </label>
 
                                 {/* Instant Snap Button */}
@@ -1513,7 +1528,11 @@ export default function CustomerBiometricsManagement({
                                 setSearch(e.target.value);
                                 setPage(1);
                             }}
-                            placeholder="Search code (#CUST-XXXX), name, phone, notes..."
+                            placeholder={
+                                isAm
+                                    ? "ኮድ (#CUST-XXXX)፣ ስም፣ ስልክ፣ ማስታወሻ ፈልግ..."
+                                    : "Search code (#CUST-XXXX), name, phone, notes..."
+                            }
                             className="pl-9 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs"
                         />
                     </div>
@@ -1528,11 +1547,15 @@ export default function CustomerBiometricsManagement({
                             }}
                         >
                             <SelectTrigger className="w-40 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs">
-                                <SelectValue placeholder="All Branches" />
+                                <SelectValue
+                                    placeholder={
+                                        isAm ? "ሁሉም ቅርንጫፎች" : "All Branches"
+                                    }
+                                />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="ALL">
-                                    🏢 All Branches
+                                    🏢 {isAm ? "ሁሉም ቅርንጫፎች" : "All Branches"}
                                 </SelectItem>
                                 {branches.map(b => (
                                     <SelectItem
@@ -1555,15 +1578,25 @@ export default function CustomerBiometricsManagement({
                         }}
                     >
                         <SelectTrigger className="w-36 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs">
-                            <SelectValue placeholder="All Tiers" />
+                            <SelectValue
+                                placeholder={isAm ? "ሁሉም ደረጃዎች" : "All Tiers"}
+                            />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="ALL">All Tiers</SelectItem>
-                            <SelectItem value="REGULAR">
-                                Regular (Standard)
+                            <SelectItem value="ALL">
+                                {isAm ? "ሁሉም ደረጃዎች" : "All Tiers"}
                             </SelectItem>
-                            <SelectItem value="VIP">VIP (10% Off)</SelectItem>
-                            <SelectItem value="VVIP">VVIP (15% Off)</SelectItem>
+                            <SelectItem value="REGULAR">
+                                {isAm
+                                    ? "መደበኛ (ደረጃውን የጠበቀ)"
+                                    : "Regular (Standard)"}
+                            </SelectItem>
+                            <SelectItem value="VIP">
+                                {isAm ? "ቪአይፒ (10% ቅናሽ)" : "VIP (10% Off)"}
+                            </SelectItem>
+                            <SelectItem value="VVIP">
+                                {isAm ? "ቪቪአይፒ (15% ቅናሽ)" : "VVIP (15% Off)"}
+                            </SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -1869,14 +1902,20 @@ export default function CustomerBiometricsManagement({
                             <Input
                                 value={editName}
                                 onChange={e => setEditName(e.target.value)}
-                                placeholder="e.g. Mr. Minilik, Dr. Sarah"
+                                placeholder={
+                                    isAm
+                                        ? "ለምሳሌ አቶ ምኒልክ፣ ዶ/ር ሳራ"
+                                        : "e.g. Mr. Minilik, Dr. Sarah"
+                                }
                                 className="mt-1 text-sm"
                             />
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <Label className="text-xs">Phone Number</Label>
+                                <Label className="text-xs">
+                                    {isAm ? "ስልክ ቁጥር" : "Phone Number"}
+                                </Label>
                                 <Input
                                     value={editPhone}
                                     onChange={e => setEditPhone(e.target.value)}
@@ -1886,7 +1925,9 @@ export default function CustomerBiometricsManagement({
                             </div>
 
                             <div>
-                                <Label className="text-xs">VIP Status</Label>
+                                <Label className="text-xs">
+                                    {isAm ? "የቪአይፒ ደረጃ" : "VIP Status"}
+                                </Label>
                                 <Select
                                     value={editTier}
                                     onValueChange={val =>
@@ -1898,13 +1939,19 @@ export default function CustomerBiometricsManagement({
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="REGULAR">
-                                            Regular (Standard)
+                                            {isAm
+                                                ? "መደበኛ (ደረጃውን የጠበቀ)"
+                                                : "Regular (Standard)"}
                                         </SelectItem>
                                         <SelectItem value="VIP">
-                                            VIP (10% Off)
+                                            {isAm
+                                                ? "ቪአይፒ (10% ቅናሽ)"
+                                                : "VIP (10% Off)"}
                                         </SelectItem>
                                         <SelectItem value="VVIP">
-                                            VVIP (15% Off)
+                                            {isAm
+                                                ? "ቪቪአይፒ (15% ቅናሽ)"
+                                                : "VVIP (15% Off)"}
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -1913,12 +1960,18 @@ export default function CustomerBiometricsManagement({
 
                         <div>
                             <Label className="text-xs">
-                                Dining Preferences &amp; Allergies
+                                {isAm
+                                    ? "የምግብ ምርጫዎች እና አለርጂዎች"
+                                    : "Dining Preferences & Allergies"}
                             </Label>
                             <Textarea
                                 value={editNotes}
                                 onChange={e => setEditNotes(e.target.value)}
-                                placeholder="e.g. Table 4 preference, sparkling water with lime, dairy allergy..."
+                                placeholder={
+                                    isAm
+                                        ? "ለምሳሌ ጠረጴዛ 4 ምርጫ፣ የወተት ተዋጽኦ አለርጂ..."
+                                        : "e.g. Table 4 preference, sparkling water with lime, dairy allergy..."
+                                }
                                 rows={2}
                                 className="mt-1 text-xs"
                             />
@@ -1931,7 +1984,7 @@ export default function CustomerBiometricsManagement({
                                 size="sm"
                                 onClick={() => setIsEditOpen(false)}
                             >
-                                Cancel
+                                {isAm ? "ይቅር" : "Cancel"}
                             </Button>
                             <Button
                                 type="submit"
@@ -2083,25 +2136,33 @@ export default function CustomerBiometricsManagement({
                         <div className="grid grid-cols-2 gap-3">
                             <div>
                                 <Label className="text-xs">
-                                    Full Name / Nickname
+                                    {isAm
+                                        ? "ሙሉ ስም / ቅጽል ስም"
+                                        : "Full Name / Nickname"}
                                 </Label>
                                 <Input
                                     value={createName}
                                     onChange={e =>
                                         setCreateName(e.target.value)
                                     }
-                                    placeholder="Optional (defaults to CUST-XXXX)"
+                                    placeholder={
+                                        isAm
+                                            ? "አማራጭ (CUST-XXXX)"
+                                            : "Optional (defaults to CUST-XXXX)"
+                                    }
                                     className="mt-1 text-sm"
                                 />
                             </div>
                             <div>
-                                <Label className="text-xs">Phone Number</Label>
+                                <Label className="text-xs">
+                                    {isAm ? "ስልክ ቁጥር" : "Phone Number"}
+                                </Label>
                                 <Input
                                     value={createPhone}
                                     onChange={e =>
                                         setCreatePhone(e.target.value)
                                     }
-                                    placeholder="Optional"
+                                    placeholder={isAm ? "አማራጭ" : "Optional"}
                                     className="mt-1 text-sm"
                                 />
                             </div>
@@ -2109,7 +2170,9 @@ export default function CustomerBiometricsManagement({
 
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <Label className="text-xs">VIP Status</Label>
+                                <Label className="text-xs">
+                                    {isAm ? "የቪአይፒ ደረጃ" : "VIP Status"}
+                                </Label>
                                 <Select
                                     value={createTier}
                                     onValueChange={val =>
@@ -2121,26 +2184,38 @@ export default function CustomerBiometricsManagement({
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="REGULAR">
-                                            Regular (Standard)
+                                            {isAm
+                                                ? "መደበኛ (ደረጃውን የጠበቀ)"
+                                                : "Regular (Standard)"}
                                         </SelectItem>
                                         <SelectItem value="VIP">
-                                            VIP (10% Off)
+                                            {isAm
+                                                ? "ቪአይፒ (10% ቅናሽ)"
+                                                : "VIP (10% Off)"}
                                         </SelectItem>
                                         <SelectItem value="VVIP">
-                                            VVIP (15% Off)
+                                            {isAm
+                                                ? "ቪቪአይፒ (15% ቅናሽ)"
+                                                : "VVIP (15% Off)"}
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
 
                             <div>
-                                <Label className="text-xs">Initial Notes</Label>
+                                <Label className="text-xs">
+                                    {isAm ? "የመጀመሪያ ማስታወሻዎች" : "Initial Notes"}
+                                </Label>
                                 <Input
                                     value={createNotes}
                                     onChange={e =>
                                         setCreateNotes(e.target.value)
                                     }
-                                    placeholder="e.g. VIP booth prefer"
+                                    placeholder={
+                                        isAm
+                                            ? "ለምሳሌ የቪአይፒ መቀመጫ ፍላጎት"
+                                            : "e.g. VIP booth prefer"
+                                    }
                                     className="mt-1 text-sm"
                                 />
                             </div>
@@ -2153,7 +2228,7 @@ export default function CustomerBiometricsManagement({
                                 size="sm"
                                 onClick={() => setIsCreateOpen(false)}
                             >
-                                Cancel
+                                {isAm ? "ይቅር" : "Cancel"}
                             </Button>
                             <Button
                                 type="submit"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { Link } from "@/i18n/navigation";
 import {
@@ -61,6 +62,7 @@ function ItemPhoto({ item }: { item: WaiterMenuItem }) {
 }
 
 export default function BakeryNewSale() {
+    const t = useTranslations("cashier");
     const session = useAppSelector(state => state.identity.session);
     const shiftSessionId = session?.shiftSessionId;
     const accessToken = useAppSelector(state => state.identity.accessToken);
@@ -147,11 +149,11 @@ export default function BakeryNewSale() {
 
     async function generate() {
         if (!shiftSessionId) {
-            toast.error("Clock in before you sell.");
+            toast.error(t("clockInBeforeSell"));
             return;
         }
         if (cart.length === 0) {
-            toast.error("Tap items first.");
+            toast.error(t("tapItemsFirst"));
             return;
         }
         setCreating(true);
@@ -180,7 +182,7 @@ export default function BakeryNewSale() {
             setBill(created);
             setTendered(created.total);
         } catch {
-            toast.error("Could not generate the bill.");
+            toast.error(t("billGenFailed"));
         } finally {
             setCreating(false);
         }
@@ -191,7 +193,7 @@ export default function BakeryNewSale() {
         const due = Number(bill.total);
         const cash = Number(tendered);
         if (!Number.isFinite(cash) || cash < due) {
-            toast.error("Tendered cash must cover the bill.");
+            toast.error(t("tenderMustCover"));
             return;
         }
         setPaying(true);
@@ -216,14 +218,14 @@ export default function BakeryNewSale() {
                 },
             );
             if (!res.ok) throw new Error("pay");
-            toast.success("Paid. Give this bill to the counter.");
+            toast.success(t("paidSuccess"));
             setBill({
                 ...bill,
                 status: "PAID",
                 paidAt: new Date().toISOString(),
             });
         } catch {
-            toast.error("Payment failed.");
+            toast.error(t("paymentFailed"));
         } finally {
             setPaying(false);
         }

@@ -91,6 +91,8 @@ export default function AddOrderMenu({
     variant?: "waiter" | "dispatcher";
     onClose: () => void;
 }) {
+    const t = useTranslations("waiter");
+    const tCommon = useTranslations("common");
     const isDispatcher = variant === "dispatcher";
     const { data, isLoading, isError } = useWaiterMenuQuery(
         tableSessionId ? { tableSessionId } : {},
@@ -510,7 +512,7 @@ export default function AddOrderMenu({
                     <Input
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
-                        placeholder="Search dishes…"
+                        placeholder={t("searchDishes")}
                         className="h-8 sm:h-9 w-full rounded-full border-transparent bg-secondary/70 pr-7 sm:pr-8 pl-8 sm:pl-9 text-[12px] sm:text-[13px] placeholder:text-slate-gray/70 focus:border-primary-border focus:bg-card"
                     />
                     {searchQuery ? (
@@ -607,7 +609,7 @@ export default function AddOrderMenu({
                                 : "border border-hairline bg-card text-slate-gray hover:bg-secondary hover:text-foreground",
                         )}
                     >
-                        <span>All Items</span>
+                        <span>{t("allItems")}</span>
                         <span
                             className={cn(
                                 "rounded-full px-1.5 py-0.2 text-[11px] font-bold",
@@ -632,7 +634,7 @@ export default function AddOrderMenu({
                             )}
                         >
                             <ShoppingBag className="size-3.5" />
-                            <span>In Order</span>
+                            <span>{t("inOrder")}</span>
                             <span className="rounded-full bg-black/15 px-1.5 py-0.2 text-[11px] font-bold">
                                 {counts.size}
                             </span>
@@ -902,7 +904,9 @@ export default function AddOrderMenu({
                                                             )}
                                                         >
                                                             <Plus className="size-3.5" />
-                                                            <span>Add</span>
+                                                            <span>
+                                                                {tCommon("add")}
+                                                            </span>
                                                         </button>
                                                     ) : null}
                                                 </div>

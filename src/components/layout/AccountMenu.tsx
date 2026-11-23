@@ -108,7 +108,7 @@ export default function AccountMenu({
     async function handleChangePassword(e?: React.FormEvent) {
         if (e) e.preventDefault();
         if (!oldPassword.trim()) {
-            toast.error("Please enter your current password.");
+            toast.error(tTopBar("enterCurrentPassword"));
             return;
         }
         const strongErr = validateStrongPassword(newPassword.trim());
@@ -117,7 +117,7 @@ export default function AccountMenu({
             return;
         }
         if (newPassword !== confirmPassword) {
-            toast.error("New passwords do not match.");
+            toast.error(tTopBar("passwordsDoNotMatch"));
             return;
         }
 
@@ -127,7 +127,7 @@ export default function AccountMenu({
                 password: newPassword.trim(),
             }).unwrap();
 
-            toast.success("Password changed successfully!");
+            toast.success(tTopBar("passwordChangedSuccess"));
             setPasswordModalOpen(false);
             setOldPassword("");
             setNewPassword("");
@@ -253,7 +253,7 @@ export default function AccountMenu({
                                 className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-foreground hover:bg-secondary transition-colors"
                             >
                                 <Lock className="size-4 shrink-0 text-slate-gray" />
-                                <span>Change Password</span>
+                                <span>{tTopBar("changePassword")}</span>
                             </button>
                         </div>
                     ) : null}
@@ -291,10 +291,10 @@ export default function AccountMenu({
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-[15px] text-foreground">
-                                        Change Password
+                                        {tTopBar("changePassword")}
                                     </h3>
                                     <p className="text-[11.5px] text-slate-gray">
-                                        Update your login password
+                                        {tTopBar("changePasswordDesc")}
                                     </p>
                                 </div>
                             </div>
@@ -314,7 +314,7 @@ export default function AccountMenu({
                         >
                             <div>
                                 <label className="block text-[12px] font-medium text-foreground mb-1">
-                                    Current Password
+                                    {tTopBar("currentPassword")}
                                 </label>
                                 <div className="relative">
                                     <Input
@@ -327,7 +327,9 @@ export default function AccountMenu({
                                         onChange={e =>
                                             setOldPassword(e.target.value)
                                         }
-                                        placeholder="Enter current password"
+                                        placeholder={tTopBar(
+                                            "currentPasswordPlaceholder",
+                                        )}
                                         className="h-9 pr-9 text-[13px]"
                                         autoComplete="current-password"
                                         disabled={isUpdatingPassword}
@@ -350,11 +352,10 @@ export default function AccountMenu({
 
                             <div>
                                 <label className="block text-[12px] font-medium text-foreground mb-0.5">
-                                    New Password
+                                    {tTopBar("newPassword")}
                                 </label>
                                 <p className="text-[11px] text-slate-gray mb-1">
-                                    At least 8 chars, 1 uppercase, 1 lowercase &
-                                    1 number.
+                                    {tTopBar("newPasswordHint")}
                                 </p>
                                 <div className="relative">
                                     <Input
@@ -367,7 +368,9 @@ export default function AccountMenu({
                                         onChange={e =>
                                             setNewPassword(e.target.value)
                                         }
-                                        placeholder="Enter new strong password"
+                                        placeholder={tTopBar(
+                                            "newPasswordPlaceholder",
+                                        )}
                                         className="h-9 pr-9 text-[13px]"
                                         autoComplete="new-password"
                                         disabled={isUpdatingPassword}
@@ -390,7 +393,7 @@ export default function AccountMenu({
 
                             <div>
                                 <label className="block text-[12px] font-medium text-foreground mb-1">
-                                    Confirm New Password
+                                    {tTopBar("confirmPassword")}
                                 </label>
                                 <div className="relative">
                                     <Input
@@ -403,7 +406,9 @@ export default function AccountMenu({
                                         onChange={e =>
                                             setConfirmPassword(e.target.value)
                                         }
-                                        placeholder="Repeat new password"
+                                        placeholder={tTopBar(
+                                            "confirmPasswordPlaceholder",
+                                        )}
                                         className="h-9 pr-9 text-[13px]"
                                         autoComplete="new-password"
                                         disabled={isUpdatingPassword}
@@ -434,7 +439,7 @@ export default function AccountMenu({
                                     onClick={() => setPasswordModalOpen(false)}
                                     className="h-9 rounded-xl text-[13px]"
                                 >
-                                    Cancel
+                                    {tTopBar("cancel")}
                                 </Button>
                                 <Button
                                     type="submit"
@@ -449,10 +454,10 @@ export default function AccountMenu({
                                     {isUpdatingPassword ? (
                                         <>
                                             <RestorchSpinner className="size-3.5 " />
-                                            <span>Saving...</span>
+                                            <span>{tTopBar("saving")}</span>
                                         </>
                                     ) : (
-                                        <span>Update Password</span>
+                                        <span>{tTopBar("updatePassword")}</span>
                                     )}
                                 </Button>
                             </div>

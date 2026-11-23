@@ -345,7 +345,7 @@ export default function CashierBillRequests() {
                             }
                         >
                             <Receipt className="size-3" />
-                            <span>Receipt</span>
+                            <span>{tCashier("receipt")}</span>
                         </Button>
                         <Button
                             size="sm"
@@ -353,7 +353,7 @@ export default function CashierBillRequests() {
                             onClick={() => setPayModalBill(row)}
                         >
                             <CreditCard className="size-3" />
-                            <span>Collect</span>
+                            <span>{tCashier("collect")}</span>
                         </Button>
                     </div>
                 ),
@@ -408,7 +408,7 @@ export default function CashierBillRequests() {
                         className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-amber-600 dark:bg-amber-500 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-amber-700 dark:hover:bg-amber-600 transition-colors self-start sm:self-auto"
                     >
                         <LogIn className="size-3.5" />
-                        <span>Go to Shift Desk</span>
+                        <span>{tCashier("goToShiftDesk")}</span>
                         <ArrowRight className="size-3.5" />
                     </Link>
                 </div>
@@ -444,7 +444,7 @@ export default function CashierBillRequests() {
                             className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 dark:bg-rose-500 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-rose-700 dark:hover:bg-rose-600 transition-colors"
                         >
                             <ArrowRightLeft className="size-3.5" />
-                            <span>Go to Handover</span>
+                            <span>{tCashier("goToHandover")}</span>
                             <ArrowRight className="size-3.5" />
                         </Link>
                     </div>
@@ -464,7 +464,7 @@ export default function CashierBillRequests() {
                                 : "text-muted-foreground hover:text-foreground",
                         )}
                     >
-                        <span>Pending Requests</span>
+                        <span>{tCashier("pendingRequests")}</span>
                         {requests.length > 0 && (
                             <span className="flex size-5 items-center justify-center rounded-full bg-amber-500 text-[11px] font-bold text-white">
                                 {requests.length}
@@ -481,7 +481,7 @@ export default function CashierBillRequests() {
                                 : "text-muted-foreground hover:text-foreground",
                         )}
                     >
-                        <span>Awaiting Payment</span>
+                        <span>{tCashier("awaitingPayment")}</span>
                         {activeBills.length > 0 && (
                             <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-white">
                                 {activeBills.length}
@@ -725,7 +725,7 @@ export default function CashierBillRequests() {
                                             }
                                         >
                                             <Receipt className="size-3.5" />
-                                            <span>Receipt</span>
+                                            <span>{tCashier("receipt")}</span>
                                         </Button>
                                         <Button
                                             size="sm"
@@ -735,7 +735,7 @@ export default function CashierBillRequests() {
                                             }
                                         >
                                             <CreditCard className="size-3.5" />
-                                            <span>Collect</span>
+                                            <span>{tCashier("collect")}</span>
                                         </Button>
                                     </div>
                                 </article>

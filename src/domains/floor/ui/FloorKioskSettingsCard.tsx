@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
     useGetFloorKioskSettingsQuery,
     usePairFloorKioskDeviceMutation,
@@ -28,6 +29,7 @@ export default function FloorKioskSettingsCard({
 }: {
     branchId?: string;
 }) {
+    const t = useTranslations("floorKioskSettings");
     const router = useRouter();
     const { data, isLoading } = useGetFloorKioskSettingsQuery(
         branchId ? { branchId } : undefined,
@@ -58,7 +60,7 @@ export default function FloorKioskSettingsCard({
         e.preventDefault();
         const trimmedPin = pin.trim();
         if (trimmedPin && !/^\d{4}$/.test(trimmedPin)) {
-            toast.error("Global Floor PIN must be exactly 4 digits.");
+            toast.error(t("pinValidation"));
             return;
         }
         try {
@@ -70,11 +72,9 @@ export default function FloorKioskSettingsCard({
                     60,
                 ),
             }).unwrap();
-            toast.success("Shared Floor Tablet settings saved.");
+            toast.success(t("settingsSaved"));
         } catch (err: any) {
-            toast.error(
-                err?.data?.message || "Failed to save Shared Floor settings.",
-            );
+            toast.error(err?.data?.message || t("saveFailed"));
         }
     };
 
@@ -88,12 +88,10 @@ export default function FloorKioskSettingsCard({
             localStorage.setItem(KIOSK_BRANCH_NAME_KEY, res.branchName);
             localStorage.setItem(KIOSK_PAIRED_KEY, "1");
             setIsPairedHere(true);
-            toast.success(
-                `This tablet is now paired as the Shared Waiter Board for ${res.branchName}.`,
-            );
+            toast.success(t("pairedSuccess", { branchName: res.branchName }));
             router.push("/floor-kiosk");
         } catch (err: any) {
-            toast.error(err?.data?.message || "Failed to pair this tablet.");
+            toast.error(err?.data?.message || t("pairFailed"));
         }
     };
 
@@ -101,7 +99,7 @@ export default function FloorKioskSettingsCard({
         localStorage.removeItem(KIOSK_PAIRED_KEY);
         localStorage.removeItem(KIOSK_TOKEN_KEY);
         setIsPairedHere(false);
-        toast.success("This device has been unpaired from Shared Waiter Mode.");
+        toast.success(t("unpairedSuccess"));
     };
 
     return (
@@ -113,12 +111,10 @@ export default function FloorKioskSettingsCard({
                     </div>
                     <div>
                         <h3 className="text-sm font-bold text-foreground">
-                            Shared Floor Tablet (Global PIN)
+                            {t("title")}
                         </h3>
                         <p className="mt-0.5 text-xs text-muted-foreground max-w-lg">
-                            Set a 4-digit Global PIN so floor tablets can stay
-                            open on the shared table board. Waiters still enter
-                            their personal PIN when tapping a table.
+                            {t("description")}
                         </p>
                     </div>
                 </div>
@@ -128,7 +124,7 @@ export default function FloorKioskSettingsCard({
                     target="_blank"
                     className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:border-orange-500/40 hover:text-orange-600 dark:hover:text-orange-400 transition"
                 >
-                    <span>Open Shared Floor</span>
+                    <span>{t("openSharedFloor")}</span>
                     <ArrowUpRight className="size-3.5" />
                 </Link>
             </div>
@@ -143,7 +139,7 @@ export default function FloorKioskSettingsCard({
                     <div>
                         <label className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground mb-1">
                             <Lock className="size-3" />
-                            <span>Global 4-Digit Floor PIN</span>
+                            <span>{t("pinLabel")}</span>
                         </label>
                         <input
                             type="text"
@@ -157,7 +153,7 @@ export default function FloorKioskSettingsCard({
                                         .slice(0, 4),
                                 )
                             }
-                            placeholder="e.g. 1234 (optional)"
+                            placeholder={t("pinPlaceholder")}
                             className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-mono outline-none focus:border-primary"
                         />
                     </div>
@@ -165,7 +161,7 @@ export default function FloorKioskSettingsCard({
                     <div>
                         <label className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground mb-1">
                             <Clock className="size-3" />
-                            <span>Turn Table Red After (minutes)</span>
+                            <span>{t("turnRedLabel")}</span>
                         </label>
                         <input
                             type="number"
@@ -183,7 +179,9 @@ export default function FloorKioskSettingsCard({
                         className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
                     >
                         <Save className="size-3.5" />
-                        <span>{isSaving ? "Saving..." : "Save Kiosk PIN"}</span>
+                        <span>
+                            {isSaving ? t("saving") : t("saveKioskPin")}
+                        </span>
                     </button>
                 </form>
             )}
@@ -191,11 +189,9 @@ export default function FloorKioskSettingsCard({
             <div className="mt-4 pt-4 border-t border-hairline flex flex-wrap items-center justify-between gap-3">
                 <div className="text-xs text-muted-foreground">
                     <span className="font-semibold text-foreground">
-                        Option 1 — One-Time Tablet Pairing:
+                        {t("option1Title")}
                     </span>{" "}
-                    Pair a shared floor tablet once so waiters see ready tables
-                    with zero PIN, and only enter their personal PIN when
-                    tapping a table.
+                    {t("option1Desc")}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
@@ -203,7 +199,7 @@ export default function FloorKioskSettingsCard({
                         <>
                             <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 px-3 py-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                                 <CheckCircle2 className="size-3.5" />
-                                <span>This Tablet is Paired</span>
+                                <span>{t("tabletPaired")}</span>
                             </span>
                             <button
                                 type="button"
@@ -211,7 +207,7 @@ export default function FloorKioskSettingsCard({
                                 className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20"
                             >
                                 <Unlink className="size-3.5" />
-                                <span>Unpair Tablet</span>
+                                <span>{t("unpairTablet")}</span>
                             </button>
                         </>
                     ) : (
@@ -223,9 +219,7 @@ export default function FloorKioskSettingsCard({
                         >
                             <TabletSmartphone className="size-3.5" />
                             <span>
-                                {isPairing
-                                    ? "Pairing..."
-                                    : "Pair This Tablet as Waiter Board"}
+                                {isPairing ? t("pairing") : t("pairThisTablet")}
                             </span>
                         </button>
                     )}

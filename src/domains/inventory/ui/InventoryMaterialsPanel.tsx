@@ -28,6 +28,7 @@ import {
     type InventoryMaterial,
 } from "@/context/services/inventoryApi";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 const CATEGORIES = [
     { id: "", label: "All Items" },
@@ -157,6 +158,7 @@ const PRESET_IMAGES = [
 ];
 
 export function InventoryMaterialsPanel() {
+    const t = useTranslations("inventory.materials");
     const [selectedCategory, setSelectedCategory] = useState<string>("");
     const [searchQuery, setSearchQuery] = useState("");
     const [isAddOpen, setIsAddOpen] = useState(false);
@@ -250,6 +252,9 @@ export function InventoryMaterialsPanel() {
                     {CATEGORIES.map(cat => {
                         const Icon = "icon" in cat ? cat.icon : null;
                         const active = selectedCategory === cat.id;
+                        const label = cat.id
+                            ? t(`categories.${cat.id}` as any)
+                            : t("categories.ALL");
                         return (
                             <button
                                 key={cat.id}
@@ -263,7 +268,7 @@ export function InventoryMaterialsPanel() {
                                 )}
                             >
                                 {Icon && <Icon className="size-3.5" />}
-                                <span>{cat.label}</span>
+                                <span>{label}</span>
                             </button>
                         );
                     })}
@@ -275,7 +280,7 @@ export function InventoryMaterialsPanel() {
                         <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                         <input
                             type="text"
-                            placeholder="Search materials..."
+                            placeholder={t("searchPlaceholder")}
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                             className="h-8 w-full rounded-lg border border-border/60 bg-background pl-8 pr-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
@@ -311,7 +316,7 @@ export function InventoryMaterialsPanel() {
                         className="h-8 gap-1.5 px-3 text-xs font-medium"
                     >
                         <Plus className="size-3.5" />
-                        <span>Add Material</span>
+                        <span>{t("addMaterial")}</span>
                     </Button>
                 </div>
             </div>
@@ -320,18 +325,18 @@ export function InventoryMaterialsPanel() {
             {isLoading ? (
                 <div className="flex items-center justify-center gap-2 rounded-xl border border-border/60 bg-card/20 py-16 text-xs text-muted-foreground">
                     <RestorchSpinner className="size-4 " />
-                    Loading restaurant materials catalog…
+                    {t("loadingCatalog")}
                 </div>
             ) : materials.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/70 bg-card/20 py-14 text-center">
                     <Boxes className="size-8 text-muted-foreground/40" />
                     <p className="text-xs font-medium text-foreground">
-                        No materials found
+                        {t("noMaterialsFound")}
                     </p>
                     <p className="max-w-xs text-[11px] text-muted-foreground">
                         {searchQuery || selectedCategory
-                            ? "Try adjusting your search or category filter."
-                            : "Get started by adding returnable trays, plates, or cutlery for outside orders."}
+                            ? t("noMaterialsHint")
+                            : t("noMaterialsEmptyHint")}
                     </p>
                     <Button
                         size="sm"
@@ -340,7 +345,7 @@ export function InventoryMaterialsPanel() {
                         className="mt-2 h-7.5 gap-1.5 text-xs font-medium"
                     >
                         <Plus className="size-3.5" />
-                        <span>Add First Material</span>
+                        <span>{t("addFirstMaterial")}</span>
                     </Button>
                 </div>
             ) : (
@@ -551,6 +556,7 @@ function MaterialFormModal({
     material?: InventoryMaterial | null;
     onClose: () => void;
 }) {
+    const t = useTranslations("inventory.materials");
     const isEdit = Boolean(material);
     const [createMaterial, { isLoading: creating }] =
         useCreateInventoryMaterialMutation();
@@ -723,7 +729,7 @@ function MaterialFormModal({
                                 required
                                 value={name}
                                 onChange={e => setName(e.target.value)}
-                                placeholder="e.g. Stainless Serving Tray"
+                                placeholder={t("namePlaceholder")}
                                 className="h-8 w-full rounded-lg border border-border/60 bg-background px-2.5 text-xs text-foreground focus:outline-none"
                             />
                         </div>
@@ -735,7 +741,7 @@ function MaterialFormModal({
                                 type="text"
                                 value={amharicName}
                                 onChange={e => setAmharicName(e.target.value)}
-                                placeholder="e.g. የአስተናጋጅ ትሪ"
+                                placeholder={t("nameAmharicPlaceholder")}
                                 className="h-8 w-full rounded-lg border border-border/60 bg-background px-2.5 text-xs text-foreground focus:outline-none"
                             />
                         </div>
@@ -750,7 +756,7 @@ function MaterialFormModal({
                                 type="text"
                                 value={code}
                                 onChange={e => setCode(e.target.value)}
-                                placeholder="Auto if blank"
+                                placeholder={t("skuPlaceholder")}
                                 className="h-8 w-full rounded-lg border border-border/60 bg-background px-2.5 font-mono text-xs text-foreground focus:outline-none"
                             />
                         </div>
@@ -763,15 +769,27 @@ function MaterialFormModal({
                                 onChange={e => setCategory(e.target.value)}
                                 className="h-8 w-full rounded-lg border border-border/60 bg-background px-2 text-xs text-foreground focus:outline-none"
                             >
-                                <option value="CUTLERY">Cutlery</option>
-                                <option value="CROCKERY">Crockery</option>
-                                <option value="GLASSWARE">Glassware</option>
-                                <option value="TRAYS">Trays</option>
-                                <option value="WARMERS_CARRIERS">
-                                    Warmers &amp; Carriers
+                                <option value="CUTLERY">
+                                    {t("categories.CUTLERY")}
                                 </option>
-                                <option value="CONTAINERS">Containers</option>
-                                <option value="OTHER">Other</option>
+                                <option value="CROCKERY">
+                                    {t("categories.CROCKERY")}
+                                </option>
+                                <option value="GLASSWARE">
+                                    {t("categories.GLASSWARE")}
+                                </option>
+                                <option value="TRAYS">
+                                    {t("categories.TRAYS")}
+                                </option>
+                                <option value="WARMERS_CARRIERS">
+                                    {t("categories.WARMERS_CARRIERS")}
+                                </option>
+                                <option value="CONTAINERS">
+                                    {t("categories.CONTAINERS")}
+                                </option>
+                                <option value="OTHER">
+                                    {t("categories.OTHER")}
+                                </option>
                             </select>
                         </div>
                         <div>
@@ -782,7 +800,7 @@ function MaterialFormModal({
                                 type="text"
                                 value={unit}
                                 onChange={e => setUnit(e.target.value)}
-                                placeholder="pcs, set, box"
+                                placeholder={t("unitPlaceholder")}
                                 className="h-8 w-full rounded-lg border border-border/60 bg-background px-2.5 text-xs text-foreground focus:outline-none"
                             />
                         </div>
@@ -811,7 +829,7 @@ function MaterialFormModal({
                             rows={2}
                             value={description}
                             onChange={e => setDescription(e.target.value)}
-                            placeholder="e.g. 16-inch fiberglass non-slip black tray for outside delivery"
+                            placeholder={t("notesPlaceholder")}
                             className="w-full rounded-lg border border-border/60 bg-background p-2 text-xs text-foreground focus:outline-none"
                         />
                     </div>
@@ -874,6 +892,7 @@ function AdjustBalanceModal({
     material: InventoryMaterial;
     onClose: () => void;
 }) {
+    const t = useTranslations("inventory.materials");
     const [upsertBalance, { isLoading }] = useUpsertMaterialBalanceMutation();
     const [onHand, setOnHand] = useState(String(material.onHandQty ?? 0));
     const [issued, setIssued] = useState(String(material.issuedQty ?? 0));
@@ -970,7 +989,7 @@ function AdjustBalanceModal({
                             {isLoading && (
                                 <RestorchSpinner className="size-3 " />
                             )}
-                            <span>Update Balance</span>
+                            <span>{t("updateBalance")}</span>
                         </Button>
                     </div>
                 </form>

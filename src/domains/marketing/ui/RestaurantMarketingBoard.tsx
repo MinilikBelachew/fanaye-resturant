@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
     useCancelMarketingCampaignMutation,
     useCreateMarketingCampaignMutation,
@@ -38,6 +39,7 @@ const LOCATION_PRESETS = ["Bole", "Kazanchis", "Piassa", "Sarbet", "CMC"];
 const VIEW_PRESETS = [5000, 10000, 25000, 50000];
 
 export default function RestaurantMarketingBoard() {
+    const t = useTranslations("marketing");
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(10);
     const [status, setStatus] = useState<"ALL" | MarketingCampaignStatus>(
@@ -97,11 +99,11 @@ export default function RestaurantMarketingBoard() {
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!menuItemId) {
-            toast.error("Please select a dish to promote.");
+            toast.error(t("selectDishRequired"));
             return;
         }
         if (!targetLocation.trim()) {
-            toast.error("Please enter a target location.");
+            toast.error(t("locationRequired"));
             return;
         }
         if (targetAgeMin > targetAgeMax) {
@@ -118,7 +120,7 @@ export default function RestaurantMarketingBoard() {
                 targetViews: Number(targetViews),
                 notes: notes.trim() || undefined,
             }).unwrap();
-            toast.success("Promotion request sent!");
+            toast.success(t("broadcastSuccess"));
             setCreateOpen(false);
             setMenuItemId("");
             setNotes("");

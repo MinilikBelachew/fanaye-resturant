@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
     ArrowRight,
     ChefHat,
@@ -24,14 +25,6 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
-const TABS = [
-    { id: "ALL", label: "All" },
-    { id: "OPEN", label: "Open" },
-    { id: "IN_KITCHEN", label: "Kitchen" },
-    { id: "READY_TO_PAY", label: "To pay" },
-    { id: "PAID", label: "Paid" },
-] as const;
-
 function statusTone(column: string) {
     switch (column) {
         case "IN_KITCHEN":
@@ -45,20 +38,26 @@ function statusTone(column: string) {
     }
 }
 
-function statusLabel(column: string) {
-    switch (column) {
-        case "IN_KITCHEN":
-            return "In stations";
-        case "READY_TO_PAY":
-            return "Ready to pay";
-        case "PAID":
-            return "Paid";
-        default:
-            return "Open";
-    }
-}
+function CallRow({
+    call,
+    t,
+}: {
+    call: DispatcherCall;
+    t: (key: string, values?: any) => string;
+}) {
+    const statusLabel = (column: string) => {
+        switch (column) {
+            case "IN_KITCHEN":
+                return t("statCooking");
+            case "READY_TO_PAY":
+                return t("statReadyPacked");
+            case "PAID":
+                return t("statDeliveredSettled");
+            default:
+                return t("tabActive");
+        }
+    };
 
-function CallRow({ call }: { call: DispatcherCall }) {
     return (
         <Link
             href={`/dispatcher/calls/${call.tableSessionId}`}
@@ -82,24 +81,24 @@ function CallRow({ call }: { call: DispatcherCall }) {
                     </span>
                 </div>
                 <p className="mt-0.5 truncate text-[12.5px] text-slate-gray">
-                    {call.customerPhone || "No phone"} · {call.slotName}
+                    {call.customerPhone || t("noPhone")} · {call.slotName}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] font-medium text-slate-gray">
                     {call.cookingItemCount > 0 ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-amber-700 dark:text-amber-300">
                             <ChefHat className="size-3" />
-                            {call.cookingItemCount} cooking
+                            {call.cookingItemCount} {t("statCooking")}
                         </span>
                     ) : null}
                     {call.readyItemCount > 0 ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-emerald-700 dark:text-emerald-300">
-                            {call.readyItemCount} ready
+                            {call.readyItemCount} {t("statReadyPacked")}
                         </span>
                     ) : null}
                     {call.hasBill ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-2 py-0.5 text-sky-700 dark:text-sky-300">
                             <Receipt className="size-3" />
-                            Bill
+                            {t("billReady")}
                         </span>
                     ) : null}
                 </div>
@@ -110,8 +109,8 @@ function CallRow({ call }: { call: DispatcherCall }) {
 }
 
 export default function DispatcherBoard() {
+    const t = useTranslations("dispatcher");
     const router = useRouter();
-    const hasSession = useAppSelector(state => Boolean(state.identity.session));
     const clockedIn = Boolean(
         useAppSelector(state => state.identity.session?.shiftSessionId),
     );
@@ -119,12 +118,12 @@ export default function DispatcherBoard() {
     const { data, isLoading, isError, refetch } = useDispatcherCallsQuery(
         undefined,
         {
-            skip: !hasSession,
             pollingInterval: pollMs,
         },
     );
     const [openCall, { isLoading: opening }] = useOpenCallPickupMutation();
-    const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("ALL");
+
+    const [tab, setTab] = useState<string>("ALL");
     const [query, setQuery] = useState("");
     const [sheetOpen, setSheetOpen] = useState(false);
     const [name, setName] = useState("");
@@ -155,11 +154,11 @@ export default function DispatcherBoard() {
     async function onCreate() {
         const customerName = name.trim();
         if (!customerName) {
-            toast.error("Guest name is required");
+            toast.error(t("guestNameRequired"));
             return;
         }
         if (!clockedIn) {
-            toast.error("Clock in before taking call orders");
+            toast.error(t("clockInRequired"));
             return;
         }
         try {
@@ -170,26 +169,33 @@ export default function DispatcherBoard() {
             setName("");
             setPhone("");
             setSheetOpen(false);
-            toast.success("Call opened");
+            toast.success(t("callOpened"));
             router.push(`/dispatcher/calls/${session.tableSessionId}`);
         } catch (err) {
-            toast.fromUnknown(err, "Could not open call order");
+            toast.fromUnknown(err, t("couldNotOpenCall"));
         }
     }
+
+    const tabsList = [
+        { id: "ALL", label: t("tabAllToday") },
+        { id: "OPEN", label: t("tabActive") },
+        { id: "IN_KITCHEN", label: t("statCooking") },
+        { id: "READY_TO_PAY", label: t("statReadyPacked") },
+        { id: "PAID", label: t("statDeliveredSettled") },
+    ];
 
     return (
         <section className="space-y-5">
             <div className="flex flex-wrap items-end justify-between gap-4">
                 <div>
                     <p className="text-[12px] font-semibold tracking-[0.12em] text-emerald-700 uppercase dark:text-emerald-300">
-                        Call pickup
+                        {t("callPickup")}
                     </p>
                     <h1 className="mt-1 text-[28px] font-semibold tracking-tight">
-                        Live board
+                        {t("title")}
                     </h1>
                     <p className="mt-1 max-w-xl text-[14px] text-slate-gray">
-                        Take phone orders, send to stations, collect payment,
-                        drop cash.
+                        {t("subtitle")}
                     </p>
                 </div>
                 <Button
@@ -198,44 +204,29 @@ export default function DispatcherBoard() {
                     className="h-11 rounded-full px-5 shadow-sm"
                 >
                     <Plus className="size-4" />
-                    New call
+                    {t("newCall")}
                 </Button>
             </div>
 
-            {!clockedIn ? (
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-[13px] text-amber-950 dark:text-amber-100">
-                    <span className="inline-flex items-center gap-2">
-                        <Clock3 className="size-4" />
-                        Clock in to open call orders.
-                    </span>
-                    <Link
-                        href="/dispatcher/shift"
-                        className="font-semibold underline underline-offset-2"
-                    >
-                        Open shift
-                    </Link>
-                </div>
-            ) : null}
-
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
                 {[
                     {
-                        label: "Open",
+                        label: t("statActiveCalls"),
                         value: counts.OPEN ?? 0,
-                        icon: Phone,
+                        icon: Clock3,
                     },
                     {
-                        label: "Kitchen",
+                        label: t("statCooking"),
                         value: counts.IN_KITCHEN ?? 0,
                         icon: ChefHat,
                     },
                     {
-                        label: "To pay",
+                        label: t("statReadyPacked"),
                         value: counts.READY_TO_PAY ?? 0,
                         icon: Receipt,
                     },
                     {
-                        label: "Paid",
+                        label: t("statDeliveredSettled"),
                         value: counts.PAID ?? 0,
                         icon: Wallet,
                     },
@@ -262,7 +253,7 @@ export default function DispatcherBoard() {
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <div className="flex flex-1 gap-1 overflow-x-auto rounded-full border border-hairline bg-card/70 p-1">
-                    {TABS.map(item => (
+                    {tabsList.map(item => (
                         <button
                             key={item.id}
                             type="button"
@@ -286,7 +277,7 @@ export default function DispatcherBoard() {
                     <Input
                         value={query}
                         onChange={e => setQuery(e.target.value)}
-                        placeholder="Search guest or phone"
+                        placeholder={t("searchPlaceholder")}
                         className="h-10 rounded-full pl-9"
                     />
                 </div>
@@ -303,40 +294,36 @@ export default function DispatcherBoard() {
                 </div>
             ) : isError ? (
                 <div className="rounded-2xl border border-destructive-border bg-destructive-soft p-4 text-[13px]">
-                    Could not load calls.{" "}
+                    {t("couldNotLoadCalls")}{" "}
                     <button
                         type="button"
                         className="font-semibold underline"
                         onClick={() => refetch()}
                     >
-                        Retry
+                        {t("retry")}
                     </button>
                 </div>
             ) : filtered.length === 0 ? (
                 <div className="rounded-3xl border border-dashed border-hairline px-6 py-14 text-center">
                     <Phone className="mx-auto size-8 text-slate-gray" />
                     <p className="mt-3 text-[16px] font-semibold">
-                        No calls here
-                    </p>
-                    <p className="mt-1 text-[13px] text-slate-gray">
-                        {clockedIn
-                            ? "Start a new call when the phone rings."
-                            : "Clock in, then open your first call order."}
+                        {t("noCallsHere")}
                     </p>
                     {clockedIn ? (
                         <Button
+                            variant="outline"
                             className="mt-4 rounded-full"
                             onClick={() => setSheetOpen(true)}
                         >
                             <Plus className="size-4" />
-                            New call
+                            {t("newCall")}
                         </Button>
                     ) : null}
                 </div>
             ) : (
                 <div className="space-y-2.5">
                     {filtered.map(call => (
-                        <CallRow key={call.tableSessionId} call={call} />
+                        <CallRow key={call.tableSessionId} call={call} t={t} />
                     ))}
                 </div>
             )}
@@ -345,21 +332,21 @@ export default function DispatcherBoard() {
                 <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-3 sm:items-center">
                     <div className="w-full max-w-md animate-in fade-in zoom-in-95 rounded-3xl border border-hairline bg-card p-5 shadow-lg">
                         <p className="text-[17px] font-semibold tracking-tight">
-                            New call order
+                            {t("newCallOrder")}
                         </p>
                         <p className="mt-1 text-[13px] text-slate-gray">
-                            Guest details only — no delivery address.
+                            {t("newCallSubtitle")}
                         </p>
                         <div className="mt-4 space-y-3">
                             <div>
                                 <label className="mb-1.5 block text-[12px] font-medium text-slate-gray">
-                                    Guest name
+                                    {t("guestName")}
                                 </label>
                                 <Input
                                     autoFocus
                                     value={name}
                                     onChange={e => setName(e.target.value)}
-                                    placeholder="Abebe Kebede"
+                                    placeholder={t("guestNamePlaceholder")}
                                     onKeyDown={e => {
                                         if (e.key === "Enter") onCreate();
                                     }}
@@ -367,12 +354,12 @@ export default function DispatcherBoard() {
                             </div>
                             <div>
                                 <label className="mb-1.5 block text-[12px] font-medium text-slate-gray">
-                                    Phone (optional)
+                                    {t("phoneOptional")}
                                 </label>
                                 <Input
                                     value={phone}
                                     onChange={e => setPhone(e.target.value)}
-                                    placeholder="+2519…"
+                                    placeholder={t("phonePlaceholder")}
                                 />
                             </div>
                         </div>
@@ -382,14 +369,14 @@ export default function DispatcherBoard() {
                                 disabled={opening}
                                 onClick={onCreate}
                             >
-                                {opening ? "Opening…" : "Open & take order"}
+                                {opening ? t("opening") : t("openAndTakeOrder")}
                             </Button>
                             <Button
                                 variant="outline"
                                 className="rounded-full"
                                 onClick={() => setSheetOpen(false)}
                             >
-                                Cancel
+                                {t("cancel")}
                             </Button>
                         </div>
                     </div>

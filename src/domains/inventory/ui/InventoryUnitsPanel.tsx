@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
     AlertTriangle,
     ArrowLeftRight,
@@ -47,6 +47,7 @@ const UNIT_CATEGORY_LABELS_AM: Record<string, string> = {
 export function InventoryUnitsPanel() {
     const locale = useLocale();
     const isAm = locale === "am";
+    const t = useTranslations("inventory.units");
     const [subTab, setSubTab] = useState<"units" | "conversions">("units");
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -169,7 +170,7 @@ export function InventoryUnitsPanel() {
         const code = unitForm.code.trim().toLowerCase();
         const name = unitForm.name.trim();
         if (!code || !name) {
-            toast.error("Code and Name are required");
+            toast.error(t("codeAndNameRequired"));
             return;
         }
 
@@ -179,18 +180,21 @@ export function InventoryUnitsPanel() {
                     id: editingUnit.id,
                     body: { name, category: unitForm.category },
                 }).unwrap();
-                toast.success(`Unit "${code}" updated`);
+                toast.success(t("unitUpdated"));
             } else {
                 await createUnit({
                     code,
                     name,
                     category: unitForm.category,
                 }).unwrap();
-                toast.success(`Unit "${code}" created`);
+                toast.success(t("unitCreated"));
             }
             closeSideSheet();
         } catch (err) {
-            toast.fromUnknown(err, "Failed to save unit");
+            toast.fromUnknown(
+                err,
+                isAm ? "መለኪያ ማስቀመጥ አልተቻለም" : "Failed to save unit",
+            );
         }
     }
 
@@ -199,12 +203,14 @@ export function InventoryUnitsPanel() {
         const factor = Number(convForm.factor);
         if (!convForm.fromUnit || !convForm.toUnit || !factor || factor <= 0) {
             toast.error(
-                "Valid from-unit, to-unit, and factor (>0) are required",
+                isAm
+                    ? "ትክክለኛ የመነሻ መለኪያ፣ የመድረሻ መለኪያ እና መጠን (>0) ያስፈልጋል"
+                    : "Valid from-unit, to-unit, and factor (>0) are required",
             );
             return;
         }
         if (convForm.fromUnit === convForm.toUnit) {
-            toast.error("From and To units must be different");
+            toast.error(t("fromToDifferent"));
             return;
         }
 
@@ -214,18 +220,21 @@ export function InventoryUnitsPanel() {
                     id: editingConv.id,
                     body: { factor },
                 }).unwrap();
-                toast.success("Conversion rule updated");
+                toast.success(t("conversionUpdated"));
             } else {
                 await createConv({
                     fromUnit: convForm.fromUnit,
                     toUnit: convForm.toUnit,
                     factor,
                 }).unwrap();
-                toast.success("Conversion rule created");
+                toast.success(t("conversionCreated"));
             }
             closeSideSheet();
         } catch (err) {
-            toast.fromUnknown(err, "Failed to save conversion");
+            toast.fromUnknown(
+                err,
+                isAm ? "የቅየራ መጠን ማስቀመጥ አልተቻለም" : "Failed to save conversion",
+            );
         }
     }
 
@@ -234,14 +243,17 @@ export function InventoryUnitsPanel() {
         try {
             if (deletingItem.type === "unit") {
                 await deleteUnit(deletingItem.id).unwrap();
-                toast.success(`Unit deleted`);
+                toast.success(t("unitDeleted"));
             } else {
                 await deleteConv(deletingItem.id).unwrap();
-                toast.success("Conversion rule deleted");
+                toast.success(t("conversionDeleted"));
             }
             setDeletingItem(null);
         } catch (err) {
-            toast.fromUnknown(err, "Could not delete item");
+            toast.fromUnknown(
+                err,
+                isAm ? "መሰረዝ አልተቻለም" : "Could not delete item",
+            );
         }
     }
 
@@ -634,7 +646,7 @@ export function InventoryUnitsPanel() {
                                                 code: e.target.value.toLowerCase(),
                                             }))
                                         }
-                                        placeholder="e.g. sack, crate, bundle, box"
+                                        placeholder={t("codePlaceholder")}
                                         required
                                         className="h-10 w-full rounded-xl border border-hairline bg-background px-3 font-mono text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-sky-500 disabled:opacity-60"
                                     />
@@ -642,7 +654,7 @@ export function InventoryUnitsPanel() {
 
                                 <label className="block space-y-1.5 text-[12px]">
                                     <span className="font-semibold text-foreground">
-                                        Display Name{" "}
+                                        {isAm ? "የሚታይ ስም" : "Display Name"}{" "}
                                         <span className="text-rose-500">*</span>
                                     </span>
                                     <input
@@ -654,7 +666,7 @@ export function InventoryUnitsPanel() {
                                                 name: e.target.value,
                                             }))
                                         }
-                                        placeholder="e.g. 50kg Sack, Standard Crate"
+                                        placeholder={t("namePlaceholder")}
                                         required
                                         className="h-10 w-full rounded-xl border border-hairline bg-background px-3 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-sky-500"
                                     />
@@ -662,11 +674,11 @@ export function InventoryUnitsPanel() {
 
                                 <div className="space-y-1.5 text-[12px]">
                                     <span className="font-semibold text-foreground">
-                                        Category
+                                        {isAm ? "ምድብ" : "Category"}
                                     </span>
                                     <InventoryNiceSelect
                                         value={unitForm.category}
-                                        placeholder="Select category"
+                                        placeholder={t("selectCategory")}
                                         onChange={v =>
                                             setUnitForm(s => ({
                                                 ...s,
@@ -676,19 +688,27 @@ export function InventoryUnitsPanel() {
                                         options={[
                                             {
                                                 value: "weight",
-                                                label: "Weight (kg, g)",
+                                                label: isAm
+                                                    ? "ክብደት (ኪ.ግ, ግ)"
+                                                    : "Weight (kg, g)",
                                             },
                                             {
                                                 value: "volume",
-                                                label: "Volume (L, ml)",
+                                                label: isAm
+                                                    ? "መጠን (ሊ, ሚ.ሊ)"
+                                                    : "Volume (L, ml)",
                                             },
                                             {
                                                 value: "count",
-                                                label: "Count (pieces, items)",
+                                                label: isAm
+                                                    ? "ብዛት (ቁጥር, ዕቃዎች)"
+                                                    : "Count (pieces, items)",
                                             },
                                             {
                                                 value: "pack",
-                                                label: "Pack (crates, bags, boxes)",
+                                                label: isAm
+                                                    ? "ጥቅል (ካርቶን, ከረጢት)"
+                                                    : "Pack (crates, bags, boxes)",
                                             },
                                         ]}
                                     />
@@ -700,7 +720,7 @@ export function InventoryUnitsPanel() {
                                         onClick={closeSideSheet}
                                         className="h-10 rounded-xl border border-hairline px-4 text-[13px] font-medium text-slate-gray hover:bg-secondary hover:text-foreground transition-colors"
                                     >
-                                        Cancel
+                                        {isAm ? "ይቅር" : "Cancel"}
                                     </button>
                                     <button
                                         type="submit"
@@ -712,8 +732,12 @@ export function InventoryUnitsPanel() {
                                         )}
                                         <span>
                                             {editingUnit
-                                                ? "Update Unit"
-                                                : "Save Unit"}
+                                                ? isAm
+                                                    ? "መለኪያ አድስ"
+                                                    : "Update Unit"
+                                                : isAm
+                                                  ? "መለኪያ መዝግብ"
+                                                  : "Save Unit"}
                                         </span>
                                     </button>
                                 </div>
@@ -725,11 +749,11 @@ export function InventoryUnitsPanel() {
                             >
                                 <div className="space-y-1.5 text-[12px]">
                                     <span className="font-semibold text-foreground">
-                                        From Unit
+                                        {isAm ? "የመነሻ መለኪያ" : "From Unit"}
                                     </span>
                                     <InventoryNiceSelect
                                         value={convForm.fromUnit}
-                                        placeholder="Select from unit"
+                                        placeholder={t("selectFromUnit")}
                                         onChange={v =>
                                             setConvForm(s => ({
                                                 ...s,
@@ -746,11 +770,13 @@ export function InventoryUnitsPanel() {
 
                                 <div className="space-y-1.5 text-[12px]">
                                     <span className="font-semibold text-foreground">
-                                        To Base Unit
+                                        {isAm
+                                            ? "የመድረሻ መሠረታዊ መለኪያ"
+                                            : "To Base Unit"}
                                     </span>
                                     <InventoryNiceSelect
                                         value={convForm.toUnit}
-                                        placeholder="Select to base unit"
+                                        placeholder={t("selectToBaseUnit")}
                                         onChange={v =>
                                             setConvForm(s => ({
                                                 ...s,
@@ -767,7 +793,9 @@ export function InventoryUnitsPanel() {
 
                                 <label className="block space-y-1.5 text-[12px]">
                                     <span className="font-semibold text-foreground">
-                                        Conversion Factor{" "}
+                                        {isAm
+                                            ? "የቅየራ መጠን (ፋክተር)"
+                                            : "Conversion Factor"}{" "}
                                         <span className="text-rose-500">*</span>
                                     </span>
                                     <input
@@ -780,12 +808,12 @@ export function InventoryUnitsPanel() {
                                                 factor: e.target.value,
                                             }))
                                         }
-                                        placeholder="e.g. 50 (if 1 sack = 50 kg)"
+                                        placeholder={t("multiplierPlaceholder")}
                                         required
                                         className="h-10 w-full rounded-xl border border-hairline bg-background px-3 font-mono text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-sky-500"
                                     />
                                     <p className="text-[11px] text-slate-gray mt-1">
-                                        Meaning: 1{" "}
+                                        {isAm ? "ትርጉም፡" : "Meaning:"} 1{" "}
                                         <strong>
                                             {convForm.fromUnit || "..."}
                                         </strong>{" "}
@@ -802,7 +830,7 @@ export function InventoryUnitsPanel() {
                                         onClick={closeSideSheet}
                                         className="h-10 rounded-xl border border-hairline px-4 text-[13px] font-medium text-slate-gray hover:bg-secondary hover:text-foreground transition-colors"
                                     >
-                                        Cancel
+                                        {isAm ? "ይቅር" : "Cancel"}
                                     </button>
                                     <button
                                         type="submit"
@@ -814,8 +842,12 @@ export function InventoryUnitsPanel() {
                                         )}
                                         <span>
                                             {editingConv
-                                                ? "Update Conversion"
-                                                : "Save Conversion"}
+                                                ? isAm
+                                                    ? "ቅየራ አድስ"
+                                                    : "Update Conversion"
+                                                : isAm
+                                                  ? "ቅየራ መዝግብ"
+                                                  : "Save Conversion"}
                                         </span>
                                     </button>
                                 </div>
@@ -835,13 +867,19 @@ export function InventoryUnitsPanel() {
                             </div>
                             <div>
                                 <h3 className="text-[16px] font-bold text-foreground">
-                                    Delete{" "}
+                                    {isAm ? "ሰርዝ" : "Delete"}{" "}
                                     {deletingItem.type === "unit"
-                                        ? "Unit"
-                                        : "Conversion"}
+                                        ? isAm
+                                            ? "መለኪያ"
+                                            : "Unit"
+                                        : isAm
+                                          ? "ቅየራ"
+                                          : "Conversion"}
                                 </h3>
                                 <p className="text-[12px] text-slate-gray mt-0.5">
-                                    Are you sure you want to delete{" "}
+                                    {isAm
+                                        ? "እርግጠኛ ነዎት መሰረዝ ይፈልጋሉ፡"
+                                        : "Are you sure you want to delete"}{" "}
                                     <strong className="text-foreground">
                                         {deletingItem.title}
                                     </strong>
@@ -857,7 +895,7 @@ export function InventoryUnitsPanel() {
                                 onClick={() => setDeletingItem(null)}
                                 className="h-10 rounded-xl border border-hairline px-4 text-[13px] font-medium text-slate-gray hover:bg-secondary hover:text-foreground transition-colors"
                             >
-                                Cancel
+                                {isAm ? "ይቅር" : "Cancel"}
                             </button>
                             <button
                                 type="button"
@@ -868,7 +906,7 @@ export function InventoryUnitsPanel() {
                                 {(deletingUnit || deletingConv) && (
                                     <RestorchSpinner className="size-4 " />
                                 )}
-                                <span>Delete</span>
+                                <span>{isAm ? "ሰርዝ" : "Delete"}</span>
                             </button>
                         </div>
                     </div>

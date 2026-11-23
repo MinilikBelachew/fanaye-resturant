@@ -68,6 +68,8 @@ export default function DispatcherCallDetail({
     const router = useRouter();
     const staff = useAppSelector(selectCurrentStaff);
     const t = useTranslations("waiter");
+    const tDisp = useTranslations("dispatcher");
+    const tCommon = useTranslations("common");
     const clockedIn = Boolean(
         useAppSelector(state => state.identity.session?.shiftSessionId),
     );
@@ -172,9 +174,9 @@ export default function DispatcherCallDetail({
                 expectedTableSessionVersion: version,
                 tableSessionId,
             }).unwrap();
-            toast.success("Bill ready");
+            toast.success(tDisp("billReady"));
         } catch (err) {
-            const message = "Could not generate bill";
+            const message = tDisp("couldNotGenerateBill");
             setError(message);
             toast.fromUnknown(err, message);
         }
@@ -187,10 +189,10 @@ export default function DispatcherCallDetail({
                 tableSessionId,
                 expectedVersion: sessionVersion,
             }).unwrap();
-            toast.success("Call closed");
+            toast.success(tDisp("callClosed"));
             router.push("/dispatcher");
         } catch (err) {
-            const message = "Could not close call";
+            const message = tDisp("couldNotCloseCall");
             setError(message);
             toast.fromUnknown(err, message);
         }
@@ -213,15 +215,19 @@ export default function DispatcherCallDetail({
                     href="/dispatcher"
                     className="inline-flex items-center gap-2 text-[14px] text-slate-gray"
                 >
-                    <ArrowLeft className="size-4" /> Back
+                    <ArrowLeft className="size-4" /> {tCommon("back")}
                 </Link>
-                <p className="text-[14px] text-destructive">Call not found.</p>
+                <p className="text-[14px] text-destructive">
+                    {tDisp("callNotFound")}
+                </p>
             </div>
         );
     }
 
     const label =
-        session.customerName?.trim() || session.displayName || "Call pickup";
+        session.customerName?.trim() ||
+        session.displayName ||
+        tDisp("callPickup");
 
     return (
         <div className="space-y-5">
@@ -231,7 +237,7 @@ export default function DispatcherCallDetail({
                         href="/dispatcher"
                         className="mb-2 inline-flex items-center gap-1.5 text-[13px] text-slate-gray hover:text-foreground"
                     >
-                        <ArrowLeft className="size-3.5" /> Board
+                        <ArrowLeft className="size-3.5" /> {tDisp("board")}
                     </Link>
                     <h1 className="text-[26px] font-semibold tracking-tight">
                         {label}
@@ -239,14 +245,14 @@ export default function DispatcherCallDetail({
                     <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-slate-gray">
                         <span className="inline-flex items-center gap-1">
                             <Phone className="size-3.5" />
-                            {session.customerPhone || "No phone"}
+                            {session.customerPhone || tDisp("noPhone")}
                         </span>
                         <span>· {session.displayName}</span>
                     </p>
                 </div>
                 <div className="rounded-2xl border border-hairline bg-card px-4 py-2.5 text-right">
                     <p className="text-[11px] font-medium tracking-wide text-slate-gray uppercase">
-                        Total
+                        {tCommon("total")}
                     </p>
                     <p className="text-[20px] font-semibold tracking-tight">
                         {formatEtb(bill ? Number(bill.total) : runningTotal)}
@@ -328,7 +334,9 @@ export default function DispatcherCallDetail({
             <div className="grid gap-4 lg:grid-cols-12">
                 <div className="space-y-3 lg:col-span-7">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-[15px] font-semibold">Items</h2>
+                        <h2 className="text-[15px] font-semibold">
+                            {tCommon("items")}
+                        </h2>
                         <p className="text-[12px] text-slate-gray">
                             {cookingCount} cooking · {readyCount} ready
                         </p>
@@ -429,7 +437,9 @@ export default function DispatcherCallDetail({
 
                 <div className="space-y-3 lg:col-span-5">
                     <div className="rounded-3xl border border-hairline bg-card p-4">
-                        <h2 className="text-[15px] font-semibold">Payment</h2>
+                        <h2 className="text-[15px] font-semibold">
+                            {tDisp("payment")}
+                        </h2>
                         <p className="mt-1 text-[12px] text-slate-gray">
                             Collect cash or transfer photo, then drop cash
                             later.

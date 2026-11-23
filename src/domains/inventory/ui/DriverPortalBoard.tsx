@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
     AlertCircle,
     ArrowRight,
@@ -28,6 +29,7 @@ import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 export default function DriverPortalBoard() {
+    const t = useTranslations("inventory.drivers");
     const staff = useAppSelector(selectCurrentStaff);
     const { data, isLoading, isFetching, refetch } =
         useGetMyDriverTransfersQuery(undefined, {
@@ -159,7 +161,7 @@ export default function DriverPortalBoard() {
                     )}
                 >
                     <Navigation className="size-4" />
-                    <span>Active Deliveries</span>
+                    <span>{t("activeDeliveries")}</span>
                     {totalActiveCount > 0 ? (
                         <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
                             {totalActiveCount}
@@ -177,7 +179,7 @@ export default function DriverPortalBoard() {
                     )}
                 >
                     <PackageCheck className="size-4" />
-                    <span>Completed</span>
+                    <span>{t("completed")}</span>
                     {completedTransfers.length > 0 ? (
                         <span className="rounded-full bg-secondary px-1.5 py-0.2 text-[10px] font-semibold text-slate-gray">
                             {completedTransfers.length}
@@ -336,7 +338,9 @@ export default function DriverPortalBoard() {
                                                         </div>
                                                         <input
                                                             type="text"
-                                                            placeholder="Arrival note (optional, e.g. Back dock)"
+                                                            placeholder={t(
+                                                                "arrivalNotePlaceholder",
+                                                            )}
                                                             value={
                                                                 arrivalNotes[
                                                                     transfer.id

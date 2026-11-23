@@ -31,6 +31,7 @@ import {
 import { useImpersonation } from "@/domains/identity/application/useImpersonation";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 function toYmd(d: Date): string {
     return d.toISOString().slice(0, 10);
@@ -75,6 +76,7 @@ export default function TenantActivityBoard({
 }: {
     fixedTenantId?: string;
 }) {
+    const t = useTranslations("tenantActivity");
     const todayStr = useMemo(() => toYmd(new Date()), []);
     const [selectedTenantId, setSelectedTenantId] = useState<string>(
         fixedTenantId || "",
@@ -208,7 +210,7 @@ export default function TenantActivityBoard({
         () => [
             {
                 id: "date",
-                header: "Business Date",
+                header: t("columns.businessDate"),
                 sortValue: row => row.date,
                 cell: row => (
                     <span className="font-mono text-[12.5px] font-semibold text-foreground">
@@ -220,7 +222,7 @@ export default function TenantActivityBoard({
                 ? [
                       {
                           id: "tenant",
-                          header: "Restaurant",
+                          header: t("columns.restaurant"),
                           sortValue: (row: TenantActivityDailyRow) =>
                               row.tenantName,
                           cell: (row: TenantActivityDailyRow) => (
@@ -233,7 +235,7 @@ export default function TenantActivityBoard({
                 : []),
             {
                 id: "branch",
-                header: "Branch",
+                header: t("columns.branch"),
                 sortValue: row => row.branchName,
                 cell: row => (
                     <span className="text-[13px] font-medium text-foreground">
@@ -243,7 +245,7 @@ export default function TenantActivityBoard({
             },
             {
                 id: "gmv",
-                header: "Total Sales (GMV)",
+                header: t("columns.totalSalesGmv"),
                 sortValue: row => row.totalGmv,
                 cell: row => (
                     <span className="font-semibold text-[13px] tabular-nums text-foreground">
@@ -253,60 +255,71 @@ export default function TenantActivityBoard({
             },
             {
                 id: "cashDigital",
-                header: "Cash vs Digital",
+                header: t("columns.cashVsDigital"),
                 sortValue: row => row.cashSales,
                 cell: row => (
                     <div className="text-[12px] tabular-nums">
                         <span className="font-medium text-emerald-600 dark:text-emerald-400">
-                            Cash: {formatEtb(row.cashSales)}
+                            {t("cash")}: {formatEtb(row.cashSales)}
                         </span>
                         <span className="mx-1.5 text-slate-gray">·</span>
                         <span className="font-medium text-blue-600 dark:text-blue-400">
-                            Digital: {formatEtb(row.digitalSales)}
+                            {t("digitalTransfer")}:{" "}
+                            {formatEtb(row.digitalSales)}
                         </span>
                     </div>
                 ),
             },
             {
                 id: "billsOrders",
-                header: "Bills & Orders",
+                header: t("columns.billsOrders"),
                 sortValue: row => row.billsCount,
                 cell: row => (
                     <div className="text-[12px] text-foreground">
                         <span className="font-medium">
-                            {row.paidBillsCount}/{row.billsCount} bills
+                            {row.paidBillsCount}/{row.billsCount}{" "}
+                            {t("columns.billsSuffix")}
                         </span>
                         <span className="mx-1 text-slate-gray">·</span>
                         <span className="text-slate-gray">
-                            {row.ordersCount} orders
+                            {row.ordersCount} {t("columns.ordersSuffix")}
                         </span>
                     </div>
                 ),
             },
             {
                 id: "tablesShifts",
-                header: "Tables & Shifts",
+                header: t("columns.tablesShifts"),
                 sortValue: row => row.tableSessionsCount,
                 cell: row => (
                     <div className="text-[12px] text-slate-gray">
-                        <span>{row.tableSessionsCount} table visits</span>
+                        <span>
+                            {row.tableSessionsCount}{" "}
+                            {t("columns.tableVisitsSuffix")}
+                        </span>
                         <span className="mx-1">·</span>
-                        <span>{row.shiftsCount} shifts</span>
+                        <span>
+                            {row.shiftsCount} {t("columns.shiftsSuffix")}
+                        </span>
                     </div>
                 ),
             },
             {
                 id: "dropsExpenses",
-                header: "Drops / Expenses",
+                header: t("columns.dropsExpenses"),
                 sortValue: row => row.cashDropsTotal,
                 cell: row => (
                     <div className="text-[12px] tabular-nums text-slate-gray">
-                        <span>Drops: {formatEtb(row.cashDropsTotal)}</span>
+                        <span>
+                            {t("columns.dropsPrefix")}{" "}
+                            {formatEtb(row.cashDropsTotal)}
+                        </span>
                         {row.expensesTotal > 0 ? (
                             <>
                                 <span className="mx-1">·</span>
                                 <span className="text-rose-600 dark:text-rose-400">
-                                    Exp: {formatEtb(row.expensesTotal)}
+                                    {t("columns.expPrefix")}{" "}
+                                    {formatEtb(row.expensesTotal)}
                                 </span>
                             </>
                         ) : null}
@@ -315,7 +328,7 @@ export default function TenantActivityBoard({
             },
             {
                 id: "dailyClose",
-                header: "Daily Close",
+                header: t("columns.dailyClose"),
                 sortValue: row => row.dailyCloseStatus,
                 cell: row => (
                     <div className="flex items-center gap-1.5">
@@ -347,7 +360,7 @@ export default function TenantActivityBoard({
                 ),
             },
         ],
-        [effectiveTenantId],
+        [effectiveTenantId, t],
     );
 
     const cashPct =
@@ -373,7 +386,7 @@ export default function TenantActivityBoard({
                         {!fixedTenantId ? (
                             <div className="min-w-[200px]">
                                 <label className="mb-1 block text-[11px] font-medium text-slate-gray">
-                                    Restaurant (Tenant)
+                                    {t("restaurantTenant")}
                                 </label>
                                 <select
                                     value={selectedTenantId}
@@ -384,11 +397,13 @@ export default function TenantActivityBoard({
                                     className="h-9 w-full rounded-xl border border-hairline bg-background px-3 text-[12.5px] font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                                 >
                                     <option value="">
-                                        All Restaurants ({tenants.length})
+                                        {t("allRestaurants", {
+                                            count: tenants.length,
+                                        })}
                                     </option>
-                                    {tenants.map(t => (
-                                        <option key={t.id} value={t.id}>
-                                            {t.name} ({t.city})
+                                    {tenants.map(tItem => (
+                                        <option key={tItem.id} value={tItem.id}>
+                                            {tItem.name} ({tItem.city})
                                         </option>
                                     ))}
                                 </select>
@@ -398,7 +413,7 @@ export default function TenantActivityBoard({
                         {/* Branch Filter */}
                         <div className="min-w-[190px]">
                             <label className="mb-1 block text-[11px] font-medium text-slate-gray">
-                                Branch
+                                {t("branch")}
                             </label>
                             <select
                                 value={selectedBranchId}
@@ -408,7 +423,9 @@ export default function TenantActivityBoard({
                                 className="h-9 w-full rounded-xl border border-hairline bg-background px-3 text-[12.5px] font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                             >
                                 <option value="">
-                                    All Branches ({branches.length})
+                                    {t("allBranches", {
+                                        count: branches.length,
+                                    })}
                                 </option>
                                 {branches.map(b => (
                                     <option key={b.id} value={b.id}>
@@ -425,15 +442,18 @@ export default function TenantActivityBoard({
                         {/* Quick Date Presets */}
                         <div>
                             <label className="mb-1 block text-[11px] font-medium text-slate-gray">
-                                Period
+                                {t("period")}
                             </label>
                             <div className="inline-flex h-9 items-center rounded-xl border border-hairline bg-background p-0.5">
                                 {(
                                     [
-                                        { id: "today", label: "Today" },
-                                        { id: "yesterday", label: "Yesterday" },
-                                        { id: "7d", label: "7 Days" },
-                                        { id: "30d", label: "30 Days" },
+                                        { id: "today", label: t("today") },
+                                        {
+                                            id: "yesterday",
+                                            label: t("yesterday"),
+                                        },
+                                        { id: "7d", label: t("days7") },
+                                        { id: "30d", label: t("days30") },
                                     ] as const
                                 ).map(p => (
                                     <button
@@ -457,7 +477,7 @@ export default function TenantActivityBoard({
                         <div className="flex items-end gap-2">
                             <div>
                                 <label className="mb-1 block text-[11px] font-medium text-slate-gray">
-                                    From
+                                    {t("from")}
                                 </label>
                                 <Input
                                     type="date"
@@ -472,7 +492,7 @@ export default function TenantActivityBoard({
                             </div>
                             <div>
                                 <label className="mb-1 block text-[11px] font-medium text-slate-gray">
-                                    To
+                                    {t("to")}
                                 </label>
                                 <Input
                                     type="date"
@@ -506,7 +526,7 @@ export default function TenantActivityBoard({
                                     className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-hairline bg-background px-3 text-[12px] font-medium text-foreground hover:bg-secondary disabled:opacity-50"
                                 >
                                     <Crown className="size-3.5 text-amber-500" />
-                                    <span>View as Owner</span>
+                                    <span>{t("viewAsOwner")}</span>
                                 </button>
                                 <button
                                     type="button"
@@ -522,7 +542,7 @@ export default function TenantActivityBoard({
                                     className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-hairline bg-background px-3 text-[12px] font-medium text-foreground hover:bg-secondary disabled:opacity-50"
                                 >
                                     <Eye className="size-3.5 text-primary" />
-                                    <span>View as Manager</span>
+                                    <span>{t("viewAsManager")}</span>
                                 </button>
                             </>
                         ) : null}
@@ -541,7 +561,7 @@ export default function TenantActivityBoard({
                                     isFetching && "animate-spin",
                                 )}
                             />
-                            <span>Refresh</span>
+                            <span>{t("refresh")}</span>
                         </Button>
                     </div>
                 </div>
@@ -552,7 +572,7 @@ export default function TenantActivityBoard({
                 <div className="rounded-2xl border border-hairline bg-card p-4">
                     <div className="flex items-center justify-between text-slate-gray">
                         <span className="text-[12px] font-medium">
-                            Period Sales (GMV)
+                            {t("periodSalesGmv")}
                         </span>
                         <TrendingUp className="size-4 text-emerald-500" />
                     </div>
@@ -560,7 +580,7 @@ export default function TenantActivityBoard({
                         {formatEtb(summary?.totalGmv ?? 0)}
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
-                        Avg per active day:{" "}
+                        {t("avgPerActiveDay")}{" "}
                         <strong className="font-semibold text-foreground">
                             {formatEtb(summary?.avgDailyGmv ?? 0)}
                         </strong>
@@ -570,13 +590,15 @@ export default function TenantActivityBoard({
                 <div className="rounded-2xl border border-hairline bg-card p-4">
                     <div className="flex items-center justify-between text-slate-gray">
                         <span className="text-[12px] font-medium">
-                            Cash vs Digital Settlement
+                            {t("cashVsDigital")}
                         </span>
                         <Wallet className="size-4 text-blue-500" />
                     </div>
                     <div className="mt-2 flex items-baseline justify-between gap-2 tabular-nums">
                         <div>
-                            <p className="text-[11px] text-slate-gray">Cash</p>
+                            <p className="text-[11px] text-slate-gray">
+                                {t("cash")}
+                            </p>
                             <p className="text-[16px] font-bold text-emerald-600 dark:text-emerald-400">
                                 {formatEtb(summary?.cashVolume ?? 0)}{" "}
                                 <span className="text-[11px] font-normal">
@@ -586,7 +608,7 @@ export default function TenantActivityBoard({
                         </div>
                         <div className="text-right">
                             <p className="text-[11px] text-slate-gray">
-                                Digital / Transfer
+                                {t("digitalTransfer")}
                             </p>
                             <p className="text-[16px] font-bold text-blue-600 dark:text-blue-400">
                                 {formatEtb(summary?.digitalVolume ?? 0)}{" "}
@@ -611,48 +633,48 @@ export default function TenantActivityBoard({
                 <div className="rounded-2xl border border-hairline bg-card p-4">
                     <div className="flex items-center justify-between text-slate-gray">
                         <span className="text-[12px] font-medium">
-                            Orders, Bills & Table Visits
+                            {t("ordersBillsTableVisits")}
                         </span>
                         <Receipt className="size-4 text-amber-500" />
                     </div>
                     <p className="mt-2 text-[22px] font-bold tracking-tight tabular-nums text-foreground">
                         {summary?.totalBills ?? 0}{" "}
                         <span className="text-[13px] font-normal text-slate-gray">
-                            bills ({summary?.paidBills ?? 0} paid ·{" "}
-                            {summary?.unpaidBills ?? 0} open)
+                            {t("billsSummary", {
+                                paid: summary?.paidBills ?? 0,
+                                unpaid: summary?.unpaidBills ?? 0,
+                            })}
                         </span>
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
-                        <strong className="text-foreground">
-                            {summary?.totalOrders ?? 0}
-                        </strong>{" "}
-                        orders across{" "}
-                        <strong className="text-foreground">
-                            {summary?.totalTableSessions ?? 0}
-                        </strong>{" "}
-                        table sessions
+                        {t("ordersSummary", {
+                            orders: summary?.totalOrders ?? 0,
+                            sessions: summary?.totalTableSessions ?? 0,
+                        })}
                     </p>
                 </div>
 
                 <div className="rounded-2xl border border-hairline bg-card p-4">
                     <div className="flex items-center justify-between text-slate-gray">
                         <span className="text-[12px] font-medium">
-                            Live Active Tables & Staff
+                            {t("liveActiveTablesStaff")}
                         </span>
                         <UtensilsCrossed className="size-4 text-primary" />
                     </div>
                     <p className="mt-2 text-[22px] font-bold tracking-tight tabular-nums text-foreground">
                         {summary?.activeTablesCount ?? 0}{" "}
                         <span className="text-[14px] font-normal text-slate-gray">
-                            / {summary?.totalTablesCount ?? 0} tables active now
+                            {t("tablesActiveNow", {
+                                total: summary?.totalTablesCount ?? 0,
+                            })}
                         </span>
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
-                        <strong className="text-foreground">
-                            {summary?.activeStaffShiftsCount ?? 0}
-                        </strong>{" "}
-                        staff on duty · Drops:{" "}
-                        <strong className="text-foreground">
+                        {t("staffOnDuty", {
+                            staff: summary?.activeStaffShiftsCount ?? 0,
+                        })}{" "}
+                        · {t("drops")}{" "}
+                        <strong className="font-semibold text-foreground">
                             {formatEtb(summary?.cashDropsVolume ?? 0)}
                         </strong>
                     </p>
@@ -672,7 +694,7 @@ export default function TenantActivityBoard({
                                 : "border-hairline bg-card text-foreground hover:bg-secondary",
                         )}
                     >
-                        All Branches ({branches.length})
+                        {t("allBranches", { count: branches.length })}
                     </button>
                     {branches.map(b => (
                         <button
@@ -721,7 +743,11 @@ export default function TenantActivityBoard({
                         )}
                     >
                         <Calendar className="size-3.5" />
-                        <span>Daily Breakdown ({dailyRows.length})</span>
+                        <span>
+                            {t("dailyBreakdownTab", {
+                                count: dailyRows.length,
+                            })}
+                        </span>
                     </button>
                     <button
                         type="button"
@@ -735,9 +761,10 @@ export default function TenantActivityBoard({
                     >
                         <UtensilsCrossed className="size-3.5" />
                         <span>
-                            Live Floor & Tables (
-                            {summary?.activeTablesCount ?? 0}/
-                            {summary?.totalTablesCount ?? 0} Active)
+                            {t("liveFloorTablesTab", {
+                                active: summary?.activeTablesCount ?? 0,
+                                total: summary?.totalTablesCount ?? 0,
+                            })}
                         </span>
                     </button>
                     <button
@@ -751,7 +778,9 @@ export default function TenantActivityBoard({
                         )}
                     >
                         <Activity className="size-3.5" />
-                        <span>All Movements ({movements.length})</span>
+                        <span>
+                            {t("allMovementsTab", { count: movements.length })}
+                        </span>
                     </button>
                 </div>
             </div>
@@ -762,15 +791,11 @@ export default function TenantActivityBoard({
                     columns={dailyColumns}
                     data={dailyRows}
                     rowKey={row => `${row.date}-${row.branchId}`}
-                    searchPlaceholder="Search by date, restaurant, or branch…"
+                    searchPlaceholder={t("searchDaily")}
                     searchText={row =>
                         `${row.date} ${row.tenantName} ${row.branchName} ${row.dailyCloseStatus}`
                     }
-                    empty={
-                        isLoading
-                            ? "Loading daily activity…"
-                            : "No activity recorded for the selected period."
-                    }
+                    empty={isLoading ? t("loadingDaily") : t("noDailyActivity")}
                     pagination={{
                         page: dailyPage,
                         limit: dailyPageSize,
@@ -793,15 +818,25 @@ export default function TenantActivityBoard({
                                 [
                                     {
                                         id: "all",
-                                        label: `All Tables (${allTables.length})`,
+                                        label: t("tableFilterAll", {
+                                            count: allTables.length,
+                                        }),
                                     },
                                     {
                                         id: "occupied",
-                                        label: `Occupied / Active (${allTables.filter(t => t.isOccupied).length})`,
+                                        label: t("tableFilterOccupied", {
+                                            count: allTables.filter(
+                                                tbl => tbl.isOccupied,
+                                            ).length,
+                                        }),
                                     },
                                     {
                                         id: "available",
-                                        label: `Available (${allTables.filter(t => !t.isOccupied).length})`,
+                                        label: t("tableFilterAvailable", {
+                                            count: allTables.filter(
+                                                tbl => !tbl.isOccupied,
+                                            ).length,
+                                        }),
                                     },
                                 ] as const
                             ).map(f => (
@@ -827,20 +862,21 @@ export default function TenantActivityBoard({
 
                     {filteredTables.length === 0 ? (
                         <div className="rounded-2xl border border-hairline bg-card p-8 text-center text-[13px] text-slate-gray">
-                            No tables match the current filter.
+                            {t("noTablesMatch")}
                         </div>
                     ) : (
                         <>
                             <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                                 {paginatedTables.map(
-                                    (t: TenantActivityTableItem) => (
+                                    (tblItem: TenantActivityTableItem) => (
                                         <div
-                                            key={t.tableId}
+                                            key={tblItem.tableId}
                                             className={cn(
                                                 "rounded-2xl border p-3.5 transition-colors",
-                                                t.status === "BILL_REQUESTED"
+                                                tblItem.status ===
+                                                    "BILL_REQUESTED"
                                                     ? "border-amber-500/40 bg-amber-500/5"
-                                                    : t.isOccupied
+                                                    : tblItem.isOccupied
                                                       ? "border-emerald-500/40 bg-emerald-500/5"
                                                       : "border-hairline bg-card",
                                             )}
@@ -849,9 +885,9 @@ export default function TenantActivityBoard({
                                                 <div>
                                                     <div className="flex items-center gap-1.5">
                                                         <span className="text-[14px] font-bold text-foreground">
-                                                            {t.tableName}
+                                                            {tblItem.tableName}
                                                         </span>
-                                                        {t.isVip ? (
+                                                        {tblItem.isVip ? (
                                                             <Badge
                                                                 variant="outline"
                                                                 className="border-amber-500/40 text-[10px] text-amber-600"
@@ -861,64 +897,74 @@ export default function TenantActivityBoard({
                                                         ) : null}
                                                     </div>
                                                     <p className="text-[11px] text-slate-gray">
-                                                        {t.branchName}
+                                                        {tblItem.branchName}
                                                         {!effectiveTenantId
-                                                            ? ` · ${t.tenantName}`
+                                                            ? ` · ${tblItem.tenantName}`
                                                             : ""}
                                                     </p>
                                                 </div>
                                                 <Badge
                                                     variant={
-                                                        t.isOccupied
+                                                        tblItem.isOccupied
                                                             ? "success"
                                                             : "secondary"
                                                     }
                                                     className="text-[10.5px]"
                                                 >
-                                                    {t.status}
+                                                    {tblItem.status}
                                                 </Badge>
                                             </div>
 
                                             <div className="mt-3 space-y-1 border-t border-hairline pt-2.5 text-[12px]">
                                                 <div className="flex items-center justify-between">
                                                     <span className="text-slate-gray">
-                                                        Waiter
+                                                        {t("waiter")}
                                                     </span>
                                                     <span className="font-medium text-foreground">
-                                                        {t.waiterName ||
-                                                            "Unassigned"}
+                                                        {tblItem.waiterName ||
+                                                            t("unassigned")}
                                                     </span>
                                                 </div>
-                                                {t.isOccupied ? (
+                                                {tblItem.isOccupied ? (
                                                     <>
                                                         <div className="flex items-center justify-between">
                                                             <span className="text-slate-gray">
-                                                                Orders / Guests
+                                                                {t(
+                                                                    "ordersGuests",
+                                                                )}
                                                             </span>
                                                             <span className="font-medium text-foreground">
-                                                                {t.ordersCount}{" "}
-                                                                order(s)
-                                                                {t.guestCount
-                                                                    ? ` · ${t.guestCount} guests`
+                                                                {t(
+                                                                    "orderCount",
+                                                                    {
+                                                                        count: tblItem.ordersCount,
+                                                                    },
+                                                                )}
+                                                                {tblItem.guestCount
+                                                                    ? ` ${t("guestCount", { count: tblItem.guestCount })}`
                                                                     : ""}
                                                             </span>
                                                         </div>
                                                         <div className="flex items-center justify-between">
                                                             <span className="text-slate-gray">
-                                                                Running Bill
+                                                                {t(
+                                                                    "runningBill",
+                                                                )}
                                                             </span>
                                                             <span className="font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
                                                                 {formatEtb(
-                                                                    t.runningBillTotal,
+                                                                    tblItem.runningBillTotal,
                                                                 )}
                                                             </span>
                                                         </div>
                                                     </>
                                                 ) : (
                                                     <div className="flex items-center justify-between text-slate-gray">
-                                                        <span>Session</span>
                                                         <span>
-                                                            Idle / Available
+                                                            {t("session")}
+                                                        </span>
+                                                        <span>
+                                                            {t("idleAvailable")}
                                                         </span>
                                                     </div>
                                                 )}
@@ -931,21 +977,17 @@ export default function TenantActivityBoard({
                             {totalTablePages > 1 ? (
                                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-hairline bg-card px-4 py-3">
                                     <span className="text-[12px] text-slate-gray">
-                                        Showing{" "}
-                                        <span className="font-semibold text-foreground">
-                                            {(tablesPage - 1) * tablesPerPage +
-                                                1}
-                                            –
-                                            {Math.min(
+                                        {t("showingTables", {
+                                            start:
+                                                (tablesPage - 1) *
+                                                    tablesPerPage +
+                                                1,
+                                            end: Math.min(
                                                 tablesPage * tablesPerPage,
                                                 filteredTables.length,
-                                            )}
-                                        </span>{" "}
-                                        of{" "}
-                                        <span className="font-semibold text-foreground">
-                                            {filteredTables.length}
-                                        </span>{" "}
-                                        tables
+                                            ),
+                                            total: filteredTables.length,
+                                        })}
                                     </span>
                                     <div className="flex items-center gap-1.5">
                                         <Button
@@ -960,17 +1002,13 @@ export default function TenantActivityBoard({
                                             }
                                         >
                                             <ChevronLeft className="size-3.5 mr-1" />
-                                            Previous
+                                            {t("previous")}
                                         </Button>
                                         <span className="px-2 font-mono text-[12px] text-muted-foreground">
-                                            Page{" "}
-                                            <span className="font-semibold text-foreground">
-                                                {tablesPage}
-                                            </span>{" "}
-                                            of{" "}
-                                            <span className="font-semibold text-foreground">
-                                                {totalTablePages}
-                                            </span>
+                                            {t("pageOf", {
+                                                page: tablesPage,
+                                                total: totalTablePages,
+                                            })}
                                         </span>
                                         <Button
                                             variant="outline"
@@ -988,7 +1026,7 @@ export default function TenantActivityBoard({
                                                 )
                                             }
                                         >
-                                            Next
+                                            {t("next")}
                                             <ChevronRight className="size-3.5 ml-1" />
                                         </Button>
                                     </div>
@@ -1019,7 +1057,7 @@ export default function TenantActivityBoard({
                                             : "border-hairline bg-card text-slate-gray hover:text-foreground",
                                     )}
                                 >
-                                    {cat.label}
+                                    {t(`movementCategories.${cat.id}` as any)}
                                 </button>
                             ))}
                         </div>
@@ -1032,7 +1070,7 @@ export default function TenantActivityBoard({
                                     setMovementSearch(e.target.value);
                                     setMovementPage(1);
                                 }}
-                                placeholder="Filter movements, staff, bill #…"
+                                placeholder={t("filterMovementsPlaceholder")}
                                 className="h-9 rounded-xl pl-8 text-[12px]"
                             />
                         </div>
@@ -1042,8 +1080,8 @@ export default function TenantActivityBoard({
                         {movements.length === 0 ? (
                             <div className="p-8 text-center text-[13px] text-slate-gray">
                                 {isLoading || isFetching
-                                    ? "Loading movements…"
-                                    : "No movements found for the selected filters."}
+                                    ? t("loadingMovements")
+                                    : t("noMovements")}
                             </div>
                         ) : (
                             <>
@@ -1119,27 +1157,22 @@ export default function TenantActivityBoard({
                                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-hairline px-4 py-3 bg-card/60">
                                     <div className="flex items-center gap-3 text-[12px] text-slate-gray">
                                         <span>
-                                            Showing{" "}
-                                            <span className="font-semibold text-foreground">
-                                                {(movementPage - 1) *
-                                                    movementPageSize +
-                                                    1}
-                                                –
-                                                {Math.min(
+                                            {t("showingMovements", {
+                                                start:
+                                                    (movementPage - 1) *
+                                                        movementPageSize +
+                                                    1,
+                                                end: Math.min(
                                                     movementPage *
                                                         movementPageSize,
                                                     totalMovements,
-                                                )}
-                                            </span>{" "}
-                                            of{" "}
-                                            <span className="font-semibold text-foreground">
-                                                {totalMovements}
-                                            </span>{" "}
-                                            movements
+                                                ),
+                                                total: totalMovements,
+                                            })}
                                         </span>
                                         <div className="flex items-center gap-1.5 pl-2 border-l border-hairline">
                                             <span className="text-[11px]">
-                                                Per page:
+                                                {t("perPage")}
                                             </span>
                                             {[15, 25, 50, 100].map(sz => (
                                                 <button
@@ -1177,17 +1210,13 @@ export default function TenantActivityBoard({
                                             }
                                         >
                                             <ChevronLeft className="size-3.5 mr-1" />
-                                            Previous
+                                            {t("previous")}
                                         </Button>
                                         <span className="px-2 font-mono text-[12px] text-muted-foreground">
-                                            Page{" "}
-                                            <span className="font-semibold text-foreground">
-                                                {movementPage}
-                                            </span>{" "}
-                                            of{" "}
-                                            <span className="font-semibold text-foreground">
-                                                {totalMovementPages}
-                                            </span>
+                                            {t("pageOf", {
+                                                page: movementPage,
+                                                total: totalMovementPages,
+                                            })}
                                         </span>
                                         <Button
                                             variant="outline"
@@ -1207,7 +1236,7 @@ export default function TenantActivityBoard({
                                                 )
                                             }
                                         >
-                                            Next
+                                            {t("next")}
                                             <ChevronRight className="size-3.5 ml-1" />
                                         </Button>
                                     </div>

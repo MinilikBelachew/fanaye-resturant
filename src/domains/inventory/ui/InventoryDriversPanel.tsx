@@ -104,7 +104,9 @@ export function InventoryDriversPanel() {
         e.preventDefault();
         const trimmedName = formData.displayName.trim();
         if (!trimmedName) {
-            toast.error("Driver display name is required");
+            toast.error(
+                isAm ? "የአሽከርካሪው ስም ያስፈልጋል" : "Driver display name is required",
+            );
             return;
         }
 
@@ -120,7 +122,11 @@ export function InventoryDriversPanel() {
                         status: formData.status,
                     },
                 }).unwrap();
-                toast.success(`Driver "${trimmedName}" updated`);
+                toast.success(
+                    isAm
+                        ? `የአሽከርካሪ "${trimmedName}" መረጃ ተሻሽሏል`
+                        : `Driver "${trimmedName}" updated`,
+                );
             } else {
                 await createDriver({
                     displayName: trimmedName,
@@ -128,11 +134,18 @@ export function InventoryDriversPanel() {
                     licencePlate: formData.licencePlate.trim() || undefined,
                     vehicleDesc: formData.vehicleDesc.trim() || undefined,
                 }).unwrap();
-                toast.success(`Driver "${trimmedName}" registered`);
+                toast.success(
+                    isAm
+                        ? `አሽከርካሪ "${trimmedName}" ተመዝግቧል`
+                        : `Driver "${trimmedName}" registered`,
+                );
             }
             closeSideSheet();
         } catch (err) {
-            toast.fromUnknown(err, "Failed to save driver");
+            toast.fromUnknown(
+                err,
+                isAm ? "አሽከርካሪውን መመዝገብ አልተቻለም" : "Failed to save driver",
+            );
         }
     }
 
@@ -140,10 +153,17 @@ export function InventoryDriversPanel() {
         if (!deletingDriver) return;
         try {
             await deleteDriver(deletingDriver.id).unwrap();
-            toast.success(`Driver "${deletingDriver.displayName}" removed`);
+            toast.success(
+                isAm
+                    ? `አሽከርካሪ "${deletingDriver.displayName}" ተሰርዟል`
+                    : `Driver "${deletingDriver.displayName}" removed`,
+            );
             setDeletingDriver(null);
         } catch (err) {
-            toast.fromUnknown(err, "Failed to delete driver");
+            toast.fromUnknown(
+                err,
+                isAm ? "አሽከርካሪውን መሰረዝ አልተቻለም" : "Failed to delete driver",
+            );
         }
     }
 
@@ -371,8 +391,12 @@ export function InventoryDriversPanel() {
                                 </div>
                                 <h3 className="text-[16px] font-bold text-foreground">
                                     {editingDriver
-                                        ? "Edit Driver"
-                                        : "Add Driver"}
+                                        ? isAm
+                                            ? "የአሽከርካሪ መረጃ አድስ"
+                                            : "Edit Driver"
+                                        : isAm
+                                          ? "አሽከርካሪ መዝግብ"
+                                          : "Add Driver"}
                                 </h3>
                             </div>
                             <button
@@ -390,7 +414,9 @@ export function InventoryDriversPanel() {
                         >
                             <label className="block space-y-1.5 text-[12px]">
                                 <span className="font-semibold text-foreground">
-                                    Driver Full Name{" "}
+                                    {isAm
+                                        ? "የአሽከርካሪው ሙሉ ስም"
+                                        : "Driver Full Name"}{" "}
                                     <span className="text-rose-500">*</span>
                                 </span>
                                 <input
@@ -402,7 +428,11 @@ export function InventoryDriversPanel() {
                                             displayName: e.target.value,
                                         }))
                                     }
-                                    placeholder="e.g. Abebe Bikila"
+                                    placeholder={
+                                        isAm
+                                            ? "ለምሳሌ አበበ ቢቂላ"
+                                            : "e.g. Abebe Bikila"
+                                    }
                                     required
                                     className="h-10 w-full rounded-xl border border-hairline bg-background px-3 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-amber-500"
                                 />
@@ -410,7 +440,7 @@ export function InventoryDriversPanel() {
 
                             <label className="block space-y-1.5 text-[12px]">
                                 <span className="font-semibold text-foreground">
-                                    Phone Number
+                                    {isAm ? "ስልክ ቁጥር" : "Phone Number"}
                                 </span>
                                 <input
                                     type="text"
@@ -428,7 +458,9 @@ export function InventoryDriversPanel() {
 
                             <label className="block space-y-1.5 text-[12px]">
                                 <span className="font-semibold text-foreground">
-                                    Vehicle Type / Model
+                                    {isAm
+                                        ? "የተሽከርካሪ ዓይነት / ሞዴል"
+                                        : "Vehicle Type / Model"}
                                 </span>
                                 <input
                                     type="text"
@@ -439,14 +471,18 @@ export function InventoryDriversPanel() {
                                             vehicleDesc: e.target.value,
                                         }))
                                     }
-                                    placeholder="e.g. Isuzu NPR Chilled Box, Toyota Hiace Van"
+                                    placeholder={
+                                        isAm
+                                            ? "ለምሳሌ አይሱዙ ማቀዝቀዣ ያለው፣ ቶዮታ ሃይኤስ"
+                                            : "e.g. Isuzu NPR Chilled Box, Toyota Hiace Van"
+                                    }
                                     className="h-10 w-full rounded-xl border border-hairline bg-background px-3 text-[13px] text-foreground focus:outline-none focus:ring-1 focus:ring-amber-500"
                                 />
                             </label>
 
                             <label className="block space-y-1.5 text-[12px]">
                                 <span className="font-semibold text-foreground">
-                                    Licence Plate Number
+                                    {isAm ? "የሰሌዳ ቁጥር" : "Licence Plate Number"}
                                 </span>
                                 <input
                                     type="text"
@@ -466,11 +502,13 @@ export function InventoryDriversPanel() {
                             {editingDriver && (
                                 <div className="space-y-1.5 text-[12px]">
                                     <span className="font-semibold text-foreground">
-                                        Status
+                                        {isAm ? "ሁኔታ" : "Status"}
                                     </span>
                                     <InventoryNiceSelect
                                         value={formData.status}
-                                        placeholder="Select status"
+                                        placeholder={
+                                            isAm ? "ሁኔታ ይምረጡ" : "Select status"
+                                        }
                                         onChange={v =>
                                             setFormData(s => ({
                                                 ...s,
@@ -480,11 +518,13 @@ export function InventoryDriversPanel() {
                                         options={[
                                             {
                                                 value: "ACTIVE",
-                                                label: "Active",
+                                                label: isAm ? "ንቁ" : "Active",
                                             },
                                             {
                                                 value: "INACTIVE",
-                                                label: "Inactive",
+                                                label: isAm
+                                                    ? "ያልነቃ"
+                                                    : "Inactive",
                                             },
                                         ]}
                                     />
@@ -497,7 +537,7 @@ export function InventoryDriversPanel() {
                                     onClick={closeSideSheet}
                                     className="h-10 rounded-xl border border-hairline px-4 text-[13px] font-medium text-slate-gray hover:bg-secondary hover:text-foreground transition-colors"
                                 >
-                                    Cancel
+                                    {isAm ? "ይቅር" : "Cancel"}
                                 </button>
                                 <button
                                     type="submit"
@@ -509,8 +549,12 @@ export function InventoryDriversPanel() {
                                     )}
                                     <span>
                                         {editingDriver
-                                            ? "Update Driver"
-                                            : "Save Driver"}
+                                            ? isAm
+                                                ? "መረጃውን አድስ"
+                                                : "Update Driver"
+                                            : isAm
+                                              ? "አሽከርካሪ መዝግብ"
+                                              : "Save Driver"}
                                     </span>
                                 </button>
                             </div>
@@ -529,14 +573,26 @@ export function InventoryDriversPanel() {
                             </div>
                             <div>
                                 <h3 className="text-[16px] font-bold text-foreground">
-                                    Delete Driver
+                                    {isAm ? "አሽከርካሪ ሰርዝ" : "Delete Driver"}
                                 </h3>
                                 <p className="text-[12px] text-slate-gray mt-0.5">
-                                    Are you sure you want to remove{" "}
-                                    <strong className="text-foreground">
-                                        {deletingDriver.displayName}
-                                    </strong>{" "}
-                                    from the fleet drivers list?
+                                    {isAm ? (
+                                        <>
+                                            እርግጠኛ ነዎት{" "}
+                                            <strong className="text-foreground">
+                                                {deletingDriver.displayName}
+                                            </strong>{" "}
+                                            ከአሽከርካሪዎች ዝርዝር ውስጥ መሰረዝ ይፈልጋሉ?
+                                        </>
+                                    ) : (
+                                        <>
+                                            Are you sure you want to remove{" "}
+                                            <strong className="text-foreground">
+                                                {deletingDriver.displayName}
+                                            </strong>{" "}
+                                            from the fleet drivers list?
+                                        </>
+                                    )}
                                 </p>
                             </div>
                         </div>
@@ -548,7 +604,7 @@ export function InventoryDriversPanel() {
                                 onClick={() => setDeletingDriver(null)}
                                 className="h-10 rounded-xl border border-hairline px-4 text-[13px] font-medium text-slate-gray hover:bg-secondary hover:text-foreground transition-colors"
                             >
-                                Cancel
+                                {isAm ? "ይቅር" : "Cancel"}
                             </button>
                             <button
                                 type="button"
@@ -559,7 +615,9 @@ export function InventoryDriversPanel() {
                                 {isDeleting && (
                                     <RestorchSpinner className="size-4 " />
                                 )}
-                                <span>Delete Driver</span>
+                                <span>
+                                    {isAm ? "አሽከርካሪ ሰርዝ" : "Delete Driver"}
+                                </span>
                             </button>
                         </div>
                     </div>

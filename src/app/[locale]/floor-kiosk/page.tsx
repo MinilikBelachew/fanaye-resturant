@@ -677,7 +677,7 @@ export default function FloorKioskPage() {
                                 }}
                                 className="h-12 rounded-xl border border-border bg-secondary/20 text-xs font-semibold text-muted-foreground hover:bg-secondary"
                             >
-                                Clear
+                                {isAm ? "አጽዳ" : "Clear"}
                             </button>
                             <button
                                 type="button"

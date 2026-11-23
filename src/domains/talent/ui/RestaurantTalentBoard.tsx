@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useListBranchesQuery } from "@/context/services/branchesApi";
 import { filePublicUrl } from "@/domains/catalog/application/mapAdminMenu";
 import {
@@ -63,6 +64,8 @@ const POS_ROLES = [
 ];
 
 export default function RestaurantTalentBoard() {
+    const t = useTranslations("talent");
+    const tCommon = useTranslations("common");
     const [tab, setTab] = useState<"browse" | "requests">("browse");
 
     // Browse filters
@@ -144,17 +147,15 @@ export default function RestaurantTalentBoard() {
         e.preventDefault();
         if (!hireTarget) return;
         if (branches.length > 0 && !branchId) {
-            toast.error("Please select a branch.");
+            toast.error(t("branchRequired"));
             return;
         }
         if (!posRoleCode) {
-            toast.error("Please select a POS staff role.");
+            toast.error(t("roleRequired"));
             return;
         }
         if (pin.trim().length < 4) {
-            toast.error(
-                "Initial PIN / password must be at least 4 characters.",
-            );
+            toast.error(t("pinMinLength"));
             return;
         }
 
@@ -166,7 +167,7 @@ export default function RestaurantTalentBoard() {
                 pin: pin.trim(),
                 notes: contactNotes.trim() || undefined,
             }).unwrap();
-            toast.success(`${hireTarget.fullName} hired and added to Staff!`);
+            toast.success(t("hiredSuccess", { name: hireTarget.fullName }));
             setHireTarget(null);
             setSelectedProfile(null);
             setTab("requests");
@@ -252,7 +253,7 @@ export default function RestaurantTalentBoard() {
                                         setBrowseSearch(e.target.value);
                                         setBrowsePage(1);
                                     }}
-                                    placeholder="Search name, role, skill..."
+                                    placeholder={t("searchPlaceholder")}
                                     className="w-full rounded-lg border border-border bg-background py-2 pr-3 pl-9 text-sm text-foreground outline-none focus:border-primary"
                                 />
                             </div>
@@ -263,7 +264,7 @@ export default function RestaurantTalentBoard() {
                                     setLocation(e.target.value);
                                     setBrowsePage(1);
                                 }}
-                                placeholder="Filter location (e.g. Bole)"
+                                placeholder={t("locationPlaceholder")}
                                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
                             />
                             <select
@@ -278,7 +279,9 @@ export default function RestaurantTalentBoard() {
                                 }}
                                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
                             >
-                                <option value="ALL">All Availability</option>
+                                <option value="ALL">
+                                    {t("allAvailability")}
+                                </option>
                                 {Object.entries(TALENT_AVAILABILITY_LABELS).map(
                                     ([k, v]) => (
                                         <option key={k} value={k}>
@@ -868,11 +871,10 @@ export default function RestaurantTalentBoard() {
                                 </button>
                                 <div>
                                     <h2 className="text-base font-bold text-foreground">
-                                        Hire & Onboard to Staff
+                                        {t("hireTitle")}
                                     </h2>
                                     <p className="text-xs text-muted-foreground">
-                                        Complete onboarding details for POS
-                                        access
+                                        {t("hireSubtitle")}
                                     </p>
                                 </div>
                             </div>
@@ -923,7 +925,7 @@ export default function RestaurantTalentBoard() {
                                 {branches.length > 0 ? (
                                     <div>
                                         <label className="mb-1 block text-xs font-medium text-foreground">
-                                            Branch *
+                                            {t("branchLabel")}
                                         </label>
                                         <select
                                             required
@@ -944,7 +946,7 @@ export default function RestaurantTalentBoard() {
 
                                 <div>
                                     <label className="mb-1 block text-xs font-medium text-foreground">
-                                        POS Staff Role *
+                                        {t("posRoleLabel")}
                                     </label>
                                     <select
                                         required
@@ -967,7 +969,7 @@ export default function RestaurantTalentBoard() {
 
                                 <div>
                                     <label className="mb-1 block text-xs font-medium text-foreground">
-                                        Initial PIN / Password *
+                                        {t("pinLabel")}
                                     </label>
                                     <input
                                         type="text"
@@ -975,19 +977,17 @@ export default function RestaurantTalentBoard() {
                                         minLength={4}
                                         value={pin}
                                         onChange={e => setPin(e.target.value)}
-                                        placeholder="Enter at least 4 characters (e.g. 4821)"
+                                        placeholder={t("pinPlaceholder")}
                                         className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
                                     />
                                     <p className="mt-1 text-[11px] text-muted-foreground">
-                                        Used as their initial POS/app login
-                                        credential if they do not already have
-                                        an account.
+                                        {t("pinHint")}
                                     </p>
                                 </div>
 
                                 <div>
                                     <label className="mb-1 block text-xs font-medium text-foreground">
-                                        Onboarding Notes (Optional)
+                                        {t("notesLabel")}
                                     </label>
                                     <textarea
                                         rows={3}
@@ -995,7 +995,7 @@ export default function RestaurantTalentBoard() {
                                         onChange={e =>
                                             setContactNotes(e.target.value)
                                         }
-                                        placeholder="Start date, shift schedule, agreed pay..."
+                                        placeholder={t("notesPlaceholder")}
                                         className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
                                     />
                                 </div>
@@ -1007,16 +1007,14 @@ export default function RestaurantTalentBoard() {
                                     onClick={() => setHireTarget(null)}
                                     className="rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
                                 >
-                                    Back
+                                    {tCommon("cancel")}
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isHiring}
                                     className="flex-1 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
                                 >
-                                    {isHiring
-                                        ? "Onboarding..."
-                                        : "Confirm Hire & Add to Staff"}
+                                    {isHiring ? t("hiring") : t("confirmHire")}
                                 </button>
                             </div>
                         </form>

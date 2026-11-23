@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     BedDouble,
@@ -64,6 +65,7 @@ function IdImageField({
     value: string;
     onChange: (url: string) => void;
 }) {
+    const t = useTranslations("rooms");
     const [upload, { isLoading }] = useUploadMenuImageMutation();
     const fileRef = useRef<HTMLInputElement>(null);
 
@@ -73,9 +75,9 @@ function IdImageField({
         try {
             const res = await upload(file).unwrap();
             onChange(res.file.path);
-            toast.success("ID image uploaded");
+            toast.success(t("idUploaded"));
         } catch (err) {
-            toast.fromUnknown(err, "Upload failed");
+            toast.fromUnknown(err, t("uploadFailed"));
         }
         e.target.value = "";
     }
@@ -84,7 +86,9 @@ function IdImageField({
         <div className="space-y-1.5">
             <Label>
                 Guest ID photo{" "}
-                <span className="text-[11px] text-slate-gray">optional</span>
+                <span className="text-[11px] text-slate-gray">
+                    {t("optional")}
+                </span>
             </Label>
             {value ? (
                 <div className="relative overflow-hidden rounded-xl border border-hairline">
@@ -144,6 +148,7 @@ function CheckInSheet({
     calendarMode: CalendarMode;
     onClose: () => void;
 }) {
+    const t = useTranslations("rooms");
     const [checkIn, { isLoading }] = useCheckInStayMutation();
 
     const [hotelRoomId, setHotelRoomId] = useState(rooms[0]?.id ?? "");
@@ -175,7 +180,7 @@ function CheckInSheet({
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault();
         if (!hotelRoomId || !guestName.trim() || !checkOutDate) {
-            toast.error("Room, guest name, and checkout date are required");
+            toast.error(t("checkInRequired"));
             return;
         }
         const plannedCheckOutAt = `${checkOutDate}T${checkOutTime}:00`;
@@ -190,11 +195,11 @@ function CheckInSheet({
                 plannedCheckOutAt,
                 guestIdImageUrl: idImageUrl || undefined,
             }).unwrap();
-            toast.success(`${guestName.trim()} checked in`);
+            toast.success(t("checkInSuccess", { name: guestName.trim() }));
             reset();
             onClose();
         } catch (err) {
-            toast.fromUnknown(err, "Check-in failed");
+            toast.fromUnknown(err, t("checkInFailed"));
         }
     }
 
@@ -264,10 +269,12 @@ function CheckInSheet({
                                 onChange={e => setHotelRoomId(e.target.value)}
                                 className="h-10 w-full rounded-xl border border-hairline bg-card px-3 text-[13px] focus:outline-none focus:ring-1 focus:ring-brand"
                             >
-                                <option value="">Select room</option>
+                                <option value="">{t("selectRoom")}</option>
                                 {rooms.map(room => (
                                     <option key={room.id} value={room.id}>
-                                        Room {room.roomNumber}
+                                        {t("roomNumber", {
+                                            number: room.roomNumber,
+                                        })}
                                         {room.floor
                                             ? ` · Floor ${room.floor}`
                                             : ""}
@@ -288,7 +295,7 @@ function CheckInSheet({
                                     id="fd-name"
                                     value={guestName}
                                     onChange={e => setGuestName(e.target.value)}
-                                    placeholder="Full name"
+                                    placeholder={t("guestNamePlaceholder")}
                                     className="h-10 rounded-xl pl-9"
                                     autoFocus
                                 />

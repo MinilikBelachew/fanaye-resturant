@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ChangeEvent } from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
     formatCalendarDateTime,
     useCalendarMode,
@@ -87,6 +87,7 @@ function getPresetDates(preset: DatePreset): { from?: string; to?: string } {
 
 export default function SuperAdminMarketPricesBoard() {
     const locale = useLocale();
+    const t = useTranslations("marketPrices");
     const { calendarMode } = useCalendarMode();
     const [tab, setTab] = useState<AdminTab>("prices");
     const [search, setSearch] = useState("");
@@ -210,7 +211,7 @@ export default function SuperAdminMarketPricesBoard() {
             priceDrafts[key] ?? (fallbackPrice ? String(fallbackPrice) : "");
         const numeric = Number(raw);
         if (!raw || Number.isNaN(numeric) || numeric <= 0) {
-            toast.error("Enter a valid price greater than 0.");
+            toast.error(t("invalidPrice"));
             return;
         }
 
@@ -226,7 +227,7 @@ export default function SuperAdminMarketPricesBoard() {
                 delete next[key];
                 return next;
             });
-            toast.success("Price updated.");
+            toast.success(t("priceUpdated"));
         } catch (err: unknown) {
             const msg =
                 (err as { data?: { message?: string } })?.data?.message ??

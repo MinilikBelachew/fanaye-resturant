@@ -2,6 +2,7 @@
 
 import { use, useMemo, useRef, useState } from "react";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
+import { useLocale } from "next-intl";
 import {
     ArrowLeft,
     BedDouble,
@@ -67,6 +68,7 @@ function IdImageField({
     value: string;
     onChange: (url: string) => void;
 }) {
+    const isAm = useLocale() === "am";
     const [upload, { isLoading }] = useUploadMenuImageMutation();
     const fileRef = useRef<HTMLInputElement>(null);
 
@@ -76,9 +78,9 @@ function IdImageField({
         try {
             const res = await upload(file).unwrap();
             onChange(res.file.path);
-            toast.success("ID image uploaded");
+            toast.success(isAm ? "የመታወቂያ ፎቶ ተሰቅሏል" : "ID image uploaded");
         } catch (err) {
-            toast.fromUnknown(err, "Upload failed");
+            toast.fromUnknown(err, isAm ? "ፎቶ መስቀል አልተቻለም" : "Upload failed");
         }
         e.target.value = "";
     }
@@ -86,8 +88,10 @@ function IdImageField({
     return (
         <div className="space-y-1.5">
             <Label>
-                Guest ID photo{" "}
-                <span className="text-slate-gray text-[11px]">optional</span>
+                {isAm ? "የእንግዳ መታወቂያ ፎቶ" : "Guest ID photo"}{" "}
+                <span className="text-slate-gray text-[11px]">
+                    {isAm ? "አማራጭ" : "optional"}
+                </span>
             </Label>
             {value ? (
                 <div className="relative w-full overflow-hidden rounded-xl border border-hairline">
@@ -149,6 +153,7 @@ function CheckInSheet({
     onClose: () => void;
     calendarMode: CalendarMode;
 }) {
+    const isAm = useLocale() === "am";
     const [checkIn, { isLoading }] = useCheckInStayMutation();
     const [guestName, setGuestName] = useState("");
     const [guestPhone, setGuestPhone] = useState("");
@@ -164,7 +169,11 @@ function CheckInSheet({
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault();
         if (!guestName.trim() || !checkOutDate) {
-            toast.error("Guest name and checkout date are required");
+            toast.error(
+                isAm
+                    ? "የእንግዳ ስም እና የመውጫ ቀን ያስፈልጋል"
+                    : "Guest name and checkout date are required",
+            );
             return;
         }
         // Combine date + time → ISO string
@@ -182,7 +191,11 @@ function CheckInSheet({
                 plannedCheckOutAt,
                 guestIdImageUrl: idImageUrl || undefined,
             }).unwrap();
-            toast.success(`${guestName.trim()} checked in`);
+            toast.success(
+                isAm
+                    ? `${guestName.trim()} ተመዝግቧል`
+                    : `${guestName.trim()} checked in`,
+            );
             // Reset
             setGuestName("");
             setGuestPhone("");
@@ -196,7 +209,7 @@ function CheckInSheet({
             setIdImageUrl("");
             onClose();
         } catch (err) {
-            toast.fromUnknown(err, "Check-in failed");
+            toast.fromUnknown(err, isAm ? "ምዝገባው አልተሳካም" : "Check-in failed");
         }
     }
 
@@ -225,7 +238,7 @@ function CheckInSheet({
                         </div>
                         <div>
                             <h2 className="text-[16px] font-semibold">
-                                Check in guest
+                                {isAm ? "እንግዳ መዝግብ" : "Check in guest"}
                             </h2>
                             <p className="mt-0.5 text-[12px] text-slate-gray">
                                 {roomLabel}
@@ -249,7 +262,7 @@ function CheckInSheet({
                         {/* Guest name */}
                         <div className="space-y-1.5">
                             <Label htmlFor="ci-name">
-                                Guest name{" "}
+                                {isAm ? "የእንግዳ ሙሉ ስም" : "Guest name"}{" "}
                                 <span className="text-destructive">*</span>
                             </Label>
                             <div className="relative">
@@ -258,7 +271,7 @@ function CheckInSheet({
                                     id="ci-name"
                                     value={guestName}
                                     onChange={e => setGuestName(e.target.value)}
-                                    placeholder="Full name"
+                                    placeholder={isAm ? "ሙሉ ስም" : "Full name"}
                                     className="h-10 rounded-xl pl-9"
                                     autoFocus
                                 />
@@ -268,7 +281,9 @@ function CheckInSheet({
                         {/* Phone + Adults */}
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1.5">
-                                <Label htmlFor="ci-phone">Phone</Label>
+                                <Label htmlFor="ci-phone">
+                                    {isAm ? "ስልክ ቁጥር" : "Phone"}
+                                </Label>
                                 <div className="relative">
                                     <Phone className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-gray" />
                                     <Input
@@ -283,7 +298,9 @@ function CheckInSheet({
                                 </div>
                             </div>
                             <div className="space-y-1.5">
-                                <Label htmlFor="ci-adults">Adults</Label>
+                                <Label htmlFor="ci-adults">
+                                    {isAm ? "አዋቂዎች" : "Adults"}
+                                </Label>
                                 <div className="relative">
                                     <Users className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-gray" />
                                     <Input
@@ -304,7 +321,9 @@ function CheckInSheet({
                         {/* Kids + Meal plan */}
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1.5">
-                                <Label htmlFor="ci-kids">Children</Label>
+                                <Label htmlFor="ci-kids">
+                                    {isAm ? "ልጆች" : "Children"}
+                                </Label>
                                 <Input
                                     id="ci-kids"
                                     type="number"
@@ -316,7 +335,7 @@ function CheckInSheet({
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <Label>Meal plan</Label>
+                                <Label>{isAm ? "የምግብ እቅድ" : "Meal plan"}</Label>
                                 <div className="grid grid-cols-2 gap-1.5">
                                     {(["NONE", "BREAKFAST"] as const).map(
                                         opt => (
@@ -332,11 +351,17 @@ function CheckInSheet({
                                                 )}
                                             >
                                                 {opt === "NONE" ? (
-                                                    "None"
+                                                    isAm ? (
+                                                        "ምንም"
+                                                    ) : (
+                                                        "None"
+                                                    )
                                                 ) : (
                                                     <span className="flex items-center justify-center gap-1">
                                                         <Coffee className="size-3" />
-                                                        Breakfast
+                                                        {isAm
+                                                            ? "ቁርስ"
+                                                            : "Breakfast"}
                                                     </span>
                                                 )}
                                             </button>
@@ -348,7 +373,11 @@ function CheckInSheet({
 
                         {/* Check-in date/time */}
                         <div className="space-y-1.5">
-                            <Label>Check-in date & time</Label>
+                            <Label>
+                                {isAm
+                                    ? "የመግቢያ ቀን እና ሰዓት"
+                                    : "Check-in date & time"}
+                            </Label>
                             <div className="grid grid-cols-2 gap-2">
                                 <div className="relative">
                                     <Calendar className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-gray" />
@@ -385,7 +414,7 @@ function CheckInSheet({
                         {/* Checkout date/time */}
                         <div className="space-y-1.5">
                             <Label>
-                                Planned checkout{" "}
+                                {isAm ? "የታቀደ የመውጫ ቀን" : "Planned checkout"}{" "}
                                 <span className="text-destructive">*</span>
                             </Label>
                             <div className="grid grid-cols-2 gap-2">
@@ -435,7 +464,7 @@ function CheckInSheet({
                             onClick={onClose}
                             className="h-9 rounded-xl px-4 text-[13px] font-medium text-slate-gray hover:bg-secondary"
                         >
-                            Cancel
+                            {isAm ? "ይቅር" : "Cancel"}
                         </button>
                         <button
                             type="submit"
@@ -449,7 +478,7 @@ function CheckInSheet({
                             ) : (
                                 <LogIn className="size-4" />
                             )}
-                            Check in
+                            {isAm ? "መዝግብ" : "Check in"}
                         </button>
                     </div>
                 </form>
@@ -466,6 +495,7 @@ function StayCard({
     stay: RoomStay;
     calendarMode: CalendarMode;
 }) {
+    const isAm = useLocale() === "am";
     const [checkOut, { isLoading: checkingOut }] = useCheckOutStayMutation();
     const [redeem, { isLoading: redeeming }] = useRedeemBreakfastMutation();
 
@@ -484,12 +514,23 @@ function StayCard({
         });
 
     async function handleCheckOut() {
-        if (!confirm(`Check out ${stay.guestName}?`)) return;
+        if (
+            !confirm(
+                isAm
+                    ? `${stay.guestName}ን ማስወጣት ይፈልጋሉ?`
+                    : `Check out ${stay.guestName}?`,
+            )
+        )
+            return;
         try {
             await checkOut(stay.id).unwrap();
-            toast.success(`${stay.guestName} checked out`);
+            toast.success(
+                isAm
+                    ? `${stay.guestName} ወጥቷል`
+                    : `${stay.guestName} checked out`,
+            );
         } catch (err) {
-            toast.fromUnknown(err, "Check-out failed");
+            toast.fromUnknown(err, isAm ? "ማስወጣት አልተሳካም" : "Check-out failed");
         }
     }
 
@@ -500,10 +541,12 @@ function StayCard({
                 quantity: 1,
             }).unwrap();
             toast.success(
-                `Breakfast redeemed · ${res.data.qtyRemaining} remaining`,
+                isAm
+                    ? `ቁርስ ተሰጥቷል · ${res.data.qtyRemaining} ቀሪ`
+                    : `Breakfast redeemed · ${res.data.qtyRemaining} remaining`,
             );
         } catch (err) {
-            toast.fromUnknown(err, "Redeem failed");
+            toast.fromUnknown(err, isAm ? "ማስረከብ አልተቻለም" : "Redeem failed");
         }
     }
 
@@ -523,7 +566,7 @@ function StayCard({
                             {stay.mealPlan === "BREAKFAST" && (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
                                     <Coffee className="size-3" />
-                                    Breakfast
+                                    {isAm ? "ቁርስ" : "Breakfast"}
                                 </span>
                             )}
                         </div>
@@ -536,21 +579,25 @@ function StayCard({
                     </div>
                 </div>
                 <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
-                    In house
+                    {isAm ? "ክፍል ውስጥ ያሉ" : "In house"}
                 </span>
             </div>
 
             {/* Stay details */}
             <div className="mt-4 grid grid-cols-3 gap-3 border-t border-hairline pt-4">
                 <div>
-                    <p className="text-[11px] text-slate-gray">Check-in</p>
+                    <p className="text-[11px] text-slate-gray">
+                        {isAm ? "መግቢያ" : "Check-in"}
+                    </p>
                     <p className="mt-0.5 text-[13px] font-medium text-foreground">
                         {fmtDate(checkInDate)}
                     </p>
                     <EthAlias isoDate={stay.checkInAt} mode={calendarMode} />
                 </div>
                 <div>
-                    <p className="text-[11px] text-slate-gray">Checkout</p>
+                    <p className="text-[11px] text-slate-gray">
+                        {isAm ? "መውጫ" : "Checkout"}
+                    </p>
                     <p className="mt-0.5 text-[13px] font-medium text-foreground">
                         {fmtDate(checkOutDate)}
                     </p>
@@ -560,10 +607,16 @@ function StayCard({
                     />
                 </div>
                 <div>
-                    <p className="text-[11px] text-slate-gray">Guests</p>
+                    <p className="text-[11px] text-slate-gray">
+                        {isAm ? "እንግዶች" : "Guests"}
+                    </p>
                     <p className="mt-0.5 text-[13px] font-medium text-foreground">
-                        {stay.adults} adults
-                        {stay.kids ? `, ${stay.kids} kids` : ""} · {nights}n
+                        {stay.adults} {isAm ? "አዋቂዎች" : "adults"}
+                        {stay.kids
+                            ? `, ${stay.kids} ${isAm ? "ልጆች" : "kids"}`
+                            : ""}{" "}
+                        · {nights}
+                        {isAm ? " ምሽት" : "n"}
                     </p>
                 </div>
             </div>
@@ -572,7 +625,7 @@ function StayCard({
             {stay.guestIdImageUrl && (
                 <div className="mt-4 border-t border-hairline pt-4">
                     <p className="mb-2 text-[11px] font-medium text-slate-gray uppercase tracking-[0.08em]">
-                        Guest ID
+                        {isAm ? "የእንግዳ መታወቂያ" : "Guest ID"}
                     </p>
                     <img
                         src={stay.guestIdImageUrl}
@@ -596,7 +649,7 @@ function StayCard({
                         ) : (
                             <CheckCircle2 className="size-3.5 text-brand" />
                         )}
-                        Redeem breakfast
+                        {isAm ? "ቁርስ አስረክብ" : "Redeem breakfast"}
                     </button>
                 )}
                 <button
@@ -610,7 +663,7 @@ function StayCard({
                     ) : (
                         <LogOut className="size-3.5" />
                     )}
-                    Check out
+                    {isAm ? "አስወጣ" : "Check out"}
                 </button>
             </div>
         </div>
@@ -623,6 +676,7 @@ export default function RoomDetailPage({
 }: {
     params: Promise<{ roomId: string }>;
 }) {
+    const isAm = useLocale() === "am";
     const { roomId } = use(params);
     const pathname = usePathname();
     const backHref = pathname.startsWith("/owner/")
@@ -702,7 +756,7 @@ export default function RoomDetailPage({
                 className="inline-flex items-center gap-1.5 text-[13px] text-slate-gray hover:text-foreground"
             >
                 <ArrowLeft className="size-4" />
-                Rooms
+                {isAm ? "ክፍሎች" : "Rooms"}
             </Link>
 
             {/* Hero */}
@@ -732,18 +786,29 @@ export default function RoomDetailPage({
                                             : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400",
                                     )}
                                 >
-                                    {isOccupied ? "Occupied" : "Available"}
+                                    {isOccupied
+                                        ? isAm
+                                            ? "የተያዘ"
+                                            : "Occupied"
+                                        : isAm
+                                          ? "ክፍት"
+                                          : "Available"}
                                 </span>
                             </div>
                             <p className="mt-1 text-[13px] text-slate-gray">
                                 {[
-                                    room.wing ? `Wing ${room.wing}` : null,
+                                    room.wing
+                                        ? `${isAm ? "ክንፍ" : "Wing"} ${room.wing}`
+                                        : null,
                                     room.defaultWaiterName
-                                        ? `Waiter: ${room.defaultWaiterName}`
+                                        ? `${isAm ? "አስተናጋጅ" : "Waiter"}: ${room.defaultWaiterName}`
                                         : null,
                                 ]
                                     .filter(Boolean)
-                                    .join(" · ") || "No additional info"}
+                                    .join(" · ") ||
+                                    (isAm
+                                        ? "ተጨማሪ መረጃ የለም"
+                                        : "No additional info")}
                             </p>
                         </div>
                     </div>
@@ -754,30 +819,46 @@ export default function RoomDetailPage({
                             className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-foreground px-4 text-[13px] font-semibold text-background hover:bg-foreground/90"
                         >
                             <LogIn className="size-3.5" />
-                            Check in
+                            {isAm ? "መዝግብ" : "Check in"}
                         </button>
                     )}
                 </div>
 
                 <div className="mt-5 grid grid-cols-3 gap-3 border-t border-hairline pt-5">
                     <div className="text-center">
-                        <p className="text-[11px] text-slate-gray">Status</p>
+                        <p className="text-[11px] text-slate-gray">
+                            {isAm ? "ሁኔታ" : "Status"}
+                        </p>
                         <p className="mt-0.5 text-[14px] font-semibold">
-                            {isOccupied ? "Occupied" : "Free"}
+                            {isOccupied
+                                ? isAm
+                                    ? "የተያዘ"
+                                    : "Occupied"
+                                : isAm
+                                  ? "ክፍት"
+                                  : "Free"}
                         </p>
                     </div>
                     <div className="text-center">
-                        <p className="text-[11px] text-slate-gray">Guest</p>
+                        <p className="text-[11px] text-slate-gray">
+                            {isAm ? "እንግዳ" : "Guest"}
+                        </p>
                         <p className="mt-0.5 text-[14px] font-semibold">
                             {room.guestName || "—"}
                         </p>
                     </div>
                     <div className="text-center">
-                        <p className="text-[11px] text-slate-gray">Meal plan</p>
+                        <p className="text-[11px] text-slate-gray">
+                            {isAm ? "የምግብ እቅድ" : "Meal plan"}
+                        </p>
                         <p className="mt-0.5 text-[14px] font-semibold">
                             {room.mealPlan === "BREAKFAST"
-                                ? "Breakfast"
-                                : "None"}
+                                ? isAm
+                                    ? "ቁርስ"
+                                    : "Breakfast"
+                                : isAm
+                                  ? "ምንም"
+                                  : "None"}
                         </p>
                     </div>
                 </div>
@@ -789,10 +870,12 @@ export default function RoomDetailPage({
                 <div className="flex min-h-[140px] flex-col items-center justify-center rounded-2xl border border-dashed border-hairline bg-card text-center">
                     <BedDouble className="size-7 text-slate-gray/40" />
                     <p className="mt-2 text-[14px] font-semibold text-foreground">
-                        Room is free
+                        {isAm ? "ክፍሉ ክፍት ነው" : "Room is free"}
                     </p>
                     <p className="mt-1 text-[12px] text-slate-gray">
-                        Use "Check in" to register a new guest
+                        {isAm
+                            ? "አዲስ እንግዳ ለመመዝገብ 'መዝግብ' የሚለውን ይጫኑ"
+                            : 'Use "Check in" to register a new guest'}
                     </p>
                 </div>
             )}

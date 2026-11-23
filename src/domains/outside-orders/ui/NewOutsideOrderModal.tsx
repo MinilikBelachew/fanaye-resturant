@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
-import { Building2, Coffee, Store, MapPin, X, Sparkles } from "lucide-react";
+import { Building2, Coffee, Store, MapPin, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,16 +11,16 @@ import {
 } from "@/context/services/outsideOrdersApi";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
+import { useTranslations } from "next-intl";
 
 const DEST_TYPES: Array<{
     type: DestinationType;
-    label: string;
     icon: typeof Building2;
 }> = [
-    { type: "BUILDING", label: "Building / Office", icon: Building2 },
-    { type: "CAFE", label: "Adjacent Cafe", icon: Coffee },
-    { type: "KIOSK", label: "Kiosk / Stand", icon: Store },
-    { type: "OTHER", label: "Other Off-Site", icon: MapPin },
+    { type: "BUILDING", icon: Building2 },
+    { type: "CAFE", icon: Coffee },
+    { type: "KIOSK", icon: Store },
+    { type: "OTHER", icon: MapPin },
 ];
 
 export default function NewOutsideOrderModal({
@@ -30,6 +30,7 @@ export default function NewOutsideOrderModal({
     onClose: () => void;
     onSuccess: (outsideOrderId: string) => void;
 }) {
+    const t = useTranslations("outsideOrders");
     const [destinationType, setDestinationType] =
         useState<DestinationType>("BUILDING");
     const [destinationName, setDestinationName] = useState("");
@@ -43,7 +44,7 @@ export default function NewOutsideOrderModal({
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         if (!destinationName.trim()) {
-            toast.error("Please specify destination name or location.");
+            toast.error(t("destNameRequired"));
             return;
         }
 
@@ -57,14 +58,11 @@ export default function NewOutsideOrderModal({
                 requiresMaterialReturn,
             }).unwrap();
 
-            toast.success("Outside order created.");
+            toast.success(t("orderCreated"));
             onSuccess(res.data.id);
             onClose();
         } catch (err: any) {
-            toast.error(
-                err?.data?.message ||
-                    "Failed to create outside order. Ensure you are on an active shift.",
-            );
+            toast.error(err?.data?.message || t("createError"));
         }
     }
 
@@ -79,10 +77,10 @@ export default function NewOutsideOrderModal({
                         </div>
                         <div>
                             <h3 className="text-base font-semibold text-foreground">
-                                New Outside / Off-Site Order
+                                {t("title")}
                             </h3>
                             <p className="text-xs text-muted-foreground">
-                                Deliver to nearby locations
+                                {t("subtitle")}
                             </p>
                         </div>
                     </div>
@@ -99,10 +97,10 @@ export default function NewOutsideOrderModal({
                     {/* Destination Type Select */}
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-foreground">
-                            Destination Type
+                            {t("destTypeLabel")}
                         </label>
                         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                            {DEST_TYPES.map(({ type, label, icon: Icon }) => (
+                            {DEST_TYPES.map(({ type, icon: Icon }) => (
                                 <button
                                     key={type}
                                     type="button"
@@ -130,7 +128,7 @@ export default function NewOutsideOrderModal({
                                                 : "text-foreground",
                                         )}
                                     >
-                                        {label}
+                                        {t(`destTypes.${type}` as any)}
                                     </span>
                                 </button>
                             ))}
@@ -140,11 +138,11 @@ export default function NewOutsideOrderModal({
                     {/* Destination Name - REQUIRED */}
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-foreground">
-                            Destination Name / Specific Room{" "}
+                            {t("destNameLabel")}{" "}
                             <span className="text-rose-500">*</span>
                         </label>
                         <Input
-                            placeholder="e.g. Next Door Bank 4th Floor, Room 402"
+                            placeholder={t("destNamePlaceholder")}
                             value={destinationName}
                             onChange={e => setDestinationName(e.target.value)}
                             required
@@ -155,11 +153,13 @@ export default function NewOutsideOrderModal({
                     {/* Delivery / Destination Note - OPTIONAL */}
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-muted-foreground">
-                            Delivery Note{" "}
-                            <span className="text-xs">(Optional)</span>
+                            {t("deliveryNoteLabel")}{" "}
+                            <span className="text-xs">
+                                {t("optionalBadge")}
+                            </span>
                         </label>
                         <Input
-                            placeholder="e.g. Leave at front security reception"
+                            placeholder={t("deliveryNotePlaceholder")}
                             value={destinationNote}
                             onChange={e => setDestinationNote(e.target.value)}
                             className="h-10"
@@ -170,10 +170,10 @@ export default function NewOutsideOrderModal({
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-muted-foreground">
-                                Recipient / Customer Name
+                                {t("recipientNameLabel")}
                             </label>
                             <Input
-                                placeholder="e.g. Dr. Abebe"
+                                placeholder={t("recipientNamePlaceholder")}
                                 value={customerName}
                                 onChange={e => setCustomerName(e.target.value)}
                                 className="h-10"
@@ -182,10 +182,10 @@ export default function NewOutsideOrderModal({
 
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-muted-foreground">
-                                Phone Number
+                                {t("phoneLabel")}
                             </label>
                             <Input
-                                placeholder="e.g. 0911223344"
+                                placeholder={t("phonePlaceholder")}
                                 value={customerPhone}
                                 onChange={e => setCustomerPhone(e.target.value)}
                                 className="h-10"
@@ -209,12 +209,10 @@ export default function NewOutsideOrderModal({
                             className="cursor-pointer space-y-1 flex-1"
                         >
                             <div className="text-sm font-semibold text-foreground">
-                                Requires Returnable Materials Tracking
+                                {t("trackingLabel")}
                             </div>
                             <div className="text-xs text-muted-foreground leading-relaxed">
-                                Chef will issue plates, cutlery, warmers, and
-                                trays. Waiter picks up with food, delivers, then
-                                returns materials for chef audit.
+                                {t("trackingDesc")}
                             </div>
                         </label>
                     </div>
@@ -227,7 +225,7 @@ export default function NewOutsideOrderModal({
                             onClick={onClose}
                             className="h-10"
                         >
-                            Cancel
+                            {t("cancel")}
                         </Button>
                         <Button
                             type="submit"
@@ -237,10 +235,10 @@ export default function NewOutsideOrderModal({
                             {isLoading ? (
                                 <>
                                     <RestorchSpinner className="mr-2 size-4 " />
-                                    Opening Order...
+                                    {t("openingOrder")}
                                 </>
                             ) : (
-                                "Open Outside Order"
+                                t("openOrder")
                             )}
                         </Button>
                     </div>
