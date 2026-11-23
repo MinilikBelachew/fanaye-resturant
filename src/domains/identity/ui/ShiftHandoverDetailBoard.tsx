@@ -17,6 +17,7 @@ import PageHeader from "@/components/custom/organisms/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
+import { useLocale } from "next-intl";
 import { useManagerHandoverDetailQuery } from "@/context/services/shiftsApi";
 import { formatEtb } from "@/lib/money";
 
@@ -29,6 +30,7 @@ export default function ShiftHandoverDetailBoard({
     handoverId,
     basePath = "/manager/staff",
 }: ShiftHandoverDetailBoardProps) {
+    const isAm = useLocale() === "am";
     const { data, isLoading, isError } =
         useManagerHandoverDetailQuery(handoverId);
 
@@ -44,16 +46,20 @@ export default function ShiftHandoverDetailBoard({
                     className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-gray hover:text-foreground transition-colors w-fit"
                 >
                     <ArrowLeft className="size-3.5" />
-                    Back to Shift Handovers
+                    {isAm ? "ወደ ፈረቃ ርክክቦች ተመለስ" : "Back to Shift Handovers"}
                 </Link>
 
                 {isLoading ? (
                     <div className="rounded-[20px] border border-hairline bg-card p-12 text-center text-xs text-slate-gray">
-                        Loading handover details...
+                        {isAm
+                            ? "የርክክብ ዝርዝር በመጫን ላይ..."
+                            : "Loading handover details..."}
                     </div>
                 ) : isError || !data ? (
                     <div className="rounded-[20px] border border-destructive-border bg-destructive-soft p-8 text-center text-xs text-destructive">
-                        Could not load this shift handover record.
+                        {isAm
+                            ? "ይህንን የፈረቃ ርክክብ መረጃ መጫን አልተቻለም።"
+                            : "Could not load this shift handover record."}
                     </div>
                 ) : (
                     <>
@@ -63,11 +69,19 @@ export default function ShiftHandoverDetailBoard({
                                 compact
                                 eyebrow={
                                     data.kind === "CASHIER"
-                                        ? "Cashier Drawer Handover"
-                                        : "Waiter Table & Cash Handover"
+                                        ? isAm
+                                            ? "የካሸር ካዝና (መቀበያ) ርክክብ"
+                                            : "Cashier Drawer Handover"
+                                        : isAm
+                                          ? "የአስተናጋጅ ጠረጴዛ እና ገንዘብ ርክክብ"
+                                          : "Waiter Table & Cash Handover"
                                 }
                                 title={`${data.outgoingName} → ${data.incomingName}`}
-                                description={`Completed on ${new Date(data.handedOverAt).toLocaleString()}`}
+                                description={
+                                    isAm
+                                        ? `የተጠናቀቀበት፡ ${new Date(data.handedOverAt).toLocaleString()}`
+                                        : `Completed on ${new Date(data.handedOverAt).toLocaleString()}`
+                                }
                             />
                             <div className="flex items-center gap-2 self-start sm:self-auto">
                                 <Badge
@@ -78,8 +92,12 @@ export default function ShiftHandoverDetailBoard({
                                     }
                                 >
                                     {data.kind === "CASHIER"
-                                        ? "Cashier Handover"
-                                        : "Waiter Handover"}
+                                        ? isAm
+                                            ? "የካሸር ርክክብ"
+                                            : "Cashier Handover"
+                                        : isAm
+                                          ? "የአስተናጋጅ ርክክብ"
+                                          : "Waiter Handover"}
                                 </Badge>
                                 {data.kind === "CASHIER" && (
                                     <span
@@ -95,8 +113,10 @@ export default function ShiftHandoverDetailBoard({
                                             <CheckCircle2 className="size-3" />
                                         )}
                                         {hasVariance
-                                            ? `Variance: ${varianceNum > 0 ? "+" : ""}${formatEtb(varianceNum)}`
-                                            : "Drawer Balanced"}
+                                            ? `${isAm ? "ልዩነት" : "Variance"}: ${varianceNum > 0 ? "+" : ""}${formatEtb(varianceNum)}`
+                                            : isAm
+                                              ? "ካዝናው ትክክል ነው"
+                                              : "Drawer Balanced"}
                                     </span>
                                 )}
                             </div>
@@ -105,7 +125,7 @@ export default function ShiftHandoverDetailBoard({
                         {data.notes ? (
                             <div className="rounded-[16px] border border-hairline bg-secondary/30 px-4 py-3 text-xs text-foreground">
                                 <span className="font-semibold text-slate-gray mr-1.5">
-                                    Handover Note:
+                                    {isAm ? "የርክክብ ማስታወሻ:" : "Handover Note:"}
                                 </span>
                                 {data.notes}
                             </div>
@@ -115,13 +135,19 @@ export default function ShiftHandoverDetailBoard({
                         <div className="rounded-[20px] border border-hairline bg-card p-5 shadow-subtle space-y-4">
                             <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                                 <Banknote className="size-4 text-brand" />
-                                <span>Money & Custody Breakdown</span>
+                                <span>
+                                    {isAm
+                                        ? "የገንዘብ እና የርክክብ ዝርዝር መግለጫ"
+                                        : "Money & Custody Breakdown"}
+                                </span>
                             </div>
 
                             {data.kind === "CASHIER" ? (
                                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                                     <StatBox
-                                        label="Opening Float"
+                                        label={
+                                            isAm ? "የመነሻ ተቀማጭ" : "Opening Float"
+                                        }
                                         value={formatEtb(
                                             Number(
                                                 data.money.openingFloat ?? 0,
@@ -129,13 +155,21 @@ export default function ShiftHandoverDetailBoard({
                                         )}
                                     />
                                     <StatBox
-                                        label="Cash Collected"
+                                        label={
+                                            isAm
+                                                ? "የተሰበሰበ ጥሬ ገንዘብ"
+                                                : "Cash Collected"
+                                        }
                                         value={formatEtb(
                                             Number(data.money.cashCollected),
                                         )}
                                     />
                                     <StatBox
-                                        label="Waiter Drops Received"
+                                        label={
+                                            isAm
+                                                ? "ከአስተናጋጆች የተቀበለው ገንዘብ"
+                                                : "Waiter Drops Received"
+                                        }
                                         value={formatEtb(
                                             Number(
                                                 data.money.cashDropsReceived ??
@@ -144,13 +178,21 @@ export default function ShiftHandoverDetailBoard({
                                         )}
                                     />
                                     <StatBox
-                                        label="Non-Cash (Transfer/Card)"
+                                        label={
+                                            isAm
+                                                ? "ጥሬ ያልሆነ (ቴሌብር/ባንክ)"
+                                                : "Non-Cash (Transfer/Card)"
+                                        }
                                         value={formatEtb(
                                             Number(data.money.nonCashCollected),
                                         )}
                                     />
                                     <StatBox
-                                        label="Expected Drawer Cash"
+                                        label={
+                                            isAm
+                                                ? "በካዝናው የሚጠበቅ ገንዘብ"
+                                                : "Expected Drawer Cash"
+                                        }
                                         value={formatEtb(
                                             Number(
                                                 data.money.expectedCash ?? 0,
@@ -158,7 +200,11 @@ export default function ShiftHandoverDetailBoard({
                                         )}
                                     />
                                     <StatBox
-                                        label="Physical Counted"
+                                        label={
+                                            isAm
+                                                ? "በእጅ የተቆጠረ ገንዘብ"
+                                                : "Physical Counted"
+                                        }
                                         value={formatEtb(
                                             Number(
                                                 data.money.countedAmount ?? 0,
@@ -167,7 +213,11 @@ export default function ShiftHandoverDetailBoard({
                                         highlight
                                     />
                                     <StatBox
-                                        label="Float to Next Cashier"
+                                        label={
+                                            isAm
+                                                ? "ለሚቀጥለው ካሸር የተላለፈ"
+                                                : "Float to Next Cashier"
+                                        }
                                         value={formatEtb(
                                             Number(
                                                 data.money
@@ -176,7 +226,11 @@ export default function ShiftHandoverDetailBoard({
                                         )}
                                     />
                                     <StatBox
-                                        label="Safe Drop Deposited"
+                                        label={
+                                            isAm
+                                                ? "ወደ ዋናው ካዝና የገባ"
+                                                : "Safe Drop Deposited"
+                                        }
                                         value={formatEtb(
                                             Number(
                                                 data.money.safeDropAmount ?? 0,
@@ -184,7 +238,7 @@ export default function ShiftHandoverDetailBoard({
                                         )}
                                     />
                                     <StatBox
-                                        label="Variance"
+                                        label={isAm ? "ልዩነት" : "Variance"}
                                         value={`${varianceNum > 0 ? "+" : ""}${formatEtb(varianceNum)}`}
                                         danger={hasVariance}
                                     />
@@ -192,7 +246,11 @@ export default function ShiftHandoverDetailBoard({
                             ) : (
                                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                                     <StatBox
-                                        label="Cash Handed Over"
+                                        label={
+                                            isAm
+                                                ? "የተረከበው ጥሬ ገንዘብ"
+                                                : "Cash Handed Over"
+                                        }
                                         value={formatEtb(
                                             Number(
                                                 data.money
@@ -202,7 +260,11 @@ export default function ShiftHandoverDetailBoard({
                                         highlight
                                     />
                                     <StatBox
-                                        label="Open Tables Value"
+                                        label={
+                                            isAm
+                                                ? "ያልተዘጉ ጠረጴዛዎች ዋጋ"
+                                                : "Open Tables Value"
+                                        }
                                         value={formatEtb(
                                             Number(
                                                 data.money
@@ -211,19 +273,31 @@ export default function ShiftHandoverDetailBoard({
                                         )}
                                     />
                                     <StatBox
-                                        label="Cash Collected in Shift"
+                                        label={
+                                            isAm
+                                                ? "በፈረቃው የተሰበሰበ ጥሬ"
+                                                : "Cash Collected in Shift"
+                                        }
                                         value={formatEtb(
                                             Number(data.money.cashCollected),
                                         )}
                                     />
                                     <StatBox
-                                        label="Non-Cash Collected"
+                                        label={
+                                            isAm
+                                                ? "የተሰበሰበ ጥሬ ያልሆነ"
+                                                : "Non-Cash Collected"
+                                        }
                                         value={formatEtb(
                                             Number(data.money.nonCashCollected),
                                         )}
                                     />
                                     <StatBox
-                                        label="Cash Dropped to Cashier"
+                                        label={
+                                            isAm
+                                                ? "ለካሸር የተረከበ ጥሬ"
+                                                : "Cash Dropped to Cashier"
+                                        }
                                         value={formatEtb(
                                             Number(
                                                 data.money.cashDropsGiven ?? 0,
@@ -242,7 +316,9 @@ export default function ShiftHandoverDetailBoard({
                                     <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                                         <UtensilsCrossed className="size-4 text-brand" />
                                         <span>
-                                            Food, Beverage & Station Breakdown
+                                            {isAm
+                                                ? "የምግብ፣ መጠጥ እና ማብሰያ ክፍል ዝርዝር"
+                                                : "Food, Beverage & Station Breakdown"}
                                         </span>
                                     </div>
                                     <span className="text-xs text-slate-gray">
@@ -250,7 +326,7 @@ export default function ShiftHandoverDetailBoard({
                                             (s, b) => s + b.itemCount,
                                             0,
                                         )}{" "}
-                                        items
+                                        {isAm ? "እቃዎች" : "items"}
                                     </span>
                                 </div>
 
@@ -292,7 +368,11 @@ export default function ShiftHandoverDetailBoard({
                             <div className="rounded-[20px] border border-hairline bg-card p-5 shadow-subtle space-y-3">
                                 <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                                     <CreditCard className="size-4 text-brand" />
-                                    <span>Payments Collected in Shift</span>
+                                    <span>
+                                        {isAm
+                                            ? "በፈረቃው የተሰበሰቡ ክፍያዎች"
+                                            : "Payments Collected in Shift"}
+                                    </span>
                                 </div>
 
                                 {data.paymentMethods.length === 0 ? (
@@ -338,8 +418,9 @@ export default function ShiftHandoverDetailBoard({
                                 <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                                     <Clock className="size-4 text-brand" />
                                     <span>
-                                        Waiter Cash Drops Received (
-                                        {data.cashDrops.length})
+                                        {isAm
+                                            ? `ከአስተናጋጆች የተረከበ ጥሬ ገንዘብ (${data.cashDrops.length})`
+                                            : `Waiter Cash Drops Received (${data.cashDrops.length})`}
                                     </span>
                                 </div>
                                 <div className="divide-y divide-hairline">
@@ -376,8 +457,9 @@ export default function ShiftHandoverDetailBoard({
                                     <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                                         <Table2 className="size-4 text-brand" />
                                         <span>
-                                            Transferred Tables & Orders (
-                                            {data.tables.length})
+                                            {isAm
+                                                ? `የተላለፉ ጠረጴዛዎች እና ትዕዛዞች (${data.tables.length})`
+                                                : `Transferred Tables & Orders (${data.tables.length})`}
                                         </span>
                                     </div>
                                 </div>
@@ -427,7 +509,9 @@ export default function ShiftHandoverDetailBoard({
                                                     </div>
                                                     <div className="text-right">
                                                         <span className="text-[11px] text-slate-gray block">
-                                                            Table Total
+                                                            {isAm
+                                                                ? "የጠረጴዛው ጠቅላላ"
+                                                                : "Table Total"}
                                                         </span>
                                                         <span className="font-mono text-sm font-bold text-brand">
                                                             {formatEtb(
@@ -444,22 +528,34 @@ export default function ShiftHandoverDetailBoard({
                                                         <thead className="border-b border-hairline/60 bg-secondary/15 text-[10.5px] font-semibold uppercase tracking-wider text-slate-gray">
                                                             <tr>
                                                                 <th className="px-5 py-2">
-                                                                    Item
+                                                                    {isAm
+                                                                        ? "እቃ / ምግብ"
+                                                                        : "Item"}
                                                                 </th>
                                                                 <th className="px-3 py-2">
-                                                                    Station
+                                                                    {isAm
+                                                                        ? "ማብሰያ ክፍል"
+                                                                        : "Station"}
                                                                 </th>
                                                                 <th className="px-3 py-2 text-center">
-                                                                    Qty
+                                                                    {isAm
+                                                                        ? "ብዛት"
+                                                                        : "Qty"}
                                                                 </th>
                                                                 <th className="px-3 py-2 text-right">
-                                                                    Unit Price
+                                                                    {isAm
+                                                                        ? "ነጠላ ዋጋ"
+                                                                        : "Unit Price"}
                                                                 </th>
                                                                 <th className="px-3 py-2 text-right">
-                                                                    Total
+                                                                    {isAm
+                                                                        ? "ጠቅላላ"
+                                                                        : "Total"}
                                                                 </th>
                                                                 <th className="px-5 py-2 text-right">
-                                                                    Status
+                                                                    {isAm
+                                                                        ? "ሁኔታ"
+                                                                        : "Status"}
                                                                 </th>
                                                             </tr>
                                                         </thead>

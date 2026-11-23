@@ -15,6 +15,7 @@ import {
     X,
 } from "lucide-react";
 import PageHeader from "@/components/custom/organisms/PageHeader";
+import { useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
     ChatMessage,
@@ -41,6 +42,7 @@ const TTS_VOICES = [
 ];
 
 export default function OwnerAiPage() {
+    const isAm = useLocale() === "am";
     const [messages, setMessages] = useState<ExtendedMessage[]>([
         {
             id: "welcome",

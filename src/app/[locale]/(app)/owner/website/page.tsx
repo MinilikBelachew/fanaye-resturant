@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
+import { useLocale } from "next-intl";
 import { toast } from "@/lib/toast";
 import { useAppSelector } from "@/context/hooks";
 import {
@@ -31,6 +32,7 @@ import {
 type ViewMode = "picker" | "customizer";
 
 export default function WebsiteStudioPage() {
+    const isAm = useLocale() === "am";
     const session = useAppSelector(state => state.identity.session);
     const { data, isLoading, error, refetch } = useGetTenantSiteQuery();
     const { data: branchesRes } = useListBranchesQuery();
@@ -195,9 +197,13 @@ export default function WebsiteStudioPage() {
         return (
             <DashboardFrame>
                 <PageHeader
-                    eyebrow="Business"
-                    title="Website Studio"
-                    description="Choose from 5 handcrafted restaurant websites and customize your own."
+                    eyebrow={isAm ? "ንግድ" : "Business"}
+                    title={isAm ? "የድረ-ገጽ ስቱዲዮ" : "Website Studio"}
+                    description={
+                        isAm
+                            ? "ከተዘጋጁ 5 የሬስቶራንት ድረ-ገጾች ይምረጡ እና የራስዎን ያብጁ።"
+                            : "Choose from 5 handcrafted restaurant websites and customize your own."
+                    }
                 />
                 <div className="rounded-2xl border border-destructive-border bg-destructive-soft p-4 text-xs text-destructive">
                     Could not load Website Studio.

@@ -1,15 +1,23 @@
+"use client";
+
+import { useLocale } from "next-intl";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
 import PageHeader from "@/components/custom/organisms/PageHeader";
 import DailyClosePanel from "@/domains/reporting/ui/DailyClosePanel";
 
-export default function ManagerFinanceClosesPage() {
+export default function Page() {
+    const isAm = useLocale() === "am";
+
     return (
         <DashboardFrame>
             <PageHeader
-                compact
-                eyebrow="Finance"
-                title="Closes"
-                description="Waiter collections plus cashier custody. Locked after manager approval."
+                eyebrow={isAm ? "ፋይናንስ" : "Finance"}
+                title={isAm ? "የቀን መዝጊያዎች" : "Closes"}
+                description={
+                    isAm
+                        ? "የአስተናጋጆች ስብስብ እና የካሸር ጥሬ ገንዘብ። በስራ አስኪያጅ ከጸደቀ በኋላ ይቆለፋል።"
+                        : "Waiter collections plus cashier custody. Locked after manager approval."
+                }
             />
             <DailyClosePanel mode="manager" />
         </DashboardFrame>

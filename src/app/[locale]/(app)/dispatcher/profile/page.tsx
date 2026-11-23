@@ -3,6 +3,7 @@
 import { CircleUserRound, LogOut, Shield } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/context/hooks";
 import PageHeader from "@/components/custom/organisms/PageHeader";
+import { useLocale } from "next-intl";
 import ThemeSwitcher from "@/components/theme/ThemeSwitcher";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 export default function DispatcherProfilePage() {
+    const isAm = useLocale() === "am";
     const staff = useAppSelector(selectCurrentStaff);
     const session = useAppSelector(state => state.identity.session);
     const dispatch = useAppDispatch();
@@ -33,9 +35,13 @@ export default function DispatcherProfilePage() {
     return (
         <section className="mx-auto w-full max-w-3xl space-y-6">
             <PageHeader
-                eyebrow="Account"
-                title="Profile"
-                description="Your dispatcher identity, branch, and appearance."
+                eyebrow={isAm ? "መለያ" : "Account"}
+                title={isAm ? "መገለጫ" : "Profile"}
+                description={
+                    isAm
+                        ? "የአስተላላኪ ማንነትዎ፣ ቅርንጫፍ እና ገጽታ።"
+                        : "Your dispatcher identity, branch, and appearance."
+                }
             />
 
             <div className="overflow-hidden rounded-[20px] border border-hairline bg-card">
