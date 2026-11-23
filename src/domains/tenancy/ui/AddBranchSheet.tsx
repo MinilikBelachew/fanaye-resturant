@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import {
     Building2,
     ChefHat,
@@ -66,6 +66,7 @@ export default function AddBranchSheet({
     tenantId?: string;
 }) {
     const t = useTranslations("owner");
+    const isAm = useLocale() === "am";
     const { data } = useListBranchesQuery(tenantId ? { tenantId } : undefined, {
         skip: !open,
     });
@@ -208,18 +209,24 @@ export default function AddBranchSheet({
 
                             {/* Branch type */}
                             <div className="space-y-1.5">
-                                <Label>Branch type</Label>
+                                <Label>
+                                    {isAm ? "የቅርንጫፍ አይነት" : "Branch type"}
+                                </Label>
                                 <div className="grid grid-cols-2 gap-2">
                                     {(
                                         [
                                             {
                                                 mode: "RESTAURANT",
-                                                label: "Restaurant",
+                                                label: isAm
+                                                    ? "ሬስቶራንት"
+                                                    : "Restaurant",
                                                 icon: Store,
                                             },
                                             {
                                                 mode: "BAKERY",
-                                                label: "Bakery",
+                                                label: isAm
+                                                    ? "ዳቦ ቤት / ኬክ ቤት"
+                                                    : "Bakery",
                                                 icon: ChefHat,
                                             },
                                         ] as const

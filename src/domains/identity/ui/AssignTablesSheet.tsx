@@ -848,7 +848,9 @@ export default function AssignTablesSheet({
                                 )}
                             >
                                 <Ban className="size-3.5 text-slate-gray" />
-                                <span>Day Off</span>
+                                <span>
+                                    {isAmharic ? "የእረፍት ቀን" : "Day Off"}
+                                </span>
                             </button>
                         </div>
                     </div>

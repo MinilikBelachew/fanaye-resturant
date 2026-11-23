@@ -42,6 +42,8 @@ const LABEL_KEYS: Record<string, string> = {
     "Menu Items": "menuItems",
     "QR Menu Builder": "qrMenu",
     "Print Menu Builder": "printMenu",
+    "Menu Engineering": "menuEngineering",
+    Feedback: "feedback",
     Stations: "stations",
     Tables: "tables",
     Staff: "staff",

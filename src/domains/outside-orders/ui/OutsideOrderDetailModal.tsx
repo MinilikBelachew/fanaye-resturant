@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useLocale } from "next-intl";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import Image from "next/image";
 import {
@@ -68,6 +69,7 @@ export default function OutsideOrderDetailModal({
     outsideOrderId: string;
     onClose: () => void;
 }) {
+    const isAm = useLocale() === "am";
     const {
         data: orderRes,
         isLoading,
@@ -529,7 +531,11 @@ export default function OutsideOrderDetailModal({
                                 ({order.bills[0].status})
                             </span>
                         ) : (
-                            <span>No bill issued yet</span>
+                            <span>
+                                {isAm
+                                    ? "እስካሁን የወጣ ሂሳብ የለም"
+                                    : "No bill issued yet"}
+                            </span>
                         )}
                     </div>
 
@@ -541,7 +547,7 @@ export default function OutsideOrderDetailModal({
                             onClick={onClose}
                             className="h-8 text-xs"
                         >
-                            Close Modal
+                            {isAm ? "ዝጋ" : "Close Modal"}
                         </Button>
 
                         {!isClosed && (

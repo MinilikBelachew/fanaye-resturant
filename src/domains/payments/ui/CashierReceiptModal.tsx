@@ -2,14 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
-import {
-    Check,
-    FileDown,
-    Lightbulb,
-    Printer,
-    Send,
-    X,
-} from "lucide-react";
+import { Check, FileDown, Lightbulb, Printer, Send, X } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Bill } from "@/domains/billing/domain/billingApi";
@@ -172,7 +165,7 @@ export const CashierReceiptModal: React.FC<CashierReceiptModalProps> = ({
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Receipt</title>
+    <title>${locale === "am" ? "ደረሰኝ" : "Receipt"}</title>
     <style>
         @page {
             size: ${pageMm} ${calculatedHeightMm}mm;

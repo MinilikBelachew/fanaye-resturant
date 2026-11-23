@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useLocale } from "next-intl";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import Image from "next/image";
 import {

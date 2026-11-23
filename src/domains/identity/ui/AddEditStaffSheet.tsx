@@ -2265,7 +2265,11 @@ export default function AddEditStaffSheet() {
                                             )}
                                         >
                                             <Ban className="size-3.5 text-slate-gray" />
-                                            <span>Day Off</span>
+                                            <span>
+                                                {isAmharic
+                                                    ? "የእረፍት ቀን"
+                                                    : "Day Off"}
+                                            </span>
                                         </button>
                                     </div>
                                 </div>
@@ -2499,12 +2503,17 @@ export default function AddEditStaffSheet() {
                                     <div className="flex items-center justify-between rounded-xl border border-hairline/80 bg-card/60 px-3 py-2 text-[12px]">
                                         <div className="flex items-center gap-1.5 font-medium text-foreground">
                                             <Clock className="size-3.5 text-muted-foreground" />
-                                            <span>Weekly Schedule</span>
+                                            <span>
+                                                {isAmharic
+                                                    ? "ሳምንታዊ መርሐግብር"
+                                                    : "Weekly Schedule"}
+                                            </span>
                                         </div>
                                         <div className="flex items-center gap-2 text-[11px] text-slate-gray">
                                             <span className="font-semibold text-foreground">
-                                                {scheduledWorkingDaysCount}{" "}
-                                                working days
+                                                {isAmharic
+                                                    ? `${scheduledWorkingDaysCount} የስራ ቀናት`
+                                                    : `${scheduledWorkingDaysCount} working days`}
                                             </span>
                                             <span>•</span>
                                             <span className="font-semibold text-foreground">
