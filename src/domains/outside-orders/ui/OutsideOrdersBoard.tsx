@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useLocale } from "next-intl";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     Boxes,
@@ -49,13 +50,41 @@ function destinationIcon(type: DestinationType | string) {
     }
 }
 
+function getDestinationTypeLabel(
+    type: DestinationType | string,
+    isAm: boolean,
+) {
+    if (isAm) {
+        switch (type) {
+            case "BUILDING":
+                return "ህንጻ";
+            case "CAFE":
+                return "ካፌ";
+            case "KIOSK":
+                return "ኪዮስክ";
+            default:
+                return "አድራሻ";
+        }
+    }
+    return type.toLowerCase().replace("_", " ");
+}
+
 export default function OutsideOrdersBoard({
-    title = "Outside Delivery Orders",
-    subtitle = "Track off-premises deliveries and returnable materials",
+    title,
+    subtitle,
 }: {
     title?: string;
     subtitle?: string;
 }) {
+    const isAm = useLocale() === "am";
+    const displayTitle =
+        title ?? (isAm ? "የውጭ ማድረሻ ትዕዛዞች" : "Outside Delivery Orders");
+    const displaySubtitle =
+        subtitle ??
+        (isAm
+            ? "ከሬስቶራንት ውጭ ማድረሻዎችን እና ተመላሽ እቃዎችን ይከታተሉ"
+            : "Track off-premises deliveries and returnable materials");
+
     const [search, setSearch] = useState("");
     const [tab, setTab] = useState<TabFilter>("active");
     const [page, setPage] = useState(1);
@@ -135,10 +164,10 @@ export default function OutsideOrdersBoard({
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 className="text-lg font-semibold tracking-tight text-foreground">
-                        {title}
+                        {displayTitle}
                     </h2>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                        {subtitle}
+                        {displaySubtitle}
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -156,7 +185,7 @@ export default function OutsideOrdersBoard({
                                 isFetching && "animate-spin",
                             )}
                         />
-                        Refresh
+                        {isAm ? "አድስ" : "Refresh"}
                     </Button>
                     <Button
                         type="button"
@@ -165,7 +194,7 @@ export default function OutsideOrdersBoard({
                         className="h-9 gap-2"
                     >
                         <Plus className="size-4" />
-                        New Order
+                        {isAm ? "አዲስ ትዕዛዝ" : "New Order"}
                     </Button>
                 </div>
             </div>
@@ -182,7 +211,7 @@ export default function OutsideOrdersBoard({
                                 {stats.active}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                                Active
+                                {isAm ? "ንቁ" : "Active"}
                             </div>
                         </div>
                     </div>
@@ -198,7 +227,7 @@ export default function OutsideOrdersBoard({
                                 {stats.materialsOut}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                                Materials Out
+                                {isAm ? "የወጡ እቃዎች" : "Materials Out"}
                             </div>
                         </div>
                     </div>
@@ -214,7 +243,7 @@ export default function OutsideOrdersBoard({
                                 {stats.pendingAudit}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                                Disputes
+                                {isAm ? "አለመግባባቶች" : "Disputes"}
                             </div>
                         </div>
                     </div>
@@ -230,7 +259,7 @@ export default function OutsideOrdersBoard({
                                 {stats.closed}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                                Completed
+                                {isAm ? "የተጠናቀቁ" : "Completed"}
                             </div>
                         </div>
                     </div>
@@ -250,7 +279,7 @@ export default function OutsideOrdersBoard({
                                 : "bg-muted/40 text-muted-foreground hover:bg-muted",
                         )}
                     >
-                        Active{" "}
+                        {isAm ? "ንቁ" : "Active"}{" "}
                         <span className="ml-1.5 text-xs opacity-75">
                             ({stats.active})
                         </span>
@@ -265,7 +294,7 @@ export default function OutsideOrdersBoard({
                                 : "bg-muted/40 text-muted-foreground hover:bg-muted",
                         )}
                     >
-                        Materials Out
+                        {isAm ? "የወጡ እቃዎች" : "Materials Out"}
                     </button>
                     <button
                         type="button"
@@ -277,7 +306,7 @@ export default function OutsideOrdersBoard({
                                 : "bg-muted/40 text-muted-foreground hover:bg-muted",
                         )}
                     >
-                        All{" "}
+                        {isAm ? "ሁሉም" : "All"}{" "}
                         <span className="ml-1.5 text-xs opacity-75">
                             ({orders.length})
                         </span>
@@ -292,7 +321,7 @@ export default function OutsideOrdersBoard({
                                 : "bg-muted/40 text-muted-foreground hover:bg-muted",
                         )}
                     >
-                        Closed{" "}
+                        {isAm ? "የተዘጉ" : "Closed"}{" "}
                         <span className="ml-1.5 text-xs opacity-75">
                             ({stats.closed})
                         </span>
@@ -302,7 +331,11 @@ export default function OutsideOrdersBoard({
                 <div className="relative w-full sm:w-80">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                     <Input
-                        placeholder="Search destination, customer, waiter..."
+                        placeholder={
+                            isAm
+                                ? "መዳረሻ፣ ደንበኛ ወይም አስተናጋጅ ይፈልጉ..."
+                                : "Search destination, customer, waiter..."
+                        }
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                         className="pl-10 h-10"
@@ -315,19 +348,23 @@ export default function OutsideOrdersBoard({
                 <div className="rounded-xl border bg-card p-16 text-center">
                     <RestorchSpinner className="size-6 mx-auto mb-3 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground">
-                        Loading orders...
+                        {isAm ? "ትዕዛዞች በመጫን ላይ..." : "Loading orders..."}
                     </p>
                 </div>
             ) : filteredOrders.length === 0 ? (
                 <div className="rounded-xl border border-dashed bg-card p-16 text-center">
                     <Building2 className="size-12 mx-auto mb-4 text-muted-foreground/40" />
                     <p className="text-sm font-medium text-foreground">
-                        No orders found
+                        {isAm ? "ምንም ትዕዛዝ አልተገኘም" : "No orders found"}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
                         {search
-                            ? "Try a different search"
-                            : "Create your first outside order to get started"}
+                            ? isAm
+                                ? "ሌላ ፍለጋ ይሞክሩ"
+                                : "Try a different search"
+                            : isAm
+                              ? "ለመጀመር የመጀመሪያውን የውጭ ትዕዛዝ ይፍጠሩ"
+                              : "Create your first outside order to get started"}
                     </p>
                 </div>
             ) : (
@@ -358,9 +395,10 @@ export default function OutsideOrdersBoard({
                                                     {order.destinationName}
                                                 </h4>
                                                 <p className="text-xs text-muted-foreground capitalize mt-0.5">
-                                                    {order.destinationType
-                                                        .toLowerCase()
-                                                        .replace("_", " ")}
+                                                    {getDestinationTypeLabel(
+                                                        order.destinationType,
+                                                        isAm,
+                                                    )}
                                                 </p>
                                             </div>
                                         </div>
@@ -374,7 +412,15 @@ export default function OutsideOrdersBoard({
                                                       : "bg-amber-500/15 text-amber-700 dark:text-amber-400",
                                             )}
                                         >
-                                            {order.status}
+                                            {order.status === "OPEN"
+                                                ? isAm
+                                                    ? "ክፍት"
+                                                    : "OPEN"
+                                                : order.status === "CLOSED"
+                                                  ? isAm
+                                                      ? "ዝግ"
+                                                      : "CLOSED"
+                                                  : order.status}
                                         </span>
                                     </div>
 
@@ -397,7 +443,8 @@ export default function OutsideOrdersBoard({
                                             <div className="flex items-center gap-2 text-muted-foreground">
                                                 <MapPin className="size-3.5 shrink-0" />
                                                 <span className="truncate">
-                                                    For: {order.customerName}
+                                                    {isAm ? "ለ፡ " : "For: "}{" "}
+                                                    {order.customerName}
                                                 </span>
                                             </div>
                                         )}
@@ -407,8 +454,12 @@ export default function OutsideOrdersBoard({
                                                 <span>
                                                     {order.itemsCount}{" "}
                                                     {order.itemsCount === 1
-                                                        ? "dish"
-                                                        : "dishes"}
+                                                        ? isAm
+                                                            ? "ምግብ"
+                                                            : "dish"
+                                                        : isAm
+                                                          ? "ምግቦች"
+                                                          : "dishes"}
                                                 </span>
                                             </div>
                                         )}
@@ -421,17 +472,23 @@ export default function OutsideOrdersBoard({
                                                 0) === 0 ? (
                                                 <span className="text-xs text-muted-foreground flex items-center gap-1.5">
                                                     <Boxes className="size-3.5" />
-                                                    No materials
+                                                    {isAm
+                                                        ? "እቃ የለም"
+                                                        : "No materials"}
                                                 </span>
                                             ) : matSummary.allReturned ? (
                                                 <span className="text-xs text-emerald-600 flex items-center gap-1.5 font-medium">
                                                     <CheckCircle2 className="size-3.5" />
-                                                    Returned
+                                                    {isAm
+                                                        ? "ተመልሷል"
+                                                        : "Returned"}
                                                 </span>
                                             ) : matSummary.hasDispute ? (
                                                 <span className="text-xs text-rose-500 flex items-center gap-1.5 font-medium">
                                                     <ShieldAlert className="size-3.5" />
-                                                    Dispute
+                                                    {isAm
+                                                        ? "አለመግባባት"
+                                                        : "Dispute"}
                                                 </span>
                                             ) : (
                                                 <span className="text-xs text-amber-600 flex items-center gap-1.5 font-medium">
@@ -445,12 +502,14 @@ export default function OutsideOrdersBoard({
                                                                 matSummary.totalReturned,
                                                             ) || 0),
                                                     )}{" "}
-                                                    out
+                                                    {isAm ? "የወጡ" : "out"}
                                                 </span>
                                             )
                                         ) : (
                                             <span className="text-xs text-muted-foreground">
-                                                Disposable
+                                                {isAm
+                                                    ? "ተጥሎ የሚቀር"
+                                                    : "Disposable"}
                                             </span>
                                         )}
 
@@ -464,7 +523,7 @@ export default function OutsideOrdersBoard({
                                             </span>
                                         ) : (
                                             <span className="text-xs text-muted-foreground">
-                                                Unbilled
+                                                {isAm ? "ያልተከፈለ" : "Unbilled"}
                                             </span>
                                         )}
                                     </div>
@@ -479,12 +538,9 @@ export default function OutsideOrdersBoard({
             {totalPages > 1 && (
                 <div className="flex items-center justify-between border-t border-border/40 pt-4 text-xs">
                     <span className="text-muted-foreground">
-                        Showing {(page - 1) * ORDERS_PER_PAGE + 1}–
-                        {Math.min(
-                            page * ORDERS_PER_PAGE,
-                            filteredOrders.length,
-                        )}{" "}
-                        of {filteredOrders.length} outside orders
+                        {isAm
+                            ? `ከ${filteredOrders.length} የውጭ ትዕዛዞች ${(page - 1) * ORDERS_PER_PAGE + 1}–${Math.min(page * ORDERS_PER_PAGE, filteredOrders.length)} በማሳየት ላይ`
+                            : `Showing ${(page - 1) * ORDERS_PER_PAGE + 1}–${Math.min(page * ORDERS_PER_PAGE, filteredOrders.length)} of ${filteredOrders.length} outside orders`}
                     </span>
                     <div className="flex items-center gap-1.5">
                         <Button
@@ -496,7 +552,7 @@ export default function OutsideOrdersBoard({
                             className="h-8 px-2.5 text-xs gap-1"
                         >
                             <ChevronLeft className="size-3.5" />
-                            Previous
+                            {isAm ? "ቀዳሚ" : "Previous"}
                         </Button>
                         <span className="px-2 font-medium">
                             {page} / {totalPages}
@@ -511,7 +567,7 @@ export default function OutsideOrdersBoard({
                             }
                             className="h-8 px-2.5 text-xs gap-1"
                         >
-                            Next
+                            {isAm ? "ቀጣይ" : "Next"}
                             <ChevronRight className="size-3.5" />
                         </Button>
                     </div>

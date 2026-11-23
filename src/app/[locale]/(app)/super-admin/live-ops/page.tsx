@@ -2,7 +2,7 @@
 
 import { Radio } from "lucide-react";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
@@ -11,6 +11,7 @@ import PageHeader from "@/components/custom/organisms/PageHeader";
 import { useGetSuperAdminLiveOpsQuery } from "@/context/services/superAdminApi";
 
 export default function LiveOpsPage() {
+    const isAm = useLocale() === "am";
     const t = useTranslations("superAdmin");
     const { data, isLoading, isFetching, error, refetch } =
         useGetSuperAdminLiveOpsQuery(undefined, {
@@ -25,9 +26,13 @@ export default function LiveOpsPage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <PageHeader
                     compact
-                    eyebrow="Platform"
-                    title="Live ops"
-                    description="Open floors, unpaid bills, and active branches across every tenant."
+                    eyebrow={isAm ? "ፕላትፎርም" : "Platform"}
+                    title={isAm ? "የቀጥታ ስራዎች" : "Live ops"}
+                    description={
+                        isAm
+                            ? "ክፍት ወለሎች፣ ያልተከፈሉ ሂሳቦች እና ንቁ ቅርንጫፎች በእያንዳንዱ ተከራይ።"
+                            : "Open floors, unpaid bills, and active branches across every tenant."
+                    }
                 />
                 <button
                     type="button"

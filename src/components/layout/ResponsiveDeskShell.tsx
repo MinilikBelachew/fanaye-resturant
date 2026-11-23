@@ -104,6 +104,20 @@ const NAV_LABEL_KEYS: Record<string, string> = {
     Prep: "centralPrep",
     Analytics: "analytics",
     Plans: "plans",
+    "Tenant Activity": "tenantActivity",
+    Marketing: "marketing",
+    Talent: "talent",
+    "Market Prices": "marketPrices",
+    Testimonials: "testimonials",
+    "Automated Backups": "automatedBackups",
+    "Backup & Restore": "backupRestore",
+    "AI Advisor": "aiAdvisor",
+    "Station menu": "stationMenu",
+    "Customers & Loyalty": "customersLoyalty",
+    Outside: "outside",
+    Board: "board",
+    "In house": "inHouse",
+    "Shipments & Transfers": "shipmentsTransfers",
 };
 
 function ResponsiveNavRails({

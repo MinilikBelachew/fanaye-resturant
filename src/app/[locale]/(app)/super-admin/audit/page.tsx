@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
     Activity,
     Building2,
@@ -77,6 +77,7 @@ function formatDateLabel(
 }
 
 export default function PlatformAuditPage() {
+    const isAm = useLocale() === "am";
     const t = useTranslations("superAdmin");
 
     const [selectedCategory, setSelectedCategory] =
@@ -413,9 +414,17 @@ export default function PlatformAuditPage() {
         <DashboardFrame>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <PageHeader
-                    eyebrow="Platform Governance & Security"
-                    title="Platform Audit Trail"
-                    description="Live append-only activity log across all restaurant tenants, user role changes, orders, payments, and system operations."
+                    eyebrow={
+                        isAm
+                            ? "የፕላትፎርም ደህንነት እና አስተዳደር"
+                            : "Platform Governance & Security"
+                    }
+                    title={isAm ? "የፕላትፎርም ኦዲት መዝገብ" : "Platform Audit Trail"}
+                    description={
+                        isAm
+                            ? "በሁሉም የሬስቶራንት ተከራዮች፣ የሚና ለውጦች፣ ትዕዛዞች፣ ክፍያዎች እና የስርዓት ስራዎች ላይ የሚደረጉ እንቅስቃሴዎች የቀጥታ መዝገብ።"
+                            : "Live append-only activity log across all restaurant tenants, user role changes, orders, payments, and system operations."
+                    }
                 />
                 <div className="flex items-center gap-2">
                     <Button

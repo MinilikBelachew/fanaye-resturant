@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import { useLocale } from "next-intl";
 import {
     AlertTriangle,
     ArrowLeft,
@@ -42,6 +43,7 @@ interface ShiftHandoversBoardProps {
 export default function ShiftHandoversBoard({
     basePath = "/manager/staff",
 }: ShiftHandoversBoardProps) {
+    const isAm = useLocale() === "am";
     const todayStr = useMemo(() => localYmd(0), []);
     const yesterdayStr = useMemo(() => localYmd(-1), []);
 
@@ -123,9 +125,17 @@ export default function ShiftHandoversBoard({
                 <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
                     <PageHeader
                         compact
-                        eyebrow="HR & Shift Operations"
-                        title="Shift Handovers"
-                        description="Audit waiter table/cash transfers and cashier drawer handovers across shifts."
+                        eyebrow={
+                            isAm
+                                ? "የሰው ኃይል እና የፈረቃ ክንውኖች"
+                                : "HR & Shift Operations"
+                        }
+                        title={isAm ? "የፈረቃ ርክክቦች" : "Shift Handovers"}
+                        description={
+                            isAm
+                                ? "በፈረቃዎች መካከል የአስተናጋጅ ጠረጴዛ/ገንዘብ እና የገንዘብ ተቀባይ ካዝና ርክክብን ይቆጣጠሩ።"
+                                : "Audit waiter table/cash transfers and cashier drawer handovers across shifts."
+                        }
                     />
                     <div className="flex flex-wrap items-center gap-2">
                         <Link href={`${basePath}/active-shifts`}>
@@ -135,7 +145,7 @@ export default function ShiftHandoversBoard({
                                 className="rounded-xl text-xs font-semibold"
                             >
                                 <ArrowLeft className="mr-1.5 size-3.5" />
-                                Active Shifts
+                                {isAm ? "ንቁ ፈረቃዎች" : "Active Shifts"}
                             </Button>
                         </Link>
                         <Button
@@ -148,7 +158,7 @@ export default function ShiftHandoversBoard({
                             <RefreshCw
                                 className={`mr-1.5 size-3.5 ${isFetching ? "animate-spin text-brand" : ""}`}
                             />
-                            Refresh
+                            {isAm ? "አድስ" : "Refresh"}
                         </Button>
                     </div>
                 </div>
@@ -157,46 +167,60 @@ export default function ShiftHandoversBoard({
                 <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
                     <div className="rounded-[18px] border border-hairline bg-card p-4 shadow-subtle">
                         <div className="flex items-center justify-between text-xs font-medium text-slate-gray">
-                            <span>Total Handovers</span>
+                            <span>
+                                {isAm ? "ጠቅላላ ርክክቦች" : "Total Handovers"}
+                            </span>
                             <ArrowRightLeft className="size-4 text-brand" />
                         </div>
                         <div className="mt-2 text-2xl font-bold text-foreground">
                             {summary.totalCount}
                         </div>
                         <p className="mt-1 text-[11px] text-slate-gray">
-                            In selected date range
+                            {isAm ? "በተመረጠው የቀን ክልል" : "In selected date range"}
                         </p>
                     </div>
 
                     <div className="rounded-[18px] border border-hairline bg-card p-4 shadow-subtle">
                         <div className="flex items-center justify-between text-xs font-medium text-slate-gray">
-                            <span>Cashier Handovers</span>
+                            <span>
+                                {isAm
+                                    ? "የገንዘብ ተቀባይ ርክክቦች"
+                                    : "Cashier Handovers"}
+                            </span>
                             <Banknote className="size-4 text-emerald-600 dark:text-emerald-400" />
                         </div>
                         <div className="mt-2 text-2xl font-bold text-foreground">
                             {summary.cashierCount}
                         </div>
                         <p className="mt-1 text-[11px] text-slate-gray">
-                            Drawer count & float transfers
+                            {isAm
+                                ? "የካዝና ቆጠራ እና የመጀመሪያ ተቀማጭ"
+                                : "Drawer count & float transfers"}
                         </p>
                     </div>
 
                     <div className="rounded-[18px] border border-hairline bg-card p-4 shadow-subtle">
                         <div className="flex items-center justify-between text-xs font-medium text-slate-gray">
-                            <span>Waiter Handovers</span>
+                            <span>
+                                {isAm ? "የአስተናጋጅ ርክክቦች" : "Waiter Handovers"}
+                            </span>
                             <Users className="size-4 text-brand" />
                         </div>
                         <div className="mt-2 text-2xl font-bold text-foreground">
                             {summary.waiterCount}
                         </div>
                         <p className="mt-1 text-[11px] text-slate-gray">
-                            Table & cash custody transfers
+                            {isAm
+                                ? "የጠረጴዛ እና የገንዘብ ርክክቦች"
+                                : "Table & cash custody transfers"}
                         </p>
                     </div>
 
                     <div className="rounded-[18px] border border-hairline bg-card p-4 shadow-subtle">
                         <div className="flex items-center justify-between text-xs font-medium text-slate-gray">
-                            <span>Flagged Variances</span>
+                            <span>
+                                {isAm ? "ልዩነት የተገኘባቸው" : "Flagged Variances"}
+                            </span>
                             <AlertTriangle
                                 className={`size-4 ${summary.varianceCount > 0 ? "text-destructive" : "text-emerald-600 dark:text-emerald-400"}`}
                             />
@@ -207,7 +231,9 @@ export default function ShiftHandoversBoard({
                             {summary.varianceCount}
                         </div>
                         <p className="mt-1 text-[11px] text-slate-gray">
-                            Cashier drawers with non-zero variance
+                            {isAm
+                                ? "ልዩነት ያለባቸው የገንዘብ መሳቢያዎች"
+                                : "Cashier drawers with non-zero variance"}
                         </p>
                     </div>
                 </div>
@@ -219,14 +245,26 @@ export default function ShiftHandoversBoard({
                         <div className="flex flex-wrap items-center gap-1.5">
                             <span className="inline-flex items-center gap-1.5 mr-1 text-xs font-medium text-slate-gray">
                                 <Calendar className="size-3.5" />
-                                Date:
+                                {isAm ? "ቀን፡ " : "Date:"}
                             </span>
                             {(
                                 [
-                                    { key: "TODAY", label: "Today" },
-                                    { key: "YESTERDAY", label: "Yesterday" },
-                                    { key: "CUSTOM", label: "Custom" },
-                                    { key: "ALL", label: "All Time" },
+                                    {
+                                        key: "TODAY",
+                                        label: isAm ? "ዛሬ" : "Today",
+                                    },
+                                    {
+                                        key: "YESTERDAY",
+                                        label: isAm ? "ትናንት" : "Yesterday",
+                                    },
+                                    {
+                                        key: "CUSTOM",
+                                        label: isAm ? "ብጁ" : "Custom",
+                                    },
+                                    {
+                                        key: "ALL",
+                                        label: isAm ? "ሁሉንም" : "All Time",
+                                    },
                                 ] as const
                             ).map(opt => (
                                 <button
@@ -255,7 +293,7 @@ export default function ShiftHandoversBoard({
                                         className="h-8 rounded-lg border border-hairline bg-background px-2.5 text-xs text-foreground focus:border-brand focus:outline-none"
                                     />
                                     <span className="text-xs text-slate-gray">
-                                        to
+                                        {isAm ? "እስከ" : "to"}
                                     </span>
                                     <input
                                         type="date"
@@ -275,9 +313,20 @@ export default function ShiftHandoversBoard({
                             <div className="flex items-center gap-1 rounded-xl border border-hairline bg-secondary/30 p-1">
                                 {(
                                     [
-                                        { key: "ALL", label: "All" },
-                                        { key: "CASHIER", label: "Cashier" },
-                                        { key: "WAITER", label: "Waiter" },
+                                        {
+                                            key: "ALL",
+                                            label: isAm ? "ሁሉም" : "All",
+                                        },
+                                        {
+                                            key: "CASHIER",
+                                            label: isAm
+                                                ? "ገንዘብ ተቀባይ"
+                                                : "Cashier",
+                                        },
+                                        {
+                                            key: "WAITER",
+                                            label: isAm ? "አስተናጋጅ" : "Waiter",
+                                        },
                                     ] as const
                                 ).map(opt => (
                                     <button
@@ -300,7 +349,11 @@ export default function ShiftHandoversBoard({
                             <div className="relative w-full sm:w-64">
                                 <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-slate-gray" />
                                 <Input
-                                    placeholder="Search staff, table, or notes..."
+                                    placeholder={
+                                        isAm
+                                            ? "ሠራተኛ፣ ጠረጴዛ ወይም ማስታወሻ ይፈልጉ..."
+                                            : "Search staff, table, or notes..."
+                                    }
                                     value={searchQuery}
                                     onChange={e => {
                                         setSearchQuery(e.target.value);
@@ -319,17 +372,27 @@ export default function ShiftHandoversBoard({
                         <table className="w-full min-w-[840px] text-left text-[13px]">
                             <thead className="border-b border-hairline bg-secondary/40 text-[11px] font-semibold tracking-wider text-slate-gray uppercase">
                                 <tr>
-                                    <th className="px-5 py-3">Role</th>
                                     <th className="px-5 py-3">
-                                        Outgoing → Incoming
+                                        {isAm ? "ሚና" : "Role"}
                                     </th>
-                                    <th className="px-5 py-3">Time</th>
                                     <th className="px-5 py-3">
-                                        Cash & Table Custody
+                                        {isAm
+                                            ? "አስረካቢ → ተረካቢ"
+                                            : "Outgoing → Incoming"}
                                     </th>
-                                    <th className="px-5 py-3">Notes</th>
+                                    <th className="px-5 py-3">
+                                        {isAm ? "ሰዓት" : "Time"}
+                                    </th>
+                                    <th className="px-5 py-3">
+                                        {isAm
+                                            ? "ገንዘብ እና የጠረጴዛ ርክክብ"
+                                            : "Cash & Table Custody"}
+                                    </th>
+                                    <th className="px-5 py-3">
+                                        {isAm ? "ማስታወሻ" : "Notes"}
+                                    </th>
                                     <th className="px-5 py-3 text-right">
-                                        Details
+                                        {isAm ? "ዝርዝር" : "Details"}
                                     </th>
                                 </tr>
                             </thead>
@@ -340,7 +403,9 @@ export default function ShiftHandoversBoard({
                                             colSpan={6}
                                             className="px-5 py-12 text-center text-xs text-slate-gray"
                                         >
-                                            Loading shift handovers...
+                                            {isAm
+                                                ? "የፈረቃ ርክክቦች በመጫን ላይ..."
+                                                : "Loading shift handovers..."}
                                         </td>
                                     </tr>
                                 ) : items.length === 0 ? (
@@ -349,8 +414,9 @@ export default function ShiftHandoversBoard({
                                             colSpan={6}
                                             className="px-5 py-12 text-center text-xs text-slate-gray"
                                         >
-                                            No shift handovers found for the
-                                            selected filters.
+                                            {isAm
+                                                ? "ለተመረጡት ማጣሪያዎች ምንም ርክክብ አልተገኘም።"
+                                                : "No shift handovers found for the selected filters."}
                                         </td>
                                     </tr>
                                 ) : (
@@ -375,8 +441,12 @@ export default function ShiftHandoversBoard({
                                                         }
                                                     >
                                                         {h.kind === "CASHIER"
-                                                            ? "Cashier"
-                                                            : "Waiter"}
+                                                            ? isAm
+                                                                ? "ገንዘብ ተቀባይ"
+                                                                : "Cashier"
+                                                            : isAm
+                                                              ? "አስተናጋጅ"
+                                                              : "Waiter"}
                                                     </Badge>
                                                 </td>
                                                 <td className="px-5 py-3.5">
@@ -399,7 +469,9 @@ export default function ShiftHandoversBoard({
                                                     {h.kind === "CASHIER" ? (
                                                         <div className="flex flex-wrap items-center gap-2">
                                                             <span>
-                                                                Counted:{" "}
+                                                                {isAm
+                                                                    ? "የተቆጠረ፡ "
+                                                                    : "Counted: "}
                                                                 <strong className="font-mono text-foreground">
                                                                     {formatEtb(
                                                                         Number(
@@ -410,7 +482,9 @@ export default function ShiftHandoversBoard({
                                                                 </strong>
                                                             </span>
                                                             <span className="text-slate-gray">
-                                                                · Float:{" "}
+                                                                {isAm
+                                                                    ? "· መነሻ፡ "
+                                                                    : "· Float: "}
                                                                 <strong className="font-mono text-foreground">
                                                                     {formatEtb(
                                                                         Number(
@@ -421,7 +495,9 @@ export default function ShiftHandoversBoard({
                                                                 </strong>
                                                             </span>
                                                             <span className="text-slate-gray">
-                                                                · Safe:{" "}
+                                                                {isAm
+                                                                    ? "· ካዝና፡ "
+                                                                    : "· Safe: "}
                                                                 <strong className="font-mono text-foreground">
                                                                     {formatEtb(
                                                                         Number(
@@ -433,7 +509,9 @@ export default function ShiftHandoversBoard({
                                                             </span>
                                                             {hasVariance ? (
                                                                 <span className="rounded-full bg-destructive-soft px-2 py-0.5 font-mono font-semibold text-destructive">
-                                                                    Var:{" "}
+                                                                    {isAm
+                                                                        ? "ልዩነት፡ "
+                                                                        : "Var: "}
                                                                     {varianceNum >
                                                                     0
                                                                         ? "+"
@@ -444,14 +522,18 @@ export default function ShiftHandoversBoard({
                                                                 </span>
                                                             ) : (
                                                                 <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 font-medium text-emerald-700 dark:text-emerald-400">
-                                                                    Balanced
+                                                                    {isAm
+                                                                        ? "ትክክል"
+                                                                        : "Balanced"}
                                                                 </span>
                                                             )}
                                                         </div>
                                                     ) : (
                                                         <div className="flex flex-wrap items-center gap-2">
                                                             <span>
-                                                                Cash:{" "}
+                                                                {isAm
+                                                                    ? "ጥሬ ገንዘብ፡ "
+                                                                    : "Cash: "}
                                                                 <strong className="font-mono text-foreground">
                                                                     {formatEtb(
                                                                         Number(
@@ -462,7 +544,9 @@ export default function ShiftHandoversBoard({
                                                                 </strong>
                                                             </span>
                                                             <span className="text-slate-gray">
-                                                                · Tables:{" "}
+                                                                {isAm
+                                                                    ? "· ጠረጴዛዎች፡ "
+                                                                    : "· Tables: "}
                                                                 <strong className="text-foreground">
                                                                     {h.tablesTransferredCount ??
                                                                         0}
@@ -488,7 +572,9 @@ export default function ShiftHandoversBoard({
                                                             size="sm"
                                                             className="h-7 rounded-lg px-2.5 text-[11px] font-semibold"
                                                         >
-                                                            View Details
+                                                            {isAm
+                                                                ? "ዝርዝር እይ"
+                                                                : "View Details"}
                                                             <ArrowRight className="ml-1 size-3" />
                                                         </Button>
                                                     </Link>
@@ -504,17 +590,39 @@ export default function ShiftHandoversBoard({
                     {/* Pagination Footer */}
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-hairline bg-secondary/20 px-5 py-3 text-xs text-slate-gray">
                         <div>
-                            Showing{" "}
-                            <strong className="text-foreground">
-                                {startIdx}
-                            </strong>
-                            –
-                            <strong className="text-foreground">
-                                {endIdx}
-                            </strong>{" "}
-                            of{" "}
-                            <strong className="text-foreground">{total}</strong>{" "}
-                            handovers
+                            {isAm ? (
+                                <>
+                                    ከ{" "}
+                                    <strong className="text-foreground">
+                                        {total}
+                                    </strong>{" "}
+                                    ርክክቦች{" "}
+                                    <strong className="text-foreground">
+                                        {startIdx}
+                                    </strong>
+                                    –
+                                    <strong className="text-foreground">
+                                        {endIdx}
+                                    </strong>{" "}
+                                    በማሳየት ላይ
+                                </>
+                            ) : (
+                                <>
+                                    Showing{" "}
+                                    <strong className="text-foreground">
+                                        {startIdx}
+                                    </strong>
+                                    –
+                                    <strong className="text-foreground">
+                                        {endIdx}
+                                    </strong>{" "}
+                                    of{" "}
+                                    <strong className="text-foreground">
+                                        {total}
+                                    </strong>{" "}
+                                    handovers
+                                </>
+                            )}
                         </div>
                         <div className="flex items-center gap-1.5">
                             <Button
@@ -525,10 +633,12 @@ export default function ShiftHandoversBoard({
                                 onClick={() => setPage(p => Math.max(1, p - 1))}
                             >
                                 <ChevronLeft className="size-3.5 mr-1" />
-                                Prev
+                                {isAm ? "ቀዳሚ" : "Prev"}
                             </Button>
                             <span className="px-2 font-medium text-foreground">
-                                Page {currentPage} of {totalPages}
+                                {isAm
+                                    ? `ገጽ ${currentPage} ከ ${totalPages}`
+                                    : `Page ${currentPage} of ${totalPages}`}
                             </span>
                             <Button
                                 variant="outline"
@@ -539,7 +649,7 @@ export default function ShiftHandoversBoard({
                                     setPage(p => Math.min(totalPages, p + 1))
                                 }
                             >
-                                Next
+                                {isAm ? "ቀጣይ" : "Next"}
                                 <ChevronRight className="size-3.5 ml-1" />
                             </Button>
                         </div>

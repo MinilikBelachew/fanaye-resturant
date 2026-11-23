@@ -31,7 +31,7 @@ import {
 import { useImpersonation } from "@/domains/identity/application/useImpersonation";
 import { formatEtb } from "@/lib/money";
 import { cn } from "@/lib/utils";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 function toYmd(d: Date): string {
     return d.toISOString().slice(0, 10);
@@ -77,6 +77,7 @@ export default function TenantActivityBoard({
     fixedTenantId?: string;
 }) {
     const t = useTranslations("tenantActivity");
+    const isAm = useLocale() === "am";
     const todayStr = useMemo(() => toYmd(new Date()), []);
     const [selectedTenantId, setSelectedTenantId] = useState<string>(
         fixedTenantId || "",
@@ -341,7 +342,17 @@ export default function TenantActivityBoard({
                             }
                             className="text-[11px]"
                         >
-                            {row.dailyCloseStatus}
+                            {isAm
+                                ? row.dailyCloseStatus === "LOCKED"
+                                    ? "የተቆለፈ"
+                                    : row.dailyCloseStatus === "APPROVED"
+                                      ? "የጸደቀ"
+                                      : row.dailyCloseStatus === "PENDING"
+                                        ? "በመጠባበቅ ላይ"
+                                        : row.dailyCloseStatus === "OPEN"
+                                          ? "ክፍት"
+                                          : row.dailyCloseStatus
+                                : row.dailyCloseStatus}
                         </Badge>
                         {row.cashVariance !== 0 ? (
                             <span
@@ -360,7 +371,7 @@ export default function TenantActivityBoard({
                 ),
             },
         ],
-        [effectiveTenantId, t],
+        [effectiveTenantId, t, isAm],
     );
 
     const cashPct =
@@ -911,7 +922,13 @@ export default function TenantActivityBoard({
                                                     }
                                                     className="text-[10.5px]"
                                                 >
-                                                    {tblItem.status}
+                                                    {tblItem.isOccupied
+                                                        ? isAm
+                                                            ? "የተያዘ"
+                                                            : "Occupied"
+                                                        : isAm
+                                                          ? "ክፍት"
+                                                          : "Available"}
                                                 </Badge>
                                             </div>
 
@@ -1106,7 +1123,9 @@ export default function TenantActivityBoard({
                                                         ),
                                                     )}
                                                 >
-                                                    {m.category}
+                                                    {t(
+                                                        `movementCategories.${m.category}` as any,
+                                                    )}
                                                 </span>
                                                 <div className="min-w-0">
                                                     <p className="truncate text-[13px] font-semibold text-foreground">

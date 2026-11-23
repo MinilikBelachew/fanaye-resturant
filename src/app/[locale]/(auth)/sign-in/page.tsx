@@ -3,7 +3,7 @@ import { RestorchLogo } from "@/components/common/RestorchLogo";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 
 import { useEffect, useState, useCallback } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
     AlertCircle,
     ArrowLeftRight,
@@ -60,6 +60,8 @@ import { cn } from "@/lib/utils";
 type AuthMode = "pin" | "credentials";
 
 export default function SignInPage() {
+    const locale = useLocale();
+    const isAm = locale === "am";
     const t = useTranslations("auth.signIn");
     const router = useRouter();
     const dispatch = useAppDispatch();
@@ -200,7 +202,11 @@ export default function SignInPage() {
         if (e) e.preventDefault();
         const trimmed = pairingInput.trim();
         if (!trimmed) {
-            setError("Please enter your restaurant name or code.");
+            setError(
+                isAm
+                    ? "እባክዎ የሬስቶራንትዎን ስም ወይም ኮድ ያስገቡ።"
+                    : "Please enter your restaurant name or code.",
+            );
             return;
         }
 
@@ -218,7 +224,9 @@ export default function SignInPage() {
                 (err as { data?: { message?: string }; message?: string })?.data
                     ?.message ||
                 (err as { message?: string })?.message ||
-                "Restaurant not found. Please enter the exact restaurant name or code provided by your administrator.";
+                (isAm
+                    ? "ሬስቶራንቱ አልተገኘም። እባክዎ በትክክል የተሰጠዎትን ስም ወይም ኮድ ያስገቡ።"
+                    : "Restaurant not found. Please enter the exact restaurant name or code provided by your administrator.");
             setError(message);
         }
     };
@@ -739,12 +747,18 @@ export default function SignInPage() {
                                             <>
                                                 <RefreshCw className="size-3.5 animate-spin" />
                                                 <span>
-                                                    Verifying Restaurant...
+                                                    {isAm
+                                                        ? "በማረጋገጥ ላይ..."
+                                                        : "Verifying Restaurant..."}
                                                 </span>
                                             </>
                                         ) : (
                                             <>
-                                                <span>Pair Terminal</span>
+                                                <span>
+                                                    {isAm
+                                                        ? "ተርሚናል አገናኝ"
+                                                        : "Pair Terminal"}
+                                                </span>
                                                 <ArrowRight className="size-3.5" />
                                             </>
                                         )}
@@ -762,7 +776,9 @@ export default function SignInPage() {
                                             }}
                                             className="w-full h-8 text-[11.5px] text-slate-gray hover:text-foreground rounded-xl"
                                         >
-                                            Cancel (Keep {configuredTenantName})
+                                            {isAm
+                                                ? `ይቅር (${configuredTenantName} ይቆይ)`
+                                                : `Cancel (Keep ${configuredTenantName})`}
                                         </Button>
                                     )}
                                 </div>
@@ -776,7 +792,9 @@ export default function SignInPage() {
                                         <div className="flex items-center gap-2 min-w-0">
                                             <span className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                                             <span className="truncate text-emerald-800 dark:text-emerald-300 font-medium">
-                                                Floor Board:{" "}
+                                                {isAm
+                                                    ? "የወለል ቦርድ፡ "
+                                                    : "Floor Board: "}
                                                 <strong>
                                                     {pairedKioskBranch}
                                                 </strong>
@@ -790,7 +808,7 @@ export default function SignInPage() {
                                                 }
                                                 className="rounded-lg bg-emerald-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-emerald-700 cursor-pointer"
                                             >
-                                                Return ↗
+                                                {isAm ? "ተመለስ ↗" : "Return ↗"}
                                             </button>
                                             <button
                                                 type="button"
@@ -803,12 +821,14 @@ export default function SignInPage() {
                                                     );
                                                     setPairedKioskBranch(null);
                                                     toast.success(
-                                                        "Tablet unpaired successfully.",
+                                                        isAm
+                                                            ? "ታብሌቱ በተሳካ ሁኔታ ተላቋል።"
+                                                            : "Tablet unpaired successfully.",
                                                     );
                                                 }}
                                                 className="rounded-lg border border-border bg-background px-2 py-1 text-[11px] font-medium text-foreground hover:bg-muted cursor-pointer"
                                             >
-                                                Unpair
+                                                {isAm ? "ግንኙነት አቋርጥ" : "Unpair"}
                                             </button>
                                         </div>
                                     </div>
@@ -829,7 +849,7 @@ export default function SignInPage() {
                                         title="Switch or pair another restaurant on this device"
                                     >
                                         <ArrowLeftRight className="size-3" />
-                                        <span>Switch</span>
+                                        <span>{isAm ? "ቀይር" : "Switch"}</span>
                                     </button>
                                 </div>
 
@@ -1220,7 +1240,7 @@ export default function SignInPage() {
                                 disabled={isFirstTimeLoading}
                                 className="h-8 text-xs"
                             >
-                                Cancel
+                                {isAm ? "ይቅር" : "Cancel"}
                             </Button>
                             <Button
                                 type="submit"
@@ -1231,12 +1251,20 @@ export default function SignInPage() {
                                 {isFirstTimeLoading ? (
                                     <>
                                         <RestorchSpinner className="size-3.5 " />
-                                        <span>Downloading...</span>
+                                        <span>
+                                            {isAm
+                                                ? "በማውረድ ላይ..."
+                                                : "Downloading..."}
+                                        </span>
                                     </>
                                 ) : (
                                     <>
                                         <Zap className="size-3.5" />
-                                        <span>Connect & Activate</span>
+                                        <span>
+                                            {isAm
+                                                ? "አገናኝ እና አስጀምር"
+                                                : "Connect & Activate"}
+                                        </span>
                                     </>
                                 )}
                             </Button>
@@ -1258,16 +1286,30 @@ export default function SignInPage() {
                             <TabletSmartphone className="size-6" />
                         </div>
                         <DialogTitle className="text-lg font-bold text-foreground">
-                            Keep this tablet paired as the Waiter Board?
+                            {isAm
+                                ? "ይህ ታብሌት እንደ አስተናጋጅ ቦርድ ተጣምሮ ይቆይ?"
+                                : "Keep this tablet paired as the Waiter Board?"}
                         </DialogTitle>
                         <DialogDescription className="text-xs text-muted-foreground">
-                            Paired tablets open straight into the live floor map
-                            for{" "}
-                            <strong className="text-foreground">
-                                {kioskPairPrompt?.branchName}
-                            </strong>{" "}
-                            with zero PIN, and waiters only enter their personal
-                            PIN when tapping a table.
+                            {isAm ? (
+                                <>
+                                    የተጣመሩ ታብሌቶች በቀጥታ ለ{" "}
+                                    <strong className="text-foreground">
+                                        {kioskPairPrompt?.branchName}
+                                    </strong>{" "}
+                                    የጠረጴዛ ካርታ ያለ ፒን ይከፈታሉ።
+                                </>
+                            ) : (
+                                <>
+                                    Paired tablets open straight into the live
+                                    floor map for{" "}
+                                    <strong className="text-foreground">
+                                        {kioskPairPrompt?.branchName}
+                                    </strong>{" "}
+                                    with zero PIN, and waiters only enter their
+                                    personal PIN when tapping a table.
+                                </>
+                            )}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -1278,7 +1320,11 @@ export default function SignInPage() {
                             className="w-full flex items-center justify-center gap-2 rounded-xl bg-orange-600 px-4 py-3 text-xs sm:text-sm font-semibold text-white hover:bg-orange-700 active:scale-95 transition-all shadow-sm shadow-orange-600/20 cursor-pointer"
                         >
                             <Check className="size-4" />
-                            <span>Yes, Pair This Device</span>
+                            <span>
+                                {isAm
+                                    ? "አዎ፣ ይህን መሣሪያ አጣምር"
+                                    : "Yes, Pair This Device"}
+                            </span>
                         </button>
 
                         <button
@@ -1286,7 +1332,9 @@ export default function SignInPage() {
                             onClick={handleViewOnlyKiosk}
                             className="w-full flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs sm:text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground active:scale-95 transition-all cursor-pointer"
                         >
-                            <span>Just View for Now</span>
+                            <span>
+                                {isAm ? "ለአሁን እይ ብቻ" : "Just View for Now"}
+                            </span>
                         </button>
                     </div>
                 </DialogContent>

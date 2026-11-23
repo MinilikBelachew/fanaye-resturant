@@ -1,6 +1,7 @@
 "use client";
 
 import React, { use, useMemo, useState } from "react";
+import { useLocale } from "next-intl";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     BellRing,
@@ -55,6 +56,7 @@ export default function GuestTableOrderingPage({
 }: {
     params: Promise<{ slug: string; tableId: string }>;
 }) {
+    const isAm = useLocale() === "am";
     const { slug, tableId } = use(params);
 
     // Full menu once (cached ~30s server-side). Session status polls separately.
@@ -251,7 +253,7 @@ export default function GuestTableOrderingPage({
         setCart(prev => [...prev, newItem]);
         setCustomizingItem(null);
         toast.success(
-            `Added to cart`,
+            isAm ? "ወደ ትዕዛዝ ተጨምሯል" : "Added to cart",
             `${customizingItem.name} (x${customizingQuantity})`,
         );
     }
@@ -293,14 +295,18 @@ export default function GuestTableOrderingPage({
             setCart([]);
             setCartOpen(false);
             toast.success(
-                "Order sent to the kitchen!",
-                `Estimated preparation time: ~${res.estimatedWaitMinutes} minutes`,
+                isAm ? "ትዕዛዝ ወደ ኩሽና ተልኳል!" : "Order sent to the kitchen!",
+                isAm
+                    ? `የሚወስደው ግምታዊ ጊዜ፡ ~${res.estimatedWaitMinutes} ደቂቃ`
+                    : `Estimated preparation time: ~${res.estimatedWaitMinutes} minutes`,
             );
             void refetch();
         } catch (err: any) {
             toast.error(
                 err?.data?.message ||
-                    "Failed to submit order. Please alert your waiter.",
+                    (isAm
+                        ? "ትዕዛዝ መላክ አልተቻለም። እባክዎ አስተናጋጅዎን ያነጋግሩ።"
+                        : "Failed to submit order. Please alert your waiter."),
             );
         }
     }
@@ -322,20 +328,32 @@ export default function GuestTableOrderingPage({
             setServiceModalOpen(false);
             toast.success(
                 type === "REQUEST_BILL"
-                    ? "Bill requested"
-                    : "Service alert sent",
-                "Your waiter has been notified and is coming right over.",
+                    ? isAm
+                        ? "ሒሳብ ተጠይቋል"
+                        : "Bill requested"
+                    : isAm
+                      ? "የአገልግሎት ጥሪ ተልኳል"
+                      : "Service alert sent",
+                isAm
+                    ? "አስተናጋጅዎ ተነግሮታል፣ አሁን ይመጣል።"
+                    : "Your waiter has been notified and is coming right over.",
             );
         } catch {
             toast.error(
-                "Could not reach service desk. Please wave to your waiter.",
+                isAm
+                    ? "አገልግሎቱን ማግኘት አልተቻለም። እባክዎ አስተናጋጅዎን ይጠሩ።"
+                    : "Could not reach service desk. Please wave to your waiter.",
             );
         }
     }
 
     async function handleSubmitFeedback() {
         if (feedbackRating < 1) {
-            toast.error("Please pick a star rating first.");
+            toast.error(
+                isAm
+                    ? "እባክዎ መጀመሪያ የኮከብ ደረጃ ይምረጡ።"
+                    : "Please pick a star rating first.",
+            );
             return;
         }
         try {
@@ -350,13 +368,17 @@ export default function GuestTableOrderingPage({
             }).unwrap();
             setFeedbackSubmitted(true);
             toast.success(
-                "Thank you for your feedback!",
-                "Your comments help us serve you better.",
+                isAm ? "ለአስተያየትዎ እናመሰግናለን!" : "Thank you for your feedback!",
+                isAm
+                    ? "አስተያየትዎ የተሻለ አገልግሎት እንድንሰጥ ይረዳናል።"
+                    : "Your comments help us serve you better.",
             );
         } catch (err: any) {
             toast.error(
                 err?.data?.message ||
-                    "Could not send your feedback right now. Please try again.",
+                    (isAm
+                        ? "አስተያየትን መላክ አልተቻለም። እባክዎ እንደገና ይሞክሩ።"
+                        : "Could not send your feedback right now. Please try again."),
             );
         }
     }
@@ -373,10 +395,14 @@ export default function GuestTableOrderingPage({
                     <RestorchSpinner className="size-8 " />
                 </div>
                 <h2 className="text-base font-bold">
-                    Connecting to Dining Floor…
+                    {isAm
+                        ? "ከመመገቢያው ወለል ጋር በመገናኘት ላይ…"
+                        : "Connecting to Dining Floor…"}
                 </h2>
                 <p className="text-xs text-slate-400">
-                    Loading digital table menu & kitchen status
+                    {isAm
+                        ? "የዲጂታል ጠረጴዛ ሜኑ እና የኩሽና ሁኔታ በመጫን ላይ"
+                        : "Loading digital table menu & kitchen status"}
                 </p>
             </div>
         );
@@ -389,11 +415,13 @@ export default function GuestTableOrderingPage({
                     <Info className="size-6" />
                 </div>
                 <div>
-                    <h1 className="text-xl font-bold">Table Not Found</h1>
+                    <h1 className="text-xl font-bold">
+                        {isAm ? "ጠረጴዛው አልተገኘም" : "Table Not Found"}
+                    </h1>
                     <p className="mt-1 text-xs text-slate-500 max-w-sm dark:text-slate-400">
-                        This QR code may have expired or is not configured for
-                        dining service. Please request a printed menu from your
-                        waiter.
+                        {isAm
+                            ? "ይህ QR ኮድ ጊዜው አልፎበታል ወይም ለመስተንግዶ አልተዘጋጀም። እባክዎ ከአስተናጋጅ የታተመ ሜኑ ይጠይቁ።"
+                            : "This QR code may have expired or is not configured for dining service. Please request a printed menu from your waiter."}
                     </p>
                 </div>
                 <Button
@@ -401,7 +429,7 @@ export default function GuestTableOrderingPage({
                     variant="outline"
                     className="text-xs"
                 >
-                    Try Again
+                    {isAm ? "እንደገና ሞክር" : "Try Again"}
                 </Button>
             </div>
         );
@@ -444,7 +472,7 @@ export default function GuestTableOrderingPage({
                             <button
                                 onClick={openFeedback}
                                 className="flex size-9 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md hover:bg-white/30 transition-colors"
-                                title="Leave feedback"
+                                title={isAm ? "አስተያየት ይስጡ" : "Leave feedback"}
                             >
                                 <Star className="size-4" />
                             </button>
@@ -453,7 +481,11 @@ export default function GuestTableOrderingPage({
                                 <button
                                     onClick={() => setWifiModalOpen(true)}
                                     className="flex size-9 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md hover:bg-white/30 transition-colors"
-                                    title="View Guest Wi-Fi"
+                                    title={
+                                        isAm
+                                            ? "የእንግዳ ዋይፋይ እይ"
+                                            : "View Guest Wi-Fi"
+                                    }
                                 >
                                     <Wifi className="size-4" />
                                 </button>
@@ -464,7 +496,7 @@ export default function GuestTableOrderingPage({
                                 className="flex items-center gap-1.5 rounded-full bg-amber-500 hover:bg-amber-400 px-3.5 py-1.5 text-xs font-bold text-slate-950 shadow-md active:scale-95 transition-all"
                             >
                                 <BellRing className="size-3.5" />
-                                <span>Service</span>
+                                <span>{isAm ? "አገልግሎት" : "Service"}</span>
                             </button>
                         </div>
                     </div>
@@ -476,11 +508,14 @@ export default function GuestTableOrderingPage({
                             <span>{tenant?.name}</span>
                         </div>
                         <h1 className="mt-1 text-2xl sm:text-3xl font-black leading-tight drop-shadow-sm">
-                            {config?.welcomeMessage || "Dine-In Menu"}
+                            {config?.welcomeMessage ||
+                                (isAm ? "የመመገቢያ ሜኑ" : "Dine-In Menu")}
                         </h1>
                         <p className="mt-0.5 text-xs sm:text-sm text-white/80 line-clamp-1 max-w-xl">
                             {config?.subtitle ||
-                                "Tap any dish to customize & order directly from your table"}
+                                (isAm
+                                    ? "ማንኛውንም ምግብ በመንካት በቀጥታ ከጠረጴዛዎ ያዙ"
+                                    : "Tap any dish to customize & order directly from your table")}
                         </p>
                     </div>
                 </header>
@@ -492,8 +527,9 @@ export default function GuestTableOrderingPage({
                             <div className="flex items-center gap-2 font-bold">
                                 <Clock className="size-4 text-amber-600 animate-spin dark:text-amber-400" />
                                 <span>
-                                    Table {table?.displayNumber || ""} Active
-                                    Order
+                                    {isAm
+                                        ? `ጠረጴዛ ${table?.displayNumber || ""} ንቁ ትዕዛዝ`
+                                        : `Table ${table?.displayNumber || ""} Active Order`}
                                 </span>
                             </div>
                             <span className="rounded-full bg-amber-600 px-2.5 py-0.5 text-[10px] font-bold text-white uppercase dark:bg-amber-500 dark:text-slate-950">
@@ -516,8 +552,9 @@ export default function GuestTableOrderingPage({
                             ))}
                             {activeSession.items.length > 3 ? (
                                 <p className="text-[10px] text-slate-500 pt-0.5 dark:text-slate-400">
-                                    + {activeSession.items.length - 3} more
-                                    item(s) in kitchen
+                                    {isAm
+                                        ? `+ ${activeSession.items.length - 3} ተጨማሪ በኩሽና ውስጥ`
+                                        : `+ ${activeSession.items.length - 3} more item(s) in kitchen`}
                                 </p>
                             ) : null}
                         </div>
@@ -532,7 +569,11 @@ export default function GuestTableOrderingPage({
                             type="search"
                             value={search}
                             onChange={e => setSearch(e.target.value)}
-                            placeholder="Search tibs, buna, pasta, cocktails…"
+                            placeholder={
+                                isAm
+                                    ? "ጥብስ፣ ቡና፣ ፓስታ፣ መጠጦች ይፈልጉ..."
+                                    : "Search tibs, buna, pasta, cocktails…"
+                            }
                             className="w-full rounded-2xl border border-slate-200/80 bg-white py-2.5 pr-4 pl-10 text-xs sm:text-sm shadow-xs placeholder:text-slate-400 focus-visible:ring-amber-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
                         />
                         {search ? (
@@ -550,7 +591,10 @@ export default function GuestTableOrderingPage({
                 {dietaryTags.length > 0 ? (
                     <div className="flex gap-2 overflow-x-auto px-4 sm:px-0 pt-3 pb-1 scrollbar-none">
                         {[
-                            { id: "ALL", label: "All Items" },
+                            {
+                                id: "ALL",
+                                label: isAm ? "ሁሉም ምግቦች" : "All Items",
+                            },
                             ...dietaryTags.map(tag => ({
                                 id: tag,
                                 label: formatDietaryTagLabel(tag),
@@ -577,10 +621,10 @@ export default function GuestTableOrderingPage({
                         <div className="flex items-center justify-between">
                             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5 dark:text-slate-400">
                                 <Sparkles className="size-3.5 text-amber-500" />
-                                Chef&apos;s Recommendations
+                                {isAm ? "የሼፉ ምርጦች" : "Chef's Recommendations"}
                             </h2>
                             <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">
-                                Must Try
+                                {isAm ? "ይሞክሩት" : "Must Try"}
                             </span>
                         </div>
 
@@ -604,7 +648,7 @@ export default function GuestTableOrderingPage({
                                             </div>
                                         )}
                                         <span className="absolute top-1.5 left-1.5 rounded-md bg-amber-600 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-xs">
-                                            Special
+                                            {isAm ? "ልዩ" : "Special"}
                                         </span>
                                     </div>
                                     <h3 className="mt-2 text-xs sm:text-sm font-bold text-slate-900 truncate dark:text-slate-100">
@@ -636,7 +680,7 @@ export default function GuestTableOrderingPage({
                                 : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                         }`}
                     >
-                        All ({items.length})
+                        {isAm ? "ሁሉም" : "All"} ({items.length})
                     </button>
                     {categories.map(cat => (
                         <button
@@ -659,11 +703,12 @@ export default function GuestTableOrderingPage({
                         <div className="rounded-3xl border border-slate-200 bg-white py-12 px-6 text-center shadow-xs dark:border-slate-700 dark:bg-slate-900">
                             <div className="text-3xl">🍲</div>
                             <h3 className="mt-2 text-sm font-bold text-slate-800 dark:text-slate-100">
-                                No dishes found
+                                {isAm ? "ምንም ምግብ አልተገኘም" : "No dishes found"}
                             </h3>
                             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                Try adjusting your search terms or dietary
-                                filters.
+                                {isAm
+                                    ? "የፍለጋ ቃልዎን ወይም ማጣሪያዎችን ይቀይሩ።"
+                                    : "Try adjusting your search terms or dietary filters."}
                             </p>
                         </div>
                     ) : groupedSections && groupedSections.length > 0 ? (
@@ -684,8 +729,12 @@ export default function GuestTableOrderingPage({
                                         <span className="rounded-full bg-slate-200/70 px-2.5 py-0.5 text-[11px] font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                                             {section.items.length}{" "}
                                             {section.items.length === 1
-                                                ? "item"
-                                                : "items"}
+                                                ? isAm
+                                                    ? "ምግብ"
+                                                    : "item"
+                                                : isAm
+                                                  ? "ምግቦች"
+                                                  : "items"}
                                         </span>
                                     </div>
 
@@ -725,7 +774,9 @@ export default function GuestTableOrderingPage({
                                                     </div>
                                                     <p className="mt-0.5 text-xs text-slate-500 line-clamp-2 leading-relaxed dark:text-slate-400">
                                                         {item.description ||
-                                                            "Crafted fresh with premium ingredients"}
+                                                            (isAm
+                                                                ? "በጥራት እና ትኩስ ግብአቶች የተዘጋጀ"
+                                                                : "Crafted fresh with premium ingredients")}
                                                     </p>
                                                     <div className="mt-2.5 flex items-center justify-between">
                                                         <span className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-slate-100">
@@ -738,7 +789,9 @@ export default function GuestTableOrderingPage({
                                                         {config?.allowGuestOrders ? (
                                                             <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 border border-amber-500/20 group-hover:bg-amber-100 transition-colors dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30 dark:group-hover:bg-amber-500/25">
                                                                 <Plus className="size-3.5" />
-                                                                Add
+                                                                {isAm
+                                                                    ? "ጨምር"
+                                                                    : "Add"}
                                                             </span>
                                                         ) : null}
                                                     </div>
@@ -758,14 +811,19 @@ export default function GuestTableOrderingPage({
                                         <h2 className="text-base font-black tracking-tight text-slate-900 dark:text-slate-100">
                                             {categories.find(
                                                 c => c.id === activeCategory,
-                                            )?.name || "Dishes"}
+                                            )?.name ||
+                                                (isAm ? "ምግቦች" : "Dishes")}
                                         </h2>
                                     </div>
                                     <span className="rounded-full bg-slate-200/70 px-2.5 py-0.5 text-[11px] font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                                         {filteredItems.length}{" "}
                                         {filteredItems.length === 1
-                                            ? "item"
-                                            : "items"}
+                                            ? isAm
+                                                ? "ምግብ"
+                                                : "item"
+                                            : isAm
+                                              ? "ምግቦች"
+                                              : "items"}
                                     </span>
                                 </div>
                             ) : null}
@@ -804,7 +862,9 @@ export default function GuestTableOrderingPage({
                                             </div>
                                             <p className="mt-0.5 text-xs text-slate-500 line-clamp-2 leading-relaxed dark:text-slate-400">
                                                 {item.description ||
-                                                    "Crafted fresh with premium ingredients"}
+                                                    (isAm
+                                                        ? "በጥራት እና ትኩስ ግብአቶች የተዘጋጀ"
+                                                        : "Crafted fresh with premium ingredients")}
                                             </p>
                                             <div className="mt-2.5 flex items-center justify-between">
                                                 <span className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-slate-100">
@@ -815,7 +875,7 @@ export default function GuestTableOrderingPage({
                                                 {config?.allowGuestOrders ? (
                                                     <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 border border-amber-500/20 group-hover:bg-amber-100 transition-colors dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30 dark:group-hover:bg-amber-500/25">
                                                         <Plus className="size-3.5" />
-                                                        Add
+                                                        {isAm ? "ጨምር" : "Add"}
                                                     </span>
                                                 ) : null}
                                             </div>
@@ -835,11 +895,14 @@ export default function GuestTableOrderingPage({
                         </div>
                         <div>
                             <h2 className="text-sm font-black text-slate-900 dark:text-slate-50">
-                                How was your experience?
+                                {isAm
+                                    ? "መስተንግዶአችን እንዴት ነበር?"
+                                    : "How was your experience?"}
                             </h2>
                             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                Share a rating and a comment — it goes straight
-                                to management. No order needed.
+                                {isAm
+                                    ? "ደረጃ እና አስተያየት ይስጡ — በቀጥታ ለአስተዳደሩ ይደርሳል። ትዕዛዝ አያስፈልግም።"
+                                    : "Share a rating and a comment — it goes straight to management. No order needed."}
                             </p>
                         </div>
                         <Button
@@ -847,7 +910,7 @@ export default function GuestTableOrderingPage({
                             className="rounded-full bg-amber-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-amber-700"
                         >
                             <Star className="size-3.5" />
-                            <span>Leave Feedback</span>
+                            <span>{isAm ? "አስተያየት ስጥ" : "Leave Feedback"}</span>
                         </Button>
                     </div>
                 </section>
@@ -865,7 +928,7 @@ export default function GuestTableOrderingPage({
                                 {cartItemCount}
                             </span>
                             <span className="text-sm font-bold">
-                                Review Order
+                                {isAm ? "ትዕዛዙን ይመርምሩ" : "Review Order"}
                             </span>
                         </div>
                         <div className="flex items-center gap-2.5">
@@ -889,7 +952,9 @@ export default function GuestTableOrderingPage({
                                 </h3>
                                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                                     {customizingItem.description ||
-                                        "Customize your order"}
+                                        (isAm
+                                            ? "ትዕዛዝዎን ያብጁ"
+                                            : "Customize your order")}
                                 </p>
                             </div>
                             <button
@@ -910,8 +975,12 @@ export default function GuestTableOrderingPage({
                                         </h4>
                                         <span className="text-[10px] font-semibold text-slate-400">
                                             {group.required
-                                                ? "Required"
-                                                : `Optional (Max ${group.maxSelections})`}
+                                                ? isAm
+                                                    ? "አስፈላጊ"
+                                                    : "Required"
+                                                : isAm
+                                                  ? `አማራጭ (እስከ ${group.maxSelections})`
+                                                  : `Optional (Max ${group.maxSelections})`}
                                         </span>
                                     </div>
 
@@ -965,7 +1034,9 @@ export default function GuestTableOrderingPage({
                                                         </span>
                                                     ) : (
                                                         <span className="text-[10px] text-slate-400">
-                                                            Free
+                                                            {isAm
+                                                                ? "ነፃ"
+                                                                : "Free"}
                                                         </span>
                                                     )}
                                                 </div>
@@ -978,14 +1049,20 @@ export default function GuestTableOrderingPage({
                             {/* Special Instructions */}
                             <div className="pt-3">
                                 <label className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                                    Special Instructions
+                                    {isAm
+                                        ? "ልዩ መመሪያዎች"
+                                        : "Special Instructions"}
                                 </label>
                                 <Input
                                     value={customizingComment}
                                     onChange={e =>
                                         setCustomizingComment(e.target.value)
                                     }
-                                    placeholder="e.g. Mitmita on the side, extra ice, no onions…"
+                                    placeholder={
+                                        isAm
+                                            ? "ምሳሌ፡ ሚጥሚጣ በጎን፣ በረዶ ጨምሩበት..."
+                                            : "e.g. Mitmita on the side, extra ice, no onions…"
+                                    }
                                     className="mt-1.5 text-xs dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                                 />
                             </div>
@@ -993,7 +1070,7 @@ export default function GuestTableOrderingPage({
                             {/* Quantity Selector */}
                             <div className="pt-4 flex items-center justify-between">
                                 <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                                    Quantity
+                                    {isAm ? "ብዛት" : "Quantity"}
                                 </span>
                                 <div className="flex items-center gap-3">
                                     <button
@@ -1027,7 +1104,9 @@ export default function GuestTableOrderingPage({
                                 onClick={addToCart}
                                 className="w-full gap-2 rounded-2xl bg-amber-600 py-6 text-sm font-bold text-white hover:bg-amber-700 shadow-md"
                             >
-                                <span>Add to Order</span>
+                                <span>
+                                    {isAm ? "ወደ ትዕዛዝ ጨምር" : "Add to Order"}
+                                </span>
                                 <span>·</span>
                                 <span>
                                     {formatEtb(currentCustomizingPrice)}
@@ -1046,11 +1125,13 @@ export default function GuestTableOrderingPage({
                             <div>
                                 <h3 className="text-lg font-black text-slate-900 flex items-center gap-2 dark:text-slate-50">
                                     <ShoppingBag className="size-5 text-amber-600 dark:text-amber-400" />
-                                    Your Table Order
+                                    {isAm ? "የጠረጴዛዎ ትዕዛዝ" : "Your Table Order"}
                                 </h3>
                                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                                    {table?.displayName} · Ready to send to the
-                                    kitchen
+                                    {table?.displayName} ·{" "}
+                                    {isAm
+                                        ? "ወደ ኩሽና ለመላክ ዝግጁ"
+                                        : "Ready to send to the kitchen"}
                                 </p>
                             </div>
                             <button
@@ -1063,7 +1144,7 @@ export default function GuestTableOrderingPage({
 
                         {cart.length === 0 ? (
                             <div className="py-8 text-center text-xs text-slate-400">
-                                Your cart is empty.
+                                {isAm ? "ትዕዛዝዎ ባዶ ነው።" : "Your cart is empty."}
                             </div>
                         ) : (
                             <div className="mt-3 space-y-3 divide-y divide-slate-100 dark:divide-slate-800">
@@ -1086,7 +1167,10 @@ export default function GuestTableOrderingPage({
                                             ) : null}
                                             {line.comment ? (
                                                 <p className="text-[10px] italic text-amber-700 dark:text-amber-300">
-                                                    Note: &ldquo;{line.comment}
+                                                    {isAm
+                                                        ? "ማስታወሻ፡ "
+                                                        : "Note: "}
+                                                    &ldquo;{line.comment}
                                                     &rdquo;
                                                 </p>
                                             ) : null}
@@ -1112,7 +1196,9 @@ export default function GuestTableOrderingPage({
                                 <div className="pt-3 space-y-3">
                                     <div className="flex items-center justify-between text-xs">
                                         <span className="font-semibold text-slate-700 dark:text-slate-300">
-                                            Guests at table:
+                                            {isAm
+                                                ? "በጠረጴዛው ያሉ እንግዶች፡"
+                                                : "Guests at table:"}
                                         </span>
                                         <div className="flex items-center gap-2">
                                             {[1, 2, 4, 6, 8].map(count => (
@@ -1135,14 +1221,20 @@ export default function GuestTableOrderingPage({
 
                                     <div>
                                         <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                            Table Note (Optional)
+                                            {isAm
+                                                ? "የጠረጴዛ ማስታወሻ (አማራጭ)"
+                                                : "Table Note (Optional)"}
                                         </label>
                                         <Input
                                             value={orderNotes}
                                             onChange={e =>
                                                 setOrderNotes(e.target.value)
                                             }
-                                            placeholder="e.g. Please bring drinks first, extra glasses…"
+                                            placeholder={
+                                                isAm
+                                                    ? "ምሳሌ፡ መጠጦችን መጀመሪያ አምጡ፣ ተጨማሪ ብርጭቆ..."
+                                                    : "e.g. Please bring drinks first, extra glasses…"
+                                            }
                                             className="mt-1 text-xs dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                                         />
                                     </div>
@@ -1151,7 +1243,9 @@ export default function GuestTableOrderingPage({
                                 {/* Total & Submit Button */}
                                 <div className="pt-4 space-y-3">
                                     <div className="flex items-center justify-between text-sm font-black text-slate-900 dark:text-slate-50">
-                                        <span>Order Total</span>
+                                        <span>
+                                            {isAm ? "አጠቃላይ ድምር" : "Order Total"}
+                                        </span>
                                         <span className="text-amber-600 text-base dark:text-amber-400">
                                             {formatEtb(cartTotal)}
                                         </span>
@@ -1167,7 +1261,11 @@ export default function GuestTableOrderingPage({
                                         ) : (
                                             <Send className="size-4 text-amber-400" />
                                         )}
-                                        <span>Send Order to Kitchen</span>
+                                        <span>
+                                            {isAm
+                                                ? "ትዕዛዙን ወደ ኩሽና ላክ"
+                                                : "Send Order to Kitchen"}
+                                        </span>
                                     </Button>
                                 </div>
                             </div>
@@ -1184,11 +1282,14 @@ export default function GuestTableOrderingPage({
                             <div>
                                 <h3 className="text-base font-black text-slate-900 flex items-center gap-2 dark:text-slate-50">
                                     <BellRing className="size-4 text-amber-600 dark:text-amber-400" />
-                                    Call Waiter & Service
+                                    {isAm
+                                        ? "አስተናጋጅ እና አገልግሎት ጥራ"
+                                        : "Call Waiter & Service"}
                                 </h3>
                                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                                    Need assistance? We will alert your
-                                    table&apos;s waiter instantly.
+                                    {isAm
+                                        ? "እርዳታ ይፈልጋሉ? ወዲያውኑ ለአስተናጋጅዎ ጥሪ ይደርሳል።"
+                                        : "Need assistance? We will alert your table's waiter instantly."}
                                 </p>
                             </div>
                             <button
@@ -1207,7 +1308,11 @@ export default function GuestTableOrderingPage({
                             >
                                 <span className="flex items-center gap-2.5">
                                     <span className="text-base">🙋</span>
-                                    <span>Call Waiter to Table</span>
+                                    <span>
+                                        {isAm
+                                            ? "አስተናጋጅ ወደ ጠረጴዛው ጥራ"
+                                            : "Call Waiter to Table"}
+                                    </span>
                                 </span>
                                 <Check className="size-4 text-slate-400" />
                             </button>
@@ -1221,7 +1326,11 @@ export default function GuestTableOrderingPage({
                             >
                                 <span className="flex items-center gap-2.5">
                                     <span className="text-base">💧</span>
-                                    <span>Bring Cold Water & Napkins</span>
+                                    <span>
+                                        {isAm
+                                            ? "ቀዝቃዛ ውኃ እና ሶፍት አምጡ"
+                                            : "Bring Cold Water & Napkins"}
+                                    </span>
                                 </span>
                                 <Check className="size-4 text-slate-400" />
                             </button>
@@ -1238,7 +1347,11 @@ export default function GuestTableOrderingPage({
                             >
                                 <span className="flex items-center gap-2.5">
                                     <span className="text-base">📱</span>
-                                    <span>Request Bill · Pay Telebirr</span>
+                                    <span>
+                                        {isAm
+                                            ? "ሒሳብ ጠይቅ · በቴሌብር ክፈል"
+                                            : "Request Bill · Pay Telebirr"}
+                                    </span>
                                 </span>
                                 <Check className="size-4 text-amber-600 dark:text-amber-400" />
                             </button>
@@ -1252,7 +1365,11 @@ export default function GuestTableOrderingPage({
                             >
                                 <span className="flex items-center gap-2.5">
                                     <span className="text-base">💵</span>
-                                    <span>Request Bill · Pay Cash</span>
+                                    <span>
+                                        {isAm
+                                            ? "ሒሳብ ጠይቅ · በጥሬ ገንዘብ ክፈል"
+                                            : "Request Bill · Pay Cash"}
+                                    </span>
                                 </span>
                                 <Check className="size-4 text-slate-400" />
                             </button>
@@ -1269,12 +1386,12 @@ export default function GuestTableOrderingPage({
                             <Wifi className="size-6" />
                         </div>
                         <h3 className="mt-3 text-base font-black text-slate-900 dark:text-slate-50">
-                            Guest Wi-Fi
+                            {isAm ? "የእንግዳ ዋይፋይ" : "Guest Wi-Fi"}
                         </h3>
                         <div className="mt-4 rounded-2xl bg-slate-100 p-3.5 text-xs text-slate-800 space-y-1.5 dark:bg-slate-800 dark:text-slate-200">
                             <div>
                                 <span className="text-slate-400 block text-[10px]">
-                                    Network Name
+                                    {isAm ? "የኔትወርክ ስም" : "Network Name"}
                                 </span>
                                 <span className="font-bold text-sm text-slate-900 dark:text-slate-50">
                                     {config?.wifiSsid}
@@ -1284,15 +1401,19 @@ export default function GuestTableOrderingPage({
                             config?.wifiPassword ? (
                                 <div className="pt-1 border-t border-slate-200 dark:border-slate-700">
                                     <span className="text-slate-400 block text-[10px]">
-                                        Password
+                                        {isAm ? "የይለፍ ቃል" : "Password"}
                                     </span>
                                     <span className="text-[11px] text-amber-700 font-semibold dark:text-amber-300">
-                                        Ask staff for the Wi‑Fi password
+                                        {isAm
+                                            ? "የዋይፋይ የይለፍ ቃል ሠራተኞችን ይጠይቁ"
+                                            : "Ask staff for the Wi‑Fi password"}
                                     </span>
                                 </div>
                             ) : (
                                 <span className="text-[11px] text-emerald-600 font-semibold dark:text-emerald-400">
-                                    No password required
+                                    {isAm
+                                        ? "የይለፍ ቃል አያስፈልግም"
+                                        : "No password required"}
                                 </span>
                             )}
                         </div>
@@ -1300,7 +1421,7 @@ export default function GuestTableOrderingPage({
                             onClick={() => setWifiModalOpen(false)}
                             className="mt-4 w-full rounded-xl bg-slate-900 text-xs font-bold text-white dark:bg-amber-500 dark:text-slate-950"
                         >
-                            Done
+                            {isAm ? "ተከናውኗል" : "Done"}
                         </Button>
                     </div>
                 </div>
@@ -1314,7 +1435,9 @@ export default function GuestTableOrderingPage({
                             <div>
                                 <h3 className="text-base font-black text-slate-900 flex items-center gap-2 dark:text-slate-50">
                                     <MessageSquarePlus className="size-4 text-amber-600 dark:text-amber-400" />
-                                    Share Your Feedback
+                                    {isAm
+                                        ? "አስተያየትዎን ያካፍሉ"
+                                        : "Share Your Feedback"}
                                 </h3>
                                 <p className="text-xs text-slate-500 dark:text-slate-400">
                                     {table?.displayName}
@@ -1337,24 +1460,27 @@ export default function GuestTableOrderingPage({
                                     <CheckCircle2 className="size-7" />
                                 </div>
                                 <h4 className="mt-3 text-sm font-black text-slate-900 dark:text-slate-50">
-                                    Thank you!
+                                    {isAm ? "እናመሰግናለን!" : "Thank you!"}
                                 </h4>
                                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                    Your feedback has been shared with the
-                                    management.
+                                    {isAm
+                                        ? "አስተያየትዎ ለአስተዳደሩ ተላልፏል።"
+                                        : "Your feedback has been shared with the management."}
                                 </p>
                                 <Button
                                     onClick={() => setFeedbackModalOpen(false)}
                                     className="mt-5 w-full rounded-xl bg-slate-900 text-xs font-bold text-white dark:bg-amber-500 dark:text-slate-950"
                                 >
-                                    Done
+                                    {isAm ? "ተከናውኗል" : "Done"}
                                 </Button>
                             </div>
                         ) : (
                             <div className="mt-4 space-y-4">
                                 <div className="text-center">
                                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                                        How would you rate us?
+                                        {isAm
+                                            ? "አገልግሎታችንን እንዴት ይገመግሙታል?"
+                                            : "How would you rate us?"}
                                     </p>
                                     <div className="mt-2 flex items-center justify-center gap-1.5">
                                         {[1, 2, 3, 4, 5].map(star => (
@@ -1380,21 +1506,27 @@ export default function GuestTableOrderingPage({
 
                                 <div>
                                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                        Your name (optional)
+                                        {isAm
+                                            ? "ስምዎ (አማራጭ)"
+                                            : "Your name (optional)"}
                                     </label>
                                     <Input
                                         value={feedbackName}
                                         onChange={e =>
                                             setFeedbackName(e.target.value)
                                         }
-                                        placeholder="e.g. Selam"
+                                        placeholder={
+                                            isAm ? "ምሳሌ፡ ሰላም" : "e.g. Selam"
+                                        }
                                         className="mt-1 text-xs dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                                     />
                                 </div>
 
                                 <div>
                                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                        Your comment (optional)
+                                        {isAm
+                                            ? "አስተያየትዎ (አማራጭ)"
+                                            : "Your comment (optional)"}
                                     </label>
                                     <textarea
                                         value={feedbackComment}
@@ -1402,7 +1534,11 @@ export default function GuestTableOrderingPage({
                                             setFeedbackComment(e.target.value)
                                         }
                                         rows={3}
-                                        placeholder="Tell us what you loved or what we can improve…"
+                                        placeholder={
+                                            isAm
+                                                ? "የወደዱትን ወይም እንዲሻሻል የሚፈልጉትን ይንገሩን..."
+                                                : "Tell us what you loved or what we can improve…"
+                                        }
                                         className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/40 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                                     />
                                 </div>
@@ -1420,7 +1556,11 @@ export default function GuestTableOrderingPage({
                                     ) : (
                                         <Send className="size-4" />
                                     )}
-                                    <span>Submit Feedback</span>
+                                    <span>
+                                        {isAm
+                                            ? "አስተያየትን ላክ"
+                                            : "Submit Feedback"}
+                                    </span>
                                 </Button>
                             </div>
                         )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale } from "next-intl";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
     AlertTriangle,
@@ -62,6 +63,7 @@ import { API_BASE_URL } from "@/context/env";
 import { cn } from "@/lib/utils";
 
 export default function SuperAdminBackupsPage() {
+    const isAm = useLocale() === "am";
     const accessToken = useAppSelector(state => state.identity.accessToken);
     const {
         data: overview,
@@ -105,13 +107,19 @@ export default function SuperAdminBackupsPage() {
             }).unwrap();
             setOperationMsg({
                 type: "success",
-                text: "Global backup schedule and interval successfully saved!",
+                text: isAm
+                    ? "አጠቃላይ የቅጂ መርሐግብር እና ክፍተት በተሳካ ሁኔታ ተቀምጧል!"
+                    : "Global backup schedule and interval successfully saved!",
             });
             refetch();
         } catch (err: any) {
             setOperationMsg({
                 type: "error",
-                text: err?.data?.message || "Failed to update backup settings.",
+                text:
+                    err?.data?.message ||
+                    (isAm
+                        ? "የቅጂ ቅንብሮችን ማዘመን አልተቻለም።"
+                        : "Failed to update backup settings."),
             });
         }
     }
@@ -123,7 +131,9 @@ export default function SuperAdminBackupsPage() {
             const res = await triggerAll().unwrap();
             setOperationMsg({
                 type: "success",
-                text: `Backup batch finished! Sent to ${res.sentCount} connected restaurant owners (${res.failedCount} failed).`,
+                text: isAm
+                    ? `የቅጂ ስራ ተጠናቋል! ለ${res.sentCount} የተገናኙ የሬስቶራንት ባለቤቶች ተልኳል (${res.failedCount} አልተሳካም)።`
+                    : `Backup batch finished! Sent to ${res.sentCount} connected restaurant owners (${res.failedCount} failed).`,
             });
             refetch();
         } catch (err: any) {
@@ -131,7 +141,9 @@ export default function SuperAdminBackupsPage() {
                 type: "error",
                 text:
                     err?.data?.message ||
-                    "Failed to trigger automated backups.",
+                    (isAm
+                        ? "አውቶማቲክ ቅጂዎችን ማስጀመር አልተቻለም።"
+                        : "Failed to trigger automated backups."),
             });
         }
     }
@@ -143,7 +155,9 @@ export default function SuperAdminBackupsPage() {
             await sendToTenant(tenantId).unwrap();
             setOperationMsg({
                 type: "success",
-                text: `Successfully exported and sent latest backup archive to ${restaurantName}'s Telegram!`,
+                text: isAm
+                    ? `የቅርብ ጊዜው የዳታቤዝ ቅጂ ወደ ${restaurantName} ቴሌግራም በተሳካ ሁኔታ ተልኳል!`
+                    : `Successfully exported and sent latest backup archive to ${restaurantName}'s Telegram!`,
             });
             refetch();
         } catch (err: any) {
@@ -151,7 +165,9 @@ export default function SuperAdminBackupsPage() {
                 type: "error",
                 text:
                     err?.data?.message ||
-                    `Failed to send backup for ${restaurantName}.`,
+                    (isAm
+                        ? `ለ${restaurantName} ቅጂ መላክ አልተሳካም።`
+                        : `Failed to send backup for ${restaurantName}.`),
             });
         } finally {
             setActiveSendingTenantId(null);
@@ -220,9 +236,17 @@ export default function SuperAdminBackupsPage() {
         <DashboardFrame>
             <PageHeader
                 compact
-                eyebrow="Platform Operations"
-                title="Automated Restaurant Backups"
-                description="Manage daily multi-tenant database archives, schedule Telegram deliveries, and verify tenant disaster recovery health."
+                eyebrow={isAm ? "የፕላትፎርም ስራዎች" : "Platform Operations"}
+                title={
+                    isAm
+                        ? "አውቶማቲክ የሬስቶራንት ቅጂዎች (ባክአፕ)"
+                        : "Automated Restaurant Backups"
+                }
+                description={
+                    isAm
+                        ? "ዕለታዊ ባለብዙ ተከራይ የዳታቤዝ ቅጂዎችን ያስተዳድሩ፣ የቴሌግራም አቅርቦቶችን ያቅዱ እና የተከራዮች ደህንነትን ያረጋግጡ።"
+                        : "Manage daily multi-tenant database archives, schedule Telegram deliveries, and verify tenant disaster recovery health."
+                }
                 action={
                     <Button
                         variant="outline"
@@ -237,7 +261,7 @@ export default function SuperAdminBackupsPage() {
                                 isFetching && "animate-spin",
                             )}
                         />
-                        Refresh
+                        {isAm ? "አድስ" : "Refresh"}
                     </Button>
                 }
             />
@@ -263,7 +287,7 @@ export default function SuperAdminBackupsPage() {
                         onClick={() => setOperationMsg(null)}
                         className="text-muted-foreground hover:text-foreground text-xs"
                     >
-                        Dismiss
+                        {isAm ? "ዝጋ" : "Dismiss"}
                     </button>
                 </div>
             )}
@@ -273,7 +297,7 @@ export default function SuperAdminBackupsPage() {
                 <Card className="shadow-sm border">
                     <CardHeader className="pb-2">
                         <CardDescription className="text-xs uppercase tracking-wider font-semibold">
-                            Total Restaurants
+                            {isAm ? "ጠቅላላ ሬስቶራንቶች" : "Total Restaurants"}
                         </CardDescription>
                         <CardTitle className="text-3xl font-black">
                             {isLoading ? (
@@ -285,7 +309,9 @@ export default function SuperAdminBackupsPage() {
                     </CardHeader>
                     <CardContent>
                         <p className="text-xs text-muted-foreground">
-                            Active platform tenant databases
+                            {isAm
+                                ? "ንቁ የፕላትፎርም ተከራይ ዳታቤዞች"
+                                : "Active platform tenant databases"}
                         </p>
                     </CardContent>
                 </Card>
@@ -293,7 +319,7 @@ export default function SuperAdminBackupsPage() {
                 <Card className="shadow-sm border">
                     <CardHeader className="pb-2">
                         <CardDescription className="text-xs uppercase tracking-wider font-semibold">
-                            Telegram Linked
+                            {isAm ? "ቴሌግራም የተገናኘ" : "Telegram Linked"}
                         </CardDescription>
                         <CardTitle className="text-3xl font-black text-emerald-600 dark:text-emerald-400">
                             {isLoading ? (
@@ -306,8 +332,10 @@ export default function SuperAdminBackupsPage() {
                     <CardContent>
                         <p className="text-xs text-muted-foreground">
                             {overview?.totalTenants
-                                ? `${Math.round(((overview.linkedTenants || 0) / overview.totalTenants) * 100)}% coverage`
-                                : "0% coverage"}
+                                ? `${Math.round(((overview.linkedTenants || 0) / overview.totalTenants) * 100)}% ${isAm ? "ሽፋን" : "coverage"}`
+                                : isAm
+                                  ? "0% ሽፋን"
+                                  : "0% coverage"}
                         </p>
                     </CardContent>
                 </Card>
@@ -315,17 +343,25 @@ export default function SuperAdminBackupsPage() {
                 <Card className="shadow-sm border">
                     <CardHeader className="pb-2">
                         <CardDescription className="text-xs uppercase tracking-wider font-semibold">
-                            Global Schedule
+                            {isAm ? "አጠቃላይ መርሐግብር" : "Global Schedule"}
                         </CardDescription>
                         <div className="flex items-center gap-2">
                             <CardTitle className="text-xl font-bold">
                                 {currentInterval === "DAILY"
-                                    ? "Every Day"
+                                    ? isAm
+                                        ? "በየቀኑ"
+                                        : "Every Day"
                                     : currentInterval === "TWICE_DAILY"
-                                      ? "Twice Daily"
+                                      ? isAm
+                                          ? "በቀን ሁለት ጊዜ"
+                                          : "Twice Daily"
                                       : currentInterval === "WEEKLY"
-                                        ? "Weekly"
-                                        : "Manual"}
+                                        ? isAm
+                                            ? "በየሳምንቱ"
+                                            : "Weekly"
+                                        : isAm
+                                          ? "በእጅ ብቻ"
+                                          : "Manual"}
                             </CardTitle>
                             <Badge
                                 variant={
@@ -338,13 +374,21 @@ export default function SuperAdminBackupsPage() {
                                         : "bg-muted text-muted-foreground",
                                 )}
                             >
-                                {currentEnabled ? "ACTIVE" : "PAUSED"}
+                                {currentEnabled
+                                    ? isAm
+                                        ? "ንቁ"
+                                        : "ACTIVE"
+                                    : isAm
+                                      ? "የቆመ"
+                                      : "PAUSED"}
                             </Badge>
                         </div>
                     </CardHeader>
                     <CardContent>
                         <p className="text-xs text-muted-foreground">
-                            Automated cron runs at 00:00 EAT
+                            {isAm
+                                ? "አውቶማቲክ በ00:00 EAT ይካሄዳል"
+                                : "Automated cron runs at 00:00 EAT"}
                         </p>
                     </CardContent>
                 </Card>
@@ -353,7 +397,7 @@ export default function SuperAdminBackupsPage() {
                     <CardHeader className="pb-2">
                         <CardDescription className="text-xs uppercase tracking-wider font-semibold flex items-center gap-1.5">
                             <Bot className="h-3.5 w-3.5 text-primary" />{" "}
-                            Restorch Bot
+                            {isAm ? "ሬስቶርች ቦት" : "Restorch Bot"}
                         </CardDescription>
                         <CardTitle className="text-lg font-bold truncate">
                             @{overview?.botUsername || "restorch_backup_bot"}
@@ -366,7 +410,7 @@ export default function SuperAdminBackupsPage() {
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
                         >
-                            Open in Telegram{" "}
+                            {isAm ? "በቴሌግራም ክፈት" : "Open in Telegram"}{" "}
                             <ArrowUpRight className="h-3 w-3" />
                         </a>
                     </CardContent>
@@ -380,12 +424,14 @@ export default function SuperAdminBackupsPage() {
                         <div>
                             <CardTitle className="text-lg flex items-center gap-2">
                                 <Settings className="h-5 w-5 text-primary" />
-                                Global Schedule & Automation Control
+                                {isAm
+                                    ? "አጠቃላይ መርሐግብር እና አውቶሜሽን ቁጥጥር"
+                                    : "Global Schedule & Automation Control"}
                             </CardTitle>
                             <CardDescription>
-                                Set how frequently Restorch generates encrypted
-                                gzip dumps and dispatches them to owner Telegram
-                                chats.
+                                {isAm
+                                    ? "ሬስቶርች ምን ያህል ጊዜ የተመሰጠሩ የዳታቤዝ ፋይሎችን አዘጋጅቶ ወደ ባለቤቱ ቴሌግራም እንደሚልክ ይወስኑ።"
+                                    : "Set how frequently Restorch generates encrypted gzip dumps and dispatches them to owner Telegram chats."}
                             </CardDescription>
                         </div>
 
@@ -397,12 +443,16 @@ export default function SuperAdminBackupsPage() {
                             {isTriggeringAll ? (
                                 <>
                                     <RestorchSpinner className="h-4 w-4 " />
-                                    Exporting & Sending...
+                                    {isAm
+                                        ? "በመላክ ላይ..."
+                                        : "Exporting & Sending..."}
                                 </>
                             ) : (
                                 <>
                                     <Send className="h-4 w-4" />
-                                    Backup All Restaurants Now
+                                    {isAm
+                                        ? "ሁሉንም አሁን ቅጂ ላክ"
+                                        : "Backup All Restaurants Now"}
                                 </>
                             )}
                         </Button>
@@ -415,7 +465,9 @@ export default function SuperAdminBackupsPage() {
                                 htmlFor="interval-select"
                                 className="text-xs font-semibold"
                             >
-                                Backup Frequency Interval
+                                {isAm
+                                    ? "የቅጂ ድግግሞሽ ክፍተት"
+                                    : "Backup Frequency Interval"}
                             </Label>
                             <Select
                                 value={currentInterval}
@@ -424,20 +476,34 @@ export default function SuperAdminBackupsPage() {
                                 }
                             >
                                 <SelectTrigger id="interval-select">
-                                    <SelectValue placeholder="Select interval" />
+                                    <SelectValue
+                                        placeholder={
+                                            isAm
+                                                ? "ክፍተት ይምረጡ"
+                                                : "Select interval"
+                                        }
+                                    />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="DAILY">
-                                        Daily at Midnight (00:00 EAT)
+                                        {isAm
+                                            ? "በየቀኑ እኩለ ሌሊት (00:00 EAT)"
+                                            : "Daily at Midnight (00:00 EAT)"}
                                     </SelectItem>
                                     <SelectItem value="TWICE_DAILY">
-                                        Twice Daily (12:00 PM & 00:00 Midnight)
+                                        {isAm
+                                            ? "በቀን ሁለት ጊዜ (6:00 ቀትር እና 6:00 ሌሊት)"
+                                            : "Twice Daily (12:00 PM & 00:00 Midnight)"}
                                     </SelectItem>
                                     <SelectItem value="WEEKLY">
-                                        Weekly (Sundays at 00:00 EAT)
+                                        {isAm
+                                            ? "በየሳምንቱ (እሑድ 00:00 EAT)"
+                                            : "Weekly (Sundays at 00:00 EAT)"}
                                     </SelectItem>
                                     <SelectItem value="MANUAL">
-                                        Manual Only (Disable Automated Cron)
+                                        {isAm
+                                            ? "በእጅ ብቻ (አውቶማቲክ አቁም)"
+                                            : "Manual Only (Disable Automated Cron)"}
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
@@ -448,7 +514,9 @@ export default function SuperAdminBackupsPage() {
                                 htmlFor="enabled-select"
                                 className="text-xs font-semibold"
                             >
-                                Scheduler Engine State
+                                {isAm
+                                    ? "የመርሐግብር ሞተር ሁኔታ"
+                                    : "Scheduler Engine State"}
                             </Label>
                             <Select
                                 value={currentEnabled ? "enabled" : "paused"}
@@ -461,10 +529,14 @@ export default function SuperAdminBackupsPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="enabled">
-                                        Enabled (Automated Dispatch Active)
+                                        {isAm
+                                            ? "በርቷል (አውቶማቲክ መላኪያ ንቁ)"
+                                            : "Enabled (Automated Dispatch Active)"}
                                     </SelectItem>
                                     <SelectItem value="paused">
-                                        Paused (Do Not Auto-Send)
+                                        {isAm
+                                            ? "ቆሟል (በራስ-ሰር አይላክም)"
+                                            : "Paused (Do Not Auto-Send)"}
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
@@ -480,12 +552,14 @@ export default function SuperAdminBackupsPage() {
                                 {isUpdatingSettings ? (
                                     <>
                                         <RestorchSpinner className="h-4 w-4 " />
-                                        Saving...
+                                        {isAm ? "በማስቀመጥ ላይ..." : "Saving..."}
                                     </>
                                 ) : (
                                     <>
                                         <ShieldCheck className="h-4 w-4" />
-                                        Save Schedule Settings
+                                        {isAm
+                                            ? "የመርሐግብር ቅንብሮችን መዝግብ"
+                                            : "Save Schedule Settings"}
                                     </>
                                 )}
                             </Button>
@@ -501,18 +575,25 @@ export default function SuperAdminBackupsPage() {
                         <div>
                             <CardTitle className="text-lg flex items-center gap-2">
                                 <Database className="h-5 w-5 text-primary" />
-                                Restaurant Data Vault
+                                {isAm
+                                    ? "የሬስቶራንት ዳታ ካዝና"
+                                    : "Restaurant Data Vault"}
                             </CardTitle>
                             <CardDescription>
-                                Individual tenant isolation status, last backup
-                                archive, and manual override triggers.
+                                {isAm
+                                    ? "የእያንዳንዱ ተከራይ የዳታቤዝ ሁኔታ፣ የመጨረሻው የቅጂ ማህደር እና በእጅ መላኪያ።"
+                                    : "Individual tenant isolation status, last backup archive, and manual override triggers."}
                             </CardDescription>
                         </div>
 
                         <div className="relative w-full sm:w-72">
                             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
-                                placeholder="Search restaurant name..."
+                                placeholder={
+                                    isAm
+                                        ? "የሬስቶራንት ስም ፈልግ..."
+                                        : "Search restaurant name..."
+                                }
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
                                 className="pl-9 text-sm"
@@ -525,13 +606,23 @@ export default function SuperAdminBackupsPage() {
                         <table className="w-full text-sm text-left border-collapse">
                             <thead>
                                 <tr className="border-b bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                                    <th className="py-3 px-4">Restaurant</th>
-                                    <th className="py-3 px-4">Telegram Bot</th>
-                                    <th className="py-3 px-4">Last Archive</th>
-                                    <th className="py-3 px-4">Archive Size</th>
-                                    <th className="py-3 px-4">Status</th>
+                                    <th className="py-3 px-4">
+                                        {isAm ? "ሬስቶራንት" : "Restaurant"}
+                                    </th>
+                                    <th className="py-3 px-4">
+                                        {isAm ? "የቴሌግራም ቦት" : "Telegram Bot"}
+                                    </th>
+                                    <th className="py-3 px-4">
+                                        {isAm ? "የመጨረሻ ቅጂ" : "Last Archive"}
+                                    </th>
+                                    <th className="py-3 px-4">
+                                        {isAm ? "የፋይሉ መጠን" : "Archive Size"}
+                                    </th>
+                                    <th className="py-3 px-4">
+                                        {isAm ? "ሁኔታ" : "Status"}
+                                    </th>
                                     <th className="py-3 px-4 text-right">
-                                        Actions
+                                        {isAm ? "እርምጃዎች" : "Actions"}
                                     </th>
                                 </tr>
                             </thead>
@@ -544,8 +635,9 @@ export default function SuperAdminBackupsPage() {
                                         >
                                             <div className="flex items-center justify-center gap-2">
                                                 <RestorchSpinner className="h-5 w-5 text-primary" />
-                                                Loading restaurant backup
-                                                catalog...
+                                                {isAm
+                                                    ? "የሬስቶራንቶች የቅጂ ዝርዝር በመጫን ላይ..."
+                                                    : "Loading restaurant backup catalog..."}
                                             </div>
                                         </td>
                                     </tr>
@@ -556,8 +648,12 @@ export default function SuperAdminBackupsPage() {
                                             className="py-12 text-center text-muted-foreground"
                                         >
                                             {searchQuery
-                                                ? "No restaurants found matching your search."
-                                                : "No restaurants registered yet."}
+                                                ? isAm
+                                                    ? "ከፍለጋዎ ጋር የሚዛመድ ሬስቶራንት አልተገኘም።"
+                                                    : "No restaurants found matching your search."
+                                                : isAm
+                                                  ? "እስካሁን የተመዘገበ ሬስቶራንት የለም።"
+                                                  : "No restaurants registered yet."}
                                         </td>
                                     </tr>
                                 ) : (
@@ -583,7 +679,9 @@ export default function SuperAdminBackupsPage() {
                                                         <CheckCircle2 className="h-3 w-3" />
                                                         {tenant.telegramUsername
                                                             ? `@${tenant.telegramUsername}`
-                                                            : "Connected"}
+                                                            : isAm
+                                                              ? "ተገናኝቷል"
+                                                              : "Connected"}
                                                     </Badge>
                                                 ) : (
                                                     <Badge
@@ -591,7 +689,9 @@ export default function SuperAdminBackupsPage() {
                                                         className="text-muted-foreground gap-1.5"
                                                     >
                                                         <XCircle className="h-3 w-3" />
-                                                        Not Linked
+                                                        {isAm
+                                                            ? "አልተገናኘም"
+                                                            : "Not Linked"}
                                                     </Badge>
                                                 )}
                                             </td>
@@ -607,7 +707,9 @@ export default function SuperAdminBackupsPage() {
                                                     </div>
                                                 ) : (
                                                     <span className="italic text-muted-foreground/60">
-                                                        Never backed up
+                                                        {isAm
+                                                            ? "እስካሁን አልተቀዳም"
+                                                            : "Never backed up"}
                                                     </span>
                                                 )}
                                             </td>
@@ -630,7 +732,9 @@ export default function SuperAdminBackupsPage() {
                                                 {tenant.lastBackupStatus ===
                                                 "SUCCESS" ? (
                                                     <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 border-emerald-500/30">
-                                                        Healthy
+                                                        {isAm
+                                                            ? "ደህንነቱ የተጠበቀ"
+                                                            : "Healthy"}
                                                     </Badge>
                                                 ) : tenant.lastBackupStatus ===
                                                   "FAILED" ? (
@@ -639,11 +743,15 @@ export default function SuperAdminBackupsPage() {
                                                         className="gap-1"
                                                     >
                                                         <AlertTriangle className="h-3 w-3" />{" "}
-                                                        Failed
+                                                        {isAm
+                                                            ? "አልተሳካም"
+                                                            : "Failed"}
                                                     </Badge>
                                                 ) : (
                                                     <Badge variant="secondary">
-                                                        Pending
+                                                        {isAm
+                                                            ? "በመጠባበቅ ላይ"
+                                                            : "Pending"}
                                                     </Badge>
                                                 )}
                                             </td>
@@ -665,8 +773,12 @@ export default function SuperAdminBackupsPage() {
                                                         }
                                                         title={
                                                             tenant.telegramLinked
-                                                                ? "Send backup archive directly to owner Telegram"
-                                                                : "Owner has not connected Telegram yet"
+                                                                ? isAm
+                                                                    ? "የቅጂ ማህደሩን በቀጥታ ወደ ባለቤቱ ቴሌግራም ላክ"
+                                                                    : "Send backup archive directly to owner Telegram"
+                                                                : isAm
+                                                                  ? "ባለቤቱ እስካሁን ቴሌግራም አላገናኘም"
+                                                                  : "Owner has not connected Telegram yet"
                                                         }
                                                         className="gap-1.5 text-xs h-8"
                                                     >
@@ -676,7 +788,7 @@ export default function SuperAdminBackupsPage() {
                                                         ) : (
                                                             <Send className="h-3.5 w-3.5 text-primary" />
                                                         )}
-                                                        Send
+                                                        {isAm ? "ላክ" : "Send"}
                                                     </Button>
 
                                                     <Button
@@ -688,7 +800,11 @@ export default function SuperAdminBackupsPage() {
                                                                 tenant.tenantName,
                                                             )
                                                         }
-                                                        title="Download .sql.gz archive to browser"
+                                                        title={
+                                                            isAm
+                                                                ? "የ.sql.gz ፋይል ወደ ኮምፒውተር አውርድ"
+                                                                : "Download .sql.gz archive to browser"
+                                                        }
                                                         className="gap-1.5 text-xs h-8 text-muted-foreground hover:text-foreground"
                                                     >
                                                         <Download className="h-3.5 w-3.5" />
@@ -718,10 +834,14 @@ export default function SuperAdminBackupsPage() {
                             </div>
                             <div>
                                 <DialogTitle>
-                                    Trigger All Automated Backups
+                                    {isAm
+                                        ? "ሁሉንም አውቶማቲክ ቅጂዎች ላክ"
+                                        : "Trigger All Automated Backups"}
                                 </DialogTitle>
                                 <DialogDescription className="text-xs">
-                                    Instant dispatch to connected Telegram chats
+                                    {isAm
+                                        ? "ወደ ተገናኙ የቴሌግራም ቻቶች ፈጣን አቅርቦት"
+                                        : "Instant dispatch to connected Telegram chats"}
                                 </DialogDescription>
                             </div>
                         </div>
@@ -729,17 +849,31 @@ export default function SuperAdminBackupsPage() {
 
                     <div className="space-y-2 py-2 text-xs text-foreground leading-relaxed">
                         <p>
-                            Are you sure you want to export and dispatch the
-                            latest database archives to{" "}
-                            <b>
-                                all {overview?.linkedTenants ?? 0} connected
-                                restaurants
-                            </b>{" "}
-                            right now?
+                            {isAm ? (
+                                <>
+                                    እርግጠኛ ነዎት የቅርብ ጊዜውን የዳታቤዝ ቅጂ አሁን ወደ{" "}
+                                    <b>
+                                        ሁሉም {overview?.linkedTenants ?? 0} የተገናኙ
+                                        ሬስቶራንቶች
+                                    </b>{" "}
+                                    መላክ ይፈልጋሉ?
+                                </>
+                            ) : (
+                                <>
+                                    Are you sure you want to export and dispatch
+                                    the latest database archives to{" "}
+                                    <b>
+                                        all {overview?.linkedTenants ?? 0}{" "}
+                                        connected restaurants
+                                    </b>{" "}
+                                    right now?
+                                </>
+                            )}
                         </p>
                         <p className="text-muted-foreground text-[11px]">
-                            Each tenant will receive exclusively their own 100%
-                            isolated .sql.gz archive with zero data leaks.
+                            {isAm
+                                ? "እያንዳንዱ ተከራይ የራሱን 100% የተከለለ የ.sql.gz ማህደር ያለ ምንም የዳታ መደባለቅ ይቀበላል።"
+                                : "Each tenant will receive exclusively their own 100% isolated .sql.gz archive with zero data leaks."}
                         </p>
                     </div>
 
@@ -751,7 +885,7 @@ export default function SuperAdminBackupsPage() {
                             disabled={isTriggeringAll}
                             className="rounded-xl text-xs h-9"
                         >
-                            Cancel
+                            {isAm ? "ይቅር" : "Cancel"}
                         </Button>
                         <Button
                             size="sm"
@@ -762,12 +896,16 @@ export default function SuperAdminBackupsPage() {
                             {isTriggeringAll ? (
                                 <>
                                     <RestorchSpinner className="size-3.5 " />
-                                    Dispatching Backups...
+                                    {isAm
+                                        ? "ቅጂዎች በመላክ ላይ..."
+                                        : "Dispatching Backups..."}
                                 </>
                             ) : (
                                 <>
                                     <Send className="size-3.5" />
-                                    Confirm & Dispatch Now
+                                    {isAm
+                                        ? "አረጋግጥ እና አሁን ላክ"
+                                        : "Confirm & Dispatch Now"}
                                 </>
                             )}
                         </Button>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useLocale } from "next-intl";
 import {
     AlertCircle,
     ArrowRight,
@@ -37,10 +38,12 @@ import { formatEthiopianLocalTime } from "@/lib/ethiopian-calendar";
 interface PresetTemplate {
     id: string;
     name: string;
+    nameAm: string;
     icon: typeof Sunrise;
     startLocalTime: string;
     endLocalTime: string;
     description: string;
+    descriptionAm: string;
     tag: string;
 }
 
@@ -48,31 +51,37 @@ const PRESET_TEMPLATES: PresetTemplate[] = [
     {
         id: "morning",
         name: "Morning Shift",
+        nameAm: "የጠዋት ፈረቃ",
         icon: Sunrise,
         startLocalTime: "07:00",
         endLocalTime: "15:00",
         description:
             "Breakfast opening, morning prep, and early lunch cash desk handover.",
+        descriptionAm: "የቁርስ መክፈቻ፣ የጠዋት ዝግጅት እና የቀትር የምሳ ካዝና ርክክብ።",
         tag: "07:00 – 15:00 (8h)",
     },
     {
         id: "afternoon",
         name: "Afternoon Shift",
+        nameAm: "የከሰዓት ፈረቃ",
         icon: Sunset,
         startLocalTime: "15:00",
         endLocalTime: "23:00",
         description:
             "Afternoon turnover, dinner rush, table coverage, and evening cash balance.",
+        descriptionAm: "የከሰዓት መስተንግዶ፣ የእራት ጥድፊያ እና የምሽት የሂሳብ ሚዛን።",
         tag: "15:00 – 23:00 (8h)",
     },
     {
         id: "night",
         name: "Night / Late Shift",
+        nameAm: "የሌሊት ፈረቃ",
         icon: Moon,
         startLocalTime: "23:00",
         endLocalTime: "07:00",
         description:
             "Late night operations, closing reconciliation, sanitation & dawn float setup.",
+        descriptionAm: "የሌሊት ክንውኖች፣ የመዝጊያ ቆጠራ፣ ጽዳት እና የጠዋት መነሻ ዝግጅት።",
         tag: "23:00 – 07:00 (8h)",
     },
 ];
@@ -106,6 +115,7 @@ export default function ShiftDefinitionsManager({
 }: {
     basePath?: string;
 }) {
+    const isAm = useLocale() === "am";
     const { data: response, isLoading, refetch } = useShiftDefinitionsQuery();
     const [createShift, { isLoading: creating }] =
         useCreateShiftDefinitionMutation();
@@ -150,19 +160,26 @@ export default function ShiftDefinitionsManager({
     };
 
     const handleApplyPreset = async (preset: PresetTemplate) => {
+        const presetName = isAm ? preset.nameAm : preset.name;
         try {
             await createShift({
-                name: preset.name,
+                name: presetName,
                 startLocalTime: preset.startLocalTime,
                 endLocalTime: preset.endLocalTime,
                 graceMinutes: 15,
             }).unwrap();
-            toast.success(`"${preset.name}" added successfully.`);
+            toast.success(
+                isAm
+                    ? `"${presetName}" በተሳካ ሁኔታ ተጨምሯል።`
+                    : `"${preset.name}" added successfully.`,
+            );
             void refetch();
         } catch (err: unknown) {
             const message =
                 (err as { data?: { message?: string } })?.data?.message ||
-                "Failed to create shift template";
+                (isAm
+                    ? "የፈረቃ ቅጽ መፍጠር አልተቻለም"
+                    : "Failed to create shift template");
             toast.error(message);
         }
     };
@@ -173,13 +190,21 @@ export default function ShiftDefinitionsManager({
 
         const trimmedName = name.trim();
         if (!trimmedName) {
-            setFormError("Please enter a valid shift name.");
+            setFormError(
+                isAm
+                    ? "እባክዎ ትክክለኛ የፈረቃ ስም ያስገቡ።"
+                    : "Please enter a valid shift name.",
+            );
             return;
         }
 
         const timeRegex = /^\d{2}:\d{2}$/;
         if (!timeRegex.test(startLocalTime) || !timeRegex.test(endLocalTime)) {
-            setFormError("Time must be in HH:mm format (e.g. 07:00).");
+            setFormError(
+                isAm
+                    ? "ሰዓቱ በHH:mm ቅርጸት መሆን አለበት (ምሳሌ፡ 07:00)።"
+                    : "Time must be in HH:mm format (e.g. 07:00).",
+            );
             return;
         }
 
@@ -192,7 +217,11 @@ export default function ShiftDefinitionsManager({
                     endLocalTime,
                     graceMinutes: 15,
                 }).unwrap();
-                toast.success(`Shift "${trimmedName}" updated.`);
+                toast.success(
+                    isAm
+                        ? `የፈረቃ "${trimmedName}" ተሻሽሏል።`
+                        : `Shift "${trimmedName}" updated.`,
+                );
             } else {
                 await createShift({
                     name: trimmedName,
@@ -200,14 +229,20 @@ export default function ShiftDefinitionsManager({
                     endLocalTime,
                     graceMinutes: 15,
                 }).unwrap();
-                toast.success(`Shift "${trimmedName}" created.`);
+                toast.success(
+                    isAm
+                        ? `የፈረቃ "${trimmedName}" ተፈጥሯል።`
+                        : `Shift "${trimmedName}" created.`,
+                );
             }
             setModalOpen(false);
             void refetch();
         } catch (err: unknown) {
             const message =
                 (err as { data?: { message?: string } })?.data?.message ||
-                "Failed to save shift definition";
+                (isAm
+                    ? "የፈረቃ ፍቺውን መመዝገብ አልተቻለም"
+                    : "Failed to save shift definition");
             setFormError(message);
         }
     };
@@ -216,13 +251,17 @@ export default function ShiftDefinitionsManager({
         if (!deleteTarget) return;
         try {
             await deleteShift(deleteTarget.id).unwrap();
-            toast.success(`Shift "${deleteTarget.name}" removed.`);
+            toast.success(
+                isAm
+                    ? `የፈረቃ "${deleteTarget.name}" ተሰርዟል።`
+                    : `Shift "${deleteTarget.name}" removed.`,
+            );
             setDeleteTarget(null);
             void refetch();
         } catch (err: unknown) {
             const message =
                 (err as { data?: { message?: string } })?.data?.message ||
-                "Failed to remove shift";
+                (isAm ? "ፈረቃውን መሰረዝ አልተቻለም" : "Failed to remove shift");
             toast.error(message);
         }
     };
@@ -236,9 +275,17 @@ export default function ShiftDefinitionsManager({
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <PageHeader
                         compact
-                        eyebrow="HR"
-                        title="Shift Definitions & Templates"
-                        description="Configure operational shifts, start and end times, and station coverage."
+                        eyebrow={isAm ? "የሰው ኃይል" : "HR"}
+                        title={
+                            isAm
+                                ? "የፈረቃ ፍቺዎች እና ቅጾች"
+                                : "Shift Definitions & Templates"
+                        }
+                        description={
+                            isAm
+                                ? "የሥራ ፈረቃዎችን፣ መጀመሪያ እና ማብቂያ ሰዓታትን እና የተሸፈኑ ቦታዎችን ያዋቅሩ።"
+                                : "Configure operational shifts, start and end times, and station coverage."
+                        }
                     />
                     <div className="flex items-center gap-2 self-start sm:self-auto">
                         <Button
@@ -247,7 +294,7 @@ export default function ShiftDefinitionsManager({
                             className="gap-2 shadow-xs"
                         >
                             <Plus className="size-4" />
-                            Create Custom Shift
+                            {isAm ? "ብጁ ፈረቃ ፍጠር" : "Create Custom Shift"}
                         </Button>
                     </div>
                 </div>
@@ -258,11 +305,15 @@ export default function ShiftDefinitionsManager({
                         <div className="flex items-center gap-2">
                             <Sparkles className="size-4 text-brand" />
                             <h2 className="text-sm font-normal tracking-tight text-foreground">
-                                Recommended 1-Click Shift Templates
+                                {isAm
+                                    ? "የሚመከሩ የ1-ጠቅታ የፈረቃ ቅጾች"
+                                    : "Recommended 1-Click Shift Templates"}
                             </h2>
                         </div>
                         <span className="text-[11px] text-muted-foreground">
-                            POS Standard 8-Hour Rotations
+                            {isAm
+                                ? "የ8-ሰዓት መደበኛ ፈረቃዎች"
+                                : "POS Standard 8-Hour Rotations"}
                         </span>
                     </div>
 
@@ -290,7 +341,9 @@ export default function ShiftDefinitionsManager({
                                                 </div>
                                                 <div>
                                                     <h3 className="text-sm font-normal tracking-tight text-foreground">
-                                                        {preset.name}
+                                                        {isAm
+                                                            ? preset.nameAm
+                                                            : preset.name}
                                                     </h3>
                                                     <span className="text-[11px] font-normal text-slate-gray">
                                                         {preset.tag}
@@ -319,19 +372,23 @@ export default function ShiftDefinitionsManager({
                                         </div>
 
                                         <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-                                            {preset.description}
+                                            {isAm
+                                                ? preset.descriptionAm
+                                                : preset.description}
                                         </p>
                                     </div>
 
                                     <div className="mt-4 pt-3 border-t border-hairline/60 flex items-center justify-between">
                                         <span className="text-[11px] font-normal text-muted-foreground flex items-center gap-1">
                                             <Clock className="size-3 text-slate-gray" />
-                                            8 Hours
+                                            {isAm ? "8 ሰዓታት" : "8 Hours"}
                                         </span>
                                         {isInstalled ? (
                                             <span className="inline-flex items-center gap-1 text-[11px] font-normal text-emerald-600 dark:text-emerald-400">
                                                 <CheckCircle2 className="size-3.5" />
-                                                Active Template
+                                                {isAm
+                                                    ? "ንቁ ቅጽ"
+                                                    : "Active Template"}
                                             </span>
                                         ) : (
                                             <Button
@@ -344,7 +401,9 @@ export default function ShiftDefinitionsManager({
                                                 }
                                             >
                                                 <Plus className="size-3" />
-                                                Add Template
+                                                {isAm
+                                                    ? "ቅጹን ጨምር"
+                                                    : "Add Template"}
                                             </Button>
                                         )}
                                     </div>
@@ -359,11 +418,14 @@ export default function ShiftDefinitionsManager({
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline px-5 py-4 sm:px-6 bg-secondary/30">
                         <div>
                             <h3 className="text-sm font-normal tracking-tight text-foreground">
-                                Active Shift Definitions ({shifts.length})
+                                {isAm
+                                    ? `ንቁ የፈረቃ ፍቺዎች (${shifts.length})`
+                                    : `Active Shift Definitions (${shifts.length})`}
                             </h3>
                             <p className="text-xs text-muted-foreground">
-                                Shifts assigned to cashiers, floor servers, and
-                                order stations in this branch.
+                                {isAm
+                                    ? "በዚህ ቅርንጫፍ ለገንዘብ ተቀባዮች፣ አሳላፊዎች እና የትዕዛዝ ጣቢያዎች የተመደቡ ፈረቃዎች።"
+                                    : "Shifts assigned to cashiers, floor servers, and order stations in this branch."}
                             </p>
                         </div>
                         <Button
@@ -373,24 +435,28 @@ export default function ShiftDefinitionsManager({
                             className="h-8 text-xs font-normal gap-1.5"
                         >
                             <Plus className="size-3.5" />
-                            Add Custom Shift
+                            {isAm ? "ብጁ ፈረቃ ጨምር" : "Add Custom Shift"}
                         </Button>
                     </div>
 
                     {isLoading ? (
                         <div className="p-8 text-center text-xs text-muted-foreground">
-                            Loading shift definitions...
+                            {isAm
+                                ? "የፈረቃ ፍቺዎች በመጫን ላይ..."
+                                : "Loading shift definitions..."}
                         </div>
                     ) : shifts.length === 0 ? (
                         <div className="p-10 text-center space-y-3">
                             <Clock3 className="size-10 text-muted-foreground/40 mx-auto" />
                             <p className="text-sm font-normal text-foreground">
-                                No shift definitions created yet.
+                                {isAm
+                                    ? "እስካሁን የተፈጠረ የፈረቃ ፍቺ የለም።"
+                                    : "No shift definitions created yet."}
                             </p>
                             <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                                Click any of the 1-click templates above
-                                (Morning, Afternoon, Night) or create a custom
-                                shift schedule.
+                                {isAm
+                                    ? "ከላይ ካሉት የ1-ጠቅታ ቅጾች (ጠዋት፣ ከሰዓት፣ ሌሊት) አንዱን ይምረጡ ወይም ብጁ ፈረቃ ይፍጠሩ።"
+                                    : "Click any of the 1-click templates above (Morning, Afternoon, Night) or create a custom shift schedule."}
                             </p>
                         </div>
                     ) : (
@@ -428,19 +494,19 @@ export default function ShiftDefinitionsManager({
                                                     </p>
                                                     {duration.isOvernight && (
                                                         <span className="rounded-md border border-hairline bg-secondary px-1.5 py-0.5 text-[10px] font-normal text-foreground">
-                                                            Overnight
+                                                            {isAm
+                                                                ? "አዳር"
+                                                                : "Overnight"}
                                                         </span>
                                                     )}
                                                     <span className="rounded-md border border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 text-[10px] font-normal">
-                                                        Active
+                                                        {isAm ? "ንቁ" : "Active"}
                                                     </span>
                                                 </div>
                                                 <p className="text-xs text-muted-foreground mt-0.5">
-                                                    {duration.hours}h{" "}
-                                                    {duration.minutes > 0
-                                                        ? `${duration.minutes}m `
-                                                        : ""}
-                                                    shift window
+                                                    {isAm
+                                                        ? `${duration.hours} ሰዓት ${duration.minutes > 0 ? `${duration.minutes} ደቂቃ ` : ""}የፈረቃ ጊዜ`
+                                                        : `${duration.hours}h ${duration.minutes > 0 ? `${duration.minutes}m ` : ""}shift window`}
                                                 </p>
                                             </div>
                                         </div>
@@ -479,7 +545,11 @@ export default function ShiftDefinitionsManager({
                                                         openEditModal(shift);
                                                     }}
                                                     className="flex size-8 items-center justify-center rounded-lg border border-hairline text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors cursor-pointer"
-                                                    title="Edit shift"
+                                                    title={
+                                                        isAm
+                                                            ? "ፈረቃ አርትዕ"
+                                                            : "Edit shift"
+                                                    }
                                                 >
                                                     <Edit3 className="size-3.5" />
                                                 </button>
@@ -490,7 +560,11 @@ export default function ShiftDefinitionsManager({
                                                         setDeleteTarget(shift);
                                                     }}
                                                     className="flex size-8 items-center justify-center rounded-lg border border-hairline text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
-                                                    title="Delete shift"
+                                                    title={
+                                                        isAm
+                                                            ? "ፈረቃ ሰርዝ"
+                                                            : "Delete shift"
+                                                    }
                                                 >
                                                     <Trash2 className="size-3.5" />
                                                 </button>
@@ -508,16 +582,14 @@ export default function ShiftDefinitionsManager({
                     <AlertCircle className="size-4 shrink-0 mt-0.5 text-muted-foreground" />
                     <div>
                         <p className="font-normal text-foreground">
-                            Shift Handover & Drawer Continuity
+                            {isAm
+                                ? "የፈረቃ ርክክብ እና የካዝና ቀጣይነት"
+                                : "Shift Handover & Drawer Continuity"}
                         </p>
                         <p className="mt-0.5 leading-relaxed text-muted-foreground">
-                            Cashiers transitioning between Morning, Afternoon,
-                            and Night shifts can use the Handover to Next
-                            Cashier feature on the Cashier Shift desk. Handover
-                            automatically counts cash, reserves the opening
-                            float for the incoming cashier, transfers safe
-                            drops, and authenticates the incoming cashier with
-                            their PIN in a single continuous flow.
+                            {isAm
+                                ? "በጠዋት፣ ከሰዓት እና በሌሊት ፈረቃዎች መካከል የሚቀያየሩ ገንዘብ ተቀባዮች በካሸር ዴስክ ላይ ያለውን 'ለቀጣዩ ካሸር አስረክብ' የሚለውን መጠቀም ይችላሉ። ርክክብ ጥሬ ገንዘብን በራስ-ሰር ይቆጥራል፣ ለመጪው ካሸር የመነሻ ተንሳፋፊ ገንዘብ ያስቀምጣል፣ ወደ ካዝና የተላለፈውን ገቢ ያሳያል እንዲሁም የሚረከበውን ካሸር በPIN ኮድ ያረጋግጣል።"
+                                : "Cashiers transitioning between Morning, Afternoon, and Night shifts can use the Handover to Next Cashier feature on the Cashier Shift desk. Handover automatically counts cash, reserves the opening float for the incoming cashier, transfers safe drops, and authenticates the incoming cashier with their PIN in a single continuous flow."}
                         </p>
                     </div>
                 </div>
@@ -532,8 +604,12 @@ export default function ShiftDefinitionsManager({
                                 <Clock3 className="size-5 text-brand" />
                                 <h3 className="text-base font-normal text-foreground">
                                     {editingShift
-                                        ? "Edit Shift Definition"
-                                        : "Create Custom Shift"}
+                                        ? isAm
+                                            ? "የፈረቃ ፍቺን አርትዕ"
+                                            : "Edit Shift Definition"
+                                        : isAm
+                                          ? "ብጁ ፈረቃ ፍጠር"
+                                          : "Create Custom Shift"}
                                 </h3>
                             </div>
                             <button
@@ -558,13 +634,17 @@ export default function ShiftDefinitionsManager({
 
                             <div>
                                 <label className="block text-xs font-normal text-foreground mb-1.5">
-                                    Shift Name
+                                    {isAm ? "የፈረቃ ስም" : "Shift Name"}
                                 </label>
                                 <Input
                                     type="text"
                                     value={name}
                                     onChange={e => setName(e.target.value)}
-                                    placeholder="e.g. Breakfast Rush, Weekend Evening"
+                                    placeholder={
+                                        isAm
+                                            ? "ለምሳሌ፡ የጠዋት ቁርስ፣ የሳምንት መጨረሻ ምሽት"
+                                            : "e.g. Breakfast Rush, Weekend Evening"
+                                    }
                                     required
                                     className="h-10"
                                 />
@@ -573,7 +653,9 @@ export default function ShiftDefinitionsManager({
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-xs font-normal text-foreground mb-1.5">
-                                        Start Local Time
+                                        {isAm
+                                            ? "የመጀመሪያ ሰዓት"
+                                            : "Start Local Time"}
                                     </label>
                                     <Input
                                         type="time"
@@ -587,7 +669,7 @@ export default function ShiftDefinitionsManager({
                                 </div>
                                 <div>
                                     <label className="block text-xs font-normal text-foreground mb-1.5">
-                                        End Local Time
+                                        {isAm ? "የማብቂያ ሰዓት" : "End Local Time"}
                                     </label>
                                     <Input
                                         type="time"
@@ -604,7 +686,9 @@ export default function ShiftDefinitionsManager({
                             {/* Ethiopian Local Time preview */}
                             <div className="rounded-xl border border-hairline bg-secondary/30 p-2.5 text-xs text-foreground flex items-center justify-between">
                                 <span className="text-muted-foreground">
-                                    የኢትዮጵያ ሰዓት (Local Time):
+                                    {isAm
+                                        ? "የኢትዮጵያ ሰዓት አቆጣጠር:"
+                                        : "የኢትዮጵያ ሰዓት (Local Time):"}
                                 </span>
                                 <span className="font-normal font-mono text-foreground">
                                     {
@@ -621,18 +705,21 @@ export default function ShiftDefinitionsManager({
 
                             {/* Duration preview */}
                             <div className="rounded-xl bg-secondary/50 p-3 text-xs flex items-center justify-between text-muted-foreground">
-                                <span>Calculated Duration:</span>
+                                <span>
+                                    {isAm
+                                        ? "የተሰላ የፈረቃ ቆይታ:"
+                                        : "Calculated Duration:"}
+                                </span>
                                 <span className="font-normal text-foreground flex items-center gap-1.5">
-                                    {previewDuration.hours} hours{" "}
-                                    {previewDuration.minutes > 0
-                                        ? `${previewDuration.minutes}m`
-                                        : ""}
+                                    {isAm
+                                        ? `${previewDuration.hours} ሰዓት ${previewDuration.minutes > 0 ? `${previewDuration.minutes} ደቂቃ` : ""}`
+                                        : `${previewDuration.hours} hours ${previewDuration.minutes > 0 ? `${previewDuration.minutes}m` : ""}`}
                                     {previewDuration.isOvernight && (
                                         <Badge
                                             variant="outline"
                                             className="text-[10px] py-0 px-1.5 font-normal"
                                         >
-                                            Overnight
+                                            {isAm ? "አዳር" : "Overnight"}
                                         </Badge>
                                     )}
                                 </span>
@@ -644,17 +731,23 @@ export default function ShiftDefinitionsManager({
                                     variant="outline"
                                     onClick={() => setModalOpen(false)}
                                 >
-                                    Cancel
+                                    {isAm ? "ሰርዝ" : "Cancel"}
                                 </Button>
                                 <Button
                                     type="submit"
                                     disabled={creating || updating}
                                 >
                                     {creating || updating
-                                        ? "Saving..."
+                                        ? isAm
+                                            ? "በማስቀመጥ ላይ..."
+                                            : "Saving..."
                                         : editingShift
-                                          ? "Save Changes"
-                                          : "Create Shift"}
+                                          ? isAm
+                                              ? "ለውጦችን መዝግብ"
+                                              : "Save Changes"
+                                          : isAm
+                                            ? "ፈረቃ ፍጠር"
+                                            : "Create Shift"}
                                 </Button>
                             </div>
                         </form>
@@ -670,14 +763,14 @@ export default function ShiftDefinitionsManager({
                             <Trash2 className="size-6" />
                         </div>
                         <h4 className="mt-4 text-center text-base font-normal text-foreground">
-                            Remove Shift Definition?
+                            {isAm
+                                ? "የፈረቃ ፍቺው ይሰረዝ?"
+                                : "Remove Shift Definition?"}
                         </h4>
                         <p className="mt-1.5 text-center text-xs text-muted-foreground">
-                            Are you sure you want to remove &quot;
-                            {deleteTarget.name}&quot; (
-                            {deleteTarget.startLocalTime} –{" "}
-                            {deleteTarget.endLocalTime})? Current clocked-in
-                            sessions will not be affected.
+                            {isAm
+                                ? `እርግጠኛ ነዎት "${deleteTarget.name}" (${deleteTarget.startLocalTime} – ${deleteTarget.endLocalTime}) መሰረዝ ይፈልጋሉ? አሁን በስራ ላይ ያሉ የተመዘገቡ ክፍለ-ጊዜዎች አይነኩም።`
+                                : `Are you sure you want to remove "${deleteTarget.name}" (${deleteTarget.startLocalTime} – ${deleteTarget.endLocalTime})? Current clocked-in sessions will not be affected.`}
                         </p>
 
                         <div className="mt-6 flex items-center gap-2">
@@ -687,7 +780,7 @@ export default function ShiftDefinitionsManager({
                                 className="flex-1"
                                 onClick={() => setDeleteTarget(null)}
                             >
-                                Cancel
+                                {isAm ? "ይቅር" : "Cancel"}
                             </Button>
                             <Button
                                 type="button"
@@ -696,7 +789,13 @@ export default function ShiftDefinitionsManager({
                                 disabled={deleting}
                                 onClick={handleDelete}
                             >
-                                {deleting ? "Removing..." : "Confirm Delete"}
+                                {deleting
+                                    ? isAm
+                                        ? "በመሰረዝ ላይ..."
+                                        : "Removing..."
+                                    : isAm
+                                      ? "ሰርዝ አረጋግጥ"
+                                      : "Confirm Delete"}
                             </Button>
                         </div>
                     </div>

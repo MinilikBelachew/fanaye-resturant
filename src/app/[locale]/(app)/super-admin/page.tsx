@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo } from "react";
+
 import {
     Activity,
     Building2,
@@ -9,7 +11,7 @@ import {
     Store,
     Users,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,6 +56,7 @@ const SHORTCUTS = [
 ] as const;
 
 export default function SuperAdminPage() {
+    const isAm = useLocale() === "am";
     const t = useTranslations("superAdmin");
     const tTenancy = useTranslations("tenancy");
     const { data, isLoading, isFetching, error, refetch } =
@@ -64,14 +67,48 @@ export default function SuperAdminPage() {
     const dash = data?.data;
     const ops = dash?.opsHealth;
 
+    const shortcuts = useMemo(
+        () => [
+            {
+                href: "/super-admin/tenants",
+                label: isAm ? "ተከራዮች" : "Tenants",
+                hint: isAm ? "ኩባንያዎች እና ቅርንጫፎች" : "Companies & branches",
+                icon: Building2,
+            },
+            {
+                href: "/super-admin/live-ops",
+                label: isAm ? "የቀጥታ ስራዎች" : "Live ops",
+                hint: isAm ? "አሁን ክፍት ወለሎች" : "Open floors now",
+                icon: Activity,
+            },
+            {
+                href: "/super-admin/staff",
+                label: isAm ? "ሰራተኞች" : "Staff",
+                hint: isAm ? "ማህደር እና ፈቃዶች" : "Directory & access",
+                icon: Users,
+            },
+            {
+                href: "/super-admin/audit",
+                label: isAm ? "ኦዲት" : "Audit",
+                hint: isAm ? "የፕላትፎርም ክስተቶች" : "Platform events",
+                icon: ScrollText,
+            },
+        ],
+        [isAm],
+    );
+
     return (
         <DashboardFrame>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <PageHeader
                     compact
-                    eyebrow="Platform"
-                    title="Super admin"
-                    description="Network health, tenant fleet, and live GMV across every restaurant."
+                    eyebrow={isAm ? "ፕላትፎርም" : "Platform"}
+                    title={isAm ? "ሱፐር አድሚን ዳሽቦርድ" : "Super admin"}
+                    description={
+                        isAm
+                            ? "የአውታረ መረብ ጤና፣ የተከራዮች ዝርዝር እና የቀጥታ ሽያጭ (GMV) በእያንዳንዱ ሬስቶራንት።"
+                            : "Network health, tenant fleet, and live GMV across every restaurant."
+                    }
                 />
                 <Button
                     variant="outline"
@@ -94,7 +131,7 @@ export default function SuperAdminPage() {
             ) : null}
 
             <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                {SHORTCUTS.map(item => {
+                {shortcuts.map(item => {
                     const Icon = item.icon;
                     return (
                         <Link

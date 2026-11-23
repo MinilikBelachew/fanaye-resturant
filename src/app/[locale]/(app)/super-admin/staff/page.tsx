@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
     Building2,
     Check,
@@ -82,6 +82,7 @@ function formatLogin(value: string | null | undefined, neverLabel: string) {
 }
 
 export default function StaffDirectoryPage() {
+    const isAm = useLocale() === "am";
     const t = useTranslations("superAdmin");
     const tCommon = useTranslations("common");
     const tTenancy = useTranslations("tenancy");
@@ -504,9 +505,13 @@ export default function StaffDirectoryPage() {
         <DashboardFrame>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
                 <PageHeader
-                    eyebrow="Platform Management"
-                    title="Staff Directory"
-                    description="View, filter, manage PINs, and create staff accounts across all restaurant tenants."
+                    eyebrow={isAm ? "የፕላትፎርም አስተዳደር" : "Platform Management"}
+                    title={isAm ? "የሰራተኞች ማህደር" : "Staff Directory"}
+                    description={
+                        isAm
+                            ? "በሁሉም የሬስቶራንት ተከራዮች ውስጥ ያሉትን ሰራተኞች ይመልከቱ፣ ያጣሩ፣ ፒን ያስተዳድሩ እና አዲስ መለያዎችን ይፍጠሩ።"
+                            : "View, filter, manage PINs, and create staff accounts across all restaurant tenants."
+                    }
                 />
 
                 <div className="flex items-center gap-2">

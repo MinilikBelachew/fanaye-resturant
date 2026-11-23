@@ -81,6 +81,33 @@ const LABEL_KEYS: Record<string, string> = {
     Shifts: "shift",
     Attendance: "attendance",
     Leave: "leave",
+    "Tenant Activity": "tenantActivity",
+    Marketing: "marketing",
+    Talent: "talent",
+    "Market Prices": "marketPrices",
+    Testimonials: "testimonials",
+    "Automated Backups": "automatedBackups",
+    "Backup & Restore": "backupRestore",
+    "AI Advisor": "aiAdvisor",
+    "Menu catalog": "menuCatalog",
+    "VIP Pricing": "vipPricing",
+    "Returnable Materials": "returnableMaterials",
+    "Station menu": "stationMenu",
+    "My leave": "myLeave",
+    Rooms: "rooms",
+    "Front desk": "frontDesk",
+    "Front Desk": "frontDesk",
+    "Reports & Audits": "reportsAudits",
+    "Active Shifts": "activeShifts",
+    "Shift Handovers": "shiftHandovers",
+    Analytics: "analytics",
+    Materials: "materials",
+    "Outside Orders": "outsideOrders",
+    "Customers & Loyalty": "customersLoyalty",
+    Outside: "outside",
+    Board: "board",
+    "In house": "inHouse",
+    "Shipments & Transfers": "shipmentsTransfers",
 };
 
 const headerClass =
@@ -164,8 +191,9 @@ function AppTopBarInner({ className }: { className?: string }) {
         : current
           ? translateLabel(current.label)
           : tTopBar("dashboard");
+    const roleKey = staff?.role?.toLowerCase() ?? "";
     const roleContext =
-        staff && tRoles.has(staff.role) ? tRoles(staff.role) : staff?.role;
+        staff && tRoles.has(roleKey) ? tRoles(roleKey) : (staff?.role ?? "");
     const stationQueue =
         staff && isStationRole(staff.role) && pathname === home;
 

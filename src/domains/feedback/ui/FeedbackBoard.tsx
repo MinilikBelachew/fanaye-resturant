@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useLocale } from "next-intl";
 import {
     CheckCheck,
     Globe,
@@ -24,11 +25,16 @@ import {
     useUpdateFeedbackStatusMutation,
 } from "@/context/services/feedbackApi";
 
-const STATUS_LABELS: Record<FeedbackStatus, string> = {
-    NEW: "New",
-    READ: "Read",
-    RESOLVED: "Resolved",
-};
+function getStatusLabel(status: FeedbackStatus, isAm: boolean): string {
+    if (isAm) {
+        if (status === "NEW") return "አዲስ";
+        if (status === "READ") return "የተነበበ";
+        return "የተፈታ";
+    }
+    if (status === "NEW") return "New";
+    if (status === "READ") return "Read";
+    return "Resolved";
+}
 
 const STATUS_STYLES: Record<FeedbackStatus, string> = {
     NEW: "bg-amber-500/15 text-amber-700 border-amber-500/30 dark:text-amber-300",
@@ -37,10 +43,14 @@ const STATUS_STYLES: Record<FeedbackStatus, string> = {
         "bg-emerald-500/15 text-emerald-700 border-emerald-500/30 dark:text-emerald-300",
 };
 
-const SOURCE_LABELS: Record<FeedbackSource, string> = {
-    QR_MENU: "QR Menu",
-    WEBSITE: "Website",
-};
+function getSourceLabel(source: FeedbackSource, isAm: boolean): string {
+    if (isAm) {
+        if (source === "QR_MENU") return "QR ሜኑ";
+        return "ድር ጣቢያ";
+    }
+    if (source === "QR_MENU") return "QR Menu";
+    return "Website";
+}
 
 function StarRow({
     rating,
@@ -78,6 +88,7 @@ function formatDateTime(iso: string): string {
 }
 
 export default function FeedbackBoard() {
+    const isAm = useLocale() === "am";
     const [statusFilter, setStatusFilter] = useState<FeedbackStatus | "ALL">(
         "ALL",
     );
@@ -133,7 +144,7 @@ export default function FeedbackBoard() {
             {/* KPI row */}
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <KpiCard
-                    label="Average rating"
+                    label={isAm ? "አማካኝ ደረጃ" : "Average rating"}
                     value={
                         summary
                             ? `${summary.averageRating.toFixed(1)} / 5`
@@ -141,28 +152,34 @@ export default function FeedbackBoard() {
                     }
                     hint={
                         summary
-                            ? `${summary.total} review${summary.total === 1 ? "" : "s"} total`
+                            ? isAm
+                                ? `በአጠቃላይ ${summary.total} ግምገማዎች`
+                                : `${summary.total} review${summary.total === 1 ? "" : "s"} total`
                             : undefined
                     }
                     tone="amber"
                     accent
                 />
                 <KpiCard
-                    label="New / unread"
+                    label={isAm ? "አዲስ / ያልተነበበ" : "New / unread"}
                     value={String(summary?.newCount ?? 0)}
-                    hint="Waiting for follow-up"
+                    hint={isAm ? "ክትትል የሚጠብቅ" : "Waiting for follow-up"}
                     icon={<Inbox className="size-4" />}
                 />
                 <KpiCard
-                    label="Low ratings (1–2★)"
+                    label={isAm ? "ዝቅተኛ ደረጃዎች (1–2★)" : "Low ratings (1–2★)"}
                     value={String(summary?.lowRatingCount ?? 0)}
-                    hint="Needs attention"
+                    hint={isAm ? "ትኩረት የሚሻ" : "Needs attention"}
                     icon={<ThumbsDown className="size-4" />}
                 />
                 <KpiCard
-                    label="Last 30 days"
+                    label={isAm ? "ያለፉት 30 ቀናት" : "Last 30 days"}
                     value={String(summary?.last30DaysCount ?? 0)}
-                    hint={`${summary?.resolvedCount ?? 0} resolved`}
+                    hint={
+                        isAm
+                            ? `${summary?.resolvedCount ?? 0} የተፈቱ`
+                            : `${summary?.resolvedCount ?? 0} resolved`
+                    }
                     icon={<MessageSquareQuote className="size-4" />}
                 />
             </div>
@@ -182,10 +199,16 @@ export default function FeedbackBoard() {
                             }}
                             className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs"
                         >
-                            <option value="ALL">All statuses</option>
-                            <option value="NEW">New</option>
-                            <option value="READ">Read</option>
-                            <option value="RESOLVED">Resolved</option>
+                            <option value="ALL">
+                                {isAm ? "ሁሉም ሁኔታዎች" : "All statuses"}
+                            </option>
+                            <option value="NEW">{isAm ? "አዲስ" : "New"}</option>
+                            <option value="READ">
+                                {isAm ? "የተነበበ" : "Read"}
+                            </option>
+                            <option value="RESOLVED">
+                                {isAm ? "የተፈታ" : "Resolved"}
+                            </option>
                         </select>
 
                         <select
@@ -198,9 +221,15 @@ export default function FeedbackBoard() {
                             }}
                             className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs"
                         >
-                            <option value="ALL">All sources</option>
-                            <option value="QR_MENU">QR Menu</option>
-                            <option value="WEBSITE">Website</option>
+                            <option value="ALL">
+                                {isAm ? "ሁሉም ምንጮች" : "All sources"}
+                            </option>
+                            <option value="QR_MENU">
+                                {isAm ? "QR ሜኑ" : "QR Menu"}
+                            </option>
+                            <option value="WEBSITE">
+                                {isAm ? "ድር ጣቢያ" : "Website"}
+                            </option>
                         </select>
 
                         <select
@@ -214,10 +243,14 @@ export default function FeedbackBoard() {
                             }}
                             className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs"
                         >
-                            <option value="ALL">All ratings</option>
+                            <option value="ALL">
+                                {isAm ? "ሁሉም ደረጃዎች" : "All ratings"}
+                            </option>
                             {[5, 4, 3, 2, 1].map(star => (
                                 <option key={star} value={star}>
-                                    {star} star{star === 1 ? "" : "s"}
+                                    {isAm
+                                        ? `${star} ኮከብ`
+                                        : `${star} star${star === 1 ? "" : "s"}`}
                                 </option>
                             ))}
                         </select>
@@ -234,7 +267,7 @@ export default function FeedbackBoard() {
                                     isFetching && "animate-spin",
                                 )}
                             />
-                            Refresh
+                            {isAm ? "አድስ" : "Refresh"}
                         </Button>
                     </div>
 
@@ -242,18 +275,25 @@ export default function FeedbackBoard() {
                         <div className="flex items-center justify-center rounded-2xl border border-border bg-background py-14">
                             <RestorchLoader
                                 size="md"
-                                label="Loading customer feedback…"
+                                label={
+                                    isAm
+                                        ? "የደንበኞች አስተያየት በመጫን ላይ…"
+                                        : "Loading customer feedback…"
+                                }
                             />
                         </div>
                     ) : items.length === 0 ? (
                         <div className="rounded-2xl border border-border bg-background py-16 text-center">
                             <MessageSquareQuote className="mx-auto size-8 text-muted-foreground/50" />
                             <p className="mt-2 text-sm font-medium">
-                                No feedback yet
+                                {isAm
+                                    ? "እስካሁን ምንም አስተያየት የለም"
+                                    : "No feedback yet"}
                             </p>
                             <p className="mt-1 text-xs text-muted-foreground">
-                                Reviews from the QR table menu and your website
-                                will appear here.
+                                {isAm
+                                    ? "ከQR ጠረጴዛ ሜኑ እና ከድር ጣቢያዎ የሚመጡ ግምገማዎች እዚህ ይታያሉ።"
+                                    : "Reviews from the QR table menu and your website will appear here."}
                             </p>
                         </div>
                     ) : (
@@ -275,10 +315,16 @@ export default function FeedbackBoard() {
                                                     STATUS_STYLES[item.status],
                                                 )}
                                             >
-                                                {STATUS_LABELS[item.status]}
+                                                {getStatusLabel(
+                                                    item.status,
+                                                    isAm,
+                                                )}
                                             </span>
                                             <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                                {SOURCE_LABELS[item.source]}
+                                                {getSourceLabel(
+                                                    item.source,
+                                                    isAm,
+                                                )}
                                             </span>
                                         </div>
                                         <span className="text-[11px] text-muted-foreground">
@@ -292,7 +338,9 @@ export default function FeedbackBoard() {
                                         </p>
                                     ) : (
                                         <p className="mt-2.5 text-xs italic text-muted-foreground">
-                                            No comment provided.
+                                            {isAm
+                                                ? "ምንም አስተያየት አልተሰጠም።"
+                                                : "No comment provided."}
                                         </p>
                                     )}
 
@@ -300,7 +348,9 @@ export default function FeedbackBoard() {
                                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
                                             <span>
                                                 {item.customerName ||
-                                                    "Anonymous guest"}
+                                                    (isAm
+                                                        ? "ስም ያልጠቀሰ እንግዳ"
+                                                        : "Anonymous guest")}
                                             </span>
                                             {item.tableName ? (
                                                 <span>· {item.tableName}</span>
@@ -338,8 +388,12 @@ export default function FeedbackBoard() {
                                             >
                                                 <Globe className="size-3.5" />
                                                 {item.isApprovedForSite
-                                                    ? "On Website"
-                                                    : "Approve for Site"}
+                                                    ? isAm
+                                                        ? "በድረ-ገጹ ላይ"
+                                                        : "On Website"
+                                                    : isAm
+                                                      ? "ለድረ-ገጽ አጽድቅ"
+                                                      : "Approve for Site"}
                                             </Button>
                                             {item.status === "NEW" ? (
                                                 <Button
@@ -355,7 +409,9 @@ export default function FeedbackBoard() {
                                                     className="gap-1.5 text-xs"
                                                 >
                                                     <MailOpen className="size-3.5" />
-                                                    Mark read
+                                                    {isAm
+                                                        ? "እንደተነበበ ምልክት አድርግ"
+                                                        : "Mark read"}
                                                 </Button>
                                             ) : null}
                                             {item.status !== "RESOLVED" ? (
@@ -371,7 +427,9 @@ export default function FeedbackBoard() {
                                                     className="gap-1.5 text-xs"
                                                 >
                                                     <CheckCheck className="size-3.5" />
-                                                    Resolve
+                                                    {isAm
+                                                        ? "መፍትሔ ስጥ"
+                                                        : "Resolve"}
                                                 </Button>
                                             ) : (
                                                 <Button
@@ -386,7 +444,9 @@ export default function FeedbackBoard() {
                                                     }
                                                     className="text-xs"
                                                 >
-                                                    Reopen
+                                                    {isAm
+                                                        ? "እንደገና ክፈት"
+                                                        : "Reopen"}
                                                 </Button>
                                             )}
                                         </div>
@@ -399,8 +459,9 @@ export default function FeedbackBoard() {
                     {meta && meta.totalPages > 1 ? (
                         <div className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-2.5 text-xs">
                             <span className="text-muted-foreground">
-                                Page {meta.page} of {meta.totalPages} ·{" "}
-                                {meta.total} total
+                                {isAm
+                                    ? `ገጽ ${meta.page} ከ ${meta.totalPages} · በአጠቃላይ ${meta.total}`
+                                    : `Page ${meta.page} of ${meta.totalPages} · ${meta.total} total`}
                             </span>
                             <div className="flex gap-2">
                                 <Button
@@ -412,7 +473,7 @@ export default function FeedbackBoard() {
                                     }
                                     className="text-xs"
                                 >
-                                    Previous
+                                    {isAm ? "ቀዳሚ" : "Previous"}
                                 </Button>
                                 <Button
                                     variant="outline"
@@ -421,7 +482,7 @@ export default function FeedbackBoard() {
                                     onClick={() => setPage(p => p + 1)}
                                     className="text-xs"
                                 >
-                                    Next
+                                    {isAm ? "ቀጣይ" : "Next"}
                                 </Button>
                             </div>
                         </div>
@@ -432,25 +493,12 @@ export default function FeedbackBoard() {
                 <div className="space-y-5">
                     <div className="rounded-2xl border border-border bg-background p-4">
                         <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                            Rating distribution
+                            {isAm ? "የደረጃዎች ስርጭት" : "Rating distribution"}
                         </h3>
                         <div className="mt-3 space-y-2">
                             {[5, 4, 3, 2, 1].map(star => {
                                 const count =
                                     summary?.distribution[String(star)] ?? 0;
-                                async function toggleWebsiteApproval(
-                                    id: string,
-                                    approved: boolean,
-                                ) {
-                                    try {
-                                        await setWebsiteApproval({
-                                            id,
-                                            approved,
-                                        }).unwrap();
-                                    } catch {
-                                        // non-owner or network error
-                                    }
-                                }
 
                                 return (
                                     <div
@@ -480,7 +528,7 @@ export default function FeedbackBoard() {
                     {summary && summary.byBranch.length > 1 ? (
                         <div className="rounded-2xl border border-border bg-background p-4">
                             <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                                By branch
+                                {isAm ? "በቅርንጫፍ" : "By branch"}
                             </h3>
                             <div className="mt-3 space-y-2.5">
                                 {summary.byBranch.map(branch => (

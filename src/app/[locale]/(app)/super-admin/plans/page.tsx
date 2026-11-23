@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale } from "next-intl";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import { CreditCard, Pencil, Plus, RefreshCw, Trash2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ const EMPTY_FORM: PlanForm = {
 };
 
 export default function SuperAdminPlansPage() {
+    const isAm = useLocale() === "am";
     const { data, isLoading, isFetching, error, refetch } =
         useListPlatformPlansQuery();
     const [createPlan, { isLoading: creating }] =
@@ -74,7 +76,9 @@ export default function SuperAdminPlansPage() {
         const maxBranches = parseMax(form.maxBranches);
         if (!form.name.trim() || !form.code.trim() || maxBranches == null) {
             toast.error(
-                "Name, code, and a branch limit of 1 or more are required.",
+                isAm
+                    ? "ስም፣ ኮድ እና ቢያንስ 1 የቅርንጫፍ ገደብ ያስፈልጋል።"
+                    : "Name, code, and a branch limit of 1 or more are required.",
             );
             return;
         }
@@ -84,11 +88,17 @@ export default function SuperAdminPlansPage() {
                 code: form.code.trim(),
                 maxBranches,
             }).unwrap();
-            toast.success("Plan created", form.name.trim());
+            toast.success(
+                isAm ? "እቅድ ተፈጥሯል" : "Plan created",
+                form.name.trim(),
+            );
             setCreateOpen(false);
             setForm(EMPTY_FORM);
         } catch (err) {
-            toast.fromUnknown(err, "Could not create this plan.");
+            toast.fromUnknown(
+                err,
+                isAm ? "ይህን እቅድ መፍጠር አልተቻለም።" : "Could not create this plan.",
+            );
         }
     }
 
@@ -98,7 +108,9 @@ export default function SuperAdminPlansPage() {
         const maxBranches = parseMax(form.maxBranches);
         if (!form.name.trim() || !form.code.trim() || maxBranches == null) {
             toast.error(
-                "Name, code, and a branch limit of 1 or more are required.",
+                isAm
+                    ? "ስም፣ ኮድ እና ቢያንስ 1 የቅርንጫፍ ገደብ ያስፈልጋል።"
+                    : "Name, code, and a branch limit of 1 or more are required.",
             );
             return;
         }
@@ -111,10 +123,16 @@ export default function SuperAdminPlansPage() {
                     maxBranches,
                 },
             }).unwrap();
-            toast.success("Plan updated", form.name.trim());
+            toast.success(
+                isAm ? "እቅድ ተዘምኗል" : "Plan updated",
+                form.name.trim(),
+            );
             setEditPlan(null);
         } catch (err) {
-            toast.fromUnknown(err, "Could not update this plan.");
+            toast.fromUnknown(
+                err,
+                isAm ? "ይህን እቅድ ማዘመን አልተቻለም።" : "Could not update this plan.",
+            );
         }
     }
 
@@ -122,12 +140,17 @@ export default function SuperAdminPlansPage() {
         if (!deleteTarget) return;
         try {
             await deletePlan(deleteTarget.id).unwrap();
-            toast.success("Plan deleted", deleteTarget.name);
+            toast.success(
+                isAm ? "እቅድ ተሰርዟል" : "Plan deleted",
+                deleteTarget.name,
+            );
             setDeleteTarget(null);
         } catch (err) {
             toast.fromUnknown(
                 err,
-                "Could not delete this plan. Move tenants off it first.",
+                isAm
+                    ? "ይህን እቅድ መሰረዝ አልተቻለም። መጀመሪያ ተከራዮችን ወደ ሌላ እቅድ ይቀይሩ።"
+                    : "Could not delete this plan. Move tenants off it first.",
             );
         }
     }
@@ -137,9 +160,13 @@ export default function SuperAdminPlansPage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <PageHeader
                     compact
-                    eyebrow="Platform"
-                    title="Plans"
-                    description="Create, edit, or delete subscription plans. Branch limits apply when a restaurant adds a location."
+                    eyebrow={isAm ? "ፕላትፎርም" : "Platform"}
+                    title={isAm ? "የደንበኝነት እቅዶች" : "Plans"}
+                    description={
+                        isAm
+                            ? "የደንበኝነት እቅዶችን ይፍጠሩ፣ ያርትዑ ወይም ይሰርዙ። የቅርንጫፍ ገደቦች አንድ ሬስቶራንት ተጨማሪ ቅርንጫፍ ሲከፍት ተግባራዊ ይሆናሉ።"
+                            : "Create, edit, or delete subscription plans. Branch limits apply when a restaurant adds a location."
+                    }
                 />
                 <div className="flex items-center gap-2">
                     <Button
@@ -152,7 +179,7 @@ export default function SuperAdminPlansPage() {
                         <RefreshCw
                             className={`size-3.5 ${isFetching ? "animate-spin" : ""}`}
                         />
-                        Refresh
+                        {isAm ? "አድስ" : "Refresh"}
                     </Button>
                     <Button
                         size="sm"
@@ -160,33 +187,37 @@ export default function SuperAdminPlansPage() {
                         className="h-8 gap-1.5 rounded-full px-3 text-[11px] font-medium"
                     >
                         <Plus className="size-3.5" />
-                        New plan
+                        {isAm ? "አዲስ እቅድ" : "New plan"}
                     </Button>
                 </div>
             </div>
 
             {error ? (
                 <div className="rounded-[14px] border border-destructive-border bg-destructive-soft p-4 text-xs text-destructive">
-                    Could not load plans from the server.
+                    {isAm
+                        ? "እቅዶችን ከአገልጋዩ መጫን አልተቻለም።"
+                        : "Could not load plans from the server."}
                 </div>
             ) : null}
 
             {isLoading ? (
                 <div className="flex items-center gap-2 py-16 text-[13px] text-slate-gray">
                     <RestorchSpinner className="size-4 " />
-                    Loading plans…
+                    {isAm ? "እቅዶች በመጫን ላይ…" : "Loading plans…"}
                 </div>
             ) : plans.length === 0 ? (
                 <div className="rounded-[16px] border border-hairline bg-card px-5 py-10 text-center">
                     <p className="text-[13px] text-slate-gray">
-                        No plans yet. Create the first one.
+                        {isAm
+                            ? "እስካሁን የተፈጠረ እቅድ የለም። የመጀመሪያውን ይፍጠሩ።"
+                            : "No plans yet. Create the first one."}
                     </p>
                     <Button
                         size="sm"
                         onClick={openCreate}
                         className="mt-3 h-8 rounded-full px-3 text-[12px]"
                     >
-                        New plan
+                        {isAm ? "አዲስ እቅድ" : "New plan"}
                     </Button>
                 </div>
             ) : (
@@ -211,12 +242,13 @@ export default function SuperAdminPlansPage() {
                                     </div>
                                 </div>
                                 <Badge variant="secondary">
-                                    {plan.tenantCount} tenants
+                                    {plan.tenantCount}{" "}
+                                    {isAm ? "ተከራዮች" : "tenants"}
                                 </Badge>
                             </div>
 
                             <p className="mt-4 text-[12px] text-slate-gray">
-                                Max branches
+                                {isAm ? "ከፍተኛ የቅርንጫፍ ብዛት" : "Max branches"}
                             </p>
                             <p className="text-[18px] font-semibold tabular-nums text-foreground">
                                 {plan.maxBranches}
@@ -230,7 +262,7 @@ export default function SuperAdminPlansPage() {
                                     className="h-8 gap-1.5 rounded-full px-3 text-[12px]"
                                 >
                                     <Pencil className="size-3.5" />
-                                    Edit
+                                    {isAm ? "አርትዕ" : "Edit"}
                                 </Button>
                                 <Button
                                     variant="outline"
@@ -239,7 +271,7 @@ export default function SuperAdminPlansPage() {
                                     className="h-8 gap-1.5 rounded-full px-3 text-[12px] text-destructive hover:text-destructive"
                                 >
                                     <Trash2 className="size-3.5" />
-                                    Delete
+                                    {isAm ? "ሰርዝ" : "Delete"}
                                 </Button>
                             </div>
                         </article>
@@ -249,25 +281,29 @@ export default function SuperAdminPlansPage() {
 
             {createOpen ? (
                 <PlanModal
-                    title="New plan"
-                    submitLabel="Create plan"
+                    title={isAm ? "አዲስ እቅድ" : "New plan"}
+                    submitLabel={isAm ? "እቅድ ፍጠር" : "Create plan"}
                     saving={saving}
                     form={form}
                     setForm={setForm}
                     onClose={() => setCreateOpen(false)}
                     onSubmit={handleCreate}
+                    isAm={isAm}
                 />
             ) : null}
 
             {editPlan ? (
                 <PlanModal
-                    title={`Edit ${editPlan.name}`}
-                    submitLabel="Save changes"
+                    title={
+                        isAm ? `${editPlan.name} አርትዕ` : `Edit ${editPlan.name}`
+                    }
+                    submitLabel={isAm ? "ለውጦችን መዝግብ" : "Save changes"}
                     saving={saving}
                     form={form}
                     setForm={setForm}
                     onClose={() => setEditPlan(null)}
                     onSubmit={handleEdit}
+                    isAm={isAm}
                 />
             ) : null}
 
@@ -279,12 +315,18 @@ export default function SuperAdminPlansPage() {
                     />
                     <div className="relative z-10 w-full max-w-md rounded-[20px] border border-hairline bg-white p-6 shadow-2xl dark:bg-card">
                         <h3 className="text-[16px] font-bold text-foreground">
-                            Delete {deleteTarget.name}?
+                            {isAm
+                                ? `${deleteTarget.name} ይሰረዝ?`
+                                : `Delete ${deleteTarget.name}?`}
                         </h3>
                         <p className="mt-2 text-[13px] text-slate-gray">
-                            {deleteTarget.tenantCount > 0
-                                ? `This plan is used by ${deleteTarget.tenantCount} tenant(s). Move them to another plan first.`
-                                : "This removes the plan. It cannot be undone."}
+                            {isAm
+                                ? deleteTarget.tenantCount > 0
+                                    ? `ይህ እቅድ በ${deleteTarget.tenantCount} ተከራይ(ዎች) ጥቅም ላይ እየዋለ ነው። መጀመሪያ ወደ ሌላ እቅድ ይቀይሯቸው።`
+                                    : "ይህ እርምጃ እቅዱን ያስወግደዋል። ወደ ኋላ መመለስ አይቻልም።"
+                                : deleteTarget.tenantCount > 0
+                                  ? `This plan is used by ${deleteTarget.tenantCount} tenant(s). Move them to another plan first.`
+                                  : "This removes the plan. It cannot be undone."}
                         </p>
                         <div className="mt-5 flex justify-end gap-2">
                             <Button
@@ -293,7 +335,7 @@ export default function SuperAdminPlansPage() {
                                 onClick={() => setDeleteTarget(null)}
                                 className="h-9 rounded-xl"
                             >
-                                Cancel
+                                {isAm ? "ይቅር" : "Cancel"}
                             </Button>
                             <Button
                                 type="button"
@@ -303,7 +345,13 @@ export default function SuperAdminPlansPage() {
                                 onClick={() => void handleDelete()}
                                 className="h-9 rounded-xl bg-destructive text-white hover:bg-destructive/90"
                             >
-                                {deleting ? "Deleting…" : "Delete"}
+                                {deleting
+                                    ? isAm
+                                        ? "በመሰረዝ ላይ…"
+                                        : "Deleting…"
+                                    : isAm
+                                      ? "ሰርዝ"
+                                      : "Delete"}
                             </Button>
                         </div>
                     </div>
@@ -321,6 +369,7 @@ function PlanModal({
     setForm,
     onClose,
     onSubmit,
+    isAm = false,
 }: {
     title: string;
     submitLabel: string;
@@ -329,6 +378,7 @@ function PlanModal({
     setForm: React.Dispatch<React.SetStateAction<PlanForm>>;
     onClose: () => void;
     onSubmit: (e: React.FormEvent) => void;
+    isAm?: boolean;
 }) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]">
@@ -349,7 +399,7 @@ function PlanModal({
                 <form onSubmit={onSubmit} className="space-y-3.5 text-[13px]">
                     <div className="space-y-1">
                         <label className="font-medium text-foreground">
-                            Name
+                            {isAm ? "የእቅድ ስም" : "Name"}
                         </label>
                         <Input
                             value={form.name}
@@ -366,7 +416,7 @@ function PlanModal({
                     </div>
                     <div className="space-y-1">
                         <label className="font-medium text-foreground">
-                            Code
+                            {isAm ? "የእቅድ ኮድ" : "Code"}
                         </label>
                         <Input
                             value={form.code}
@@ -383,7 +433,7 @@ function PlanModal({
                     </div>
                     <div className="space-y-1">
                         <label className="font-medium text-foreground">
-                            Max branches
+                            {isAm ? "ከፍተኛ የቅርንጫፍ ብዛት" : "Max branches"}
                         </label>
                         <Input
                             type="number"
@@ -400,8 +450,9 @@ function PlanModal({
                             required
                         />
                         <p className="text-[11px] text-slate-gray">
-                            Restaurants on this plan cannot open more active
-                            locations than this.
+                            {isAm
+                                ? "በዚህ እቅድ ላይ ያሉ ሬስቶራንቶች ከዚህ በላይ ንቁ ቅርንጫፍ መክፈት አይችሉም።"
+                                : "Restaurants on this plan cannot open more active locations than this."}
                         </p>
                     </div>
                     <div className="flex justify-end gap-2 pt-2">
@@ -411,14 +462,18 @@ function PlanModal({
                             onClick={onClose}
                             className="h-9 rounded-xl"
                         >
-                            Cancel
+                            {isAm ? "ይቅር" : "Cancel"}
                         </Button>
                         <Button
                             type="submit"
                             disabled={saving}
                             className="h-9 rounded-xl"
                         >
-                            {saving ? "Saving…" : submitLabel}
+                            {saving
+                                ? isAm
+                                    ? "በማስቀመጥ ላይ…"
+                                    : "Saving…"
+                                : submitLabel}
                         </Button>
                     </div>
                 </form>
