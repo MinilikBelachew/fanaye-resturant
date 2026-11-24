@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useLocale } from "next-intl";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-    UtensilsCrossed,
     ChefHat,
     Truck,
     Package,
@@ -11,7 +11,17 @@ import {
     Megaphone,
     Cpu,
     Wallet,
+    Sparkles,
+    Check,
+    TrendingUp,
+    ArrowRight,
+    ArrowLeft,
 } from "lucide-react";
+
+interface BulletPoint {
+    en: string;
+    am: string;
+}
 
 interface PlatformModule {
     id: string;
@@ -21,476 +31,676 @@ interface PlatformModule {
     subtitleAm: string;
     shortDesc: string;
     shortDescAm: string;
-    angleDeg: number;
+    bullets: BulletPoint[];
+    cta: string;
+    ctaAm: string;
+    metricValue: string;
+    metricLabel: string;
+    metricLabelAm: string;
+    // Hub coordinates in 640 x 480 canvas
+    x: number;
+    y: number;
     icon: React.ComponentType<{ className?: string }>;
 }
 
 const MODULES: PlatformModule[] = [
     {
-        id: "front-of-house",
-        title: "Front of House",
-        titleAm: "የአዳራሽ አገልግሎት",
-        subtitle: "Tables · POS · QR",
-        subtitleAm: "ጠረጴዛዎች · POS · QR",
+        id: "payments-cash",
+        title: "Payments & CRM",
+        titleAm: "ክፍያ እና CRM",
+        subtitle: "Track · Grow · Engage",
+        subtitleAm: "ሂሳብ · እድገት · ደንበኛ",
         shortDesc:
-            "Live floor maps, waiter POS, and QR ordering. Synced to the kitchen the instant a guest orders.",
+            "Split checks, verified Telebirr & CBE reference checks, and shift Z-Reports with zero drawer variance.",
         shortDescAm:
-            "ቀጥታ የጠረጴዛ ካርታ፣ የአስተናጋጅ POS እና የQR ማዘዣ። ትዕዛዝ በተሰጠበት ቅጽበት ወደ ኩሽና ይደርሳል።",
-        angleDeg: -65,
-        icon: UtensilsCrossed,
+            "የተከፋፈለ ሂሳብ፣ ቴሌብር/ባንክ እና የፈረቃ Z-Report። እያንዳንዱ ብር በመዝጊያ ይመሳከራል።",
+        bullets: [
+            { en: "Instant QR & mobile money", am: "ፈጣን QR እና የሞባይል ክፍያ" },
+            { en: "Verified Telebirr/CBE receipts", am: "የቴሌብር እና ባንክ ማመሳከሪያ" },
+            { en: "End-of-day drawer Z-Report", am: "የቀን መዝጊያ የካሽ ሪፖርት" },
+            { en: "Guest loyalty profiles", am: "የደንበኛ ታማኝነት መገለጫ" },
+        ],
+        cta: "View Payments",
+        ctaAm: "የክፍያ ስርዓቱን ይመልከቱ",
+        metricValue: "100%",
+        metricLabel: "Drawer Match",
+        metricLabelAm: "ትክክለኛ ሂሳብ",
+        x: 320,
+        y: 55,
+        icon: Wallet,
     },
     {
         id: "kitchen",
         title: "Kitchen",
-        titleAm: "ኩሽና (KDS)",
-        subtitle: "KDS · Routing",
-        subtitleAm: "KDS · ስርጭት",
+        titleAm: "ኩሽና",
+        subtitle: "Prep · Cook",
+        subtitleAm: "ዝግጅት · ማብሰል",
         shortDesc:
-            "Automatic station routing, prep timers, and pass control. Zero paper tickets or shouting.",
+            "Station-by-station KDS routing with live prep timers, color-coded urgency, and pass bump control.",
         shortDescAm:
             "ቀጥታ የምድብ ስርጭት፣ የዝግጅት ሰዓት ቆጣሪ እና የማውጫ ቁጥጥር። ያለ ወረቀት እና ያለ ጩኸት።",
-        angleDeg: -20,
+        bullets: [
+            {
+                en: "Split tickets to Grill, Bar & Pastry",
+                am: "ትዕዛዝ በምድብ መከፋፈል",
+            },
+            { en: "Live cooking timer countdowns", am: "የቀጥታ ምግብ ማብሰያ ሰዓት" },
+            { en: "Zero lost paper tickets", am: "የጠፋ ወረቀት ትዕዛዝ የለም" },
+            { en: "Pass bump & waiter alert", am: "ምግብ ሲደርስ ለአስተናጋጅ ጥሪ" },
+        ],
+        cta: "See Kitchen KDS",
+        ctaAm: "ኩሽና KDS ይመልከቱ",
+        metricValue: "< 8 min",
+        metricLabel: "Prep Speed",
+        metricLabelAm: "ፈጣን ዝግጅት",
+        x: 485,
+        y: 132,
         icon: ChefHat,
     },
     {
-        id: "delivery-hotel",
-        title: "Delivery & Hotel",
-        titleAm: "ዴሊቨሪ እና ሆቴል",
-        subtitle: "Dispatch · Rooms",
-        subtitleAm: "ዴሊቨሪ · ክፍሎች",
+        id: "delivery-fleet",
+        title: "Delivery & Fleet",
+        titleAm: "ዴሊቨሪ እና ስምሪት",
+        subtitle: "Dispatch · Track",
+        subtitleAm: "ስምሪት · ክትትል",
         shortDesc:
-            "Driver dispatch and hotel room folios in one flow. Real-time status from pass to doorstep.",
+            "Driver dispatch and hotel room folios in one unified flow. Real-time status from kitchen pass to doorstep.",
         shortDescAm:
             "የአሽከርካሪ ስርጭት እና የሆቴል ክፍል ሂሳብ በአንድ መስመር። ከኩሽና እስከ ደጃፍ ቀጥታ ክትትል።",
-        angleDeg: 22,
+        bullets: [
+            { en: "One-tap rider dispatch", am: "በአንድ ንክኪ አሽከርካሪ መመደብ" },
+            { en: "Live GPS courier tracking", am: "የቀጥታ ካርታ ክትትል" },
+            { en: "Hotel room billing sync", am: "ከሆቴል ክፍል ሂሳብ ጋር ማመሳሰል" },
+            { en: "Automated customer SMS", am: "ለደንበኛ የሁኔታ መልዕክት" },
+        ],
+        cta: "Track Delivery",
+        ctaAm: "ዴሊቨሪውን ይከታተሉ",
+        metricValue: "24 min",
+        metricLabel: "Avg Delivery",
+        metricLabelAm: "አማካይ ዴሊቨሪ",
+        x: 520,
+        y: 310,
         icon: Truck,
     },
     {
         id: "inventory",
         title: "Inventory",
-        titleAm: "ክምችት እና ስቶር",
-        subtitle: "Recipes · Stock",
-        subtitleAm: "ረሲፒ · ክምችት",
+        titleAm: "ክምችት",
+        subtitle: "Stock · Forecast",
+        subtitleAm: "ክምችት · ትንበያ",
         shortDesc:
-            "Recipe-level stock deduction as dishes sell. Low-stock alerts before key items run out.",
+            "Recipe-level stock deduction as dishes sell. Low-stock alerts and automatic reorder triggers.",
         shortDescAm:
             "ምግቦች ሲሸጡ ግብዓቶች በረሲፒ መጠን በራስ-ሰር ይቀነሳሉ። እቃዎች ሳያልቁ ማስጠንቀቂያ ይሰጣል።",
-        angleDeg: 67,
+        bullets: [
+            { en: "Gram-accurate recipe deduction", am: "በግራም ትክክለኛ የረሲፒ ቅነሳ" },
+            {
+                en: "Automated store low-stock alerts",
+                am: "የአነስተኛ ክምችት ማስጠንቀቂያ",
+            },
+            { en: "Supplier purchase orders", am: "የአቅራቢዎች የግዢ ትዕዛዝ" },
+            { en: "Food waste tracking log", am: "የብክነት እና ኪሳራ ክትትል" },
+        ],
+        cta: "Explore Inventory",
+        ctaAm: "ክምችቱን ይመልከቱ",
+        metricValue: "-28%",
+        metricLabel: "Waste Saved",
+        metricLabelAm: "የቀነሰ ብክነት",
+        x: 412,
+        y: 445,
         icon: Package,
     },
     {
         id: "people-finance",
-        title: "People & Finance",
-        titleAm: "ሰራተኞች እና ፋይናንስ",
-        subtitle: "HR · Payroll",
-        subtitleAm: "HR · ደመወዝ",
+        title: "People & HR",
+        titleAm: "ሰራተኞች እና HR",
+        subtitle: "Hire · Manage",
+        subtitleAm: "ቅጥር · አስተዳደር",
         shortDesc:
-            "Shifts, attendance, tips, and payroll alongside branch P&L and expense approvals.",
+            "Staff shifts, attendance, tips, and payroll alongside branch P&L, expense vouchers, and permissions.",
         shortDescAm: "ፈረቃ፣ አቴንዳንስ፣ ቲፕ እና ደመወዝ ከቅርንጫፍ ትርፍና ኪሳራ እና ወጪ ማጽደቅ ጋር።",
-        angleDeg: 113,
+        bullets: [
+            { en: "Shift scheduling & swap logs", am: "የፈረቃ መርሃ-ግብር እና ቅያሬ" },
+            { en: "Biometric/PIN clock-in", am: "የጣት አሻራ ወይም PIN መግቢያ" },
+            { en: "Automated tip distribution", am: "ፍትሃዊ የቲፕ ክፍፍል" },
+            { en: "Daily branch profit & loss", am: "የዕለት ትርፍና ኪሳራ ሪፖርት" },
+        ],
+        cta: "Manage Team",
+        ctaAm: "ሰራተኞችን ያስተዳድሩ",
+        metricValue: "99.4%",
+        metricLabel: "Payroll Accuracy",
+        metricLabelAm: "ትክክለኛ ደመወዝ",
+        x: 228,
+        y: 445,
         icon: Users,
     },
     {
         id: "marketing",
         title: "Marketing",
         titleAm: "ማርኬቲንግ",
-        subtitle: "Website · Print",
-        subtitleAm: "ድረ-ገጽ · ህትመት",
+        subtitle: "Reach · Retain",
+        subtitleAm: "ድረስ · ያቆዩ",
         shortDesc:
-            "Branded ordering site, print-ready QR tents, and promos that bring guests back directly.",
+            "Branded direct ordering website, print-ready table QR tents, and loyalty promos that bring guests back.",
         shortDescAm:
             "የራስዎ የማዘዣ ድረ-ገጽ፣ ለህትመት ዝግጁ የሆኑ QR ካርዶች እና ደንበኛ የሚመልሱ ማስተዋወቂያዎች።",
-        angleDeg: 158,
+        bullets: [
+            { en: "Direct zero-commission ordering", am: "ያለ ኮሚሽን ቀጥታ ማዘዣ" },
+            {
+                en: "Table QR print-ready exporter",
+                am: "ለህትመት ዝግጁ የሆነ የጠረጴዛ QR",
+            },
+            { en: "SMS & WhatsApp promos", am: "የSMS እና ዋትስአፕ ማስተዋወቂያ" },
+            { en: "Loyalty points & cashbacks", am: "የደንበኛ ነጥብ እና ቅናሾች" },
+        ],
+        cta: "Launch Campaigns",
+        ctaAm: "ዘመቻዎችን ይጀምሩ",
+        metricValue: "+45%",
+        metricLabel: "Repeat Guests",
+        metricLabelAm: "ተመላሽ ደንበኞች",
+        x: 120,
+        y: 310,
         icon: Megaphone,
     },
     {
         id: "ai-insights",
         title: "AI & Insights",
-        titleAm: "AI እና ትንታኔ",
-        subtitle: "Advisor · Menu",
-        subtitleAm: "አማካሪ · ሜኑ",
+        titleAm: "AI & Insights",
+        subtitle: "Smarter Decisions",
+        subtitleAm: "ብልህ ውሳኔዎች",
         shortDesc:
-            "Margin advisor, dish profitability, and demand forecasting. Chosen for decisions, not noise.",
-        shortDescAm:
-            "የትርፍ ህዳግ አማካሪ፣ የምግብ ትርፋማነት እና የፍላጎት ትንበያ። ለትክክለኛ ውሳኔ የተዘጋጀ።",
-        angleDeg: 202,
+            "Get real-time analytics, sales forecasting, and actionable insights to grow your business.",
+        shortDescAm: "የቀጥታ ሽያጭ ትንበያ፣ የትርፍ ህዳግ እና ንግድዎን ለማሳደግ ተግባራዊ ምክሮች።",
+        bullets: [
+            { en: "Sales & performance analytics", am: "የሽያጭ እና አፈጻጸም ትንታኔ" },
+            { en: "Demand forecasting", am: "የትዕዛዝ ፍላጎት ትንበያ" },
+            { en: "Profitability reports", am: "የምግብ ትርፋማነት ሪፖርት" },
+            { en: "Smart recommendations", am: "ብልህ የአሰራር ምክሮች" },
+        ],
+        cta: "Explore Insights",
+        ctaAm: "ትንታኔውን ይመልከቱ",
+        metricValue: "+32%",
+        metricLabel: "Sales Growth",
+        metricLabelAm: "የሽያጭ እድገት",
+        x: 155,
+        y: 132,
         icon: Cpu,
-    },
-    {
-        id: "payments-cash",
-        title: "Payments & Cash",
-        titleAm: "ክፍያ እና ካሼር",
-        subtitle: "Billing · Z-Report",
-        subtitleAm: "ሂሳብ · Z-Report",
-        shortDesc:
-            "Split bills, mobile money, and shift Z-Reports. Every birr reconciled at close.",
-        shortDescAm:
-            "የተከፋፈለ ሂሳብ፣ ቴሌብር/ባንክ እና የፈረቃ Z-Report። እያንዳንዱ ብር በመዝጊያ ይመሳከራል።",
-        angleDeg: 247,
-        icon: Wallet,
     },
 ];
 
-// SVG coordinate space (640 x 560)
+// Center disc coordinates in 640 x 520 space
 const CX = 320;
-const CY = 280;
-const ORBIT_R = 206;
-const HUB_EDGE_R = 70;
-const CARD_STOP_R = 152;
-
-function polar(angleDeg: number, radius: number) {
-    const rad = (angleDeg * Math.PI) / 180;
-    return {
-        x: CX + Math.cos(rad) * radius,
-        y: CY + Math.sin(rad) * radius,
-    };
-}
+const CY = 260;
 
 export default function LandingConnectedPlatform() {
-    const isAm = useLocale() === "am";
-    const [activeIndex, setActiveIndex] = useState(0);
-    const [beamProgress, setBeamProgress] = useState(1);
+    const params = useParams();
+    const isAm = params?.locale === "am";
+    const [activeIndex, setActiveIndex] = useState(5); // Defaults to Marketing (like reference)
     const [isPaused, setIsPaused] = useState(false);
-    const targetProgressRef = useRef(1);
-    const currentProgressRef = useRef(1);
-
-    useEffect(() => {
-        let rafId = 0;
-        let isDisposed = false;
-
-        const tick = () => {
-            if (isDisposed) return;
-            const diff = targetProgressRef.current - currentProgressRef.current;
-            if (Math.abs(diff) > 0.002) {
-                currentProgressRef.current += diff * 0.12;
-                setBeamProgress(currentProgressRef.current);
-            }
-            rafId = window.requestAnimationFrame(tick);
-        };
-
-        rafId = window.requestAnimationFrame(tick);
-        return () => {
-            isDisposed = true;
-            window.cancelAnimationFrame(rafId);
-        };
-    }, []);
 
     useEffect(() => {
         if (isPaused) return;
         const timer = window.setInterval(() => {
             setActiveIndex(prev => (prev + 1) % MODULES.length);
-            currentProgressRef.current = 0.05;
-            targetProgressRef.current = 1;
-        }, 2800);
+        }, 5500);
         return () => window.clearInterval(timer);
     }, [isPaused]);
 
     const selectModule = (idx: number) => {
         setActiveIndex(idx);
-        currentProgressRef.current = 0.05;
-        targetProgressRef.current = 1;
     };
 
-    // Straight glowing arrow from center hub edge outward to the active card
-    const angle = MODULES[activeIndex].angleDeg;
-    const startPt = polar(angle, HUB_EDGE_R);
-    const curRadius = HUB_EDGE_R + (CARD_STOP_R - HUB_EDGE_R) * beamProgress;
-    const endPt = polar(angle, curRadius);
-    const rad = (angle * Math.PI) / 180;
-    const headLen = 11;
-    const headAngle = 0.45;
-    const ax1 = endPt.x - headLen * Math.cos(rad - headAngle);
-    const ay1 = endPt.y - headLen * Math.sin(rad - headAngle);
-    const ax2 = endPt.x - headLen * Math.cos(rad + headAngle);
-    const ay2 = endPt.y - headLen * Math.sin(rad + headAngle);
+    const nextModule = () => {
+        setActiveIndex(prev => (prev + 1) % MODULES.length);
+    };
+
+    const prevModule = () => {
+        setActiveIndex(prev => (prev - 1 + MODULES.length) % MODULES.length);
+    };
+
+    const activeMod = MODULES[activeIndex];
+    const ActiveIcon = activeMod.icon;
 
     return (
         <section
             id="connected-platform"
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
-            className="relative border-t border-border/60 bg-background text-foreground py-16 lg:py-24"
+            className="relative scroll-mt-24 lg:scroll-mt-28 border-t border-border/60 bg-background text-foreground py-16 lg:py-24 overflow-hidden"
         >
-            <div className="mx-auto w-full max-w-7xl px-6 lg:px-8">
+            <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center">
-                    {/* LEFT COLUMN: Single active module explanation with larger title & text */}
+                    {/* LEFT COLUMN: Header + Detailed Active Module Card + Pagination */}
                     <div className="lg:col-span-5 flex flex-col">
-                        <h2 className="text-3xl sm:text-5xl font-bold tracking-tight leading-[1.06]">
+                        {/* Top Pill Tag */}
+                        <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/20 bg-orange-500/10 px-3.5 py-1 text-xs font-semibold text-orange-600 dark:text-orange-400 w-fit">
+                            <Sparkles className="size-3.5 text-orange-500" />
+                            <span>
+                                {isAm
+                                    ? "ብልህ የምግብ ቤት መድረክ"
+                                    : "Smart Restaurant Platform"}
+                            </span>
+                        </div>
+
+                        {/* Title & Subtitle */}
+                        <h2 className="mt-3 text-3xl sm:text-5xl font-bold tracking-tight leading-[1.08]">
                             {isAm
-                                ? "አንድ የተቀናጀ መድረክ። "
-                                : "One connected platform. "}
+                                ? "አንድ የተቀናጀ መድረክ።"
+                                : "One connected platform."}
+                            <br />
                             <span className="font-serif italic font-normal text-orange-600 dark:text-orange-500">
                                 {isAm
-                                    ? "ሁሉም ስክሪኖች በአንድነት።"
-                                    : "Every screen in sync."}
+                                    ? "ምግብ ቤትዎን በብልሃት ይምሩ።"
+                                    : "Run your restaurant smarter."}
                             </span>
                         </h2>
 
-                        <div
-                            key={MODULES[activeIndex].id}
-                            className="mt-10 border-t border-border/60 pt-8 transition-all duration-300 animate-in fade-in slide-in-from-bottom-2"
-                        >
-                            <div className="flex items-center gap-3">
-                                <span className="font-mono text-sm font-semibold tabular-nums text-orange-600 dark:text-orange-400">
-                                    {String(activeIndex + 1).padStart(2, "0")}
-                                </span>
-                                <span className="text-xs font-mono uppercase tracking-[0.14em] text-muted-foreground">
-                                    {isAm
-                                        ? MODULES[activeIndex].subtitleAm
-                                        : MODULES[activeIndex].subtitle}
-                                </span>
-                            </div>
+                        <p className="mt-3 text-base sm:text-lg text-muted-foreground leading-relaxed">
+                            {isAm
+                                ? "ትዕዛዝ፣ ኩሽና እና ዴሊቨሪን በቀጥታ በRestorch ያስተዳድሩ — ሁሉም በአንድ ጠንካራ መድረክ።"
+                                : "Manage orders, kitchen, and delivery in real-time with Restorch — all in one powerful platform."}
+                        </p>
 
-                            <h3 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight">
-                                {isAm
-                                    ? MODULES[activeIndex].titleAm
-                                    : MODULES[activeIndex].title}
-                            </h3>
+                        {/* Active Module Detailed Card */}
+                        <div className="mt-6 rounded-3xl border border-border/80 dark:border-white/10 bg-white/95 dark:bg-[#111827]/95 p-6 sm:p-7 backdrop-blur-xl transition-all duration-300 min-h-[380px] flex flex-col justify-between">
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={activeMod.id}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    transition={{
+                                        duration: 0.28,
+                                        ease: "easeOut",
+                                    }}
+                                    className="flex flex-col flex-1 justify-between"
+                                >
+                                    <div>
+                                        {/* Card Header: Icon + Title + Active Tag */}
+                                        <div className="flex items-center justify-between gap-4">
+                                            <div className="flex items-center gap-3.5">
+                                                <div className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 text-white">
+                                                    <ActiveIcon className="size-5.5 stroke-[2.2]" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-xl sm:text-2xl font-bold tracking-tight">
+                                                        {isAm
+                                                            ? activeMod.titleAm
+                                                            : activeMod.title}
+                                                    </h3>
+                                                    <p className="text-xs font-semibold text-orange-600 dark:text-orange-400">
+                                                        {isAm
+                                                            ? activeMod.subtitleAm
+                                                            : activeMod.subtitle}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="inline-flex items-center gap-1.5 rounded-full bg-orange-500/10 px-3 py-1 text-xs font-semibold text-orange-600 dark:text-orange-400 border border-orange-500/20">
+                                                <span className="size-1.5 rounded-full bg-orange-500 animate-pulse" />
+                                                <span>
+                                                    {isAm ? "ንቁ" : "Active"}
+                                                </span>
+                                            </div>
+                                        </div>
 
-                            <p className="mt-3 text-base sm:text-lg leading-relaxed text-muted-foreground">
-                                {isAm
-                                    ? MODULES[activeIndex].shortDescAm
-                                    : MODULES[activeIndex].shortDesc}
-                            </p>
+                                        <p className="mt-4 text-sm sm:text-base leading-relaxed text-muted-foreground">
+                                            {isAm
+                                                ? activeMod.shortDescAm
+                                                : activeMod.shortDesc}
+                                        </p>
+
+                                        {/* Bullets List & Mini Chart Mockup Graphic */}
+                                        <div className="mt-5 grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">
+                                            {/* 4 Checkmark Bullets */}
+                                            <ul className="sm:col-span-7 space-y-2">
+                                                {activeMod.bullets.map(
+                                                    (b, i) => (
+                                                        <li
+                                                            key={i}
+                                                            className="flex items-center gap-2.5 text-xs sm:text-sm font-medium text-foreground"
+                                                        >
+                                                            <div className="flex size-4.5 shrink-0 items-center justify-center rounded-full bg-orange-500 text-white">
+                                                                <Check className="size-3 stroke-[3]" />
+                                                            </div>
+                                                            <span>
+                                                                {isAm
+                                                                    ? b.am
+                                                                    : b.en}
+                                                            </span>
+                                                        </li>
+                                                    ),
+                                                )}
+                                            </ul>
+
+                                            {/* Mini Chart Card Mockup */}
+                                            <div className="sm:col-span-5 relative rounded-2xl border border-orange-500/15 bg-gradient-to-br from-orange-50/70 via-white to-amber-50/40 dark:from-[#1b2234] dark:to-[#141b29] p-3.5">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                                        {isAm
+                                                            ? activeMod.metricLabelAm
+                                                            : activeMod.metricLabel}
+                                                    </span>
+                                                    <span className="inline-flex items-center gap-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                                                        <TrendingUp className="size-3" />
+                                                        {activeMod.metricValue}
+                                                    </span>
+                                                </div>
+                                                {/* Mini SVG line sparkline & donut */}
+                                                <div className="mt-2 flex items-center justify-between gap-2">
+                                                    <svg
+                                                        viewBox="0 0 100 40"
+                                                        className="h-9 w-20 overflow-visible text-orange-500"
+                                                    >
+                                                        <path
+                                                            d="M5,35 Q25,32 45,20 T85,8 L95,6"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            strokeWidth="2.5"
+                                                            strokeLinecap="round"
+                                                        />
+                                                        <circle
+                                                            cx="95"
+                                                            cy="6"
+                                                            r="3"
+                                                            fill="#f97316"
+                                                        />
+                                                    </svg>
+                                                    <div className="relative size-8 shrink-0">
+                                                        <svg
+                                                            viewBox="0 0 36 36"
+                                                            className="size-8 -rotate-90"
+                                                        >
+                                                            <circle
+                                                                cx="18"
+                                                                cy="18"
+                                                                r="14"
+                                                                fill="none"
+                                                                stroke="#e2e8f0"
+                                                                strokeWidth="4"
+                                                                className="dark:stroke-slate-700"
+                                                            />
+                                                            <circle
+                                                                cx="18"
+                                                                cy="18"
+                                                                r="14"
+                                                                fill="none"
+                                                                stroke="#f97316"
+                                                                strokeWidth="4"
+                                                                strokeDasharray="65 100"
+                                                                strokeLinecap="round"
+                                                            />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* CTA Action Button */}
+                                    <div className="mt-5 pt-4 border-t border-border/60">
+                                        <a
+                                            href="#contact"
+                                            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                        >
+                                            <span>
+                                                {isAm
+                                                    ? activeMod.ctaAm
+                                                    : activeMod.cta}
+                                            </span>
+                                            <ArrowRight className="size-4" />
+                                        </a>
+                                    </div>
+                                </motion.div>
+                            </AnimatePresence>
                         </div>
 
-                        <div className="mt-8 flex items-center gap-2">
-                            {MODULES.map((m, idx) => {
-                                const isActive = idx === activeIndex;
-                                return (
+                        {/* Pagination Indicators & Controls */}
+                        <div className="mt-6 flex items-center justify-between">
+                            {/* Pill Dots */}
+                            <div className="flex items-center gap-2">
+                                {MODULES.map((m, idx) => (
                                     <button
                                         key={m.id}
                                         type="button"
                                         onClick={() => selectModule(idx)}
                                         aria-label={m.title}
-                                        className={`h-1.5 rounded-full transition-all duration-300 ${
-                                            isActive
-                                                ? "w-8 bg-orange-500"
-                                                : idx < activeIndex
-                                                  ? "w-3 bg-orange-500/40 hover:bg-orange-500/70"
-                                                  : "w-3 bg-border hover:bg-muted-foreground/50"
+                                        className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                                            idx === activeIndex
+                                                ? "w-7 bg-orange-500"
+                                                : "w-2 bg-border hover:bg-muted-foreground/40"
                                         }`}
                                     />
-                                );
-                            })}
+                                ))}
+                            </div>
+
+                            {/* Prev / Next Circular Buttons */}
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={prevModule}
+                                    aria-label="Previous module"
+                                    className="flex size-9 items-center justify-center rounded-full border border-border/80 bg-card hover:bg-muted transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
+                                >
+                                    <ArrowLeft className="size-4" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={nextModule}
+                                    aria-label="Next module"
+                                    className="flex size-9 items-center justify-center rounded-full border border-border/80 bg-card hover:bg-muted transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
+                                >
+                                    <ArrowRight className="size-4" />
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    {/* RIGHT COLUMN: Radial Hub & Spoke Diagram */}
-                    <div className="lg:col-span-7 relative">
-                        <div className="hidden md:block relative mx-auto w-full max-w-[640px] aspect-[640/560]">
+                    {/* RIGHT COLUMN: Pixel-Perfect Radial Diagram Matching Reference Image with Live Animations */}
+                    <div className="lg:col-span-7 flex items-center justify-center">
+                        <div className="relative w-full max-w-[640px] aspect-[640/520] select-none">
+                            {/* SVG Dotted Orbit Ring & Radial Spoke Lines */}
                             <svg
-                                viewBox="0 0 640 560"
-                                className="absolute inset-0 h-full w-full pointer-events-none"
-                                aria-hidden="true"
+                                viewBox="0 0 640 520"
+                                className="absolute inset-0 h-full w-full pointer-events-none overflow-visible"
                             >
-                                <defs>
-                                    <radialGradient
-                                        id="restorch-hub-glow"
-                                        cx="50%"
-                                        cy="50%"
-                                        r="50%"
-                                    >
-                                        <stop
-                                            offset="0%"
-                                            stopColor="rgba(249,115,22,0.2)"
-                                        />
-                                        <stop
-                                            offset="70%"
-                                            stopColor="rgba(249,115,22,0.04)"
-                                        />
-                                        <stop
-                                            offset="100%"
-                                            stopColor="rgba(249,115,22,0)"
-                                        />
-                                    </radialGradient>
-                                    <filter
-                                        id="beam-glow"
-                                        x="-40%"
-                                        y="-40%"
-                                        width="180%"
-                                        height="180%"
-                                    >
-                                        <feGaussianBlur
-                                            stdDeviation="3.5"
-                                            result="blur"
-                                        />
-                                        <feMerge>
-                                            <feMergeNode in="blur" />
-                                            <feMergeNode in="SourceGraphic" />
-                                        </feMerge>
-                                    </filter>
-                                </defs>
-
-                                {/* Ambient center glow */}
-                                <circle
+                                {/* Animated Dotted Circular Orbit Ring passing through satellite centers */}
+                                <motion.circle
                                     cx={CX}
                                     cy={CY}
-                                    r={145}
-                                    fill="url(#restorch-hub-glow)"
-                                />
-
-                                {/* Concentric orbit rings */}
-                                <circle
-                                    cx={CX}
-                                    cy={CY}
-                                    r={118}
+                                    r={205}
                                     fill="none"
-                                    className="stroke-orange-500/15 dark:stroke-orange-400/15"
-                                    strokeWidth="1"
-                                />
-                                <circle
-                                    cx={CX}
-                                    cy={CY}
-                                    r={182}
-                                    fill="none"
-                                    className="stroke-orange-500/20 dark:stroke-orange-400/20"
-                                    strokeWidth="1"
+                                    stroke="#fed7aa"
+                                    strokeWidth="1.2"
+                                    strokeDasharray="4 6"
+                                    className="dark:stroke-orange-950/40"
+                                    animate={{ strokeDashoffset: [0, -30] }}
+                                    transition={{
+                                        duration: 8,
+                                        repeat: Infinity,
+                                        ease: "linear",
+                                    }}
                                 />
 
-                                {/* Subtle dashed spokes */}
+                                {/* Inactive Spokes */}
                                 {MODULES.map((m, idx) => {
-                                    const p1 = polar(m.angleDeg, HUB_EDGE_R);
-                                    const p2 = polar(m.angleDeg, ORBIT_R - 36);
-                                    const isAct = idx === activeIndex;
+                                    if (idx === activeIndex) return null;
                                     return (
                                         <line
                                             key={m.id}
-                                            x1={p1.x}
-                                            y1={p1.y}
-                                            x2={p2.x}
-                                            y2={p2.y}
-                                            strokeDasharray="3 5"
-                                            strokeWidth="1"
-                                            className={
-                                                isAct
-                                                    ? "stroke-orange-500/35"
-                                                    : "stroke-border/60 dark:stroke-white/10"
-                                            }
+                                            x1={CX}
+                                            y1={CY}
+                                            x2={m.x}
+                                            y2={m.y}
+                                            stroke="#ffedd5"
+                                            strokeWidth="1.2"
+                                            className="dark:stroke-orange-950/30"
                                         />
                                     );
                                 })}
 
-                                {/* Straight glowing arrow from center hub to active card */}
-                                <line
-                                    x1={startPt.x}
-                                    y1={startPt.y}
-                                    x2={endPt.x}
-                                    y2={endPt.y}
-                                    stroke="#f97316"
+                                {/* Active Vibrant Orange Spoke Line (Smooth Spring Line to selected pill) */}
+                                <motion.line
+                                    x1={CX}
+                                    y1={CY}
+                                    animate={{
+                                        x2: activeMod.x,
+                                        y2: activeMod.y,
+                                    }}
+                                    transition={{
+                                        type: "spring",
+                                        stiffness: 300,
+                                        damping: 28,
+                                    }}
+                                    stroke="#ea580c"
                                     strokeWidth="2.5"
                                     strokeLinecap="round"
-                                    filter="url(#beam-glow)"
                                 />
-                                <polygon
-                                    points={`${endPt.x},${endPt.y} ${ax1},${ay1} ${ax2},${ay2}`}
+
+                                {/* Outer Soft Glow Halo traveling along active spoke */}
+                                <motion.circle
+                                    key={`halo-${activeMod.id}`}
+                                    animate={{
+                                        cx: [CX, activeMod.x],
+                                        cy: [CY, activeMod.y],
+                                        opacity: [0, 0.45, 0],
+                                    }}
+                                    transition={{
+                                        duration: 3.2,
+                                        repeat: Infinity,
+                                        ease: "easeInOut",
+                                    }}
+                                    r="7"
                                     fill="#f97316"
-                                    filter="url(#beam-glow)"
+                                />
+
+                                {/* Glowing Pulse Bead traveling along active spoke (Calm, Elegant Pace) */}
+                                <motion.circle
+                                    key={`dot-${activeMod.id}`}
+                                    animate={{
+                                        cx: [CX, activeMod.x],
+                                        cy: [CY, activeMod.y],
+                                        opacity: [0, 1, 0],
+                                    }}
+                                    transition={{
+                                        duration: 3.2,
+                                        repeat: Infinity,
+                                        ease: "easeInOut",
+                                    }}
+                                    r="3.8"
+                                    fill="#ea580c"
                                 />
                             </svg>
 
-                            {/* Center Restorch Core Hub */}
+                            {/* Center Restorch Hub with Breathing Ripple and Floating Glow */}
                             <div
                                 style={{
                                     left: `${(CX / 640) * 100}%`,
-                                    top: `${(CY / 560) * 100}%`,
+                                    top: `${(CY / 520) * 100}%`,
                                 }}
-                                className="absolute -translate-x-1/2 -translate-y-1/2 flex h-32 w-32 flex-col items-center justify-center rounded-full border border-orange-500/25 bg-card dark:bg-[#0E131D] shadow-[0_0_40px_rgba(249,115,22,0.16)]"
+                                className="absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center z-20 pointer-events-none select-none"
                             >
-                                <img
-                                    src="/images/branding/restorch-mark-square.png"
-                                    alt="Restorch"
-                                    className="h-10 w-10 object-contain"
-                                />
-                                <span className="mt-1 text-sm font-bold tracking-tight">
-                                    Restorch
-                                </span>
-                                <span className="text-[10px] text-muted-foreground">
-                                    {isAm ? "ቀጥታ ስርዓት" : "Real-time core"}
-                                </span>
+                                {/* Continuous Circular Water Ripple Waves (Fluid swell, crest, and soft shore dissolve) */}
+                                {[0, 1.3, 2.6].map((delay, idx) => (
+                                    <motion.div
+                                        key={idx}
+                                        animate={{
+                                            scale: [0.92, 1.65],
+                                            opacity: [0, 0.6, 0.3, 0],
+                                        }}
+                                        transition={{
+                                            duration: 3.9,
+                                            delay: delay,
+                                            repeat: Infinity,
+                                            ease: [0.22, 1, 0.36, 1],
+                                            times: [0, 0.25, 0.65, 1],
+                                        }}
+                                        className="absolute size-38 sm:size-44 rounded-full border border-orange-500/50 dark:border-orange-400/40 bg-gradient-to-r from-orange-500/[0.05] via-amber-500/[0.06] to-orange-500/[0.03] shadow-[0_0_16px_rgba(249,115,22,0.22)] pointer-events-none"
+                                    />
+                                ))}
+
+                                {/* Outer Translucent Warm Ring with Subtle Breathing */}
+                                <motion.div
+                                    animate={{
+                                        scale: [1, 1.03, 1],
+                                        opacity: [0.92, 1, 0.92],
+                                    }}
+                                    transition={{
+                                        duration: 3.5,
+                                        repeat: Infinity,
+                                        ease: "easeInOut",
+                                    }}
+                                    className="size-38 sm:size-44 rounded-full border border-orange-200/60 dark:border-orange-900/40 bg-[#FFF5ED] dark:bg-[#2A180E] flex items-center justify-center"
+                                >
+                                    {/* Inner White Core Disc */}
+                                    <div className="size-28 sm:size-32 rounded-full bg-white dark:bg-[#121826] border border-slate-100 dark:border-white/10 shadow-sm flex flex-col items-center justify-center text-center p-2">
+                                        {/* Orange Badge with Bold "R" */}
+                                        <div className="size-8 sm:size-9 rounded-xl bg-gradient-to-b from-[#f97316] to-[#ea580c] flex items-center justify-center text-white font-black text-base sm:text-lg shadow-xs leading-none">
+                                            R
+                                        </div>
+                                        <span className="mt-1.5 font-bold text-xs sm:text-sm tracking-tight text-slate-900 dark:text-white leading-none">
+                                            Restorch
+                                        </span>
+                                        <span className="text-[8px] sm:text-[9px] font-mono font-medium text-slate-400 dark:text-slate-500 tracking-wider uppercase mt-1 leading-none">
+                                            {isAm
+                                                ? "ቀጥታ ስርዓት"
+                                                : "REAL-TIME CORE"}
+                                        </span>
+                                    </div>
+                                </motion.div>
                             </div>
 
-                            {/* 8 Radial Module Cards */}
+                            {/* 7 Cleanly Arranged Satellite Capsule Pills with Micro-Interactions */}
                             {MODULES.map((m, idx) => {
-                                const pos = polar(m.angleDeg, ORBIT_R);
                                 const isActive = idx === activeIndex;
                                 const Icon = m.icon;
 
                                 return (
-                                    <button
+                                    <motion.button
                                         key={m.id}
                                         type="button"
                                         onClick={() => selectModule(idx)}
-                                        style={{
-                                            left: `${(pos.x / 640) * 100}%`,
-                                            top: `${(pos.y / 560) * 100}%`,
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.96 }}
+                                        animate={{
+                                            scale: isActive ? 1.06 : 1,
                                         }}
-                                        className={`absolute -translate-x-1/2 -translate-y-1/2 flex items-center gap-2.5 rounded-2xl border px-3.5 py-2.5 text-left transition-all duration-500 ease-out w-[166px] ${
+                                        transition={{
+                                            type: "spring",
+                                            stiffness: 350,
+                                            damping: 25,
+                                        }}
+                                        style={{
+                                            left: `${(m.x / 640) * 100}%`,
+                                            top: `${(m.y / 520) * 100}%`,
+                                        }}
+                                        className={`absolute -translate-x-1/2 -translate-y-1/2 flex items-center gap-2.5 sm:gap-3 rounded-full transition-colors duration-300 ease-out cursor-pointer z-30 select-none ${
                                             isActive
-                                                ? "z-20 scale-105 border-orange-500/80 bg-card dark:bg-[#131A29] shadow-[0_10px_30px_rgba(249,115,22,0.22)] ring-2 ring-orange-500/20"
-                                                : "z-10 border-border/80 bg-card/90 dark:bg-[#0E131D]/90 hover:border-orange-500/40 opacity-75 hover:opacity-100"
+                                                ? "px-4 py-2 sm:px-4.5 sm:py-2.5 bg-gradient-to-r from-[#d9480f] to-[#ea580c] text-white shadow-[0_8px_24px_rgba(217,72,15,0.38)]"
+                                                : "px-3.5 py-1.5 sm:px-4 sm:py-2 bg-white dark:bg-[#121826] border border-slate-200/80 dark:border-white/10 text-slate-800 dark:text-slate-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:border-orange-500/40"
                                         }`}
                                     >
+                                        {/* Circular Icon Container */}
                                         <div
-                                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-colors duration-300 ${
+                                            className={`flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-full transition-colors duration-200 ${
                                                 isActive
-                                                    ? "border-orange-500/40 bg-orange-500 text-white"
-                                                    : "border-orange-500/20 bg-orange-500/10 text-orange-600 dark:text-orange-400"
+                                                    ? "bg-black/15 text-white"
+                                                    : "bg-[#FFF5ED] dark:bg-orange-950/40 text-[#ea580c]"
                                             }`}
                                         >
-                                            <Icon className="h-4 w-4" />
+                                            <Icon className="size-3.5 sm:size-4 stroke-[2]" />
                                         </div>
-                                        <div className="min-w-0">
-                                            <p className="truncate text-xs font-semibold leading-tight">
-                                                {isAm ? m.titleAm : m.title}
-                                            </p>
-                                            <p className="truncate text-[10px] text-muted-foreground mt-0.5">
-                                                {isAm
-                                                    ? m.subtitleAm
-                                                    : m.subtitle}
-                                            </p>
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
 
-                        {/* Mobile / Small Tablet Grid */}
-                        <div className="grid grid-cols-2 gap-3 md:hidden">
-                            {MODULES.map((m, idx) => {
-                                const isActive = idx === activeIndex;
-                                const Icon = m.icon;
-                                return (
-                                    <button
-                                        key={m.id}
-                                        type="button"
-                                        onClick={() => selectModule(idx)}
-                                        className={`flex items-center gap-2.5 rounded-xl border p-3 text-left transition-all duration-300 ${
-                                            isActive
-                                                ? "border-orange-500 bg-card shadow-md ring-1 ring-orange-500/20"
-                                                : "border-border/80 bg-card/70"
-                                        }`}
-                                    >
-                                        <div
-                                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                                        {/* Pill Text */}
+                                        <span
+                                            className={`text-xs sm:text-[13px] tracking-tight whitespace-nowrap ${
                                                 isActive
-                                                    ? "bg-orange-500 text-white"
-                                                    : "bg-orange-500/10 text-orange-600 dark:text-orange-400"
+                                                    ? "font-bold text-white"
+                                                    : "font-semibold"
                                             }`}
                                         >
-                                            <Icon className="h-4 w-4" />
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="truncate text-xs font-semibold">
-                                                {isAm ? m.titleAm : m.title}
-                                            </p>
-                                            <p className="truncate text-[10px] text-muted-foreground">
-                                                {isAm
-                                                    ? m.subtitleAm
-                                                    : m.subtitle}
-                                            </p>
-                                        </div>
-                                    </button>
+                                            {isAm ? m.titleAm : m.title}
+                                        </span>
+                                    </motion.button>
                                 );
                             })}
                         </div>

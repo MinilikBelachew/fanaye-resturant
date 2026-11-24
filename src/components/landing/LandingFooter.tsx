@@ -139,7 +139,7 @@ export default function LandingFooter() {
 
     return (
         <footer className="relative overflow-hidden border-t border-border/60 bg-secondary/25 dark:bg-background text-foreground pt-16 sm:pt-20">
-            <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 {/* 5-Column Footer Links */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8 sm:gap-10">
                     {FOOTER_COLUMNS.map(col => (
@@ -299,7 +299,7 @@ export default function LandingFooter() {
                 aria-hidden="true"
                 className="pointer-events-none select-none mt-8 sm:mt-10 overflow-hidden text-center"
             >
-                <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <span className="block font-bold tracking-[-0.04em] leading-[0.82] text-foreground/[0.06] dark:text-white/[0.06] text-[20vw] sm:text-[17vw] lg:text-[185px] translate-y-2 sm:translate-y-4">
                         Restorch
                     </span>

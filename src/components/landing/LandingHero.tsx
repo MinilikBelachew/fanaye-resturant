@@ -11,7 +11,10 @@ export default function LandingHero() {
     const isAm = useLocale() === "am";
 
     return (
-        <section className="relative min-h-[90vh] flex flex-col justify-between pt-28 sm:pt-36 pb-16 lg:pb-20 overflow-hidden bg-background">
+        <section
+            id="home"
+            className="relative min-h-[90vh] flex flex-col justify-between pt-28 sm:pt-36 pb-16 lg:pb-20 overflow-hidden bg-background scroll-mt-24"
+        >
             {/* Subtle ambient backdrop adapting to light & dark modes */}
             <div className="pointer-events-none absolute inset-0 overflow-hidden select-none">
                 <div className="absolute -top-24 right-1/6 size-[540px] rounded-full bg-orange-500/[0.025] dark:bg-orange-500/[0.04] blur-[140px]" />

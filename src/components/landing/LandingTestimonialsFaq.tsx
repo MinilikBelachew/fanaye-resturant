@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
 import { useLocale, useTranslations } from "next-intl";
 import {
     Plus,
@@ -46,7 +48,7 @@ export default function LandingTestimonialsFaq() {
 
     return (
         <section className="relative py-20 md:py-28 border-t border-border/50 bg-background text-foreground">
-            <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 {/* Live Super-Admin Managed Testimonials (max 4 initially, expandable) */}
                 {testimonials.length > 0 ? (
                     <div id="testimonials" className="mb-24 scroll-mt-24">
@@ -165,9 +167,15 @@ export default function LandingTestimonialsFaq() {
                     </div>
                 ) : null}
 
-                {/* FAQ Section */}
+                {/* FAQ Section with Smooth In-View Appear Effect */}
                 <div id="faq" className="scroll-mt-24">
-                    <div className="text-center max-w-2xl mx-auto">
+                    <motion.div
+                        initial={{ opacity: 0, y: 16 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, amount: 0.2 }}
+                        transition={{ duration: 0.55 }}
+                        className="text-center max-w-2xl mx-auto"
+                    >
                         <h3 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
                             {isAm ? "ተደጋግመው " : "Frequently "}
                             <span className="font-serif italic font-normal text-orange-600 dark:text-orange-500">
@@ -179,27 +187,51 @@ export default function LandingTestimonialsFaq() {
                                 ? "Restorchን በአዳራሽ፣ በኩሽና፣ በስቶር እና በቅርንጫፎች ስለመጠቀም ማወቅ የሚፈልጉት ሁሉ።"
                                 : "Everything you need to know about running Restorch across your floor, kitchen, store, and branches."}
                         </p>
-                    </div>
+                    </motion.div>
 
                     <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-                        {/* Left Branded Gradient Card */}
-                        <div className="lg:col-span-4 relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#c2410c] via-[#ea580c] to-[#f59e0b] p-7 sm:p-8 text-white flex flex-col items-center justify-between text-center shadow-[0_18px_45px_rgba(234,88,12,0.22)]">
+                        {/* Left Branded Card with Rich Smoke/Silk Background */}
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true, amount: 0.2 }}
+                            transition={{ duration: 0.6, delay: 0.1 }}
+                            className="lg:col-span-4 group relative overflow-hidden rounded-3xl border border-white/20 p-7 sm:p-8 text-white flex flex-col items-center justify-between text-center shadow-[0_20px_50px_rgba(234,88,12,0.25)] min-h-[420px]"
+                        >
+                            {/* Background Image with Gentle Soft Blur and Warm Overlays */}
+                            <Image
+                                src="/images/landing/faq-bg.jpg"
+                                alt="Restorch FAQ background"
+                                fill
+                                sizes="(max-width: 1024px) 100vw, 33vw"
+                                priority={false}
+                                className="object-cover object-center pointer-events-none scale-105 blur-[5px] transition-transform duration-700 ease-out group-hover:scale-110"
+                            />
+                            {/* Gradient overlays to guarantee crisp text legibility while letting the glowing orange satin wave shine through */}
                             <div
                                 aria-hidden="true"
-                                className="pointer-events-none absolute -bottom-16 -right-16 size-48 rounded-full bg-white/15 blur-2xl"
+                                className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/65"
+                            />
+                            <div
+                                aria-hidden="true"
+                                className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#c2410c]/30 via-transparent to-black/15 mix-blend-multiply"
+                            />
+                            <div
+                                aria-hidden="true"
+                                className="pointer-events-none absolute -bottom-16 -right-16 size-48 rounded-full bg-orange-500/25 blur-3xl"
                             />
 
                             <div className="relative z-10 flex flex-col items-center mt-2">
-                                <div className="flex size-16 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm border border-white/25">
+                                <div className="flex size-16 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-md border border-white/30 shadow-inner">
                                     <MessageCircleQuestion className="size-8 text-white" />
                                 </div>
 
-                                <h4 className="mt-6 text-2xl font-bold tracking-tight leading-snug">
+                                <h4 className="mt-6 text-2xl font-bold tracking-tight leading-snug drop-shadow-sm">
                                     {isAm
                                         ? "ተጨማሪ ጥያቄዎች አሉዎት?"
                                         : "Do you have more questions?"}
                                 </h4>
-                                <p className="mt-3 text-xs sm:text-sm text-white/85 leading-relaxed max-w-xs">
+                                <p className="mt-3 text-xs sm:text-sm text-white/90 leading-relaxed max-w-xs drop-shadow-xs">
                                     {isAm
                                         ? "ስለ አዘገጃጀት፣ መሳሪያዎች እና የሬስቶራንት አሰራር ቡድናችን ሊረዳዎት ዝግጁ ነው።"
                                         : "Have more questions? Our team is here to help with setup, hardware, and custom restaurant workflows."}
@@ -208,24 +240,32 @@ export default function LandingTestimonialsFaq() {
 
                             <a
                                 href="mailto:hello@restorch.com"
-                                className="relative z-10 mt-8 inline-flex w-full items-center justify-center rounded-full bg-white px-6 py-3 text-xs sm:text-sm font-semibold text-zinc-900 shadow-sm transition-transform duration-200 hover:scale-[1.02] hover:bg-white/95"
+                                className="relative z-10 mt-8 inline-flex w-full items-center justify-center rounded-full bg-white px-6 py-3 text-xs sm:text-sm font-bold text-zinc-900 shadow-lg transition-all duration-200 hover:scale-[1.02] hover:bg-white/95"
                             >
                                 {isAm ? "ኢሜይል ይላኩ" : "Direct Mail"}
                             </a>
-                        </div>
+                        </motion.div>
 
-                        {/* Right Accordion List */}
+                        {/* Right Accordion List with Smooth Animated Height/Opacity Transitions */}
                         <div className="lg:col-span-8 flex flex-col justify-center space-y-3">
                             {items.map((faq, idx) => {
                                 const isOpen = openFaq === idx;
                                 return (
-                                    <div
+                                    <motion.div
                                         key={idx}
+                                        initial={{ opacity: 0, y: 14 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true, amount: 0.1 }}
+                                        transition={{
+                                            duration: 0.45,
+                                            delay: 0.12 + idx * 0.06,
+                                            ease: [0.16, 1, 0.3, 1],
+                                        }}
                                         className={cn(
-                                            "rounded-2xl border transition-all duration-200",
+                                            "overflow-hidden rounded-2xl border transition-all duration-300",
                                             isOpen
-                                                ? "border-orange-500/30 bg-orange-500/[0.07] dark:bg-orange-500/[0.10]"
-                                                : "border-border/70 bg-secondary/45 dark:bg-white/[0.03] hover:border-orange-500/30",
+                                                ? "border-border/90 bg-secondary/40 dark:bg-white/[0.035]"
+                                                : "border-border/60 bg-secondary/25 dark:bg-white/[0.015] hover:border-border/90 hover:bg-secondary/40",
                                         )}
                                     >
                                         <button
@@ -233,33 +273,94 @@ export default function LandingTestimonialsFaq() {
                                             onClick={() =>
                                                 setOpenFaq(isOpen ? null : idx)
                                             }
-                                            className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left cursor-pointer"
+                                            className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left cursor-pointer group"
                                         >
-                                            <span className="text-sm sm:text-[15px] font-semibold text-foreground">
-                                                {faq.q}
-                                            </span>
                                             <span
                                                 className={cn(
-                                                    "flex size-7 shrink-0 items-center justify-center rounded-full transition-colors",
+                                                    "text-sm sm:text-[15px] font-semibold transition-colors duration-200",
                                                     isOpen
-                                                        ? "text-orange-600 dark:text-orange-400"
-                                                        : "text-muted-foreground",
+                                                        ? "text-foreground"
+                                                        : "text-foreground/90 group-hover:text-foreground",
+                                                )}
+                                            >
+                                                {faq.q}
+                                            </span>
+                                            <motion.span
+                                                animate={{
+                                                    rotate: isOpen ? 180 : 0,
+                                                }}
+                                                transition={{
+                                                    duration: 0.3,
+                                                    ease: [0.16, 1, 0.3, 1],
+                                                }}
+                                                className={cn(
+                                                    "flex size-7 shrink-0 items-center justify-center rounded-full transition-colors duration-200",
+                                                    isOpen
+                                                        ? "bg-secondary text-foreground"
+                                                        : "bg-secondary/60 text-muted-foreground group-hover:text-foreground",
                                                 )}
                                             >
                                                 {isOpen ? (
-                                                    <Minus className="size-4" />
+                                                    <Minus className="size-3.5" />
                                                 ) : (
-                                                    <Plus className="size-4" />
+                                                    <Plus className="size-3.5" />
                                                 )}
-                                            </span>
+                                            </motion.span>
                                         </button>
 
-                                        {isOpen ? (
-                                            <div className="px-5 pb-4 text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                                                {faq.a}
-                                            </div>
-                                        ) : null}
-                                    </div>
+                                        {/* Smooth Collapse & Expand Transition */}
+                                        <AnimatePresence initial={false}>
+                                            {isOpen && (
+                                                <motion.div
+                                                    key="content"
+                                                    initial={{
+                                                        height: 0,
+                                                        opacity: 0,
+                                                    }}
+                                                    animate={{
+                                                        height: "auto",
+                                                        opacity: 1,
+                                                        transition: {
+                                                            height: {
+                                                                duration: 0.35,
+                                                                ease: [
+                                                                    0.16, 1,
+                                                                    0.3, 1,
+                                                                ],
+                                                            },
+                                                            opacity: {
+                                                                duration: 0.25,
+                                                                delay: 0.05,
+                                                                ease: "easeOut",
+                                                            },
+                                                        },
+                                                    }}
+                                                    exit={{
+                                                        height: 0,
+                                                        opacity: 0,
+                                                        transition: {
+                                                            height: {
+                                                                duration: 0.28,
+                                                                ease: [
+                                                                    0.16, 1,
+                                                                    0.3, 1,
+                                                                ],
+                                                            },
+                                                            opacity: {
+                                                                duration: 0.18,
+                                                                ease: "easeIn",
+                                                            },
+                                                        },
+                                                    }}
+                                                    className="overflow-hidden"
+                                                >
+                                                    <div className="px-5 pb-4 pt-1.5 text-xs sm:text-sm text-muted-foreground leading-relaxed border-t border-border/50 dark:border-white/5">
+                                                        {faq.a}
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </motion.div>
                                 );
                             })}
                         </div>

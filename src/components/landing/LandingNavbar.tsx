@@ -17,15 +17,31 @@ export default function LandingNavbar() {
     const t = useTranslations("nav");
     const { calendarMode, setCalendarMode } = useCalendarMode();
 
+    const isMarketPrices = pathname?.startsWith("/market-prices");
+    const isHomePage =
+        !pathname || pathname === "/" || pathname === `/${locale}`;
+
     const navLinks = [
         {
+            name: isAm ? "ዋና ገጽ" : "Home",
+            href: isHomePage ? "#home" : `/${locale}#home`,
+            isRoute: false,
+        },
+        {
             name: isAm ? "መድረክ" : "Platform",
-            href: "/#connected-platform",
+            href: isHomePage
+                ? "#connected-platform"
+                : `/${locale}#connected-platform`,
+            isRoute: false,
+        },
+        {
+            name: isAm ? "ባህሪያት" : "Features",
+            href: isHomePage ? "#features" : `/${locale}#features`,
             isRoute: false,
         },
         {
             name: t("howItWorks"),
-            href: "/#how-it-works",
+            href: isHomePage ? "#how-it-works" : `/${locale}#how-it-works`,
             isRoute: false,
         },
         {
@@ -35,17 +51,15 @@ export default function LandingNavbar() {
         },
         {
             name: isAm ? "ምስክርነቶች" : "Testimonials",
-            href: "/#testimonials",
+            href: isHomePage ? "#testimonials" : `/${locale}#testimonials`,
             isRoute: false,
         },
         {
             name: isAm ? "ጥያቄዎች" : "FAQ",
-            href: "/#faq",
+            href: isHomePage ? "#faq" : `/${locale}#faq`,
             isRoute: false,
         },
     ];
-
-    const isMarketPrices = pathname?.startsWith("/market-prices");
 
     return (
         <header className="fixed top-4 sm:top-5 inset-x-0 mx-auto z-50 w-[94%] max-w-6xl">

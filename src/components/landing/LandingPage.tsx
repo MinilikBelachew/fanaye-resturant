@@ -10,9 +10,8 @@ import { usePublicFeedSocket } from "@/hooks/usePublicFeedSocket";
 import LandingHero from "./LandingHero";
 import LandingMarquee from "./LandingMarquee";
 import LandingConnectedPlatform from "./LandingConnectedPlatform";
+import LandingBentoFeatures from "./LandingBentoFeatures";
 import LandingHowItWorks from "./LandingHowItWorks";
-// import LandingLiveDemoSimulation from "./LandingLiveDemoSimulation";
-// import LandingBentoFeatures from "./LandingBentoFeatures";
 import LandingComparison from "./LandingComparison";
 import LandingHardwareCompatibility from "./LandingHardwareCompatibility";
 import LandingRoleMatrix from "./LandingRoleMatrix";
@@ -55,9 +54,8 @@ export default function LandingPage() {
                 <LandingHero />
                 <LandingMarquee />
                 <LandingConnectedPlatform />
+                <LandingBentoFeatures />
                 <LandingHowItWorks />
-                {/* <LandingLiveDemoSimulation /> */}
-                {/* <LandingBentoFeatures /> */}
                 {/* <LandingComparison />
                 <LandingHardwareCompatibility />
                 <LandingRoleMatrix />
