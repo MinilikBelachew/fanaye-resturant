@@ -3,8 +3,11 @@
 import { use, useMemo, useState } from "react";
 import { RestorchSpinner } from "@/components/common/RestorchSpinner";
 import {
+    AlertCircle,
     ArrowLeft,
+    CheckCircle2,
     Clock,
+    Flame,
     RefreshCw,
     Ticket,
     UserRound,
@@ -21,12 +24,15 @@ import { RestorchLoader } from "@/components/common/RestorchLoader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+    useMarkItemReadyMutation,
+    useStartPreparationMutation,
     useStationDetailQuery,
     useStationHistoryQuery,
     useUpdateStationMutation,
     type StationHistoryItem,
     type StationHistoryPeriod,
 } from "@/context/services/stationsApi";
+import { isQuickServeWorkflow } from "@/domains/fulfillment/domain/stationTicket";
 import { openEditStation } from "@/context/slices/stationSlice";
 import { useAppDispatch } from "@/context/hooks";
 import AddEditStationSheet from "@/domains/fulfillment/ui/AddEditStationSheet";
@@ -36,15 +42,19 @@ import { cn } from "@/lib/utils";
 
 const PERIODS: StationHistoryPeriod[] = [
     "today",
+    "yesterday",
     "week",
     "month",
     "quarter",
     "year",
+    "all",
     "custom",
 ];
 
 const STATE_FILTERS = [
     "all",
+    "MISSED",
+    "UNFINISHED",
     "QUEUED",
     "ACKNOWLEDGED",
     "IN_PREPARATION",
@@ -53,6 +63,8 @@ const STATE_FILTERS = [
     "CANCELLED",
     "CANNOT_PREPARE",
 ] as const;
+
+const ACTIVE_STATES = new Set(["QUEUED", "ACKNOWLEDGED", "IN_PREPARATION"]);
 
 const POLL_MS = 8000;
 
@@ -139,21 +151,30 @@ export default function ManagerStationDetailPage({
 
     const [updateStation, { isLoading: isToggling }] =
         useUpdateStationMutation();
+    const [startPrep, { isLoading: startingPrep }] =
+        useStartPreparationMutation();
+    const [markReady, { isLoading: markingReady }] = useMarkItemReadyMutation();
 
     const rows = history?.data ?? [];
     const paginationMeta = history?.pagination;
+    const workflowMode = history?.workflowMode;
+    const missedClosedCount = history?.summary?.missedClosed ?? 0;
 
     const periodLabel = (id: StationHistoryPeriod) => {
         if (id === "today") return tManager("periodToday");
+        if (id === "yesterday") return "Yesterday";
         if (id === "week") return tManager("periodWeek");
         if (id === "month") return tManager("periodMonth");
         if (id === "quarter") return tManager("periodQuarter");
         if (id === "year") return tManager("periodYear");
+        if (id === "all") return "All time";
         return tManager("periodCustom");
     };
 
     const stateLabel = (state: string) => {
         const map: Record<string, string> = {
+            MISSED: "Missed (Closed table)",
+            UNFINISHED: "Unfinished",
             QUEUED: t("state_QUEUED"),
             ACKNOWLEDGED: t("state_ACKNOWLEDGED"),
             IN_PREPARATION: t("state_IN_PREPARATION"),
@@ -205,9 +226,16 @@ export default function ManagerStationDetailPage({
                 id: "table",
                 header: t("colTable"),
                 cell: row => (
-                    <span className="text-[13px] text-foreground">
-                        {row.tableDisplayName}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-[13px] text-foreground">
+                            {row.tableDisplayName}
+                        </span>
+                        {row.seatingClosed ? (
+                            <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-slate-gray">
+                                Closed
+                            </span>
+                        ) : null}
+                    </div>
                 ),
             },
             {
@@ -243,8 +271,101 @@ export default function ManagerStationDetailPage({
                     </span>
                 ),
             },
+            {
+                id: "actions",
+                header: "Action",
+                cell: row => {
+                    if (!ACTIVE_STATES.has(row.state)) {
+                        return (
+                            <span className="text-[11px] text-slate-gray">
+                                —
+                            </span>
+                        );
+                    }
+                    const quickServe = isQuickServeWorkflow(workflowMode);
+                    const canMarkReadyDirectly =
+                        quickServe ||
+                        row.seatingClosed ||
+                        row.state === "IN_PREPARATION";
+                    const busy = startingPrep || markingReady;
+                    return (
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            {!row.seatingClosed &&
+                                !quickServe &&
+                                row.state !== "IN_PREPARATION" && (
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        disabled={busy}
+                                        onClick={async () => {
+                                            try {
+                                                await startPrep({
+                                                    orderItemId: row.id,
+                                                    expectedVersion:
+                                                        row.version,
+                                                }).unwrap();
+                                                toast.success(
+                                                    "Marked in progress",
+                                                    row.itemName,
+                                                );
+                                                void refetchHistory();
+                                            } catch (err) {
+                                                toast.fromUnknown(
+                                                    err,
+                                                    "Could not update status.",
+                                                );
+                                            }
+                                        }}
+                                        className="h-7 px-2 text-[11px] border-hairline cursor-pointer"
+                                    >
+                                        <Flame className="size-3 mr-1 text-orange-500" />
+                                        Start
+                                    </Button>
+                                )}
+                            {canMarkReadyDirectly && (
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    disabled={busy}
+                                    onClick={async () => {
+                                        try {
+                                            await markReady({
+                                                orderItemId: row.id,
+                                                expectedVersion: row.version,
+                                            }).unwrap();
+                                            toast.success(
+                                                "Marked ready",
+                                                row.itemName,
+                                            );
+                                            void refetchHistory();
+                                        } catch (err) {
+                                            toast.fromUnknown(
+                                                err,
+                                                "Could not mark ready.",
+                                            );
+                                        }
+                                    }}
+                                    className="h-7 px-2.5 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+                                >
+                                    <CheckCircle2 className="size-3 mr-1" />
+                                    Mark Ready
+                                </Button>
+                            )}
+                        </div>
+                    );
+                },
+            },
         ],
-        [t],
+        [
+            t,
+            workflowMode,
+            startingPrep,
+            markingReady,
+            startPrep,
+            markReady,
+            refetchHistory,
+        ],
     );
 
     const pagination: DataTablePagination = useMemo(
@@ -457,6 +578,29 @@ export default function ManagerStationDetailPage({
                     </div>
                 ))}
             </div>
+
+            {missedClosedCount > 0 && stateFilter !== "MISSED" ? (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 text-[12px] text-amber-950 dark:text-amber-200">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <AlertCircle className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                        <span>
+                            <strong>{missedClosedCount} order(s)</strong> had
+                            their table closed without a status update.
+                        </span>
+                    </div>
+                    <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                            setStateFilter("MISSED");
+                            setPage(1);
+                        }}
+                        className="h-8 rounded-full bg-amber-600 hover:bg-amber-700 px-3 text-[12px] font-medium text-white cursor-pointer"
+                    >
+                        Show missed ({missedClosedCount})
+                    </Button>
+                </div>
+            ) : null}
 
             <div className="flex flex-col gap-2">
                 <div className="flex flex-wrap gap-1.5">
