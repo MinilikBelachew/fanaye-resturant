@@ -298,10 +298,12 @@ export type StationDetailResponse = {
 
 export type StationHistoryPeriod =
     | "today"
+    | "yesterday"
     | "week"
     | "month"
     | "quarter"
     | "year"
+    | "all"
     | "custom";
 
 export type StationHistoryParams = {
@@ -328,13 +330,26 @@ export type StationHistoryItem = {
     queuedAt?: string | null;
     readyAt?: string | null;
     servedAt?: string | null;
+    version: number;
+    seatingClosed: boolean;
     prepMinutes?: number | null;
+};
+
+export type StationHistorySummary = {
+    total: number;
+    completed: number;
+    unfinished: number;
+    missedClosed: number;
+    cancelled: number;
 };
 
 export type StationHistoryResponse = {
     stationId: string;
+    stationName?: string;
+    workflowMode?: string;
     period: string;
     periodLabel: string;
+    summary?: StationHistorySummary;
     data: StationHistoryItem[];
     pagination: {
         page: number;

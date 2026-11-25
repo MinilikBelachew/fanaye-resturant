@@ -8,6 +8,7 @@ import {
     LayoutGrid,
     Table2,
     Boxes,
+    History,
 } from "lucide-react";
 import DataTable, {
     type DataTableColumn,
@@ -769,7 +770,17 @@ function StationQueueBoardInner({ role }: { role: StationRole }) {
                               : QUEUE_FILTER_LABELS[status]}
                     </h1>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => router.push(`/${role}/history`)}
+                        className="h-8 sm:h-9 px-2.5 sm:px-3 text-[12px] sm:text-[13px] font-medium border-hairline text-foreground hover:bg-secondary cursor-pointer"
+                    >
+                        <History className="size-3.5 sm:size-4 mr-1 text-slate-gray" />
+                        <span>History</span>
+                    </Button>
                     {featureOutsideOrders && (
                         <Button
                             type="button"

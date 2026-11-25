@@ -9,6 +9,7 @@ import {
     UtensilsCrossed,
     CalendarDays,
     Boxes,
+    History,
 } from "lucide-react";
 import { useGetTenantSiteQuery } from "@/context/services/siteApi";
 import { Suspense } from "react";
@@ -112,6 +113,20 @@ function StationKdsNavInner({
 
             {/* Divider between Queue tabs and Station tools */}
             <div className="h-6 w-px bg-border my-auto shrink-0 mx-0.5" />
+
+            {/* Order History link */}
+            <Link
+                href={`${home}/history`}
+                className={cn(
+                    "flex shrink-0 items-center gap-1.5 rounded-[12px] border px-2.5 py-1.5 text-[12px] font-medium sm:gap-2 sm:rounded-[16px] sm:px-3 sm:py-2 sm:text-[13px]",
+                    pathname === `${home}/history`
+                        ? "border-transparent bg-accent text-accent-foreground"
+                        : "border-hairline bg-card text-slate-gray hover:text-foreground",
+                )}
+            >
+                <History className="size-3.5 sm:size-4" />
+                <span className="whitespace-nowrap">History</span>
+            </Link>
 
             {/* Station Menu link */}
             <Link

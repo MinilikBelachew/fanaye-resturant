@@ -72,6 +72,11 @@ function stationQueueNav(home: string): NavSection[] {
                     icon: LayoutGrid,
                     filter: "all",
                 },
+                {
+                    href: `${home}/history`,
+                    label: "Order History",
+                    icon: Clock3,
+                },
             ],
         },
         {
