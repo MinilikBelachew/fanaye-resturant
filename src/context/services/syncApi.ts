@@ -7,8 +7,18 @@ export type SyncStatusResponse = {
     tenantId: string;
     cloudReachable: boolean;
     lastSyncedAt: string | null;
+    lastPulledSeq?: string;
     pendingOrdersCount: number;
     pendingBillsCount: number;
+    pendingOutboxCount?: number;
+    failedOutboxCount?: number;
+    lastSyncError?: string | null;
+    pendingByCategory?: {
+        menusAndCatalog: number;
+        ordersAndBills: number;
+        filesAndMedia: number;
+        other: number;
+    };
     localServerIp?: string;
     availableIps?: { name: string; ip: string }[];
 };
@@ -70,7 +80,12 @@ export const syncApi = api.injectEndpoints({
             invalidatesTags: ["Sync"],
         }),
         triggerSyncNow: build.mutation<
-            { status: string; message: string },
+            {
+                status: string;
+                message: string;
+                pushedCount?: number;
+                pulledCount?: number;
+            },
             void
         >({
             query: () => ({

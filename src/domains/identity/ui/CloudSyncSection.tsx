@@ -198,9 +198,9 @@ export default function CloudSyncSection() {
                                     Cloud Synchronization Status
                                 </CardTitle>
                                 <CardDescription className="text-xs">
-                                    Seamlessly synchronizes local offline
-                                    orders, bills, and menu updates with your
-                                    central SaaS server.
+                                    Two-way sync for offline orders, bills,
+                                    menus, dish photos (Cloudinary), inventory,
+                                    and Cloud updates.
                                 </CardDescription>
                             </div>
                         </div>
@@ -253,15 +253,58 @@ export default function CloudSyncSection() {
 
                         <div className="p-3 rounded-lg bg-muted/40 border border-border/60">
                             <div className="text-xs text-muted-foreground">
-                                Local Unsynced Orders
+                                Local Pending Sync Queue
                             </div>
                             <div className="text-xs font-semibold mt-1 flex items-center gap-1.5">
                                 <Database className="h-3.5 w-3.5 text-primary" />
                                 <span>
-                                    {status?.pendingOrdersCount ?? 0} orders
-                                    waiting
+                                    {status?.pendingOutboxCount ??
+                                        status?.pendingOrdersCount ??
+                                        0}{" "}
+                                    changes waiting
                                 </span>
                             </div>
+                            {status?.pendingByCategory &&
+                                (status.pendingOutboxCount ?? 0) > 0 && (
+                                    <div className="text-[11px] text-muted-foreground mt-1 flex flex-wrap gap-x-2 gap-y-0.5">
+                                        {status.pendingByCategory
+                                            .menusAndCatalog > 0 && (
+                                            <span>
+                                                Menus:{" "}
+                                                {
+                                                    status.pendingByCategory
+                                                        .menusAndCatalog
+                                                }
+                                            </span>
+                                        )}
+                                        {status.pendingByCategory
+                                            .filesAndMedia > 0 && (
+                                            <span>
+                                                Photos:{" "}
+                                                {
+                                                    status.pendingByCategory
+                                                        .filesAndMedia
+                                                }
+                                            </span>
+                                        )}
+                                        {status.pendingByCategory
+                                            .ordersAndBills > 0 && (
+                                            <span>
+                                                Sales:{" "}
+                                                {
+                                                    status.pendingByCategory
+                                                        .ordersAndBills
+                                                }
+                                            </span>
+                                        )}
+                                        {status.pendingByCategory.other > 0 && (
+                                            <span>
+                                                Other:{" "}
+                                                {status.pendingByCategory.other}
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
                         </div>
 
                         <div className="p-3 rounded-lg bg-muted/40 border border-border/60">
@@ -277,6 +320,21 @@ export default function CloudSyncSection() {
                             </div>
                         </div>
                     </div>
+
+                    {status?.lastSyncError && (
+                        <div className="mt-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-xs text-destructive">
+                            <span className="font-semibold">
+                                Sync Retry Notice
+                                {status.failedOutboxCount
+                                    ? ` (${status.failedOutboxCount} item${status.failedOutboxCount === 1 ? "" : "s"})`
+                                    : ""}
+                                :{" "}
+                            </span>
+                            <span className="break-all">
+                                {status.lastSyncError}
+                            </span>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
@@ -419,8 +477,9 @@ export default function CloudSyncSection() {
                         Automatic Background Sync
                     </CardTitle>
                     <CardDescription className="text-xs">
-                        Automatically pushes local orders and bills to Cloud
-                        when internet is available.
+                        Automatically pushes offline orders, bills, menus, dish
+                        photos (to Cloudinary), inventory &amp; daily close to
+                        Cloud, and pulls Cloud changes back down.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
