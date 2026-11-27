@@ -16,6 +16,9 @@ import {
     Send,
     Bot,
     CheckCircle2,
+    Laptop,
+    RotateCcw,
+    ShieldCheck,
     XCircle,
 } from "lucide-react";
 import DashboardFrame from "@/components/custom/organisms/DashboardFrame";
@@ -27,6 +30,8 @@ import { Link, useRouter } from "@/i18n/navigation";
 import {
     useDeleteSuperAdminTenantMutation,
     useGetSuperAdminTenantByIdQuery,
+    useGetSuperAdminTenantDesktopLicenseQuery,
+    useResetSuperAdminTenantDesktopLicenseMutation,
     useUpdateSuperAdminTenantMutation,
 } from "@/context/services/superAdminApi";
 import {
@@ -102,8 +107,14 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
         useUpdateSuperAdminTenantMutation();
     const [deleteTenant, { isLoading: isDeleting }] =
         useDeleteSuperAdminTenantMutation();
+    const { data: licenseRes, refetch: refetchLicense } =
+        useGetSuperAdminTenantDesktopLicenseQuery(tenantId);
+    const [resetDesktopLicense, { isLoading: isResettingLicense }] =
+        useResetSuperAdminTenantDesktopLicenseMutation();
+    const [confirmResetLicense, setConfirmResetLicense] = useState(false);
     const { impersonate, isStarting: isImpersonating } = useImpersonation();
     const tenant = response?.data;
+    const desktopLicense = licenseRes?.data;
 
     if (isLoading) {
         return (
@@ -968,6 +979,122 @@ export default function TenantDetailView({ tenantId }: TenantDetailViewProps) {
                                 label={t("detail.factTenantUuid")}
                                 value={tenant.id}
                                 mono
+                            />
+                        </div>
+                    </section>
+
+                    <section className="mt-4 overflow-hidden rounded-2xl border border-hairline bg-card">
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline px-4 py-3">
+                            <div className="flex items-center gap-2">
+                                <Laptop className="size-4 text-slate-gray" />
+                                <div>
+                                    <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-slate-gray">
+                                        Desktop Offline POS License
+                                    </p>
+                                    <p className="text-[12px] text-slate-gray">
+                                        Hardware lock binds the offline Windows
+                                        installer to one PC per restaurant.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Badge
+                                    variant={
+                                        desktopLicense?.bound
+                                            ? "success"
+                                            : "secondary"
+                                    }
+                                    className="gap-1"
+                                >
+                                    <ShieldCheck className="size-3" />
+                                    {desktopLicense?.bound
+                                        ? "Bound to PC"
+                                        : "Unbound"}
+                                </Badge>
+                                {desktopLicense?.bound ? (
+                                    confirmResetLicense ? (
+                                        <div className="flex items-center gap-1.5">
+                                            <button
+                                                type="button"
+                                                disabled={isResettingLicense}
+                                                onClick={async () => {
+                                                    try {
+                                                        await resetDesktopLicense(
+                                                            tenantId,
+                                                        ).unwrap();
+                                                        toast.success(
+                                                            "Desktop device license reset",
+                                                            "This restaurant can now activate a new POS computer.",
+                                                        );
+                                                        setConfirmResetLicense(
+                                                            false,
+                                                        );
+                                                        void refetchLicense();
+                                                    } catch {
+                                                        toast.error(
+                                                            "Failed to reset device license",
+                                                        );
+                                                    }
+                                                }}
+                                                className="inline-flex h-8 items-center gap-1 rounded-full bg-destructive px-3 text-[12px] font-medium text-white hover:bg-destructive/90 disabled:opacity-50"
+                                            >
+                                                Confirm Reset
+                                            </button>
+                                            <button
+                                                type="button"
+                                                disabled={isResettingLicense}
+                                                onClick={() =>
+                                                    setConfirmResetLicense(
+                                                        false,
+                                                    )
+                                                }
+                                                className="inline-flex h-8 items-center rounded-full px-2.5 text-[12px] font-medium text-slate-gray hover:bg-secondary"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setConfirmResetLicense(true)
+                                            }
+                                            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-hairline bg-card px-3 text-[12px] font-medium text-foreground hover:bg-secondary"
+                                        >
+                                            <RotateCcw className="size-3.5" />
+                                            Reset / Unbind Device
+                                        </button>
+                                    )
+                                ) : null}
+                            </div>
+                        </div>
+                        <div className="grid gap-x-6 gap-y-4 p-4 sm:grid-cols-2 lg:grid-cols-4">
+                            <Fact
+                                label="Bound Computer Name"
+                                value={desktopLicense?.deviceLabel || "—"}
+                            />
+                            <Fact
+                                label="Hardware Fingerprint"
+                                value={
+                                    desktopLicense?.hardwareHashPreview || "—"
+                                }
+                                mono
+                            />
+                            <Fact
+                                label="Activated At"
+                                value={
+                                    desktopLicense?.activatedAt
+                                        ? new Date(
+                                              desktopLicense.activatedAt,
+                                          ).toLocaleString()
+                                        : "—"
+                                }
+                            />
+                            <Fact
+                                label="Total Activations"
+                                value={String(
+                                    desktopLicense?.historyCount ?? 0,
+                                )}
                             />
                         </div>
                     </section>

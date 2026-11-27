@@ -759,6 +759,36 @@ export const superAdminApi = api.injectEndpoints({
                 params: params ?? undefined,
             }),
         }),
+
+        getSuperAdminTenantDesktopLicense: builder.query<
+            {
+                data: {
+                    bound: boolean;
+                    hardwareHashPreview?: string;
+                    deviceLabel?: string;
+                    activatedAt?: string;
+                    historyCount: number;
+                };
+            },
+            string
+        >({
+            query: id => ({
+                url: `/super-admin/tenants/${id}/desktop-license`,
+                method: "GET",
+            }),
+            providesTags: ["Auth"],
+        }),
+
+        resetSuperAdminTenantDesktopLicense: builder.mutation<
+            { ok: boolean; revokedCount: number },
+            string
+        >({
+            query: id => ({
+                url: `/super-admin/tenants/${id}/desktop-license`,
+                method: "DELETE",
+            }),
+            invalidatesTags: ["Auth"],
+        }),
     }),
 });
 
@@ -786,4 +816,6 @@ export const {
     useSetSuperAdminRolePermissionsMutation,
     useImpersonateSuperAdminSessionMutation,
     useGetSuperAdminTenantActivityQuery,
+    useGetSuperAdminTenantDesktopLicenseQuery,
+    useResetSuperAdminTenantDesktopLicenseMutation,
 } = superAdminApi;
